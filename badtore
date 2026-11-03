@@ -384,7 +384,7 @@
                     <!-- ペース切替バー -->
                     <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                         <div class="flex items-center justify-between text-xs font-bold text-slate-400 mb-1.5 px-1">
-                            <span>⏱️ スピード（秒数）変更</span>
+                            <span>⏱️ 配球スピード（秒数）変更</span>
                             <span id="quick-pace-current" class="text-emerald-400 font-black text-xs">現在 2.0秒</span>
                         </div>
                         <div class="grid grid-cols-5 gap-1.5">
@@ -396,8 +396,8 @@
                         </div>
                     </div>
 
-                    <!-- シングルス/ダブルス ＆ 音声切替 -->
-                    <div class="grid grid-cols-2 gap-2">
+                    <!-- シングルス/ダブルス ＆ 音声モード・声の速さ調整 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                             <div class="text-[11px] font-bold text-slate-400 mb-1.5">🏸 コートライン表示</div>
                             <div class="grid grid-cols-2 gap-1">
@@ -405,15 +405,23 @@
                                 <button type="button" id="btn-court-singles" onclick="setCourtMode('singles')" class="py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300">シングルス</button>
                             </div>
                         </div>
-                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                            <div class="flex justify-between text-[11px] font-bold text-slate-400 mb-1.5">
-                                <span>🔊 音声</span>
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                            <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                                <span>🔊 音声 ＆ 声のスピード</span>
                                 <button type="button" onclick="speakTest()" class="text-emerald-400 font-black underline">▶音テスト</button>
                             </div>
                             <div class="grid grid-cols-3 gap-1">
-                                <button type="button" id="quick-sound-both" onclick="setSoundModeQuick('both')" class="py-2 rounded-lg text-[11px] font-black bg-emerald-500 text-slate-950">声+音</button>
-                                <button type="button" id="quick-sound-beep" onclick="setSoundModeQuick('beep')" class="py-2 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300">電子音</button>
-                                <button type="button" id="quick-sound-mute" onclick="setSoundModeQuick('mute')" class="py-2 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300">消音</button>
+                                <button type="button" id="quick-sound-both" onclick="setSoundModeQuick('both')" class="py-1.5 rounded-lg text-[11px] font-black bg-emerald-500 text-slate-950">声+音</button>
+                                <button type="button" id="quick-sound-beep" onclick="setSoundModeQuick('beep')" class="py-1.5 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300">電子音</button>
+                                <button type="button" id="quick-sound-mute" onclick="setSoundModeQuick('mute')" class="py-1.5 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300">消音</button>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px]">
+                                <span class="text-slate-400 font-bold">🗣️ 声の速さ:</span>
+                                <select id="voice-rate-select" onchange="changeVoiceRate(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-0.5 text-xs font-black text-emerald-300">
+                                    <option value="0.85">ゆっくり (0.85x)</option>
+                                    <option value="1.0" selected>標準・自然 (1.0x)</option>
+                                    <option value="1.15">やや速め (1.15x)</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -1195,9 +1203,10 @@
     }
 
     /* =========================================================
-       1. 音声合成 ＆ Web Audio 電子音エンジン
+       1. 音声合成 ＆ Web Audio 電子音エンジン（自然な速度 1.0 に修正）
     ========================================================= */
     let soundMode = 'both';
+    let voiceRate = 1.0; // 標準の自然な読み上げ速度
     let audioCtx = null;
     let jaVoice = null;
 
@@ -1210,6 +1219,11 @@
     if ('speechSynthesis' in window) {
         loadJapaneseVoice();
         window.speechSynthesis.onvoiceschanged = loadJapaneseVoice;
+    }
+
+    function changeVoiceRate(val) {
+        voiceRate = parseFloat(val) || 1.0;
+        speakCall('声の速さを変更しました');
     }
 
     function initAudioEngine() {
@@ -1253,8 +1267,8 @@
             const utter = new SpeechSynthesisUtterance(text);
             utter.lang = 'ja-JP';
             if (jaVoice) utter.voice = jaVoice;
-            utter.rate = 1.38;
-            utter.pitch = 1.05;
+            utter.rate = voiceRate; // 自然な速度（デフォルト1.0）
+            utter.pitch = 1.0;
             window.speechSynthesis.speak(utter);
         } catch (e) {}
     }
@@ -1262,7 +1276,7 @@
     function speakTest() {
         initAudioEngine();
         if (soundMode === 'mute') setSoundModeQuick('both');
-        speakCall('左前、音声テストOKです');
+        speakCall('左前、右奥、音声テストOKです');
     }
 
     function setSoundModeQuick(mode) {
@@ -1270,8 +1284,8 @@
         ['both', 'beep', 'mute'].forEach(m => {
             const btn = document.getElementById(`quick-sound-${m}`);
             btn.className = m === mode
-                ? 'py-2 rounded-lg text-[11px] font-black bg-emerald-500 text-slate-950'
-                : 'py-2 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300';
+                ? 'py-1.5 rounded-lg text-[11px] font-black bg-emerald-500 text-slate-950'
+                : 'py-1.5 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300';
         });
         const icon = document.getElementById('header-sound-icon');
         const label = document.getElementById('header-sound-label');
@@ -1861,7 +1875,7 @@
         if (completed) {
             totalSetsCompleted += totalSets;
             document.getElementById('stat-total-sets').textContent = `${totalSetsCompleted} セット`;
-            speakCall('全セット完了、ナイスファイトでした');
+            speakCall('全セット完了、お疲れ様でした');
         } else if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
         }
@@ -2153,7 +2167,6 @@
         const el = aiBiometrics.elbowAngle || 95;
         const sh = aiBiometrics.shoulderElevation || 105;
         const kn = aiBiometrics.kneeAngle || 135;
-        const sw = aiBiometrics.peakSwingSpeed || 72;
 
         let score = 85;
         let msg = '';
