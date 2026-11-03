@@ -1,0 +1,2623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="バドトレPRO">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#090d16">
+    <title>バドトレPRO - AI骨格解析＆練習メニュー作成・フットワーク管理</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google MediaPipe Pose (33関節骨格認識AIエンジン) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;900&family=Noto+Sans+JP:wght@500;700;900&display=swap');
+
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: #090d16;
+            color: #f8fafc;
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+        }
+
+        input, select, textarea, button {
+            user-select: auto;
+            -webkit-user-select: auto;
+            touch-action: manipulation;
+        }
+
+        /* スマホ上部のノッチ・ステータスバー干渉を確実に防ぐセーフヘッダー */
+        .safe-header {
+            padding-top: calc(var(--safe-top) + 0.65rem);
+            padding-bottom: 0.5rem;
+            padding-left: max(0.75rem, var(--safe-left));
+            padding-right: max(0.75rem, var(--safe-right));
+            position: relative;
+            z-index: 60;
+        }
+
+        .safe-bottom-nav {
+            padding-bottom: max(0.6rem, var(--safe-bottom));
+            padding-left: max(0.5rem, var(--safe-left));
+            padding-right: max(0.5rem, var(--safe-right));
+            position: relative;
+            z-index: 60;
+        }
+
+        /* フルスクリーン時の上部HUDもノッチ下に確実に配置 */
+        .safe-floating-hud {
+            top: calc(var(--safe-top) + 0.75rem);
+        }
+
+        /* 半面コート描画 */
+        .badminton-half-court {
+            background-color: #065f46;
+            border: 4px solid #ffffff;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 0 45px rgba(0, 0, 0, 0.35);
+            width: 100%;
+            aspect-ratio: 1 / 1.15;
+            max-width: min(94vw, 680px);
+            max-height: min(62vh, 820px);
+            transition: all 0.25s ease;
+        }
+
+        @media (min-width: 768px) {
+            .badminton-half-court {
+                border-width: 6px;
+                max-height: min(78vh, 920px);
+            }
+        }
+
+        .court-line {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.88);
+            pointer-events: none;
+            z-index: 10;
+            transition: all 0.25s ease;
+        }
+
+        /* シングルス時のサイドシェードとライン強調 */
+        .alley-shade {
+            position: absolute;
+            background-color: rgba(2, 6, 23, 0.68);
+            pointer-events: none;
+            z-index: 12;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .court-singles-mode .alley-shade {
+            opacity: 1;
+        }
+        .court-singles-mode .line-singles-side {
+            background-color: #38bdf8 !important;
+            width: 4px !important;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.95);
+            opacity: 1 !important;
+        }
+        .court-singles-mode .line-doubles-long {
+            opacity: 0.18 !important;
+        }
+        .court-doubles-mode .line-doubles-long {
+            background-color: #fde047 !important;
+            height: 3px !important;
+            box-shadow: 0 0 10px rgba(250, 204, 21, 0.85);
+            opacity: 1 !important;
+        }
+
+        /* ネット表現 */
+        .net-bar {
+            position: absolute;
+            top: -6px;
+            left: -2%;
+            right: -2%;
+            height: 10px;
+            background: repeating-linear-gradient(90deg, #f8fafc, #f8fafc 6px, #334155 6px, #334155 12px);
+            border-bottom: 3px solid #ef4444;
+            z-index: 25;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            pointer-events: none;
+        }
+
+        /* 6エリアのマス */
+        .court-zone {
+            position: relative;
+            z-index: 20;
+            transition: all 0.06s ease-out;
+            border: 2px dashed rgba(255, 255, 255, 0.22);
+            background-color: rgba(15, 23, 42, 0.18);
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .court-zone.zone-disabled {
+            background-color: rgba(2, 6, 23, 0.78);
+            border-color: rgba(255, 255, 255, 0.05);
+            opacity: 0.35;
+        }
+
+        /* 3種類の光り方 */
+        .zone-flash-normal {
+            background: radial-gradient(circle, #86efac 0%, #22c55e 60%, #15803d 100%) !important;
+            border: 6px solid #ffffff !important;
+            box-shadow: 0 0 65px 18px rgba(74, 222, 128, 0.95), inset 0 0 35px #ffffff !important;
+            transform: scale(1.02);
+            z-index: 30 !important;
+            opacity: 1 !important;
+        }
+        .zone-flash-defense {
+            background: radial-gradient(circle, #7dd3fc 0%, #0ea5e9 60%, #0369a1 100%) !important;
+            border: 6px solid #ffffff !important;
+            box-shadow: 0 0 65px 18px rgba(56, 189, 248, 0.95), inset 0 0 35px #ffffff !important;
+            transform: scale(1.02);
+            z-index: 30 !important;
+            opacity: 1 !important;
+        }
+        .zone-flash-reverse {
+            background: radial-gradient(circle, #fef08a 0%, #eab308 60%, #dc2626 100%) !important;
+            border: 6px solid #ffffff !important;
+            box-shadow: 0 0 75px 22px rgba(250, 204, 21, 1), inset 0 0 40px #ffffff !important;
+            transform: scale(1.03);
+            z-index: 30 !important;
+            opacity: 1 !important;
+        }
+
+        .zone-flash-normal .zone-title,
+        .zone-flash-defense .zone-title,
+        .zone-flash-reverse .zone-title {
+            color: #020617 !important;
+            text-shadow: 0 0 14px rgba(255, 255, 255, 1);
+            transform: scale(1.18);
+        }
+        .zone-flash-normal .zone-sub,
+        .zone-flash-defense .zone-sub,
+        .zone-flash-reverse .zone-sub {
+            color: #090d16 !important;
+            font-weight: 900 !important;
+        }
+
+        /* スコア用フルコート */
+        .full-court-board {
+            background-color: #065f46;
+            border: 3px solid #ffffff;
+            position: relative;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65);
+        }
+
+        .service-box-active-server {
+            background-color: rgba(250, 204, 21, 0.28) !important;
+            box-shadow: inset 0 0 0 3px #facc15, 0 0 20px rgba(250, 204, 21, 0.45) !important;
+            z-index: 15;
+        }
+        .service-box-active-receiver {
+            background-color: rgba(56, 189, 248, 0.25) !important;
+            box-shadow: inset 0 0 0 3px #38bdf8, 0 0 20px rgba(56, 189, 248, 0.4) !important;
+            z-index: 15;
+        }
+
+        /* スタート時の自動フルスクリーンモード */
+        body.auto-fullscreen-mode #main-header,
+        body.auto-fullscreen-mode #main-bottom-nav,
+        body.auto-fullscreen-mode #left-control-panel {
+            display: none !important;
+        }
+        body.auto-fullscreen-mode #court-stage-area {
+            padding-top: calc(var(--safe-top) + 5.2rem) !important;
+            padding-bottom: calc(var(--safe-bottom) + 4.5rem) !important;
+            height: 100dvh !important;
+        }
+        body.auto-fullscreen-mode .badminton-half-court {
+            max-width: 96vw !important;
+            max-height: calc(100dvh - 10.5rem) !important;
+        }
+    </style>
+</head>
+<body class="w-full flex flex-col bg-slate-950">
+
+    <!-- ヘッダー（スマホで確実に押せるよう十分な高さと余白を確保） -->
+    <header id="main-header" class="safe-header bg-slate-900 border-b border-slate-800 shrink-0">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-slate-950 font-black text-base shadow shrink-0">
+                    🏸
+                </div>
+                <div class="truncate">
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="font-black text-sm sm:text-base tracking-wide text-white leading-tight">バドトレ PRO</h1>
+                        <span id="ai-engine-status" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">🧠 AI稼働OK</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- スマホでも押しやすい大きめボタン群 -->
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="openMenuCreatorModal(true)" class="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-500 text-slate-950 shadow flex items-center gap-1 active:scale-95">
+                    <span>🛠️</span>
+                    <span>メニュー作成</span>
+                </button>
+
+                <button type="button" onclick="openMenuBookModal(true)" class="min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 active:scale-95">
+                    <span>📋</span>
+                    <span>メニュー帳</span>
+                </button>
+
+                <button type="button" id="btn-header-sound" onclick="toggleQuickMute()" class="min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-black border border-emerald-500/60 bg-emerald-500/20 text-emerald-300 flex items-center gap-1 shadow active:scale-95">
+                    <span id="header-sound-icon" class="text-sm leading-none">🔊</span>
+                    <span id="header-sound-label" class="hidden sm:inline">音声 ON</span>
+                </button>
+
+                <button type="button" onclick="openPwaModal(true)" class="min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-black bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1 active:scale-95">
+                    <span>📲</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col overflow-hidden relative">
+
+        <!-- スタート直後の3秒カウントダウンオーバーレイ -->
+        <div id="countdown-overlay" class="hidden fixed inset-0 bg-slate-950/95 z-[80] flex flex-col items-center justify-center p-4">
+            <div id="countdown-label" class="text-xl sm:text-3xl font-black text-emerald-400 mb-3 text-center">ホームポジションへ移動してください</div>
+            <div id="countdown-number" class="text-8xl sm:text-[9rem] font-black text-white drop-shadow-[0_0_55px_rgba(16,185,129,0.95)] leading-none">3</div>
+            <button type="button" onclick="stopTraining(false)" class="mt-8 px-8 py-4 rounded-2xl bg-rose-500 text-white font-black text-base shadow-lg active:scale-95">
+                ✕ キャンセル（設定へ戻る）
+            </button>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 1 & 2. フットワーク ＆ ハンズフリーAIリアクション共通画面 -->
+        <!-- ========================================================= -->
+        <div id="training-shared-wrapper" class="flex-grow flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+
+            <!-- 左側操作パネル（スマホ縦画面でもスムーズにスクロール・タップ可能） -->
+            <div id="left-control-panel" class="bg-slate-900/95 border-b md:border-b-0 md:border-r border-slate-800 p-3 md:w-[380px] lg:w-[420px] flex flex-col justify-between md:overflow-y-auto space-y-2.5 z-30">
+                <div class="space-y-2.5">
+
+                    <!-- 現在選択中のメニュー表示＆メニュー作成ボタン -->
+                    <div class="bg-slate-950 p-2.5 rounded-2xl border border-emerald-500/40 flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <span id="active-menu-mode-badge" class="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">🎲 ランダム配球</span>
+                                <span class="text-xs text-white font-bold truncate" id="active-menu-title">全面6点ベーシック</span>
+                            </div>
+                            <div id="active-sequence-preview" class="text-[11px] font-black text-amber-300 truncate mt-0.5 hidden">順序: -</div>
+                        </div>
+                        <button type="button" onclick="openMenuCreatorModal(true)" class="min-h-[38px] px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shrink-0 shadow active:scale-95">
+                            🛠️ メニュー作成
+                        </button>
+                    </div>
+
+                    <!-- タイマー・セット・休憩設定 -->
+                    <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-center">
+                        <div class="flex flex-col justify-center">
+                            <div class="text-[10px] font-bold text-slate-400">セット数 / 休憩</div>
+                            <div class="flex items-center justify-center gap-1 my-1">
+                                <select id="set-total-select" onchange="updateSetConfig()" class="bg-slate-900 text-xs font-black text-emerald-400 rounded-lg px-2 py-1 border border-slate-700">
+                                    <option value="1">1セット</option>
+                                    <option value="2">2セット</option>
+                                    <option value="3" selected>3セット</option>
+                                    <option value="5">5セット</option>
+                                </select>
+                            </div>
+                            <select id="rest-select" onchange="updateSetConfig()" class="bg-slate-900 text-[11px] font-bold text-slate-300 text-center rounded px-1 py-0.5 border border-slate-800">
+                                <option value="10">休憩 10秒</option>
+                                <option value="15" selected>休憩 15秒</option>
+                                <option value="20">休憩 20秒</option>
+                                <option value="30">休憩 30秒</option>
+                            </select>
+                        </div>
+                        <div class="border-x border-slate-800 px-1 flex flex-col justify-center">
+                            <div class="text-[10px] font-bold text-slate-400">1セット時間</div>
+                            <select id="duration-select" onchange="changeSetDuration(this.value)" class="bg-slate-900 text-lg sm:text-xl font-black text-white text-center rounded-lg py-1 my-1 border border-slate-700">
+                                <option value="20">20秒</option>
+                                <option value="30" selected>30秒</option>
+                                <option value="45">45秒</option>
+                                <option value="60">60秒</option>
+                                <option value="90">90秒</option>
+                            </select>
+                            <div id="pace-badge-mini" class="text-[10px] font-bold text-emerald-400">2.0秒間隔</div>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <div class="text-[10px] font-bold text-slate-400">指示モード</div>
+                            <select id="flash-style-select" class="bg-slate-900 text-[11px] font-black text-yellow-400 rounded-lg px-1 py-1.5 border border-slate-700 mx-1 my-1">
+                                <option value="normal">🟢 通常のみ</option>
+                                <option value="mix_defense">🔵 レシーブ混ぜ</option>
+                                <option value="mix_reverse">🟡 逆突き混ぜ</option>
+                            </select>
+                            <div id="rep-counter" class="text-[10px] font-bold text-slate-400">待機中</div>
+                        </div>
+                    </div>
+
+                    <!-- マイメニュー記憶スロット（3枠）＆ 練習メニュー帳 -->
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-400 px-0.5">
+                            <span>💾 ワンタップ呼び出し</span>
+                            <div class="flex gap-3">
+                                <button type="button" onclick="openMenuCreatorModal(true)" class="text-emerald-400 underline font-black py-0.5">＋新規作成</button>
+                                <button type="button" onclick="openMenuBookModal(true)" class="text-amber-400 underline font-black py-0.5">📋メニュー帳</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5" id="my-slots-container"></div>
+                    </div>
+
+                    <!-- 練習パターン（6エリアON/OFFプリセット） -->
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-400 px-0.5">
+                            <span>📌 クイック範囲切り替え</span>
+                            <span class="text-[10px] text-emerald-400">※コート直接タップ可</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button type="button" onclick="applyPreset('all6')" class="py-2 bg-slate-800 active:bg-slate-700 rounded-lg text-xs font-bold border border-slate-700">🔥 全面6点</button>
+                            <button type="button" onclick="applyPreset('corners4')" class="py-2 bg-slate-800 active:bg-slate-700 rounded-lg text-xs font-bold border border-slate-700">📐 四隅4点</button>
+                            <button type="button" onclick="applyPreset('frontOnly')" class="py-2 bg-slate-800 active:bg-slate-700 rounded-lg text-xs font-bold border border-slate-700">⚡ 前衛2点</button>
+                            <button type="button" onclick="applyPreset('backOnly')" class="py-2 bg-slate-800 active:bg-slate-700 rounded-lg text-xs font-bold border border-slate-700">🚀 後衛2点</button>
+                            <button type="button" onclick="applyPreset('sidesOnly')" class="py-2 bg-slate-800 active:bg-slate-700 rounded-lg text-xs font-bold border border-slate-700">↔️ 左右2点</button>
+                            <button type="button" onclick="applyPreset('diagonal')" class="py-2 bg-slate-800 active:bg-slate-700 rounded-lg text-xs font-bold border border-slate-700">↗️ 対角2点</button>
+                        </div>
+                    </div>
+
+                    <!-- ペース切替バー -->
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-400 mb-1.5 px-1">
+                            <span>⏱️ 配球スピード（秒数）変更</span>
+                            <span id="quick-pace-current" class="text-emerald-400 font-black text-xs">現在 2.0秒</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <button type="button" onclick="setQuickPace(2.6)" data-pace="2.6" class="pace-quick-btn py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">2.6秒</button>
+                            <button type="button" onclick="setQuickPace(2.2)" data-pace="2.2" class="pace-quick-btn py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">2.2秒</button>
+                            <button type="button" onclick="setQuickPace(2.0)" data-pace="2.0" class="pace-quick-btn py-2 rounded-lg text-xs font-black bg-emerald-500 text-slate-950 border border-emerald-400">2.0秒</button>
+                            <button type="button" onclick="setQuickPace(1.6)" data-pace="1.6" class="pace-quick-btn py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">1.6秒</button>
+                            <button type="button" onclick="setQuickPace(1.2)" data-pace="1.2" class="pace-quick-btn py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">1.2秒</button>
+                        </div>
+                    </div>
+
+                    <!-- シングルス/ダブルス ＆ 音声モード・声の速さ調整 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                            <div class="text-[11px] font-bold text-slate-400 mb-1.5">🏸 コートライン表示</div>
+                            <div class="grid grid-cols-2 gap-1">
+                                <button type="button" id="btn-court-doubles" onclick="setCourtMode('doubles')" class="py-2 rounded-lg text-xs font-black bg-emerald-500 text-slate-950">ダブルス</button>
+                                <button type="button" id="btn-court-singles" onclick="setCourtMode('singles')" class="py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300">シングルス</button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                            <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
+                                <span>🔊 音声 ＆ 声のスピード</span>
+                                <button type="button" onclick="speakTest()" class="text-emerald-400 font-black underline">▶音テスト</button>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1">
+                                <button type="button" id="quick-sound-both" onclick="setSoundModeQuick('both')" class="py-1.5 rounded-lg text-[11px] font-black bg-emerald-500 text-slate-950">声+音</button>
+                                <button type="button" id="quick-sound-beep" onclick="setSoundModeQuick('beep')" class="py-1.5 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300">電子音</button>
+                                <button type="button" id="quick-sound-mute" onclick="setSoundModeQuick('mute')" class="py-1.5 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300">消音</button>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px]">
+                                <span class="text-slate-400 font-bold">🗣️ 声の速さ:</span>
+                                <select id="voice-rate-select" onchange="changeVoiceRate(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-0.5 text-xs font-black text-emerald-300">
+                                    <option value="0.85">ゆっくり (0.85x)</option>
+                                    <option value="1.0" selected>標準・自然 (1.0x)</option>
+                                    <option value="1.15">やや速め (1.15x)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- START ボタン -->
+                <div class="pt-2 border-t border-slate-800">
+                    <button type="button" id="btn-start-main" onclick="startTrainingWithFullscreen()" class="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base sm:text-lg shadow-lg shadow-emerald-500/25 transition active:scale-98 flex items-center justify-center gap-2">
+                        <span>▶</span> <span id="btn-start-btn-label">スタート（全画面で開始）</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 右側：コート ＆ ハンズフリーAIリアクション表示領域 -->
+            <div id="court-stage-area" class="flex-grow bg-slate-950 p-3 sm:p-4 flex flex-col items-center justify-center relative min-h-[380px]">
+
+                <!-- 全画面実行中の上部ステータス＆ストップバー（ノッチ下に安全配置） -->
+                <div id="floating-hud" class="hidden safe-floating-hud fixed left-3 right-3 z-[70] flex items-center justify-between bg-slate-900/95 backdrop-blur border-2 border-slate-700 px-4 py-2.5 rounded-2xl shadow-2xl">
+                    <div class="flex items-center gap-3 sm:gap-6">
+                        <div>
+                            <span id="hud-set-badge" class="text-[10px] font-black text-emerald-400 block leading-none">SET 1 / 3</span>
+                            <span id="hud-timer" class="text-2xl sm:text-3xl font-black text-white tabular-nums leading-tight">00:30</span>
+                        </div>
+                        <div class="border-l border-slate-700 pl-3 sm:pl-6">
+                            <span class="text-[10px] font-bold text-slate-400 block leading-none">現在の指示</span>
+                            <span id="hud-call" class="text-lg sm:text-2xl font-black text-yellow-400 leading-tight">-</span>
+                        </div>
+                        <div class="hidden sm:block border-l border-slate-700 pl-6">
+                            <span class="text-[10px] font-bold text-slate-400 block leading-none">回数</span>
+                            <span id="hud-rep" class="text-lg font-black text-emerald-400 leading-tight">0 回目</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="stopTraining(false)" class="min-h-[44px] px-4 sm:px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black text-xs sm:text-sm shadow-lg active:scale-95 flex items-center gap-1.5">
+                        <span>⏹</span> <span>ストップ</span>
+                    </button>
+                </div>
+
+                <!-- 全画面実行中の下部ストップボタン（片手でも確実に押せる補助バー） -->
+                <div id="floating-bottom-stop" class="hidden fixed bottom-4 left-4 right-4 z-[70] flex justify-center">
+                    <button type="button" onclick="stopTraining(false)" class="w-full max-w-md py-3.5 rounded-2xl bg-slate-900/95 border-2 border-rose-500 text-rose-300 font-black text-sm shadow-2xl active:scale-95">
+                        ⏹ トレーニングを停止して設定画面へ戻る
+                    </button>
+                </div>
+
+                <!-- A. 6エリア半面コート (フットワークモード) -->
+                <div id="footwork-court-view" class="w-full h-full flex items-center justify-center">
+                    <div id="half-court-board" class="badminton-half-court court-doubles-mode rounded-lg grid grid-cols-2 grid-rows-3 p-2 sm:p-3 gap-2 sm:gap-3">
+                        <div class="net-bar"></div>
+
+                        <div class="alley-shade top-0 bottom-0 left-0 w-[8%]"></div>
+                        <div class="alley-shade top-0 bottom-0 right-0 w-[8%]"></div>
+                        <div class="court-line line-singles-side top-0 bottom-0 left-[8%] w-[2px]"></div>
+                        <div class="court-line line-singles-side top-0 bottom-0 right-[8%] w-[2px]"></div>
+
+                        <div class="court-line left-0 right-0 top-[28%] h-[2px]"></div>
+                        <div class="court-line left-1/2 top-[28%] bottom-0 w-[2px] -translate-x-1/2"></div>
+                        <div class="court-line line-doubles-long left-0 right-0 bottom-[10%] h-[2px]"></div>
+
+                        <div id="zone-0" onclick="toggleZoneActive(0)" class="court-zone rounded-xl flex flex-col items-center justify-center p-2">
+                            <span class="zone-title text-4xl sm:text-6xl font-black text-white transition">↖</span>
+                            <span class="zone-sub text-xs sm:text-base font-bold text-emerald-300 mt-1">1. 左前</span>
+                        </div>
+                        <div id="zone-1" onclick="toggleZoneActive(1)" class="court-zone rounded-xl flex flex-col items-center justify-center p-2">
+                            <span class="zone-title text-4xl sm:text-6xl font-black text-white transition">↗</span>
+                            <span class="zone-sub text-xs sm:text-base font-bold text-emerald-300 mt-1">2. 右前</span>
+                        </div>
+                        <div id="zone-2" onclick="toggleZoneActive(2)" class="court-zone rounded-xl flex flex-col items-center justify-center p-2">
+                            <span class="zone-title text-4xl sm:text-6xl font-black text-white transition">←</span>
+                            <span class="zone-sub text-xs sm:text-base font-bold text-emerald-300 mt-1">3. 左横</span>
+                        </div>
+                        <div id="zone-3" onclick="toggleZoneActive(3)" class="court-zone rounded-xl flex flex-col items-center justify-center p-2">
+                            <span class="zone-title text-4xl sm:text-6xl font-black text-white transition">→</span>
+                            <span class="zone-sub text-xs sm:text-base font-bold text-emerald-300 mt-1">4. 右横</span>
+                        </div>
+                        <div id="zone-4" onclick="toggleZoneActive(4)" class="court-zone rounded-xl flex flex-col items-center justify-center p-2">
+                            <span class="zone-title text-4xl sm:text-6xl font-black text-white transition">↙</span>
+                            <span class="zone-sub text-xs sm:text-base font-bold text-emerald-300 mt-1">5. 左奥</span>
+                        </div>
+                        <div id="zone-5" onclick="toggleZoneActive(5)" class="court-zone rounded-xl flex flex-col items-center justify-center p-2">
+                            <span class="zone-title text-4xl sm:text-6xl font-black text-white transition">↘</span>
+                            <span class="zone-sub text-xs sm:text-base font-bold text-emerald-300 mt-1">6. 右奥</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- B. ハンズフリーAIリアクション＆骨格重心検知ビュー -->
+                <div id="reaction-court-view" class="hidden w-full h-full flex flex-col items-center justify-between max-w-3xl mx-auto py-1 space-y-2">
+                    <div class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-2.5 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex gap-1.5">
+                            <button type="button" id="rx-mode-auto" onclick="setReactionSubMode('auto')" class="px-3 py-2 rounded-xl text-xs font-black bg-emerald-500 text-slate-950">⚡ 連続ランダム矢印 (タップ不要)</button>
+                            <button type="button" id="rx-mode-cam" onclick="setReactionSubMode('camera')" class="px-3 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">🧠 AI骨格追跡・非接触1歩目測定</button>
+                        </div>
+                    </div>
+
+                    <div id="reaction-stage-box" class="w-full flex-grow min-h-[240px] rounded-3xl bg-slate-900 border-4 border-slate-800 flex flex-col items-center justify-center relative overflow-hidden p-4 shadow-2xl">
+                        <div id="rx-cam-preview-wrap" class="hidden absolute top-3 right-3 w-32 sm:w-44 aspect-video bg-slate-950 rounded-xl overflow-hidden border-2 border-emerald-400 shadow-lg z-20">
+                            <video id="rx-cam-video" playsinline muted class="w-full h-full object-cover scale-x-[-1]"></video>
+                            <canvas id="rx-pose-canvas" class="absolute inset-0 w-full h-full scale-x-[-1] pointer-events-none"></canvas>
+                            <div class="absolute bottom-0 inset-x-0 bg-slate-950/85 text-[9px] text-center font-black text-emerald-300 py-0.5">
+                                AI重心移動量: <span id="motion-val">0</span>
+                            </div>
+                        </div>
+
+                        <div id="rx-type-badge" class="px-4 py-1 rounded-full bg-slate-800 text-slate-300 font-black text-xs sm:text-sm mb-2">
+                            「▶ スタート」で全画面連続スタート
+                        </div>
+                        <div id="reaction-arrow-symbol" class="text-[6rem] sm:text-[10rem] font-black text-emerald-400 leading-none select-none transition-transform duration-75">
+                            🏸
+                        </div>
+                        <div id="reaction-main-msg" class="text-xl sm:text-3xl font-black text-white mt-2 text-center">
+                            コートに立ってAIリアクション練習
+                        </div>
+                        <div id="reaction-sub-msg" class="text-xs font-bold text-slate-400 mt-1 text-center">
+                            ※画面タップ不要。AIカメラモードではあなたの肩・腰の骨格移動から1歩目の反応速度(ms)を自動計測します
+                        </div>
+                    </div>
+
+                    <div class="w-full grid grid-cols-3 gap-2 text-center shrink-0">
+                        <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold">直前の1歩目反応</div>
+                            <div id="react-last-time" class="text-base sm:text-lg font-black text-white">-- ms</div>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold">平均初動タイム</div>
+                            <div id="react-avg-time" class="text-base sm:text-lg font-black text-emerald-400">-- ms</div>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold">フライング検知</div>
+                            <div id="react-foul-count" class="text-base sm:text-lg font-black text-rose-400">0 回</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 🛠️ 練習メニュー作成スタジオ（カスタム作成 ＆ AI自動生成モーダル） -->
+        <!-- ========================================================= -->
+        <div id="menu-creator-modal" class="hidden fixed inset-0 bg-slate-950/90 z-[90] flex items-center justify-center p-2 sm:p-4">
+            <div class="bg-slate-900 border-2 border-emerald-500/60 rounded-2xl max-w-4xl w-full max-h-[88dvh] flex flex-col overflow-hidden shadow-2xl">
+                <div class="p-3.5 sm:p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">🛠️</span>
+                        <div>
+                            <h3 class="text-sm sm:text-lg font-black text-white">練習メニュー作成スタジオ</h3>
+                            <p class="text-[11px] text-slate-400 hidden sm:block">ランダム配球・順番固定パターン・AI自動生成に対応</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openMenuCreatorModal(false)" class="min-h-[38px] px-4 py-1.5 rounded-xl bg-slate-800 text-white font-black text-xs">✕ 閉じる</button>
+                </div>
+
+                <div class="p-3.5 sm:p-4 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-4 text-xs">
+                    <!-- 左：AI自動生成 -->
+                    <div class="lg:col-span-5 bg-slate-950 border border-emerald-500/40 rounded-2xl p-4 space-y-3 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-1.5">
+                                <span class="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-black text-[10px]">AI GENERATOR</span>
+                                <h4 class="text-sm font-black text-emerald-400">🧠 AIにメニューを自動作成させる</h4>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-400 mb-1">① 今日の重点テーマ</label>
+                                <select id="ai-gen-focus" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs font-bold text-white">
+                                    <option value="weakness">📊 AI実測＆試合の失点傾向から弱点克服</option>
+                                    <option value="front_push">⚡ ダブルス前衛：高速プッシュ封鎖</option>
+                                    <option value="back_smash">🚀 ダブルス後衛：スマッシュ＆ラウンド奥</option>
+                                    <option value="singles_pattern">🔢 シングルス基礎：前→奥→前→奥の固定順序</option>
+                                    <option value="defense_counter">🛡️ レシーブ強化：スマッシュレシーブ＆前詰め</option>
+                                    <option value="feint_brain">🟡 判断力強化：逆突きフェイント対応</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">② カテゴリ</label>
+                                    <select id="ai-gen-level" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs font-bold text-white">
+                                        <option value="junior">🌱 ジュニア・基礎</option>
+                                        <option value="school" selected>🏫 中高生・部活</option>
+                                        <option value="advanced">👑 上級・実業団級</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">③ 強度</label>
+                                    <select id="ai-gen-intensity" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs font-bold text-white">
+                                        <option value="light">ゆっくり確認</option>
+                                        <option value="normal" selected>実戦速度 (標準)</option>
+                                        <option value="hard">限界スピード</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="generateMenuByAI()" class="w-full py-3 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs shadow-lg active:scale-95">
+                            ✨ AIでこの条件のメニューを生成 ➔
+                        </button>
+                    </div>
+
+                    <!-- 右：手動カスタム作成 -->
+                    <div class="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div class="sm:col-span-2">
+                                <label class="block text-[11px] font-bold text-slate-400 mb-1">メニュー名</label>
+                                <input id="creator-title" type="text" value="オリジナル4隅強化メニュー" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs font-black text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-400 mb-1">保存先スロット</label>
+                                <select id="creator-slot-target" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs font-bold text-emerald-400">
+                                    <option value="book_only">📋 メニュー帳のみ</option>
+                                    <option value="0">💾 スロット①＋メニュー帳</option>
+                                    <option value="1">💾 スロット②＋メニュー帳</option>
+                                    <option value="2">💾 スロット③＋メニュー帳</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="btn-creator-random" onclick="setCreatorPatternMode('random')" class="py-2 rounded-lg font-black text-xs bg-emerald-500 text-slate-950">🎲 ランダム配球モード</button>
+                                <button type="button" id="btn-creator-sequence" onclick="setCreatorPatternMode('sequence')" class="py-2 rounded-lg font-black text-xs bg-slate-800 text-slate-300 border border-slate-700">🔢 順番固定（パターン）</button>
+                            </div>
+
+                            <div id="creator-random-box" class="space-y-1.5 pt-1">
+                                <div class="text-[11px] text-slate-400">光らせるエリアをタップして選択：</div>
+                                <div class="grid grid-cols-3 gap-1.5" id="creator-zones-grid"></div>
+                            </div>
+
+                            <div id="creator-sequence-box" class="hidden space-y-2 pt-1">
+                                <div class="text-[11px] text-amber-300 font-bold">打つ順番通りにボタンをタップしてコースを追加：</div>
+                                <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                                    <button type="button" onclick="addCreatorSequenceStep(0)" class="py-2 bg-slate-800 rounded-lg font-black text-white border border-slate-600">+①左前</button>
+                                    <button type="button" onclick="addCreatorSequenceStep(1)" class="py-2 bg-slate-800 rounded-lg font-black text-white border border-slate-600">+②右前</button>
+                                    <button type="button" onclick="addCreatorSequenceStep(2)" class="py-2 bg-slate-800 rounded-lg font-black text-white border border-slate-600">+③左横</button>
+                                    <button type="button" onclick="addCreatorSequenceStep(3)" class="py-2 bg-slate-800 rounded-lg font-black text-white border border-slate-600">+④右横</button>
+                                    <button type="button" onclick="addCreatorSequenceStep(4)" class="py-2 bg-slate-800 rounded-lg font-black text-white border border-slate-600">+⑤左奥</button>
+                                    <button type="button" onclick="addCreatorSequenceStep(5)" class="py-2 bg-slate-800 rounded-lg font-black text-white border border-slate-600">+⑥右奥</button>
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-950 p-2 rounded-lg border border-slate-800">
+                                    <div id="creator-seq-display" class="text-xs font-black text-emerald-400 truncate">①左前 ➔ ⑥右奥 ➔ ②右前 ➔ ⑤左奥</div>
+                                    <button type="button" onclick="clearCreatorSequence()" class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 font-bold text-[11px] shrink-0">クリア</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                                <label class="block text-[10px] text-slate-400 font-bold">間隔: <span id="creator-pace-val" class="text-emerald-400 font-black">2.0秒</span></label>
+                                <input id="creator-pace" type="range" min="1.0" max="3.0" step="0.1" value="2.0" oninput="document.getElementById('creator-pace-val').textContent=this.value+'秒'" class="w-full mt-2 accent-emerald-500">
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                                <label class="block text-[10px] text-slate-400 font-bold mb-1">1セット秒数</label>
+                                <select id="creator-duration" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs font-black text-white">
+                                    <option value="20">20秒</option>
+                                    <option value="30" selected>30秒</option>
+                                    <option value="45">45秒</option>
+                                    <option value="60">60秒</option>
+                                </select>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                                <label class="block text-[10px] text-slate-400 font-bold mb-1">セット数</label>
+                                <select id="creator-sets" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs font-black text-white">
+                                    <option value="1">1セット</option>
+                                    <option value="2">2セット</option>
+                                    <option value="3" selected>3セット</option>
+                                    <option value="5">5セット</option>
+                                </select>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                                <label class="block text-[10px] text-slate-400 font-bold mb-1">フェイント</label>
+                                <select id="creator-style" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs font-black text-yellow-400">
+                                    <option value="normal">🟢 通常のみ</option>
+                                    <option value="mix_defense">🔵 レシーブ混ぜ</option>
+                                    <option value="mix_reverse">🟡 逆突き混ぜ</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 mb-1">意識するポイントメモ</label>
+                            <input id="creator-desc" type="text" value="1球ごとに必ずセンターへ戻り、リアクションステップを踏む" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs text-slate-200">
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 pt-1">
+                            <button type="button" onclick="saveCreatedMenu(false)" class="flex-1 py-3 rounded-xl bg-slate-800 text-emerald-300 border border-emerald-500/40 font-black text-xs">
+                                💾 保存してメニュー帳に追加
+                            </button>
+                            <button type="button" onclick="saveCreatedMenu(true)" class="flex-1 py-3 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs shadow-lg">
+                                ▶ 保存して今すぐコートにセット
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 📋 練習メニュー帳モーダル -->
+        <!-- ========================================================= -->
+        <div id="menu-book-modal" class="hidden fixed inset-0 bg-slate-950/90 z-[90] flex items-center justify-center p-3 sm:p-5">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[86dvh] flex flex-col overflow-hidden shadow-2xl">
+                <div class="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-black text-white">📋 バドミントン実践練習メニュー帳</h3>
+                        <p class="text-xs text-slate-400">選ぶだけでコートにセットされます</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="openMenuBookModal(false); openMenuCreatorModal(true);" class="px-3 py-2 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs">＋ 新規作成</button>
+                        <button type="button" onclick="openMenuBookModal(false)" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 font-black text-xs">✕ 閉じる</button>
+                    </div>
+                </div>
+                <div id="menu-book-list" class="p-4 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs"></div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 3. 🎥 本物のAIフォーム解析（MediaPipe 33関節追跡＆角度実測） -->
+        <!-- ========================================================= -->
+        <div id="view-ai-coach" class="hidden flex-grow overflow-y-auto p-3 sm:p-5 space-y-4">
+            <div class="max-w-5xl mx-auto space-y-4 pb-8">
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900 p-3.5 rounded-2xl border border-slate-800">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-black text-[10px]">MediaPipe Pose ML</span>
+                            <h2 class="text-base sm:text-lg font-black text-white">🎥 AIリアルタイム骨格認識 ＆ 関節角度・速度測定</h2>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="startCameraFeed()" class="px-3.5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs shadow">📷 AIカメラ起動</button>
+                        <label class="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-200 font-black text-xs border border-slate-700 cursor-pointer">
+                            📂 動画ファイルをAI解析
+                            <input type="file" accept="video/*" class="hidden" onchange="loadUserVideo(event)">
+                        </label>
+                        <button type="button" onclick="toggleProGhost()" id="btn-pro-ghost" class="px-3.5 py-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40 font-black text-xs">👤 プロ理想骨格を重ねる</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3">
+                        <div class="relative w-full aspect-video bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                            <video id="ai-video-el" playsinline muted loop crossorigin="anonymous" class="w-full h-full object-contain"></video>
+                            <div id="video-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 pointer-events-none p-4 text-center">
+                                <span class="text-4xl mb-2">🧠</span>
+                                <span class="text-xs sm:text-sm font-black text-white">「📷 AIカメラ起動」または「📂 動画ファイルをAI解析」を選択</span>
+                            </div>
+                            <canvas id="ai-skeleton-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+                            <canvas id="draw-canvas" class="absolute inset-0 w-full h-full cursor-crosshair touch-none"></canvas>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-2 text-center">
+                            <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                                <div class="text-[10px] text-slate-400 font-bold">右肘の角度</div>
+                                <div id="live-elbow-angle" class="text-base sm:text-lg font-black text-emerald-400">-- °</div>
+                            </div>
+                            <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                                <div class="text-[10px] text-slate-400 font-bold">肩・肘の挙上角</div>
+                                <div id="live-shoulder-angle" class="text-base sm:text-lg font-black text-sky-400">-- °</div>
+                            </div>
+                            <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                                <div class="text-[10px] text-slate-400 font-bold">膝の沈み込み角</div>
+                                <div id="live-knee-angle" class="text-base sm:text-lg font-black text-amber-400">-- °</div>
+                            </div>
+                            <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                                <div class="text-[10px] text-slate-400 font-bold">腕振速度指数</div>
+                                <div id="live-swing-speed" class="text-base sm:text-lg font-black text-rose-400">-- pt</div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-400">✏️ 線引き:</span>
+                                <button type="button" onclick="setDrawColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border-2 border-white"></button>
+                                <button type="button" onclick="setDrawColor('#facc15')" class="w-6 h-6 rounded-full bg-yellow-400"></button>
+                                <button type="button" onclick="setDrawColor('#38bdf8')" class="w-6 h-6 rounded-full bg-sky-400"></button>
+                                <button type="button" onclick="setDrawColor('#22c55e')" class="w-6 h-6 rounded-full bg-emerald-500"></button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="toggleVideoPlay()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-bold border border-slate-700">⏯ 一時停止/再生</button>
+                                <button type="button" onclick="clearDrawCanvas()" class="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/40">🗑️ 消去</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-black text-emerald-400">🤖 AIバイオメカニクス判定</h3>
+                                <span id="ai-form-score-badge" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-black text-xs">AIスコア: -- 点</span>
+                            </div>
+                            <select id="ai-check-topic" onchange="evaluateLiveBiomechanics(true)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs font-bold text-white">
+                                <option value="smash">オーバーヘッド・スマッシュ（肘の挙上角＆打点）</option>
+                                <option value="step">フットワーク1歩目＆ランジ（膝の沈み込み角度）</option>
+                                <option value="receive">ドライブ・レシーブ構え（重心バランス＆肘位置）</option>
+                            </select>
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                                <div class="text-xs font-black text-yellow-400">📌 AI実測フィードバック</div>
+                                <p id="ai-feedback-text" class="text-xs text-slate-200 leading-relaxed">
+                                    カメラまたは動画を再生すると、AIが関節角度をリアルタイム計算してアドバイスを表示します。
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="syncBiometricsToGearAndProfile()" class="w-full py-3.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg active:scale-95">
+                            ✨ 実測データを「AIギア診断＆カルテ」へ反映
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 4. スコア＆サーブ・1点戻す(Undo)・失点スタッツ・リーグ表 -->
+        <!-- ========================================================= -->
+        <div id="view-scoreboard" class="hidden flex-grow overflow-y-auto p-3 sm:p-5">
+            <div class="max-w-5xl mx-auto space-y-4 pb-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-base font-black text-white">🏸 スコア ＆ サーブ位置ナビ</h2>
+                            <div class="flex gap-1.5">
+                                <button type="button" id="score-mode-doubles" onclick="setScoreMatchMode('doubles')" class="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500 text-slate-950">ダブルス</button>
+                                <button type="button" id="score-mode-singles" onclick="setScoreMatchMode('singles')" class="px-2.5 py-1 rounded-lg text-xs font-black bg-slate-800 text-slate-300">シングルス</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 text-center">
+                            <div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/40">
+                                <div class="text-xs font-black text-emerald-400 mb-1">自ペア / TEAM A</div>
+                                <div id="match-score-a" class="text-5xl sm:text-6xl font-black text-white tabular-nums my-2">0</div>
+                                <button type="button" onclick="addMatchPoint('A')" class="w-full py-3 rounded-xl bg-emerald-500 text-slate-950 font-black text-sm shadow active:scale-95">＋1 得点</button>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-2xl border border-sky-500/40">
+                                <div class="text-xs font-black text-sky-400 mb-1">相手 / TEAM B</div>
+                                <div id="match-score-b" class="text-5xl sm:text-6xl font-black text-white tabular-nums my-2">0</div>
+                                <button type="button" onclick="addMatchPoint('B')" class="w-full py-3 rounded-xl bg-sky-500 text-slate-950 font-black text-sm shadow active:scale-95">＋1 得点</button>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="button" onclick="undoMatchPoint()" class="flex-grow py-3 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 active:scale-95">
+                                <span>↺</span> <span>1点戻す（Undo）</span>
+                            </button>
+                            <button type="button" onclick="resetMatchScore()" class="px-4 py-3 rounded-xl bg-slate-800 text-slate-300 font-black text-xs border border-slate-700">
+                                リセット
+                            </button>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <div class="text-[11px] font-bold text-slate-400">📊 失点・課題メモ（タップで記録 → メニュー作成AIと連動）</div>
+                            <div class="grid grid-cols-3 gap-1.5">
+                                <button type="button" onclick="recordWeakness('バック奥遅れ')" class="py-2 px-2 rounded-lg bg-slate-900 text-xs font-bold text-slate-200 border border-slate-700">バック奥遅れ (<span id="weak-バック奥遅れ">0</span>)</button>
+                                <button type="button" onclick="recordWeakness('ネット前甘さ')" class="py-2 px-2 rounded-lg bg-slate-900 text-xs font-bold text-slate-200 border border-slate-700">ネット前甘さ (<span id="weak-ネット前甘さ">0</span>)</button>
+                                <button type="button" onclick="recordWeakness('スマッシュ被弾')" class="py-2 px-2 rounded-lg bg-slate-900 text-xs font-bold text-slate-200 border border-slate-700">レシーブ遅れ (<span id="weak-スマッシュ被弾">0</span>)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                        <div class="flex items-center justify-between text-xs font-bold">
+                            <span class="text-yellow-400">🟨 黄色枠＝サーバー</span>
+                            <span class="text-sky-400">🟦 水色枠＝レシーバー</span>
+                        </div>
+                        <div class="full-court-board w-full aspect-[1.6/1] rounded-xl grid grid-cols-2 grid-rows-2 p-2 gap-1 relative">
+                            <div class="absolute top-0 bottom-0 left-1/2 w-1 bg-rose-500 -translate-x-1/2 z-20"></div>
+                            <div id="pos-a-left" class="bg-slate-950/35 border border-white/30 rounded flex flex-col items-center justify-center p-2">
+                                <span class="text-[10px] text-slate-300">Team A 左(奇数)</span>
+                                <span class="text-sm font-black text-white">A2</span>
+                            </div>
+                            <div id="pos-b-right" class="bg-slate-950/35 border border-white/30 rounded flex flex-col items-center justify-center p-2">
+                                <span class="text-[10px] text-slate-300">Team B 右(偶数)</span>
+                                <span class="text-sm font-black text-white">B1</span>
+                            </div>
+                            <div id="pos-a-right" class="bg-slate-950/35 border border-white/30 rounded flex flex-col items-center justify-center p-2 service-box-active-server">
+                                <span class="text-[10px] text-slate-300">Team A 右(偶数)</span>
+                                <span class="text-sm font-black text-white">A1 (Server)</span>
+                            </div>
+                            <div id="pos-b-left" class="bg-slate-950/35 border border-white/30 rounded flex flex-col items-center justify-center p-2 service-box-active-receiver">
+                                <span class="text-[10px] text-slate-300">Team B 左(奇数)</span>
+                                <span class="text-sm font-black text-white">B2</span>
+                            </div>
+                        </div>
+                        <div id="serve-guide-text" class="text-xs font-bold text-center text-emerald-300 bg-slate-950 py-2 rounded-xl border border-slate-800">
+                            現在：Team A (A1) が右サービスコートからサーブ
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="text-sm font-black text-white">📋 部内戦・練習試合 対戦カード自動生成</h3>
+                        <div class="flex items-center gap-2">
+                            <select id="bracket-count" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white">
+                                <option value="4">4人 (総当たり)</option>
+                                <option value="6" selected>6人 (ダブルス回し)</option>
+                                <option value="8">8人 (2コート回し)</option>
+                            </select>
+                            <button type="button" onclick="generateMatchBracket()" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs">対戦表を作成</button>
+                        </div>
+                    </div>
+                    <div id="bracket-result" class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 5. ギア＆ガット管理（🤖 AI実測データ連動ラケット診断 ＆ 特性図鑑） -->
+        <!-- ========================================================= -->
+        <div id="view-gear-lab" class="hidden flex-grow overflow-y-auto p-3 sm:p-5">
+            <div class="max-w-5xl mx-auto space-y-6 pb-8">
+
+                <div class="bg-slate-900 border-2 border-emerald-500/50 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-xs font-black px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950">REAL AI BIOMECHANICS &amp; GEAR MATCHING</span>
+                            <h2 class="text-lg sm:text-xl font-black text-white mt-2">🤖 AI実測データ連動・ラケット＆張力（ポンド数）診断</h2>
+                        </div>
+                        <div id="gear-ai-telemetry-badge" class="bg-slate-950 px-3 py-2 rounded-xl border border-emerald-500/40 text-xs text-emerald-300 font-bold">
+                            📊 AIカメラ実測値: 未計測（下の項目から手動診断も可能）
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <label class="block text-xs font-black text-emerald-400 mb-1.5">① 身長・体格・年代</label>
+                            <select id="diag-physique" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white outline-none">
+                                <option value="junior">~155cm (ジュニア・小中学生)</option>
+                                <option value="standard" selected>155~172cm (一般標準・中高生・女性)</option>
+                                <option value="tall">173cm~ (長身・一般男性・パワー型)</option>
+                            </select>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <label class="block text-xs font-black text-emerald-400 mb-1.5">② スイング速度（AI連動）</label>
+                            <select id="diag-swing" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white outline-none">
+                                <option value="fast" selected>速い・シャープに振り抜く</option>
+                                <option value="medium">標準・タイミング重視で振る</option>
+                                <option value="compact">コンパクト・これから力をつける</option>
+                            </select>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <label class="block text-xs font-black text-emerald-400 mb-1.5">③ 主なプレースタイル</label>
+                            <select id="diag-style" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white outline-none">
+                                <option value="speed" selected>ダブルス前衛・高速ドライブ展開</option>
+                                <option value="control">オールラウンド・コース突き＆球持ち</option>
+                                <option value="power">ダブルス後衛・角度のある強打</option>
+                            </select>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <label class="block text-xs font-black text-emerald-400 mb-1.5">④ ラケットに求めること</label>
+                            <select id="diag-priority" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-bold text-white outline-none">
+                                <option value="repulsion" selected>弾きの良さ・連続タッチの速さ</option>
+                                <option value="hold">シャトルをくわえ込むコントロール性</option>
+                                <option value="smash">相手を突き破るスマッシュの重さ</option>
+                                <option value="easy">肘や肩に優しく、楽に奥まで飛ぶ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="runAiRacketDiagnosis()" class="w-full py-3.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-sm sm:text-base shadow-lg active:scale-98 flex items-center justify-center gap-2">
+                        <span>🧠</span> <span>AIマルチベクトル演算でラケット相性（％）＆適正ポンド数を算出</span>
+                    </button>
+
+                    <div id="ai-diag-result-box" class="bg-slate-950 border-2 border-amber-400/70 rounded-2xl p-4 sm:p-5 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">👑</span>
+                                <div>
+                                    <div id="diag-match-score" class="text-xs font-black text-amber-400">AI相性マッチ度：97.4%</div>
+                                    <div id="diag-result-title" class="text-base sm:text-lg font-black text-white">あなたへのイチ押し：YONEX NANOFLARE 800 PRO / GAME</div>
+                                </div>
+                            </div>
+                            <span id="diag-result-tension" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-black text-xs sm:text-sm">
+                                🎯 推奨ガット張力：23 〜 25 lbs
+                            </span>
+                        </div>
+                        <p id="diag-result-reason" class="text-sm text-slate-200 leading-relaxed bg-slate-900/90 p-3.5 rounded-xl border border-slate-800">
+                            【AI解析コメント】素早いスイングワークと前衛・ドライブ展開を重視するスタイルには、極細フレームで空気抵抗を極限まで減らした「NANOFLARE 800シリーズ」が最高にマッチします。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                        <h2 class="text-lg sm:text-xl font-black text-white">📖 ラケット特性・打球感カタログ（AI相性順）</h2>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" onclick="filterRackets('all')" class="px-3.5 py-2 rounded-xl bg-slate-800 text-xs font-black text-white border border-slate-600">すべて</button>
+                            <button type="button" onclick="filterRackets('speed')" class="px-3.5 py-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40 text-xs font-black">⚡ スピード</button>
+                            <button type="button" onclick="filterRackets('control')" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black">🎯 球持ち</button>
+                            <button type="button" onclick="filterRackets('power')" class="px-3.5 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black">💥 パワー</button>
+                        </div>
+                    </div>
+                    <div id="racket-catalog-list" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
+                        <h3 class="text-base font-black text-emerald-400">✂️ マイラケット・ガット張り替え履歴管理</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                            <input id="str-racket" type="text" placeholder="ラケット名" class="bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+                            <input id="str-gut" type="text" placeholder="ガット (例: EXBOLT 65)" class="bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+                            <input id="str-lbs" type="number" placeholder="ポンド (例: 24)" class="bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+                            <button type="button" onclick="addStringingLog()" class="bg-emerald-500 text-slate-950 font-black rounded-xl text-xs py-2.5">＋ 履歴に追加</button>
+                        </div>
+                        <div id="stringing-log-list" class="space-y-2 text-xs pt-1"></div>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-3">
+                        <h3 class="text-base font-black text-sky-400">📖 プロ・カテゴリ別の張力（ポンド数）目安</h3>
+                        <div class="space-y-2.5 text-xs">
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <div class="font-black text-white">世界トップ選手・ハードヒッター</div>
+                                    <div class="text-slate-400 mt-0.5">ASTROX 100 ZZ / 88D PRO × BG80 / EXBOLT 65</div>
+                                </div>
+                                <span class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 font-black">29〜32 lbs</span>
+                            </div>
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <div class="font-black text-white">実業団・高校生・一般上級者</div>
+                                    <div class="text-slate-400 mt-0.5">NANOFLARE 800 / ARCSABER 11 PRO × EXBOLT 65</div>
+                                </div>
+                                <span class="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-black">24〜27 lbs</span>
+                            </div>
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <div class="font-black text-white">ジュニア・中学生・女性（反発重視）</div>
+                                    <div class="text-slate-400 mt-0.5">NANOFLARE 800 GAME / 軽量5Uモデル</div>
+                                </div>
+                                <span class="px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 font-black">19〜23 lbs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 6. マイカルテ -->
+        <!-- ========================================================= -->
+        <div id="view-mypage" class="hidden flex-grow overflow-y-auto p-3 sm:p-5">
+            <div class="max-w-4xl mx-auto space-y-4 pb-8">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl font-black text-emerald-300">
+                            🏸
+                        </div>
+                        <div>
+                            <input id="prof-name" type="text" value="マイプレイヤー" class="bg-transparent font-black text-lg text-white border-b border-transparent focus:border-emerald-400 outline-none">
+                            <div class="text-xs text-slate-400 mt-0.5">AIバイオメカニクス計測データ ＆ 選手カルテ</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold">累計練習セット</div>
+                            <div id="stat-total-sets" class="text-base font-black text-emerald-400">12 セット</div>
+                        </div>
+                        <div class="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold">AIベスト反応</div>
+                            <div id="stat-best-react" class="text-base font-black text-sky-400">-- ms</div>
+                        </div>
+                        <div class="bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-bold">AIフォーム得点</div>
+                            <div id="stat-form-score" class="text-base font-black text-amber-400">-- 点</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-emerald-500/40 rounded-2xl p-4 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="text-sm font-black text-emerald-400">🧠 AI実測データからの逆算練習メニュー</h3>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="openMenuCreatorModal(true)" class="px-3 py-1.5 rounded-xl bg-slate-800 text-emerald-300 border border-emerald-500/40 font-black text-xs">🛠️ メニュー作成</button>
+                            <button type="button" onclick="applyAiSuggestedMenu()" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs shadow">セットして練習へ ▶</button>
+                        </div>
+                    </div>
+                    <p id="ai-reverse-suggestion" class="text-xs sm:text-sm text-slate-200 leading-relaxed bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                        現在の課題分析：リアクション初動とバック奥からの戻りの強化がおすすめです。「後衛2点＋四隅ランダム（1.6秒ペース）」で1歩目の蹴り出しを鍛えましょう。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- アプリ化案内モーダル -->
+        <div id="pwa-modal" class="hidden fixed inset-0 bg-slate-950/90 z-[90] flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-black text-white">📲 iPhone / iPad ホーム画面への追加方法</h3>
+                    <button type="button" onclick="openPwaModal(false)" class="text-slate-400 hover:text-white font-black">✕</button>
+                </div>
+                <ol class="text-xs text-slate-300 space-y-2 list-decimal list-inside leading-relaxed">
+                    <li>Safariで<strong>「共有アイコン（四角から上矢印）」</strong>をタップします。</li>
+                    <li>メニューから<strong>「ホーム画面に追加」</strong>を選択します。</li>
+                </ol>
+                <button type="button" onclick="openPwaModal(false)" class="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs">閉じる</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 下部ナビゲーションバー -->
+    <nav id="main-bottom-nav" class="safe-bottom-nav bg-slate-900 border-t border-slate-800 pt-1.5 shrink-0">
+        <div class="grid grid-cols-6 gap-1 max-w-4xl mx-auto">
+            <button type="button" onclick="switchMainTab('footwork', this)" class="nav-tab-btn py-2 rounded-xl flex flex-col items-center justify-center text-emerald-400 bg-slate-800/80 font-black">
+                <span class="text-base leading-none">👟</span>
+                <span class="text-[10px] mt-1">フットワーク</span>
+            </button>
+            <button type="button" onclick="switchMainTab('reaction', this)" class="nav-tab-btn py-2 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 font-bold">
+                <span class="text-base leading-none">⚡</span>
+                <span class="text-[10px] mt-1">AI反射測定</span>
+            </button>
+            <button type="button" onclick="switchMainTab('ai', this)" class="nav-tab-btn py-2 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 font-bold">
+                <span class="text-base leading-none">🎥</span>
+                <span class="text-[10px] mt-1">AI骨格解析</span>
+            </button>
+            <button type="button" onclick="switchMainTab('score', this)" class="nav-tab-btn py-2 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 font-bold">
+                <span class="text-base leading-none">🏸</span>
+                <span class="text-[10px] mt-1">スコア・試合</span>
+            </button>
+            <button type="button" onclick="switchMainTab('gear', this)" class="nav-tab-btn py-2 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 font-bold">
+                <span class="text-base leading-none">🛒</span>
+                <span class="text-[10px] mt-1">ギア・AI診断</span>
+            </button>
+            <button type="button" onclick="switchMainTab('mypage', this)" class="nav-tab-btn py-2 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 font-bold">
+                <span class="text-base leading-none">👤</span>
+                <span class="text-[10px] mt-1">マイカルテ</span>
+            </button>
+        </div>
+    </nav>
+
+<script>
+    /* =========================================================
+       0. Google MediaPipe Pose 初期化
+    ========================================================= */
+    let mpPose = null;
+    let mpPoseReady = false;
+    let activePoseTarget = 'none';
+
+    const aiBiometrics = {
+        elbowAngle: 0,
+        shoulderElevation: 0,
+        kneeAngle: 0,
+        peakSwingSpeed: 0,
+        formScore: 0,
+        measuredSamples: 0,
+        lastWristPos: null,
+        lastWristTime: 0
+    };
+
+    function initMediaPipePoseEngine() {
+        if (mpPose || typeof Pose === 'undefined') return;
+        try {
+            mpPose = new Pose({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+            });
+            mpPose.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                enableSegmentation: false,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            mpPose.onResults(onMediaPipePoseResults);
+            mpPoseReady = true;
+        } catch (e) {}
+    }
+    window.addEventListener('DOMContentLoaded', initMediaPipePoseEngine);
+
+    function computeJointAngle(a, b, c) {
+        if (!a || !b || !c) return 0;
+        const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+        let angle = Math.abs(radians * 180.0 / Math.PI);
+        if (angle > 180.0) angle = 360.0 - angle;
+        return Math.round(angle);
+    }
+
+    function onMediaPipePoseResults(results) {
+        if (activePoseTarget === 'ai_form') {
+            renderAiFormPoseAndBiomechanics(results);
+        } else if (activePoseTarget === 'rx_cam') {
+            processReactionPoseTracking(results);
+        }
+    }
+
+    /* =========================================================
+       1. 音声合成 ＆ Web Audio 電子音エンジン（自然な速度 1.0 に修正）
+    ========================================================= */
+    let soundMode = 'both';
+    let voiceRate = 1.0; // 標準の自然な読み上げ速度
+    let audioCtx = null;
+    let jaVoice = null;
+
+    function loadJapaneseVoice() {
+        if (!('speechSynthesis' in window)) return;
+        const voices = window.speechSynthesis.getVoices();
+        jaVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Kyoko')) ||
+                  voices.find(v => v.lang.includes('ja')) || null;
+    }
+    if ('speechSynthesis' in window) {
+        loadJapaneseVoice();
+        window.speechSynthesis.onvoiceschanged = loadJapaneseVoice;
+    }
+
+    function changeVoiceRate(val) {
+        voiceRate = parseFloat(val) || 1.0;
+        speakCall('声の速さを変更しました');
+    }
+
+    function initAudioEngine() {
+        if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        if ('speechSynthesis' in window) {
+            loadJapaneseVoice();
+            const u = new SpeechSynthesisUtterance('');
+            u.volume = 0;
+            window.speechSynthesis.speak(u);
+        }
+    }
+
+    function playBeep(freq = 880, duration = 0.09) {
+        if (soundMode === 'mute') return;
+        try {
+            initAudioEngine();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {}
+    }
+
+    function speakCall(text) {
+        if (soundMode === 'mute') return;
+        playBeep(920, 0.08);
+        if (soundMode === 'beep' || !('speechSynthesis' in window)) return;
+        try {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'ja-JP';
+            if (jaVoice) utter.voice = jaVoice;
+            utter.rate = voiceRate; // 自然な速度（デフォルト1.0）
+            utter.pitch = 1.0;
+            window.speechSynthesis.speak(utter);
+        } catch (e) {}
+    }
+
+    function speakTest() {
+        initAudioEngine();
+        if (soundMode === 'mute') setSoundModeQuick('both');
+        speakCall('左前、右奥、音声テストOKです');
+    }
+
+    function setSoundModeQuick(mode) {
+        soundMode = mode;
+        ['both', 'beep', 'mute'].forEach(m => {
+            const btn = document.getElementById(`quick-sound-${m}`);
+            btn.className = m === mode
+                ? 'py-1.5 rounded-lg text-[11px] font-black bg-emerald-500 text-slate-950'
+                : 'py-1.5 rounded-lg text-[11px] font-black bg-slate-800 text-slate-300';
+        });
+        const icon = document.getElementById('header-sound-icon');
+        const label = document.getElementById('header-sound-label');
+        if (mode === 'mute') {
+            icon.textContent = '🔇'; if (label) label.textContent = '消音中';
+        } else if (mode === 'beep') {
+            icon.textContent = '🔔'; if (label) label.textContent = '電子音';
+        } else {
+            icon.textContent = '🔊'; if (label) label.textContent = '音声 ON';
+        }
+    }
+
+    function toggleQuickMute() {
+        setSoundModeQuick(soundMode === 'mute' ? 'both' : 'mute');
+    }
+
+    /* =========================================================
+       2. 🛠️ 練習メニュー作成スタジオ ＆ メニュー帳
+    ========================================================= */
+    const zoneNames = ['左前', '右前', '左横', '右横', '左奥', '右奥'];
+    const oppositeZoneMap = [5, 4, 3, 2, 1, 0];
+    let activeZones = [true, true, true, true, true, true];
+    let activePatternMode = 'random';
+    let activeSequenceList = [0, 5, 1, 4];
+    let sequenceStepIndex = 0;
+
+    let currentPace = 2.0;
+    let setDuration = 30;
+    let totalSets = 3;
+    let restDuration = 15;
+    let currentTabMode = 'footwork';
+
+    let creatorMode = 'random';
+    let creatorZones = [true, true, false, false, true, true];
+    let creatorSequence = [0, 5, 1, 4];
+
+    let myMenuSlots = [
+        { name: '① ジュニア四隅基礎', mode: 'random', seq: [], zones: [true, true, false, false, true, true], pace: 2.4, duration: 30, sets: 3, style: 'normal' },
+        { name: '② 前奥交互パターン', mode: 'sequence', seq: [0, 5, 1, 4], zones: [true, true, false, false, true, true], pace: 2.0, duration: 30, sets: 3, style: 'normal' },
+        { name: '③ シングルス全面追い込み', mode: 'random', seq: [], zones: [true, true, true, true, true, true], pace: 1.6, duration: 45, sets: 3, style: 'mix_reverse' }
+    ];
+
+    let presetMenuBook = [
+        { title: '🌱 ジュニア基礎・四隅ランダム', desc: '正しいステップと戻りを身につける4隅ベーシックメニュー', mode: 'random', seq: [], zones: [true, true, false, false, true, true], pace: 2.4, duration: 30, sets: 3, style: 'normal', custom: false },
+        { title: '🔢 定番パターン：左前➔右奥➔右前➔左奥', desc: '決まった順番で対角に動き、フットワークの型を固めるパターン練習', mode: 'sequence', seq: [0, 5, 1, 4], zones: [true, true, false, false, true, true], pace: 2.0, duration: 30, sets: 3, style: 'normal', custom: false },
+        { title: '🏫 中高部活・全面6点オールラウンド', desc: 'レシーブ（青色）を織り交ぜた実践的な全面フットワーク', mode: 'random', seq: [], zones: [true, true, true, true, true, true], pace: 2.0, duration: 30, sets: 3, style: 'mix_defense', custom: false },
+        { title: '⚡ ダブルス前衛・プッシュ＆ネット封鎖', desc: '前衛2点＋左右ドライブに素早く飛びつく高速メニュー', mode: 'random', seq: [], zones: [true, true, true, true, false, false], pace: 1.6, duration: 20, sets: 4, style: 'normal', custom: false },
+        { title: '🚀 ダブルス後衛・スマッシュ＆ラウンド連打', desc: '左奥・右奥の2点に絞ってオーバーヘッドの入りを強化', mode: 'random', seq: [], zones: [false, false, false, false, true, true], pace: 2.0, duration: 30, sets: 3, style: 'normal', custom: false },
+        { title: '🧠 逆突きフェイント対応（黄色＝逆へ動く）', desc: '黄色く光った時は「表示と対角の逆方向」へ動く判断力トレ', mode: 'random', seq: [], zones: [true, true, true, true, true, true], pace: 2.2, duration: 30, sets: 3, style: 'mix_reverse', custom: false }
+    ];
+
+    try {
+        const savedBook = localStorage.getItem('badotore_menu_book_v1');
+        if (savedBook) presetMenuBook = JSON.parse(savedBook);
+        const savedSlots = localStorage.getItem('badotore_slots_v1');
+        if (savedSlots) myMenuSlots = JSON.parse(savedSlots);
+    } catch (e) {}
+
+    function persistMenus() {
+        try {
+            localStorage.setItem('badotore_menu_book_v1', JSON.stringify(presetMenuBook));
+            localStorage.setItem('badotore_slots_v1', JSON.stringify(myMenuSlots));
+        } catch (e) {}
+    }
+
+    function renderMySlots() {
+        const container = document.getElementById('my-slots-container');
+        container.innerHTML = myMenuSlots.map((s, idx) => `
+            <button type="button" onclick="loadMySlot(${idx})" class="py-2 px-2 bg-slate-900 active:bg-slate-800 rounded-lg border border-slate-700 text-left truncate transition">
+                <div class="text-[11px] font-black text-emerald-400 truncate">${s.name}</div>
+                <div class="text-[10px] text-slate-400">${s.mode === 'sequence' ? '🔢順番' : '🎲ランダム'} / ${s.pace}秒</div>
+            </button>
+        `).join('');
+    }
+
+    function applyMenuObjectToActive(m) {
+        activePatternMode = m.mode || 'random';
+        activeSequenceList = m.seq && m.seq.length ? [...m.seq] : [0, 5, 1, 4];
+        activeZones = [...m.zones];
+        renderZonesState();
+        setQuickPace(m.pace);
+        document.getElementById('duration-select').value = m.duration;
+        changeSetDuration(m.duration);
+        document.getElementById('set-total-select').value = m.sets;
+        document.getElementById('flash-style-select').value = m.style || 'normal';
+        updateSetConfig();
+
+        document.getElementById('active-menu-title').textContent = m.title || m.name;
+        const modeBadge = document.getElementById('active-menu-mode-badge');
+        const seqPreview = document.getElementById('active-sequence-preview');
+        if (activePatternMode === 'sequence') {
+            modeBadge.textContent = '🔢 順番固定';
+            modeBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-300';
+            seqPreview.textContent = '順序: ' + activeSequenceList.map(i => zoneNames[i]).join(' ➔ ');
+            seqPreview.classList.remove('hidden');
+        } else {
+            modeBadge.textContent = '🎲 ランダム配球';
+            modeBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300';
+            seqPreview.classList.add('hidden');
+        }
+    }
+
+    function loadMySlot(idx) {
+        applyMenuObjectToActive(myMenuSlots[idx]);
+    }
+
+    function openMenuCreatorModal(show) {
+        const modal = document.getElementById('menu-creator-modal');
+        modal.classList.toggle('hidden', !show);
+        if (show) {
+            renderCreatorZonesGrid();
+            renderCreatorSequenceText();
+        }
+    }
+
+    function setCreatorPatternMode(mode) {
+        creatorMode = mode;
+        document.getElementById('btn-creator-random').className = mode === 'random'
+            ? 'py-2 rounded-lg font-black text-xs bg-emerald-500 text-slate-950'
+            : 'py-2 rounded-lg font-black text-xs bg-slate-800 text-slate-300 border border-slate-700';
+        document.getElementById('btn-creator-sequence').className = mode === 'sequence'
+            ? 'py-2 rounded-lg font-black text-xs bg-amber-400 text-slate-950'
+            : 'py-2 rounded-lg font-black text-xs bg-slate-800 text-slate-300 border border-slate-700';
+        document.getElementById('creator-random-box').classList.toggle('hidden', mode !== 'random');
+        document.getElementById('creator-sequence-box').classList.toggle('hidden', mode !== 'sequence');
+    }
+
+    function renderCreatorZonesGrid() {
+        const grid = document.getElementById('creator-zones-grid');
+        grid.innerHTML = zoneNames.map((name, idx) => `
+            <button type="button" onclick="toggleCreatorZone(${idx})" class="py-2 px-2 rounded-lg font-black text-xs border transition ${creatorZones[idx] ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300' : 'bg-slate-950 border-slate-800 text-slate-500'}">
+                ${creatorZones[idx] ? '✔ ' : ''}${idx + 1}. ${name}
+            </button>
+        `).join('');
+    }
+
+    function toggleCreatorZone(idx) {
+        creatorZones[idx] = !creatorZones[idx];
+        if (!creatorZones.some(Boolean)) creatorZones[idx] = true;
+        renderCreatorZonesGrid();
+    }
+
+    function addCreatorSequenceStep(zoneIdx) {
+        if (creatorSequence.length >= 12) return alert('1パターンの最大ステップ数は12球までです');
+        creatorSequence.push(zoneIdx);
+        renderCreatorSequenceText();
+    }
+
+    function clearCreatorSequence() {
+        creatorSequence = [];
+        renderCreatorSequenceText();
+    }
+
+    function renderCreatorSequenceText() {
+        const el = document.getElementById('creator-seq-display');
+        if (creatorSequence.length === 0) {
+            el.textContent = '上の「+①左前」などのボタンを順番にタップしてください';
+        } else {
+            el.textContent = creatorSequence.map((z, i) => `(${i + 1})${zoneNames[z]}`).join(' ➔ ');
+        }
+    }
+
+    function generateMenuByAI() {
+        const focus = document.getElementById('ai-gen-focus').value;
+        const level = document.getElementById('ai-gen-level').value;
+        const intensity = document.getElementById('ai-gen-intensity').value;
+
+        let basePace = level === 'junior' ? 2.3 : level === 'advanced' ? 1.4 : 1.9;
+        if (intensity === 'light') basePace += 0.3;
+        if (intensity === 'hard') basePace -= 0.3;
+        basePace = Math.max(1.0, Math.min(2.8, Number(basePace.toFixed(1))));
+
+        let title = '';
+        let desc = '';
+        let duration = intensity === 'hard' ? 45 : 30;
+        let sets = intensity === 'hard' ? 4 : 3;
+        let style = 'normal';
+
+        if (focus === 'weakness') {
+            const backWeak = weaknessCounts['バック奥遅れ'];
+            const frontWeak = weaknessCounts['ネット前甘さ'];
+            if (backWeak > frontWeak) {
+                setCreatorPatternMode('sequence');
+                creatorSequence = [0, 4, 1, 4];
+                title = '🧠 AI弱点克服：バック奥ラウンド強化パターン';
+                desc = '前衛から左奥（バック奥）への素早いピボットステップを重点強化するAI処方メニュー';
+            } else {
+                setCreatorPatternMode('random');
+                creatorZones = [true, true, false, false, true, true];
+                style = 'mix_defense';
+                title = '🧠 AI総合強化：四隅高速トランジション';
+                desc = 'レシーブから攻撃への切り替えと1歩目の初動スピードを高めるAI推奨メニュー';
+            }
+        } else if (focus === 'front_push') {
+            setCreatorPatternMode('random');
+            creatorZones = [true, true, true, true, false, false];
+            basePace = Math.max(1.1, Number((basePace - 0.2).toFixed(1)));
+            duration = 20;
+            title = '⚡ AI生成：ダブルス前衛プッシュ＆ドライブ封鎖';
+            desc = 'ラケットを常にネットより高く保ち、コンパクトな振りで前・横を封鎖する';
+        } else if (focus === 'back_smash') {
+            setCreatorPatternMode('random');
+            creatorZones = [false, false, false, false, true, true];
+            title = '🚀 AI生成：後衛スマッシュ＆ラウンド連打';
+            desc = '右肘を高く保ち、打った直後に着地と同時にセンターへ戻る';
+        } else if (focus === 'singles_pattern') {
+            setCreatorPatternMode('sequence');
+            creatorSequence = [0, 5, 1, 4, 2, 3];
+            title = '🔢 AI生成：シングルス全面6点固定パターン';
+            desc = '左前➔右奥➔右前➔左奥➔左横➔右横の順番でリズミカルに足を運ぶ';
+        } else if (focus === 'defense_counter') {
+            setCreatorPatternMode('random');
+            creatorZones = [true, true, true, true, false, false];
+            style = 'mix_defense';
+            title = '🛡️ AI生成：スマッシュレシーブ＆前詰めカウンター';
+            desc = '水色点灯時は低い姿勢でレシーブし、次の緑点灯で素早くネット前へ詰める';
+        } else {
+            setCreatorPatternMode('random');
+            creatorZones = [true, true, true, true, true, true];
+            style = 'mix_reverse';
+            title = '🟡 AI生成：逆突きフェイント対応ステップ';
+            desc = '黄色く光った時は「表示と対角の逆方向」へ素早く切り返す';
+        }
+
+        document.getElementById('creator-title').value = title;
+        document.getElementById('creator-desc').value = desc;
+        document.getElementById('creator-pace').value = basePace;
+        document.getElementById('creator-pace-val').textContent = `${basePace}秒`;
+        document.getElementById('creator-duration').value = duration;
+        document.getElementById('creator-sets').value = sets;
+        document.getElementById('creator-style').value = style;
+        renderCreatorZonesGrid();
+        renderCreatorSequenceText();
+    }
+
+    function saveCreatedMenu(applyImmediately = false) {
+        const title = document.getElementById('creator-title').value.trim() || 'マイカスタムメニュー';
+        const desc = document.getElementById('creator-desc').value.trim() || 'オリジナル作成メニュー';
+        const pace = parseFloat(document.getElementById('creator-pace').value);
+        const duration = parseInt(document.getElementById('creator-duration').value);
+        const sets = parseInt(document.getElementById('creator-sets').value);
+        const style = document.getElementById('creator-style').value;
+        const slotTarget = document.getElementById('creator-slot-target').value;
+
+        if (creatorMode === 'sequence' && creatorSequence.length === 0) {
+            return alert('順番固定モードでは、少なくとも1つ以上のコースを追加してください');
+        }
+
+        const seqZones = [false, false, false, false, false, false];
+        if (creatorMode === 'sequence') {
+            creatorSequence.forEach(z => { seqZones[z] = true; });
+        }
+
+        const newMenu = {
+            title,
+            name: title,
+            desc,
+            mode: creatorMode,
+            seq: creatorMode === 'sequence' ? [...creatorSequence] : [],
+            zones: creatorMode === 'sequence' ? seqZones : [...creatorZones],
+            pace,
+            duration,
+            sets,
+            style,
+            custom: true
+        };
+
+        presetMenuBook.unshift(newMenu);
+
+        if (slotTarget !== 'book_only') {
+            const sIdx = parseInt(slotTarget);
+            myMenuSlots[sIdx] = { ...newMenu };
+            renderMySlots();
+        }
+
+        persistMenus();
+
+        if (applyImmediately) {
+            applyMenuObjectToActive(newMenu);
+            openMenuCreatorModal(false);
+        } else {
+            alert(`「${title}」を練習メニュー帳に保存しました！`);
+        }
+    }
+
+    function openMenuBookModal(show) {
+        const modal = document.getElementById('menu-book-modal');
+        modal.classList.toggle('hidden', !show);
+        if (show) renderMenuBookList();
+    }
+
+    function renderMenuBookList() {
+        const list = document.getElementById('menu-book-list');
+        list.innerHTML = presetMenuBook.map((m, i) => `
+            <div class="bg-slate-950 border ${m.custom ? 'border-emerald-500/50' : 'border-slate-800'} rounded-xl p-3.5 flex flex-col justify-between space-y-2.5">
+                <div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[10px] font-black px-2 py-0.5 rounded ${m.mode === 'sequence' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}">
+                            ${m.mode === 'sequence' ? '🔢 順番固定パターン' : '🎲 ランダム配球'}
+                        </span>
+                        ${m.custom ? `<button type="button" onclick="deleteBookMenu(${i})" class="text-[10px] text-rose-400 underline font-bold">🗑️ 削除</button>` : ''}
+                    </div>
+                    <div class="font-black text-white text-sm mt-1.5">${m.title}</div>
+                    <p class="text-slate-400 text-[11px] mt-1 leading-relaxed">${m.desc}</p>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                    <span class="text-[11px] font-bold text-emerald-400">${m.pace}秒間隔 / ${m.duration}秒×${m.sets}</span>
+                    <div class="flex gap-1.5">
+                        <button type="button" onclick="shareSpecificMenu(${i})" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-sky-300 font-bold text-[11px]">🔗共有</button>
+                        <button type="button" onclick="applyBookMenu(${i})" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-black text-xs">セットする</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function applyBookMenu(i) {
+        applyMenuObjectToActive(presetMenuBook[i]);
+        openMenuBookModal(false);
+    }
+
+    function deleteBookMenu(i) {
+        if (!confirm(`「${presetMenuBook[i].title}」を削除しますか？`)) return;
+        presetMenuBook.splice(i, 1);
+        persistMenus();
+        renderMenuBookList();
+    }
+
+    function shareSpecificMenu(i) {
+        const m = presetMenuBook[i];
+        const detail = m.mode === 'sequence'
+            ? `順番：${m.seq.map(z => zoneNames[z]).join('→')}`
+            : `エリア：${m.zones.map((on, idx) => on ? zoneNames[idx] : null).filter(Boolean).join('・')}`;
+        const text = `【バドトレPRO 練習メニュー共有】\nメニュー名：${m.title}\n${detail}\nスピード：${m.pace}秒間隔 / ${m.duration}秒×${m.sets}セット\nポイント：${m.desc}`;
+        if (navigator.clipboard) navigator.clipboard.writeText(text);
+        alert(`練習メニューをコピーしました！\n\n${text}`);
+    }
+
+    renderMySlots();
+
+    /* =========================================================
+       3. フットワーク ＆ ハンズフリー・リアクション実行制御
+    ========================================================= */
+    let timeRemaining = 30;
+    let currentSetNum = 1;
+    let isRunning = false;
+    let isResting = false;
+    let repCount = 0;
+    let totalSetsCompleted = 12;
+    let footworkTimer = null;
+    let countdownTimer = null;
+    let prepInterval = null;
+
+    function updateSetConfig() {
+        totalSets = parseInt(document.getElementById('set-total-select').value);
+        restDuration = parseInt(document.getElementById('rest-select').value);
+    }
+
+    function changeSetDuration(val) {
+        setDuration = parseInt(val);
+        timeRemaining = setDuration;
+        document.getElementById('hud-timer').textContent = `00:${String(setDuration).padStart(2, '0')}`;
+    }
+
+    function setCourtMode(mode) {
+        const board = document.getElementById('half-court-board');
+        const btnD = document.getElementById('btn-court-doubles');
+        const btnS = document.getElementById('btn-court-singles');
+        if (mode === 'singles') {
+            board.classList.remove('court-doubles-mode');
+            board.classList.add('court-singles-mode');
+            btnS.className = 'py-2 rounded-lg text-xs font-black bg-sky-400 text-slate-950';
+            btnD.className = 'py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300';
+        } else {
+            board.classList.remove('court-singles-mode');
+            board.classList.add('court-doubles-mode');
+            btnD.className = 'py-2 rounded-lg text-xs font-black bg-emerald-500 text-slate-950';
+            btnS.className = 'py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300';
+        }
+    }
+
+    function setQuickPace(sec) {
+        currentPace = sec;
+        document.getElementById('quick-pace-current').textContent = `現在 ${sec.toFixed(1)}秒`;
+        document.getElementById('pace-badge-mini').textContent = `${sec.toFixed(1)}秒間隔`;
+        document.querySelectorAll('.pace-quick-btn').forEach(btn => {
+            btn.className = parseFloat(btn.dataset.pace) === sec
+                ? 'pace-quick-btn py-2 rounded-lg text-xs font-black bg-emerald-500 text-slate-950 border border-emerald-400'
+                : 'pace-quick-btn py-2 rounded-lg text-xs font-black bg-slate-800 text-slate-300 border border-slate-700';
+        });
+    }
+
+    function toggleZoneActive(idx) {
+        if (isRunning) return;
+        activePatternMode = 'random';
+        document.getElementById('active-menu-mode-badge').textContent = '🎲 ランダム配球';
+        document.getElementById('active-sequence-preview').classList.add('hidden');
+        activeZones[idx] = !activeZones[idx];
+        if (!activeZones.some(Boolean)) activeZones[idx] = true;
+        renderZonesState();
+    }
+
+    function renderZonesState() {
+        activeZones.forEach((on, i) => {
+            document.getElementById(`zone-${i}`).classList.toggle('zone-disabled', !on);
+        });
+    }
+
+    function applyPreset(type) {
+        activePatternMode = 'random';
+        document.getElementById('active-menu-mode-badge').textContent = '🎲 ランダム配球';
+        document.getElementById('active-sequence-preview').classList.add('hidden');
+        if (type === 'all6') activeZones = [true, true, true, true, true, true];
+        if (type === 'corners4') activeZones = [true, true, false, false, true, true];
+        if (type === 'frontOnly') activeZones = [true, true, false, false, false, false];
+        if (type === 'backOnly') activeZones = [false, false, false, false, true, true];
+        if (type === 'sidesOnly') activeZones = [false, false, true, true, false, false];
+        if (type === 'diagonal') activeZones = [false, true, false, false, true, false];
+        renderZonesState();
+    }
+
+    function startTrainingWithFullscreen() {
+        initAudioEngine();
+        requestWakeLock(false);
+        updateSetConfig();
+        currentSetNum = 1;
+        sequenceStepIndex = 0;
+
+        document.body.classList.add('auto-fullscreen-mode');
+        document.getElementById('floating-hud').classList.remove('hidden');
+        document.getElementById('floating-bottom-stop').classList.remove('hidden');
+
+        runCountdownOverlay(`SET ${currentSetNum} / ${totalSets} - ホームポジションへ`, () => {
+            beginActiveSet();
+        });
+    }
+
+    function runCountdownOverlay(labelText, onComplete) {
+        const overlay = document.getElementById('countdown-overlay');
+        const numEl = document.getElementById('countdown-number');
+        document.getElementById('countdown-label').textContent = labelText;
+        overlay.classList.remove('hidden');
+        let prepCount = 3;
+        numEl.textContent = prepCount;
+        playBeep(660, 0.1);
+
+        clearInterval(prepInterval);
+        prepInterval = setInterval(() => {
+            prepCount--;
+            if (prepCount > 0) {
+                numEl.textContent = prepCount;
+                playBeep(660, 0.1);
+            } else {
+                clearInterval(prepInterval);
+                overlay.classList.add('hidden');
+                onComplete();
+            }
+        }, 1000);
+    }
+
+    function beginActiveSet() {
+        isRunning = true;
+        isResting = false;
+        repCount = 0;
+        sequenceStepIndex = 0;
+        timeRemaining = setDuration;
+        document.getElementById('hud-set-badge').textContent = `SET ${currentSetNum} / ${totalSets}`;
+        document.getElementById('hud-timer').textContent = `00:${String(timeRemaining).padStart(2, '0')}`;
+        document.getElementById('hud-rep').textContent = '0 回目';
+
+        if (currentTabMode === 'reaction' && reactionSubMode === 'camera') {
+            startHandsFreeCameraReactionLoop();
+        } else {
+            triggerNextCue();
+            footworkTimer = setInterval(triggerNextCue, currentPace * 1000);
+        }
+
+        clearInterval(countdownTimer);
+        countdownTimer = setInterval(() => {
+            timeRemaining--;
+            document.getElementById('hud-timer').textContent = `00:${String(Math.max(0, timeRemaining)).padStart(2, '0')}`;
+            if (timeRemaining <= 0) {
+                handleSetFinished();
+            }
+        }, 1000);
+    }
+
+    function handleSetFinished() {
+        clearInterval(footworkTimer);
+        clearInterval(countdownTimer);
+        clearTimeout(camCueTimeout);
+        clearCourtFlashes();
+
+        if (currentSetNum < totalSets) {
+            currentSetNum++;
+            isResting = true;
+            let restLeft = restDuration;
+            speakCall(`セット終了、${restDuration}秒休憩です`);
+            document.getElementById('hud-call').textContent = 'インターバル休憩中';
+            countdownTimer = setInterval(() => {
+                restLeft--;
+                document.getElementById('hud-timer').textContent = `休 ${String(restLeft).padStart(2, '0')}`;
+                if (restLeft <= 3 && restLeft > 0) playBeep(660, 0.08);
+                if (restLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    beginActiveSet();
+                }
+            }, 1000);
+        } else {
+            stopTraining(true);
+        }
+    }
+
+    function clearCourtFlashes() {
+        document.querySelectorAll('.court-zone').forEach(z => {
+            z.classList.remove('zone-flash-normal', 'zone-flash-defense', 'zone-flash-reverse');
+        });
+    }
+
+    function triggerNextCue() {
+        clearCourtFlashes();
+        let pick = 0;
+
+        if (activePatternMode === 'sequence' && activeSequenceList.length > 0) {
+            pick = activeSequenceList[sequenceStepIndex % activeSequenceList.length];
+            sequenceStepIndex++;
+        } else {
+            const candidates = activeZones.map((on, idx) => on ? idx : -1).filter(idx => idx !== -1);
+            pick = candidates[Math.floor(Math.random() * candidates.length)];
+        }
+
+        const styleSetting = document.getElementById('flash-style-select').value;
+        let flashClass = 'zone-flash-normal';
+        let callText = zoneNames[pick];
+        let rxTypeLabel = '🟢 通常フットワーク';
+
+        if (styleSetting === 'mix_defense' && Math.random() < 0.35) {
+            flashClass = 'zone-flash-defense';
+            callText = `${zoneNames[pick]}、レシーブ`;
+            rxTypeLabel = '🔵 レシーブ（低い姿勢）';
+        } else if (styleSetting === 'mix_reverse' && Math.random() < 0.35) {
+            flashClass = 'zone-flash-reverse';
+            const actualTarget = zoneNames[oppositeZoneMap[pick]];
+            callText = `逆！${actualTarget}`;
+            rxTypeLabel = `🟡 フェイント逆突き！（正解：${actualTarget}）`;
+        }
+
+        const zoneEl = document.getElementById(`zone-${pick}`);
+        setTimeout(() => {
+            zoneEl.classList.add(flashClass);
+            repCount++;
+            document.getElementById('hud-call').textContent = callText;
+            document.getElementById('hud-rep').textContent = `${repCount} 回目`;
+            document.getElementById('rep-counter').textContent = `${repCount} 回目`;
+
+            const arrows = ['↖', '↗', '←', '→', '↙', '↘'];
+            const symEl = document.getElementById('reaction-arrow-symbol');
+            symEl.textContent = arrows[pick];
+            symEl.className = flashClass === 'zone-flash-reverse'
+                ? 'text-[7rem] sm:text-[11rem] font-black text-yellow-400 leading-none scale-110 transition-transform'
+                : flashClass === 'zone-flash-defense'
+                ? 'text-[7rem] sm:text-[11rem] font-black text-sky-400 leading-none scale-110 transition-transform'
+                : 'text-[7rem] sm:text-[11rem] font-black text-emerald-400 leading-none scale-110 transition-transform';
+            document.getElementById('rx-type-badge').textContent = rxTypeLabel;
+            document.getElementById('reaction-main-msg').textContent = callText;
+
+            speakCall(callText);
+        }, 45);
+    }
+
+    function stopTraining(completed = false) {
+        isRunning = false;
+        isResting = false;
+        clearInterval(prepInterval);
+        clearInterval(footworkTimer);
+        clearInterval(countdownTimer);
+        clearTimeout(camCueTimeout);
+        cancelAnimationFrame(motionAnimFrame);
+
+        document.getElementById('countdown-overlay').classList.add('hidden');
+        clearCourtFlashes();
+
+        document.body.classList.remove('auto-fullscreen-mode');
+        document.getElementById('floating-hud').classList.add('hidden');
+        document.getElementById('floating-bottom-stop').classList.add('hidden');
+
+        if (completed) {
+            totalSetsCompleted += totalSets;
+            document.getElementById('stat-total-sets').textContent = `${totalSetsCompleted} セット`;
+            speakCall('全セット完了、お疲れ様でした');
+        } else if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+    }
+
+    /* =========================================================
+       4. ⚡ ハンズフリーAIリアクション
+    ========================================================= */
+    let reactionSubMode = 'auto';
+    let rxCamStream = null;
+    let motionAnimFrame = null;
+    let prevFrameData = null;
+    let prevPoseCoM = null;
+    let camState = 'idle';
+    let camCueTime = 0;
+    let camCueTimeout = null;
+    let reactHistory = [];
+    let reactBest = 9999;
+    let reactFouls = 0;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = 64;
+    offCanvas.height = 48;
+    const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+
+    async function setReactionSubMode(mode) {
+        reactionSubMode = mode;
+        const btnAuto = document.getElementById('rx-mode-auto');
+        const btnCam = document.getElementById('rx-mode-cam');
+        const previewWrap = document.getElementById('rx-cam-preview-wrap');
+
+        if (mode === 'camera') {
+            btnCam.className = 'px-3 py-2 rounded-xl text-xs font-black bg-emerald-500 text-slate-950';
+            btnAuto.className = 'px-3 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700';
+            previewWrap.classList.remove('hidden');
+            await initReactionCamera();
+        } else {
+            btnAuto.className = 'px-3 py-2 rounded-xl text-xs font-black bg-emerald-500 text-slate-950';
+            btnCam.className = 'px-3 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700';
+            previewWrap.classList.add('hidden');
+        }
+    }
+
+    async function initReactionCamera() {
+        initMediaPipePoseEngine();
+        if (rxCamStream) return;
+        try {
+            rxCamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 }, audio: false });
+            const v = document.getElementById('rx-cam-video');
+            v.srcObject = rxCamStream;
+            await v.play();
+        } catch (e) {
+            alert('カメラが許可されていないため、通常の連続ランダム矢印モードで動作します。');
+            setReactionSubMode('auto');
+        }
+    }
+
+    function startHandsFreeCameraReactionLoop() {
+        prevFrameData = null;
+        prevPoseCoM = null;
+        activePoseTarget = 'rx_cam';
+        scheduleNextCamCue();
+        detectCameraMotionLoop();
+    }
+
+    function scheduleNextCamCue() {
+        if (!isRunning) return;
+        camState = 'waiting';
+        prevPoseCoM = null;
+        document.getElementById('rx-type-badge').textContent = '⏳ AIが骨格重心を監視中（動くとフライング）';
+        document.getElementById('reaction-arrow-symbol').textContent = '👀';
+        document.getElementById('reaction-main-msg').textContent = '合図を待って1歩目を出してください';
+
+        const randomWait = 1500 + Math.random() * 2000;
+        clearTimeout(camCueTimeout);
+        camCueTimeout = setTimeout(() => {
+            if (!isRunning) return;
+            camState = 'cue_active';
+            camCueTime = performance.now();
+            triggerNextCue();
+        }, randomWait);
+    }
+
+    function processReactionPoseTracking(results) {
+        const rxCanvas = document.getElementById('rx-pose-canvas');
+        if (!rxCanvas) return;
+        const rCtx = rxCanvas.getContext('2d');
+        rxCanvas.width = 160;
+        rxCanvas.height = 90;
+        rCtx.clearRect(0, 0, rxCanvas.width, rxCanvas.height);
+
+        if (!results.poseLandmarks) return;
+        const lm = results.poseLandmarks;
+        if (typeof drawConnectors !== 'undefined' && typeof POSE_CONNECTIONS !== 'undefined') {
+            drawConnectors(rCtx, lm, POSE_CONNECTIONS, { color: '#34d399', lineWidth: 2 });
+        }
+
+        const comX = (lm[11].x + lm[12].x + lm[23].x + lm[24].x) / 4;
+        const comY = (lm[11].y + lm[12].y + lm[23].y + lm[24].y) / 4;
+
+        if (prevPoseCoM) {
+            const dist = Math.hypot(comX - prevPoseCoM.x, comY - prevPoseCoM.y);
+            const score = Math.round(dist * 1000);
+            document.getElementById('motion-val').textContent = score;
+            if (score > 22) handleDetectedFirstStepMovement();
+        }
+        prevPoseCoM = { x: comX, y: comY };
+    }
+
+    function handleDetectedFirstStepMovement() {
+        if (camState === 'waiting') {
+            clearTimeout(camCueTimeout);
+            camState = 'cooldown';
+            reactFouls++;
+            document.getElementById('react-foul-count').textContent = `${reactFouls} 回`;
+            document.getElementById('rx-type-badge').textContent = '⚠️ AIフライング検知！合図の前に重心が動きました';
+            document.getElementById('reaction-main-msg').textContent = 'フライング！2秒後に次の合図へ';
+            playBeep(240, 0.25);
+            camCueTimeout = setTimeout(scheduleNextCamCue, 2000);
+        } else if (camState === 'cue_active') {
+            const ms = Math.round(performance.now() - camCueTime);
+            if (ms > 110) {
+                camState = 'cooldown';
+                reactHistory.push(ms);
+                const avg = Math.round(reactHistory.reduce((a, b) => a + b, 0) / reactHistory.length);
+                if (ms < reactBest) {
+                    reactBest = ms;
+                    document.getElementById('stat-best-react').textContent = `${reactBest} ms`;
+                }
+                document.getElementById('react-last-time').textContent = `${ms} ms`;
+                document.getElementById('react-avg-time').textContent = `${avg} ms`;
+                document.getElementById('rx-type-badge').textContent = `⚡ AI 1歩目検知：${ms} ms！`;
+                updateGearTelemetryBadge();
+                camCueTimeout = setTimeout(scheduleNextCamCue, 2200);
+            }
+        }
+    }
+
+    async function detectCameraMotionLoop() {
+        if (!isRunning || reactionSubMode !== 'camera') return;
+        const v = document.getElementById('rx-cam-video');
+        if (v.readyState >= 2) {
+            if (mpPose && mpPoseReady) {
+                try { await mpPose.send({ image: v }); } catch (e) {}
+            } else {
+                offCtx.drawImage(v, 0, 0, 64, 48);
+                const frame = offCtx.getImageData(0, 0, 64, 48).data;
+                if (prevFrameData) {
+                    let diff = 0;
+                    for (let i = 0; i < frame.length; i += 16) diff += Math.abs(frame[i] - prevFrameData[i]);
+                    const motionScore = Math.round(diff / 180);
+                    document.getElementById('motion-val').textContent = motionScore;
+                    if (motionScore > 18) handleDetectedFirstStepMovement();
+                }
+                prevFrameData = new Uint8ClampedArray(frame);
+            }
+        }
+        motionAnimFrame = requestAnimationFrame(detectCameraMotionLoop);
+    }
+
+    /* =========================================================
+       5. 🎥 本物のAIフォーム解析
+    ========================================================= */
+    const drawCanvas = document.getElementById('draw-canvas');
+    const drawCtx = drawCanvas.getContext('2d');
+    const skelCanvas = document.getElementById('ai-skeleton-canvas');
+    const skelCtx = skelCanvas.getContext('2d');
+    let isDrawing = false;
+    let drawColor = '#ef4444';
+    let showProGhost = false;
+    let aiVideoLoopId = null;
+
+    function resizeCanvas() {
+        const rect = drawCanvas.parentElement.getBoundingClientRect();
+        if (rect.width === 0) return;
+        drawCanvas.width = rect.width;
+        drawCanvas.height = rect.height;
+        skelCanvas.width = rect.width;
+        skelCanvas.height = rect.height;
+        if (showProGhost) renderProGhostSkeleton();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function setDrawColor(c) { drawColor = c; }
+    function clearDrawCanvas() {
+        drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    }
+
+    drawCanvas.addEventListener('pointerdown', e => {
+        if (drawCanvas.width === 0) resizeCanvas();
+        isDrawing = true;
+        const r = drawCanvas.getBoundingClientRect();
+        drawCtx.beginPath();
+        drawCtx.moveTo(e.clientX - r.left, e.clientY - r.top);
+    });
+    drawCanvas.addEventListener('pointermove', e => {
+        if (!isDrawing) return;
+        const r = drawCanvas.getBoundingClientRect();
+        drawCtx.strokeStyle = drawColor;
+        drawCtx.lineWidth = 4;
+        drawCtx.lineCap = 'round';
+        drawCtx.lineTo(e.clientX - r.left, e.clientY - r.top);
+        drawCtx.stroke();
+    });
+    window.addEventListener('pointerup', () => { isDrawing = false; });
+
+    function toggleProGhost() {
+        if (skelCanvas.width === 0) resizeCanvas();
+        showProGhost = !showProGhost;
+        skelCtx.clearRect(0, 0, skelCanvas.width, skelCanvas.height);
+        if (showProGhost) renderProGhostSkeleton();
+    }
+
+    function renderProGhostSkeleton() {
+        const w = skelCanvas.width, h = skelCanvas.height;
+        skelCtx.save();
+        skelCtx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
+        skelCtx.lineWidth = 3;
+        skelCtx.setLineDash([6, 4]);
+        skelCtx.beginPath();
+        skelCtx.arc(w * 0.5, h * 0.26, 16, 0, Math.PI * 2);
+        skelCtx.moveTo(w * 0.5, h * 0.31); skelCtx.lineTo(w * 0.48, h * 0.60);
+        skelCtx.moveTo(w * 0.5, h * 0.35); skelCtx.lineTo(w * 0.62, h * 0.22); skelCtx.lineTo(w * 0.68, h * 0.11);
+        skelCtx.moveTo(w * 0.48, h * 0.60); skelCtx.lineTo(w * 0.38, h * 0.86);
+        skelCtx.moveTo(w * 0.48, h * 0.60); skelCtx.lineTo(w * 0.60, h * 0.86);
+        skelCtx.stroke();
+        skelCtx.fillStyle = '#38bdf8';
+        skelCtx.font = 'bold 12px sans-serif';
+        skelCtx.fillText('★ プロ理想打点・肘角度ガイド', w * 0.48, h * 0.09);
+        skelCtx.restore();
+    }
+
+    function renderAiFormPoseAndBiomechanics(results) {
+        if (skelCanvas.width === 0) resizeCanvas();
+        const w = skelCanvas.width, h = skelCanvas.height;
+        skelCtx.clearRect(0, 0, w, h);
+        if (showProGhost) renderProGhostSkeleton();
+
+        if (!results.poseLandmarks) return;
+        const lm = results.poseLandmarks;
+
+        if (typeof drawConnectors !== 'undefined' && typeof POSE_CONNECTIONS !== 'undefined') {
+            drawConnectors(skelCtx, lm, POSE_CONNECTIONS, { color: '#10b981', lineWidth: 3 });
+            drawLandmarks(skelCtx, lm, { color: '#facc15', lineWidth: 1, radius: 4 });
+        }
+
+        const elbowDeg = computeJointAngle(lm[12], lm[14], lm[16]);
+        const shoulderDeg = computeJointAngle(lm[24], lm[12], lm[14]);
+        const kneeDeg = computeJointAngle(lm[24], lm[26], lm[28]);
+
+        const now = performance.now();
+        if (aiBiometrics.lastWristPos && (now - aiBiometrics.lastWristTime) > 16) {
+            const dt = (now - aiBiometrics.lastWristTime) / 1000;
+            const dist = Math.hypot(lm[16].x - aiBiometrics.lastWristPos.x, lm[16].y - aiBiometrics.lastWristPos.y);
+            const instSpeed = Math.min(100, Math.round((dist / dt) * 32));
+            if (instSpeed > aiBiometrics.peakSwingSpeed) aiBiometrics.peakSwingSpeed = instSpeed;
+        }
+        aiBiometrics.lastWristPos = { x: lm[16].x, y: lm[16].y };
+        aiBiometrics.lastWristTime = now;
+
+        aiBiometrics.elbowAngle = elbowDeg;
+        aiBiometrics.shoulderElevation = shoulderDeg;
+        aiBiometrics.kneeAngle = kneeDeg;
+        aiBiometrics.measuredSamples++;
+
+        skelCtx.save();
+        skelCtx.font = 'bold 13px sans-serif';
+        skelCtx.fillStyle = '#fef08a';
+        skelCtx.fillText(`肘 ${elbowDeg}°`, lm[14].x * w + 8, lm[14].y * h);
+        skelCtx.fillStyle = '#7dd3fc';
+        skelCtx.fillText(`肩挙上 ${shoulderDeg}°`, lm[12].x * w + 8, lm[12].y * h);
+        skelCtx.fillStyle = '#fcd34d';
+        skelCtx.fillText(`膝 ${kneeDeg}°`, lm[26].x * w + 8, lm[26].y * h);
+        skelCtx.restore();
+
+        document.getElementById('live-elbow-angle').textContent = `${elbowDeg} °`;
+        document.getElementById('live-shoulder-angle').textContent = `${shoulderDeg} °`;
+        document.getElementById('live-knee-angle').textContent = `${kneeDeg} °`;
+        document.getElementById('live-swing-speed').textContent = `${aiBiometrics.peakSwingSpeed} pt`;
+
+        evaluateLiveBiomechanics(false);
+    }
+
+    function evaluateLiveBiomechanics(forceUpdate = false) {
+        if (aiBiometrics.measuredSamples === 0 && !forceUpdate) return;
+        const topic = document.getElementById('ai-check-topic').value;
+        const fbText = document.getElementById('ai-feedback-text');
+        const scoreBadge = document.getElementById('ai-form-score-badge');
+
+        const el = aiBiometrics.elbowAngle || 95;
+        const sh = aiBiometrics.shoulderElevation || 105;
+        const kn = aiBiometrics.kneeAngle || 135;
+
+        let score = 85;
+        let msg = '';
+
+        if (topic === 'smash') {
+            const shDiff = sh >= 95 ? 0 : (95 - sh);
+            score = Math.max(60, Math.min(99, 96 - Math.round(shDiff * 0.6)));
+            msg = sh < 85
+                ? `【AI実測診断】右肩に対する肘の挙上角が ${sh}° とやや下がっています（理想は95°以上）。肘を高く保つとスマッシュ角度が向上します！`
+                : `【AI実測診断】素晴らしいフォームです！肩の挙上角が ${sh}°、肘角度 ${el}° と高い打点をキープできています。`;
+        } else if (topic === 'step') {
+            score = (kn >= 110 && kn <= 150) ? 94 : 78;
+            msg = `【AI実測診断】フットワーク時の膝の沈み込み角度は ${kn}° です。`;
+        } else {
+            score = (kn <= 150 && el >= 70 && el <= 130) ? 92 : 80;
+            msg = `【AI実測診断】レシーブ時の膝角度 ${kn}°、肘角度 ${el}° を検出。安定した構えです。`;
+        }
+
+        aiBiometrics.formScore = score;
+        scoreBadge.textContent = `AIスコア: ${score} 点`;
+        document.getElementById('stat-form-score').textContent = `${score} 点`;
+        fbText.textContent = msg;
+    }
+
+    async function startAiVideoPoseLoop() {
+        const video = document.getElementById('ai-video-el');
+        activePoseTarget = 'ai_form';
+        async function step() {
+            if (activePoseTarget !== 'ai_form') return;
+            if (video && !video.paused && !video.ended && video.readyState >= 2 && mpPose && mpPoseReady) {
+                try { await mpPose.send({ image: video }); } catch (e) {}
+            }
+            aiVideoLoopId = requestAnimationFrame(step);
+        }
+        cancelAnimationFrame(aiVideoLoopId);
+        aiVideoLoopId = requestAnimationFrame(step);
+    }
+
+    async function startCameraFeed() {
+        initMediaPipePoseEngine();
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 640, height: 360 }, audio: false });
+            const video = document.getElementById('ai-video-el');
+            video.srcObject = stream;
+            await video.play();
+            document.getElementById('video-placeholder').classList.add('hidden');
+            setTimeout(() => {
+                resizeCanvas();
+                startAiVideoPoseLoop();
+            }, 250);
+        } catch (err) {
+            alert('カメラへのアクセスが許可されていないか対応していない環境です。');
+        }
+    }
+
+    function loadUserVideo(event) {
+        initMediaPipePoseEngine();
+        const file = event.target.files[0];
+        if (!file) return;
+        const video = document.getElementById('ai-video-el');
+        video.srcObject = null;
+        video.src = URL.createObjectURL(file);
+        video.play();
+        document.getElementById('video-placeholder').classList.add('hidden');
+        setTimeout(() => {
+            resizeCanvas();
+            startAiVideoPoseLoop();
+        }, 250);
+    }
+
+    function toggleVideoPlay() {
+        const v = document.getElementById('ai-video-el');
+        if (v.paused) v.play(); else v.pause();
+    }
+
+    function syncBiometricsToGearAndProfile() {
+        updateGearTelemetryBadge();
+        if (aiBiometrics.peakSwingSpeed >= 70) {
+            document.getElementById('diag-swing').value = 'fast';
+        } else if (aiBiometrics.peakSwingSpeed >= 40) {
+            document.getElementById('diag-swing').value = 'medium';
+        }
+        runAiRacketDiagnosis();
+        alert(`AI実測データを「🛒 ギア・AI診断」と「🛠️ メニュー作成AI」に反映しました！`);
+    }
+
+    function updateGearTelemetryBadge() {
+        const badge = document.getElementById('gear-ai-telemetry-badge');
+        if (!badge) return;
+        const reactStr = reactBest < 9999 ? `${reactBest}ms` : '未計測';
+        const swingStr = aiBiometrics.peakSwingSpeed > 0 ? `${aiBiometrics.peakSwingSpeed}pt` : '未計測';
+        const elbowStr = aiBiometrics.elbowAngle > 0 ? `${aiBiometrics.elbowAngle}°` : '未計測';
+        badge.textContent = `📊 AI実測値連動中: 腕振速度 ${swingStr} / 肘角度 ${elbowStr} / 初動反応 ${reactStr}`;
+    }
+
+    /* =========================================================
+       6. スコア＆サーブ ＆ 1点戻す(Undo)
+    ========================================================= */
+    let scoreA = 0, scoreB = 0;
+    let serverTeam = 'A';
+    let matchMode = 'doubles';
+    let matchHistory = [];
+    let weaknessCounts = { 'バック奥遅れ': 0, 'ネット前甘さ': 0, 'スマッシュ被弾': 0 };
+
+    function setScoreMatchMode(m) {
+        matchMode = m;
+        document.getElementById('score-mode-doubles').className = m === 'doubles' ? 'px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500 text-slate-950' : 'px-2.5 py-1 rounded-lg text-xs font-black bg-slate-800 text-slate-300';
+        document.getElementById('score-mode-singles').className = m === 'singles' ? 'px-2.5 py-1 rounded-lg text-xs font-black bg-sky-400 text-slate-950' : 'px-2.5 py-1 rounded-lg text-xs font-black bg-slate-800 text-slate-300';
+        updateScoreCourtUI();
+    }
+
+    function addMatchPoint(team) {
+        matchHistory.push({ scoreA, scoreB, serverTeam });
+        if (team === 'A') scoreA++; else scoreB++;
+        serverTeam = team;
+        updateScoreCourtUI();
+    }
+
+    function undoMatchPoint() {
+        if (matchHistory.length === 0) return;
+        const prev = matchHistory.pop();
+        scoreA = prev.scoreA;
+        scoreB = prev.scoreB;
+        serverTeam = prev.serverTeam;
+        updateScoreCourtUI();
+    }
+
+    function resetMatchScore() {
+        matchHistory = [];
+        scoreA = 0; scoreB = 0; serverTeam = 'A';
+        updateScoreCourtUI();
+    }
+
+    function updateScoreCourtUI() {
+        document.getElementById('match-score-a').textContent = scoreA;
+        document.getElementById('match-score-b').textContent = scoreB;
+        const activeScore = serverTeam === 'A' ? scoreA : scoreB;
+        const isEven = activeScore % 2 === 0;
+
+        ['pos-a-right', 'pos-a-left', 'pos-b-right', 'pos-b-left'].forEach(id => {
+            document.getElementById(id).classList.remove('service-box-active-server', 'service-box-active-receiver');
+        });
+
+        if (serverTeam === 'A') {
+            if (isEven) {
+                document.getElementById('pos-a-right').classList.add('service-box-active-server');
+                document.getElementById('pos-b-right').classList.add('service-box-active-receiver');
+                document.getElementById('serve-guide-text').textContent = `現在：Team A (${scoreA}点・偶数) が右コートからサーブ`;
+            } else {
+                document.getElementById('pos-a-left').classList.add('service-box-active-server');
+                document.getElementById('pos-b-left').classList.add('service-box-active-receiver');
+                document.getElementById('serve-guide-text').textContent = `現在：Team A (${scoreA}点・奇数) が左コートからサーブ`;
+            }
+        } else {
+            if (isEven) {
+                document.getElementById('pos-b-right').classList.add('service-box-active-server');
+                document.getElementById('pos-a-right').classList.add('service-box-active-receiver');
+                document.getElementById('serve-guide-text').textContent = `現在：Team B (${scoreB}点・偶数) が右コートからサーブ`;
+            } else {
+                document.getElementById('pos-b-left').classList.add('service-box-active-server');
+                document.getElementById('pos-a-left').classList.add('service-box-active-receiver');
+                document.getElementById('serve-guide-text').textContent = `現在：Team B (${scoreB}点・奇数) が左コートからサーブ`;
+            }
+        }
+    }
+
+    function recordWeakness(key) {
+        weaknessCounts[key]++;
+        document.getElementById(`weak-${key}`).textContent = weaknessCounts[key];
+    }
+
+    function generateMatchBracket() {
+        const n = parseInt(document.getElementById('bracket-count').value);
+        const container = document.getElementById('bracket-result');
+        const matches = n === 4 ? ['第1試合: 1・2 vs 3・4', '第2試合: 1・3 vs 2・4', '第3試合: 1・4 vs 2・3'] :
+                        n === 6 ? ['第1試合: 1・2 vs 3・4 (休:5・6)', '第2試合: 1・5 vs 2・6 (休:3・4)', '第3試合: 3・5 vs 4・6 (休:1・2)'] :
+                                  ['第1R: [A] 1・2 vs 3・4 / [B] 5・6 vs 7・8', '第2R: [A] 1・3 vs 5・7 / [B] 2・4 vs 6・8', '第3R: [A] 1・8 vs 2・7 / [B] 3・6 vs 4・5'];
+        container.innerHTML = matches.map(m => `<div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 font-bold text-slate-200">${m}</div>`).join('');
+    }
+    generateMatchBracket();
+
+    /* =========================================================
+       7. 🤖 AIラケット診断 ＆ 特性カタログ
+    ========================================================= */
+    const racketCatalog = [
+        {
+            id: 'nanoflare800',
+            name: 'YONEX NANOFLARE 800 PRO / GAME',
+            category: 'speed',
+            tag: '⚡ ヘッドライト / 極細フレーム・高速ドライブ特化',
+            catchcopy: '前衛のタッチスピードと低空ドライブの弾きを極めたスピードモデル',
+            balance: 'ヘッドライト',
+            shaft: '硬め (PRO) / 中間 (GAME)',
+            weight: '4U (約83g) / 3U',
+            tension: '20 〜 28 lbs',
+            stats: { speed: 98, control: 88, power: 78 },
+            matchPercent: 97.4,
+            desc: '空気抵抗を極限まで減らした極細フレーム形状により、前衛でのプッシュやドライブ合戦での振り抜きが抜群のモデルです。「PRO」は球威と弾きの鋭さを求める上級者に、「GAME」は適度なしなりでジュニア・中学生や女性のステップアップに最適です。',
+            recommendFor: [
+                'ダブルス前衛〜中盤で素早いタッチから主導権を握りたい選手',
+                '相手の強打をコンパクトな振りで鋭くカウンター返球したい選手'
+            ],
+            gutRecommend: 'EXBOLT 65 (弾き＆スピード最大化) / BG66 ULTIMAX',
+            aiBestMatch: true
+        },
+        {
+            id: 'arcsaber11',
+            name: 'YONEX ARCSABER 11 PRO / PLAY',
+            category: 'control',
+            tag: '🎯 イーブンバランス / 球持ち・精密コントロール',
+            catchcopy: 'シャトルを一瞬「くわえ込む」球持ちで、狙ったライン際へ精密配球',
+            balance: 'イーブン（均一）',
+            shaft: 'やや硬め (PRO)',
+            weight: '4U (約83g) / 3U',
+            tension: '19 〜 27 lbs',
+            stats: { speed: 86, control: 99, power: 84 },
+            matchPercent: 91.2,
+            desc: '打球時にフレームがシャトルを一瞬ホールドする独特の「球持ち感（くわえ込み）」が特徴の名機。狙ったライン際へ正確に配球したいオールラウンダーに絶大な信頼を得ています。',
+            recommendFor: [
+                'シングルス・ダブルス問わず、配球とコース突きで勝負する選手',
+                '一度シャトルを乗せて運ぶ感覚が好きなプレイヤー'
+            ],
+            gutRecommend: 'EXBOLT 65 / AEROBITE (カット・ヘアピン重視)',
+            aiBestMatch: false
+        },
+        {
+            id: 'astrox88',
+            name: 'YONEX ASTROX 88D PRO / 99 PRO',
+            category: 'power',
+            tag: '💥 ヘッドヘビー / 後衛からの角度と重いスマッシュ',
+            catchcopy: '相手のレシーブを上から突き破る、重く角度のある連続強打モデル',
+            balance: 'ヘッドヘビー',
+            shaft: '硬め',
+            weight: '4U (約83g) / 3U (約88g)',
+            tension: '20 〜 28 lbs',
+            stats: { speed: 78, control: 85, power: 98 },
+            matchPercent: 84.5,
+            desc: 'ヘッドの重さを活かした破壊力のあるスマッシュと、次のショットへのスムーズな準備を両立。後衛から相手ディフェンスの壁をこじ開けるパワーヒッター向けの設計です。',
+            recommendFor: [
+                'ダブルス後衛からの強打や、シングルスで上から攻め切る選手',
+                'スマッシュの球威と沈み込む角度を引き上げたいプレイヤー'
+            ],
+            gutRecommend: 'BG80 POWER / EXBOLT 68 (ハードヒット＆耐久性重視)',
+            aiBestMatch: false
+        },
+        {
+            id: 'light_junior',
+            name: '超軽量・高反発育成モデル (5U/6U・TP Lite 70クラス)',
+            category: 'speed',
+            tag: '🌱 超軽量 5U〜6U / ジュニア・楽な飛び＆ラケットワーク習得',
+            catchcopy: '軽い力で奥までしっかり飛び、肘や肩への負担を抑えて正しいフォームを習得',
+            balance: 'イーブン〜ライト',
+            shaft: '柔らかめ〜中間',
+            weight: '5U〜6U (約73〜78g)',
+            tension: '18 〜 24 lbs',
+            stats: { speed: 95, control: 88, power: 75 },
+            matchPercent: 86.0,
+            desc: 'ラケット全体の重量が非常に軽く、まだ筋力が発展途上のジュニア選手でも手首や肩を痛めずに正しいオーバーヘッドスイングと素早いラケットワークを身につけられる育成・操作性重視スペックです。',
+            recommendFor: [
+                '正しいスイング軌道と素早いラケット準備を身につけたいジュニア・小中学生',
+                'ハイクリアやバック奥からの返球を無理なく深く飛ばしたいプレイヤー'
+            ],
+            gutRecommend: 'EXBOLT 65 / 0.65mm細ゲージ高反発ガット (19〜21 lbs推奨)',
+            aiBestMatch: false
+        }
+    ];
+
+    function runAiRacketDiagnosis() {
+        const physique = document.getElementById('diag-physique').value;
+        const swing = document.getElementById('diag-swing').value;
+        const style = document.getElementById('diag-style').value;
+        const priority = document.getElementById('diag-priority').value;
+
+        let targetVec = { speed: 80, control: 80, power: 80, light: 50 };
+        if (style === 'speed' || priority === 'repulsion') targetVec.speed += 20;
+        if (style === 'control' || priority === 'hold') targetVec.control += 22;
+        if (style === 'power' || priority === 'smash') targetVec.power += 24;
+        if (physique === 'junior' || priority === 'easy' || swing === 'compact') {
+            targetVec.light += 45;
+            targetVec.speed += 15;
+        }
+
+        racketCatalog.forEach(r => {
+            const sDiff = Math.abs(targetVec.speed - r.stats.speed);
+            const cDiff = Math.abs(targetVec.control - r.stats.control);
+            const pDiff = Math.abs(targetVec.power - r.stats.power);
+            let rawScore = 99.2 - (sDiff * 0.18 + cDiff * 0.18 + pDiff * 0.18);
+            if (r.id === 'light_junior' && targetVec.light > 80) rawScore += 9.5;
+            if (r.id === 'nanoflare800' && style === 'speed') rawScore += 4.5;
+            if (r.id === 'arcsaber11' && (style === 'control' || priority === 'hold')) rawScore += 5.5;
+            if (r.id === 'astrox88' && (style === 'power' || priority === 'smash') && targetVec.light < 80) rawScore += 6.0;
+            r.matchPercent = Math.max(72.0, Math.min(99.4, Number(rawScore.toFixed(1))));
+            r.aiBestMatch = false;
+        });
+
+        const sorted = [...racketCatalog].sort((a, b) => b.matchPercent - a.matchPercent);
+        const bestRacket = sorted[0];
+        bestRacket.aiBestMatch = true;
+
+        let baseLbs = physique === 'junior' ? 20 : physique === 'tall' ? 25 : 23;
+        if (swing === 'fast') baseLbs += 1;
+        if (swing === 'compact' || priority === 'easy') baseLbs -= 1;
+        const tensionText = `${baseLbs} 〜 ${baseLbs + 2} lbs`;
+
+        document.getElementById('diag-match-score').textContent = `AI相性マッチ度：${bestRacket.matchPercent}%`;
+        document.getElementById('diag-result-title').textContent = `あなたへのイチ押し：${bestRacket.name}`;
+        document.getElementById('diag-result-tension').textContent = `🎯 推奨ガット張力：${tensionText}`;
+        document.getElementById('diag-result-reason').textContent = `【AIマルチベクトル解析】あなたの体格・スイング特性・求める球質から算出した結果、「${bestRacket.name}」が相性 ${bestRacket.matchPercent}% で第1位となりました！推奨ガット（${bestRacket.gutRecommend.split('/')[0]}）を ${tensionText} で張ることでパフォーマンスが最大化されます。`;
+
+        filterRackets('all');
+    }
+
+    function filterRackets(cat) {
+        const list = document.getElementById('racket-catalog-list');
+        let items = cat === 'all' ? [...racketCatalog] : racketCatalog.filter(r => r.category === cat);
+        items.sort((a, b) => b.matchPercent - a.matchPercent);
+
+        list.innerHTML = items.map(r => `
+            <div class="bg-slate-950 ${r.aiBestMatch ? 'border-2 border-emerald-400' : 'border border-slate-800'} rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                            <span class="text-xs font-black px-2.5 py-1 rounded-md bg-slate-900 text-emerald-300 border border-emerald-500/30">${r.tag}</span>
+                            <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300">AI相性 ${r.matchPercent}%</span>
+                        </div>
+                        <h3 class="text-lg font-black text-white">${r.name}</h3>
+                        <p class="text-xs font-bold text-amber-300 mt-1">“ ${r.catchcopy} ”</p>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-200 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800">${r.desc}</p>
+                    <div class="text-xs text-sky-300 bg-sky-500/10 px-3 py-2 rounded-xl border border-sky-500/30">
+                        💡 推奨ガット：<strong>${r.gutRecommend}</strong>（推奨張力: ${r.tension}）
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span>参考ショップ情報:</span>
+                    <div class="flex gap-4">
+                        <a href="https://www.amazon.co.jp/s?k=${encodeURIComponent(r.name)}" target="_blank" rel="noopener" class="hover:text-white underline">Amazonで見る ↗</a>
+                        <a href="https://search.rakuten.co.jp/search/mall/${encodeURIComponent(r.name)}/" target="_blank" rel="noopener" class="hover:text-white underline">楽天市場で見る ↗</a>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    filterRackets('all');
+
+    let stringLogs = [
+        { date: '2026-10-18', racket: 'NANOFLARE 800 GAME', gut: 'EXBOLT 65', lbs: '23 lbs' },
+        { date: '2026-09-25', racket: 'ARCSABER 11', gut: 'EXBOLT 65', lbs: '24 lbs' }
+    ];
+
+    function renderStringLogs() {
+        const el = document.getElementById('stringing-log-list');
+        el.innerHTML = stringLogs.map(item => `
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div>
+                    <span class="font-black text-white">${item.racket}</span>
+                    <span class="text-slate-400 ml-2">${item.gut} (${item.date})</span>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-black">${item.lbs}</span>
+            </div>
+        `).join('');
+    }
+    renderStringLogs();
+
+    function addStringingLog() {
+        const racket = document.getElementById('str-racket').value.trim() || 'マイラケット';
+        const gut = document.getElementById('str-gut').value.trim() || 'EXBOLT 65';
+        const lbs = document.getElementById('str-lbs').value.trim() || '24';
+        const today = new Date().toISOString().slice(0, 10);
+        stringLogs.unshift({ date: today, racket, gut, lbs: `${lbs} lbs` });
+        renderStringLogs();
+    }
+
+    /* =========================================================
+       8. ナビゲーション・モーダル制御
+    ========================================================= */
+    function switchMainTab(tab, btnEl) {
+        if (isRunning) stopTraining(false);
+        activePoseTarget = 'none';
+        cancelAnimationFrame(aiVideoLoopId);
+
+        document.querySelectorAll('.nav-tab-btn').forEach(b => {
+            b.className = 'nav-tab-btn py-2 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-slate-200 font-bold';
+        });
+        btnEl.className = 'nav-tab-btn py-2 rounded-xl flex flex-col items-center justify-center text-emerald-400 bg-slate-800/80 font-black';
+
+        const sharedWrapper = document.getElementById('training-shared-wrapper');
+        const fwView = document.getElementById('footwork-court-view');
+        const rxView = document.getElementById('reaction-court-view');
+        const aiView = document.getElementById('view-ai-coach');
+        const scoreView = document.getElementById('view-scoreboard');
+        const gearView = document.getElementById('view-gear-lab');
+        const myView = document.getElementById('view-mypage');
+
+        [sharedWrapper, aiView, scoreView, gearView, myView].forEach(v => v.classList.add('hidden'));
+
+        if (tab === 'footwork') {
+            currentTabMode = 'footwork';
+            sharedWrapper.classList.remove('hidden');
+            fwView.classList.remove('hidden');
+            rxView.classList.add('hidden');
+        } else if (tab === 'reaction') {
+            currentTabMode = 'reaction';
+            sharedWrapper.classList.remove('hidden');
+            fwView.classList.add('hidden');
+            rxView.classList.remove('hidden');
+        } else if (tab === 'ai') {
+            aiView.classList.remove('hidden');
+            setTimeout(() => {
+                resizeCanvas();
+                startAiVideoPoseLoop();
+            }, 100);
+        } else if (tab === 'score') {
+            scoreView.classList.remove('hidden');
+        } else if (tab === 'gear') {
+            gearView.classList.remove('hidden');
+            updateGearTelemetryBadge();
+        } else if (tab === 'mypage') {
+            myView.classList.remove('hidden');
+        }
+    }
+
+    function applyAiSuggestedMenu() {
+        applyMenuObjectToActive({
+            title: 'AI逆算：バック奥ラウンド強化パターン',
+            mode: 'sequence',
+            seq: [0, 4, 1, 4],
+            zones: [true, true, false, false, true, false],
+            pace: 1.8,
+            duration: 30,
+            sets: 3,
+            style: 'normal'
+        });
+        const firstTabBtn = document.querySelectorAll('.nav-tab-btn')[0];
+        switchMainTab('footwork', firstTabBtn);
+    }
+
+    let wakeLockObj = null;
+    async function requestWakeLock(showMsg = false) {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLockObj = await navigator.wakeLock.request('screen');
+                const dot = document.getElementById('wakelock-dot');
+                if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]';
+            } catch (e) {}
+        }
+    }
+
+    function openPwaModal(show) {
+        document.getElementById('pwa-modal').classList.toggle('hidden', !show);
+    }
+</script>
+</body>
+</html>
