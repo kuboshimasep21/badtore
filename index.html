@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-  <title>バドトレPRO v7.0 - バドミントン専用 AI動作解析＆実践トレーニングシステム</title>
+  <title>バドトレPRO v7.5 - バドミントン専用 AI動作解析＆実践トレーニング</title>
 
   <!-- MediaPipe Pose & Drawing Utils -->
 
@@ -26,25 +26,23 @@
 
     /* ==========================================================
 
-       🎨 3つの洗練されたUIテーマ（ワンタップ切替）
+       🎨 3種類のUIテーマ（ワンタップ切替）
 
     ========================================================== */
 
     :root, [data-theme="cyber"] {
 
-      --bg-base: #050914;
+      --bg-base: #060b16;
 
-      --bg-gradient: radial-gradient(circle at 15% 0%, #0f2942 0%, #050914 70%);
+      --bg-surface: #0c1528;
 
-      --bg-surface: rgba(11, 19, 36, 0.92);
+      --bg-card: #111d36;
 
-      --bg-card: rgba(16, 26, 48, 0.86);
-
-      --bg-panel: rgba(22, 35, 64, 0.9);
+      --bg-panel: #172645;
 
       --accent-primary: #10b981;
 
-      --accent-primary-glow: rgba(16, 185, 129, 0.45);
+      --accent-primary-glow: rgba(16, 185, 129, 0.42);
 
       --accent-secondary: #06b6d4;
 
@@ -56,13 +54,13 @@
 
       --text-secondary: #94a3b8;
 
-      --border-subtle: rgba(56, 189, 248, 0.22);
+      --border-subtle: rgba(56, 189, 248, 0.24);
 
       --court-surface: linear-gradient(160deg, #065f46 0%, #044e3a 100%);
 
       --court-line: rgba(255, 255, 255, 0.92);
 
-      --cell-bg: rgba(9, 14, 26, 0.68);
+      --cell-bg: rgba(9, 14, 26, 0.72);
 
     }
 
@@ -72,17 +70,15 @@
 
       --bg-base: #09090b;
 
-      --bg-gradient: radial-gradient(circle at 50% 0%, #1c1917 0%, #09090b 75%);
+      --bg-surface: #121216;
 
-      --bg-surface: rgba(18, 18, 22, 0.94);
+      --bg-card: #18181d;
 
-      --bg-card: rgba(24, 24, 29, 0.92);
-
-      --bg-panel: rgba(34, 34, 41, 0.94);
+      --bg-panel: #222229;
 
       --accent-primary: #eab308;
 
-      --accent-primary-glow: rgba(234, 179, 8, 0.4);
+      --accent-primary-glow: rgba(234, 179, 8, 0.38);
 
       --accent-secondary: #38bdf8;
 
@@ -98,9 +94,9 @@
 
       --court-surface: linear-gradient(160deg, #18181b 0%, #0f172a 100%);
 
-      --court-line: rgba(234, 179, 8, 0.9);
+      --court-line: rgba(234, 179, 8, 0.92);
 
-      --cell-bg: rgba(10, 14, 24, 0.78);
+      --cell-bg: rgba(10, 14, 24, 0.82);
 
     }
 
@@ -110,17 +106,15 @@
 
       --bg-base: #090d16;
 
-      --bg-gradient: radial-gradient(circle at 80% 0%, #1e1b4b 0%, #090d16 70%);
+      --bg-surface: #111827;
 
-      --bg-surface: rgba(15, 22, 38, 0.92);
+      --bg-card: #172033;
 
-      --bg-card: rgba(23, 31, 52, 0.88);
-
-      --bg-panel: rgba(31, 41, 69, 0.92);
+      --bg-panel: #1f2b44;
 
       --accent-primary: #84cc16;
 
-      --accent-primary-glow: rgba(132, 204, 22, 0.45);
+      --accent-primary-glow: rgba(132, 204, 22, 0.42);
 
       --accent-secondary: #22d3ee;
 
@@ -138,13 +132,19 @@
 
       --court-line: rgba(255, 255, 255, 0.92);
 
-      --cell-bg: rgba(9, 14, 26, 0.72);
+      --cell-bg: rgba(9, 14, 26, 0.75);
 
     }
 
 
 
-    * {
+    /* ==========================================================
+
+       🛠️ 横はみ出し・見切れ完全防止リセット
+
+    ========================================================== */
+
+    *, *::before, *::after {
 
       box-sizing: border-box;
 
@@ -152,9 +152,11 @@
 
       padding: 0;
 
+      min-width: 0; /* Grid/Flex子要素の横膨張を100%阻止 */
+
       -webkit-tap-highlight-color: transparent;
 
-      font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Sans", "Noto Sans JP", sans-serif;
 
     }
 
@@ -162,19 +164,39 @@
 
     html, body {
 
-      background-color: var(--bg-base);
+      width: 100%;
 
-      background-image: var(--bg-gradient);
-
-      color: var(--text-primary);
-
-      line-height: 1.5;
+      max-width: 100vw;
 
       overflow-x: hidden;
 
+      background-color: var(--bg-base);
+
+      color: var(--text-primary);
+
+      line-height: 1.45;
+
       min-height: 100dvh;
 
-      padding-bottom: 50px;
+      padding-bottom: 40px;
+
+    }
+
+
+
+    /* 全画面モード時はヘッダーとナビを完全に隠してめり込みをゼロにする */
+
+    body.is-fullscreen-mode {
+
+      overflow: hidden !important;
+
+    }
+
+    body.is-fullscreen-mode header,
+
+    body.is-fullscreen-mode .nav-scroller {
+
+      display: none !important;
 
     }
 
@@ -186,13 +208,9 @@
 
       background: var(--bg-surface);
 
-      backdrop-filter: blur(16px);
-
-      -webkit-backdrop-filter: blur(16px);
-
       border-bottom: 1px solid var(--border-subtle);
 
-      padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 8px 14px;
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px 12px;
 
       position: sticky;
 
@@ -208,7 +226,9 @@
 
       align-items: center;
 
-      gap: 8px;
+      gap: 6px;
+
+      width: 100%;
 
     }
 
@@ -220,7 +240,7 @@
 
       align-items: center;
 
-      gap: 8px;
+      gap: 6px;
 
     }
 
@@ -228,17 +248,13 @@
 
     .brand-logo {
 
-      font-size: 1.12rem;
+      font-size: 1.05rem;
 
       font-weight: 900;
 
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
 
-      background: linear-gradient(90deg, #ffffff 0%, var(--accent-primary) 100%);
-
-      -webkit-background-clip: text;
-
-      -webkit-text-fill-color: transparent;
+      color: var(--text-primary);
 
     }
 
@@ -252,17 +268,15 @@
 
       font-size: 0.68rem;
 
-      padding: 2px 8px;
+      padding: 2px 7px;
 
       border-radius: 999px;
 
       font-weight: 900;
 
-      letter-spacing: 0.3px;
-
-      box-shadow: 0 0 10px var(--accent-primary-glow);
-
       white-space: nowrap;
+
+      flex-shrink: 0;
 
     }
 
@@ -278,6 +292,8 @@
 
       flex-wrap: wrap;
 
+      max-width: 100%;
+
     }
 
 
@@ -290,15 +306,23 @@
 
       border: 1px solid var(--border-subtle);
 
-      padding: 5px 10px;
+      padding: 5px 8px;
 
       border-radius: 999px;
 
-      font-size: 0.75rem;
+      font-size: 0.74rem;
 
       font-weight: 800;
 
       width: auto;
+
+      max-width: 175px;
+
+      text-overflow: ellipsis;
+
+      overflow: hidden;
+
+      white-space: nowrap;
 
       cursor: pointer;
 
@@ -306,31 +330,41 @@
 
 
 
-    /* 提案D：横スクロール不要の折り返しナビタブ（スマホは2段・iPad/PCは1列） */
+    /* ナビゲーション（スマホは2段・iPad/PCは1列で全タブが一目で見える） */
 
     .nav-scroller {
 
       background: var(--bg-surface);
 
-      backdrop-filter: blur(12px);
-
       border-bottom: 1px solid var(--border-subtle);
 
-      padding: 7px 10px;
+      padding: 6px 8px;
 
-      display: flex;
+      display: grid;
 
-      flex-wrap: wrap;
-
-      justify-content: center;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
 
       gap: 5px;
 
       position: sticky;
 
-      top: 46px;
+      top: 45px;
 
       z-index: 95;
+
+      width: 100%;
+
+    }
+
+
+
+    @media (min-width: 768px) {
+
+      .nav-scroller {
+
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+
+      }
 
     }
 
@@ -344,25 +378,25 @@
 
       border: 1px solid var(--border-subtle);
 
-      padding: 6px 11px;
+      padding: 6px 4px;
 
-      border-radius: 999px;
+      border-radius: 8px;
 
-      font-size: 0.76rem;
+      font-size: clamp(0.68rem, 2.2vw, 0.78rem);
 
       font-weight: 800;
 
       white-space: nowrap;
 
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
       cursor: pointer;
-
-      transition: all 0.16s ease;
-
-      flex: 1 1 auto;
 
       text-align: center;
 
-      max-width: 185px;
+      transition: background 0.15s, color 0.15s;
 
     }
 
@@ -372,11 +406,11 @@
 
       background: var(--accent-primary);
 
-      color: #030712;
+      color: #020617;
 
       border-color: transparent;
 
-      box-shadow: 0 3px 12px var(--accent-primary-glow);
+      box-shadow: 0 2px 10px var(--accent-primary-glow);
 
     }
 
@@ -384,35 +418,25 @@
 
     .main-container {
 
-      max-width: 1280px;
+      width: 100%;
+
+      max-width: 1240px;
 
       margin: 0 auto;
 
-      padding: 12px;
+      padding: 10px;
 
     }
 
 
 
-    .tab-panel { display: none !important; }
+    /* ※重要: backdrop-filter や transform アニメーションを使わないことで
 
-    .tab-panel.active {
+       iOS Safari でも position:fixed 全画面が絶対に親要素に閉じ込められない */
 
-      display: block !important;
+    .tab-panel { display: none !important; width: 100%; }
 
-      animation: fadeSlide 0.18s ease-out;
-
-    }
-
-
-
-    @keyframes fadeSlide {
-
-      from { opacity: 0; transform: translateY(4px); }
-
-      to { opacity: 1; transform: translateY(0); }
-
-    }
+    .tab-panel.active { display: block !important; width: 100%; }
 
 
 
@@ -420,19 +444,19 @@
 
       background: var(--bg-card);
 
-      backdrop-filter: blur(14px);
-
-      -webkit-backdrop-filter: blur(14px);
-
       border: 1px solid var(--border-subtle);
 
-      border-radius: 16px;
+      border-radius: 14px;
 
-      padding: 14px;
+      padding: 12px;
 
-      margin-bottom: 14px;
+      margin-bottom: 12px;
 
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+      width: 100%;
+
+      max-width: 100%;
+
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 
     }
 
@@ -450,11 +474,13 @@
 
       gap: 8px;
 
-      margin-bottom: 12px;
+      margin-bottom: 10px;
 
-      padding-bottom: 9px;
+      padding-bottom: 8px;
 
       border-bottom: 1px solid var(--border-subtle);
+
+      width: 100%;
 
     }
 
@@ -462,7 +488,7 @@
 
     .card-title {
 
-      font-size: 0.96rem;
+      font-size: 0.92rem;
 
       font-weight: 900;
 
@@ -470,9 +496,11 @@
 
       align-items: center;
 
-      gap: 7px;
+      gap: 6px;
 
       flex-wrap: wrap;
+
+      line-height: 1.35;
 
     }
 
@@ -488,6 +516,8 @@
 
       align-items: center;
 
+      max-width: 100%;
+
     }
 
 
@@ -500,11 +530,11 @@
 
       color: var(--text-primary);
 
-      padding: 7px 12px;
+      padding: 7px 11px;
 
-      border-radius: 10px;
+      border-radius: 9px;
 
-      font-size: 0.79rem;
+      font-size: 0.78rem;
 
       font-weight: 800;
 
@@ -516,19 +546,23 @@
 
       justify-content: center;
 
-      gap: 5px;
+      gap: 4px;
 
-      transition: all 0.15s ease;
+      transition: transform 0.1s ease, opacity 0.15s;
 
       user-select: none;
 
-      white-space: nowrap;
+      max-width: 100%;
+
+      line-height: 1.25;
+
+      text-align: center;
 
     }
 
 
 
-    .btn:active { transform: scale(0.96); }
+    .btn:active { transform: scale(0.97); }
 
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -541,8 +575,6 @@
       color: #020617;
 
       border-color: transparent;
-
-      box-shadow: 0 3px 12px var(--accent-primary-glow);
 
     }
 
@@ -592,17 +624,19 @@
 
       grid-template-columns: 1fr 1fr;
 
-      gap: 8px;
+      gap: 6px;
 
-      background: rgba(5, 9, 20, 0.78);
+      background: var(--bg-base);
 
-      padding: 6px;
+      padding: 5px;
 
-      border-radius: 12px;
+      border-radius: 11px;
 
       border: 1px solid var(--border-subtle);
 
-      margin-bottom: 14px;
+      margin-bottom: 12px;
+
+      width: 100%;
 
     }
 
@@ -618,9 +652,9 @@
 
     .mode-switch-btn {
 
-      padding: 10px 12px;
+      padding: 9px 10px;
 
-      border-radius: 9px;
+      border-radius: 8px;
 
       border: none;
 
@@ -630,13 +664,13 @@
 
       font-weight: 900;
 
-      font-size: 0.82rem;
+      font-size: 0.8rem;
 
       cursor: pointer;
 
-      transition: all 0.18s;
-
       text-align: center;
+
+      line-height: 1.3;
 
     }
 
@@ -648,31 +682,31 @@
 
       color: #020617;
 
-      box-shadow: 0 3px 14px var(--accent-primary-glow);
-
     }
 
 
 
-    /* iPad横向き・PCでは2カラム、スマホ・iPad縦向きでは見やすい1カラム */
+    /* iPad横向き・PCでは2カラム、スマホ・iPad縦向きでは1カラム */
 
     .split-grid {
 
       display: grid;
 
-      grid-template-columns: 1.42fr 1fr;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 
-      gap: 14px;
+      gap: 12px;
 
       align-items: start;
+
+      width: 100%;
 
     }
 
 
 
-    @media (max-width: 900px) {
+    @media (max-width: 920px) {
 
-      .split-grid { grid-template-columns: 1fr; }
+      .split-grid { grid-template-columns: minmax(0, 1fr); }
 
     }
 
@@ -680,7 +714,7 @@
 
     select, input[type="number"], input[type="text"] {
 
-      background: rgba(5, 9, 20, 0.92);
+      background: var(--bg-base);
 
       color: var(--text-primary);
 
@@ -688,13 +722,17 @@
 
       padding: 8px 10px;
 
-      border-radius: 10px;
+      border-radius: 9px;
 
-      font-size: 16px;
+      font-size: 15px;
 
       width: 100%;
 
+      max-width: 100%;
+
       outline: none;
+
+      text-overflow: ellipsis;
 
     }
 
@@ -704,19 +742,31 @@
 
       display: grid;
 
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
 
-      gap: 10px;
+      gap: 8px;
+
+      width: 100%;
 
     }
 
 
 
+    @media (max-width: 420px) {
+
+      .form-grid { grid-template-columns: minmax(0, 1fr); }
+
+    }
+
+
+
+    .form-group { width: 100%; }
+
     .form-group label {
 
       display: block;
 
-      font-size: 0.74rem;
+      font-size: 0.73rem;
 
       color: var(--text-secondary);
 
@@ -730,7 +780,7 @@
 
     /* ==========================================================
 
-       🛠️ 全画面表示の完全修正（iPhoneノッチ・iPad縦横・右端切れゼロ）
+       🛠️ 全画面表示（iPhoneノッチ・iPad縦横・上端めり込みゼロ）
 
     ========================================================== */
 
@@ -762,7 +812,7 @@
 
       border: none !important;
 
-      z-index: 99999 !important;
+      z-index: 999999 !important;
 
       background: var(--bg-base) !important;
 
@@ -772,7 +822,7 @@
 
                calc(12px + env(safe-area-inset-right, 0px))
 
-               calc(12px + env(safe-area-inset-bottom, 0px))
+               calc(14px + env(safe-area-inset-bottom, 0px))
 
                calc(12px + env(safe-area-inset-left, 0px)) !important;
 
@@ -786,27 +836,25 @@
 
       overflow: hidden !important;
 
-      box-sizing: border-box !important;
-
     }
 
 
 
     /* ==========================================================
 
-       TAB 1: 🏃 声指示フットワーク（中央邪魔バッジ撤去・改行禁止・全画面ピタリ）
+       TAB 1: 🏃 声指示フットワーク（6マスコート）
 
     ========================================================== */
 
     .fw-court-stage {
 
-      background: rgba(7, 12, 24, 0.94);
+      background: var(--bg-surface);
 
       border: 1px solid var(--border-subtle);
 
-      border-radius: 16px;
+      border-radius: 14px;
 
-      padding: 12px;
+      padding: 10px;
 
       display: flex;
 
@@ -818,7 +866,7 @@
 
       width: 100%;
 
-      box-sizing: border-box;
+      max-width: 100%;
 
     }
 
@@ -840,15 +888,11 @@
 
       width: 100%;
 
-      max-width: 760px;
-
       flex-shrink: 0;
 
     }
 
 
-
-    /* 通常時のコートボード */
 
     .fw-court-board {
 
@@ -858,35 +902,29 @@
 
       grid-template-rows: repeat(3, minmax(0, 1fr));
 
-      gap: 10px;
+      gap: 8px;
 
       width: 100%;
 
-      max-width: 500px;
+      max-width: 520px;
 
-      height: clamp(320px, 58dvh, 480px);
+      height: clamp(300px, 54dvh, 450px);
 
       margin: 0 auto;
 
       background: var(--court-surface);
 
-      padding: 12px;
+      padding: 10px;
 
       border: 3px solid var(--court-line);
 
-      border-radius: 14px;
+      border-radius: 12px;
 
-      position: relative;
-
-      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.45), 0 8px 24px rgba(0, 0, 0, 0.4);
-
-      box-sizing: border-box;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.45);
 
     }
 
 
-
-    /* 全画面時のコートボード：スマホ縦・横・iPadすべてで絶対にはみ出さない計算 */
 
     .fullscreen-target:fullscreen .fw-court-board,
 
@@ -898,13 +936,13 @@
 
       width: 100% !important;
 
-      max-width: min(94vw, 860px) !important;
+      max-width: min(94vw, 840px) !important;
 
       height: auto !important;
 
-      max-height: calc(100dvh - 115px) !important;
+      max-height: calc(100dvh - 120px) !important;
 
-      gap: 12px;
+      gap: 10px;
 
       padding: 12px;
 
@@ -920,7 +958,7 @@
 
       border: 2px solid rgba(255, 255, 255, 0.32);
 
-      border-radius: 12px;
+      border-radius: 10px;
 
       display: flex;
 
@@ -934,13 +972,13 @@
 
       cursor: pointer;
 
-      transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+      transition: transform 0.1s ease, background 0.1s ease;
 
       user-select: none;
 
       text-align: center;
 
-      padding: 6px 4px;
+      padding: 4px;
 
       overflow: hidden;
 
@@ -950,11 +988,9 @@
 
     .fw-cell-title {
 
-      font-size: clamp(1.05rem, 3.6vw, 1.55rem);
+      font-size: clamp(1rem, 3.8vw, 1.45rem);
 
-      white-space: nowrap !important; /* 「左サイ / ド」の改行崩れを完全防止 */
-
-      letter-spacing: -0.3px;
+      white-space: nowrap !important;
 
       line-height: 1.2;
 
@@ -968,7 +1004,7 @@
 
     .fullscreen-target.pseudo-fullscreen .fw-cell-title {
 
-      font-size: clamp(1.25rem, 4.2vmin, 2.4rem);
+      font-size: clamp(1.2rem, 4.2vmin, 2.2rem);
 
     }
 
@@ -976,13 +1012,13 @@
 
     .fw-cell small {
 
-      font-size: clamp(0.64rem, 1.8vw, 0.78rem);
+      font-size: clamp(0.62rem, 1.8vw, 0.76rem);
 
       color: #cbd5e1;
 
       font-weight: 700;
 
-      margin-top: 3px;
+      margin-top: 2px;
 
       white-space: nowrap !important;
 
@@ -1008,11 +1044,9 @@
 
       border-color: #ffffff !important;
 
-      box-shadow: 0 0 38px rgba(251, 191, 36, 0.95);
+      box-shadow: 0 0 32px rgba(251, 191, 36, 0.95);
 
       transform: scale(1.02);
-
-      z-index: 4;
 
     }
 
@@ -1040,8 +1074,6 @@
 
       width: 100%;
 
-      max-width: 680px;
-
       line-height: 1.35;
 
       flex-shrink: 0;
@@ -1060,13 +1092,13 @@
 
       background: radial-gradient(circle at center, #102342 0%, #050914 100%);
 
-      border: 2px solid var(--border-subtle);
+      border: 1px solid var(--border-subtle);
 
-      border-radius: 16px;
+      border-radius: 14px;
 
-      padding: 14px;
+      padding: 12px;
 
-      min-height: 410px;
+      min-height: 360px;
 
       width: 100%;
 
@@ -1078,19 +1110,15 @@
 
       align-items: center;
 
-      position: relative;
-
-      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.65);
-
     }
 
 
 
     .giant-arrow-circle {
 
-      width: clamp(200px, 44vmin, 320px);
+      width: clamp(185px, 44vmin, 290px);
 
-      height: clamp(200px, 44vmin, 320px);
+      height: clamp(185px, 44vmin, 290px);
 
       border-radius: 50%;
 
@@ -1106,13 +1134,9 @@
 
       justify-content: center;
 
-      transition: all 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: all 0.12s ease;
 
-      margin: auto;
-
-      position: relative;
-
-      box-shadow: 0 0 40px rgba(0, 0, 0, 0.6), inset 0 0 22px rgba(6, 182, 212, 0.12);
+      margin: 12px auto;
 
     }
 
@@ -1122,11 +1146,11 @@
 
       border-color: var(--accent-highlight);
 
-      background: radial-gradient(circle, rgba(251, 191, 36, 0.24) 0%, rgba(10, 16, 30, 0.96) 78%);
+      background: radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, rgba(10, 16, 30, 0.96) 78%);
 
-      box-shadow: 0 0 65px rgba(251, 191, 36, 0.68), inset 0 0 28px rgba(251, 191, 36, 0.3);
+      box-shadow: 0 0 50px rgba(251, 191, 36, 0.65);
 
-      transform: scale(1.05);
+      transform: scale(1.04);
 
     }
 
@@ -1136,9 +1160,9 @@
 
       border-color: var(--accent-secondary);
 
-      box-shadow: 0 0 42px rgba(6, 182, 212, 0.6), inset 0 0 22px rgba(6, 182, 212, 0.3);
+      box-shadow: 0 0 35px rgba(6, 182, 212, 0.6);
 
-      transform: scale(0.94);
+      transform: scale(0.95);
 
     }
 
@@ -1146,9 +1170,9 @@
 
     .svg-arrow-holder {
 
-      width: 62%;
+      width: 60%;
 
-      height: 62%;
+      height: 60%;
 
       display: flex;
 
@@ -1174,17 +1198,13 @@
 
     .giant-arrow-label {
 
-      font-size: clamp(1.2rem, 3.2vmin, 1.9rem);
+      font-size: clamp(1.1rem, 3.2vmin, 1.7rem);
 
       font-weight: 900;
-
-      letter-spacing: 0.5px;
 
       margin-top: 4px;
 
       color: var(--text-primary);
-
-      white-space: nowrap;
 
     }
 
@@ -1192,17 +1212,15 @@
 
     /* ==========================================================
 
-       カメラビューポート ＆ 線引きモード制御（スクロール阻害ゼロ）
+       カメラビューポート（上部ステータスバーを独立させ文字被り・見切れゼロ）
 
     ========================================================== */
 
-    .viewport-box {
+    .viewport-wrapper {
 
-      position: relative;
+      background: #040812;
 
-      background: #03060c;
-
-      border-radius: 16px;
+      border-radius: 14px;
 
       border: 1px solid var(--border-subtle);
 
@@ -1210,15 +1228,75 @@
 
       width: 100%;
 
-      min-height: 280px;
+      display: flex;
 
-      max-height: 75dvh;
+      flex-direction: column;
+
+    }
+
+
+
+    .viewport-header-bar {
+
+      background: var(--bg-surface);
+
+      border-bottom: 1px solid var(--border-subtle);
+
+      padding: 6px 10px;
+
+      display: flex;
+
+      justify-content: space-between;
+
+      align-items: center;
+
+      flex-wrap: wrap;
+
+      gap: 6px;
+
+      width: 100%;
+
+      flex-shrink: 0;
+
+    }
+
+
+
+    .viewport-status-text {
+
+      font-size: 0.73rem;
+
+      font-weight: 800;
+
+      color: var(--text-primary);
+
+      line-height: 1.3;
+
+    }
+
+
+
+    .viewport-stage {
+
+      position: relative;
+
+      width: 100%;
+
+      min-height: 240px;
+
+      max-height: 68dvh;
 
       display: flex;
 
       align-items: center;
 
       justify-content: center;
+
+      background: #03060c;
+
+      overflow: hidden;
+
+      flex: 1 1 auto;
 
     }
 
@@ -1230,13 +1308,27 @@
 
       max-width: 100%;
 
-      max-height: 75dvh;
+      max-height: 68dvh;
 
       width: auto;
 
       height: auto;
 
       object-fit: contain;
+
+    }
+
+
+
+    .fullscreen-target:fullscreen .viewport-stage,
+
+    .fullscreen-target:-webkit-full-screen .viewport-stage,
+
+    .fullscreen-target.pseudo-fullscreen .viewport-stage {
+
+      max-height: calc(100dvh - 65px) !important;
+
+      width: 100% !important;
 
     }
 
@@ -1248,23 +1340,15 @@
 
     .fullscreen-target.pseudo-fullscreen .viewport-canvas {
 
-      max-width: 100%;
+      max-width: 100% !important;
 
-      max-height: calc(100dvh - 70px);
-
-      width: auto;
-
-      height: auto;
-
-      object-fit: contain;
-
-      margin: auto;
+      max-height: calc(100dvh - 70px) !important;
 
     }
 
 
 
-    /* 修正④：デフォルトは pointer-events: none で画面スクロールを一切邪魔しない */
+    /* 線引きキャンバス（OFF時はスクロールを一切妨げない） */
 
     #drawCanvas {
 
@@ -1298,117 +1382,7 @@
 
       outline: 2px dashed #f43f5e;
 
-      outline-offset: -4px;
-
-    }
-
-
-
-    /* 提案B：iPad/スマホ自動最適化の2画面比較パネル */
-
-    .compare-dual-wrap {
-
-      display: none;
-
-      grid-template-columns: 1fr 1fr;
-
-      gap: 10px;
-
-      width: 100%;
-
-      background: rgba(4, 8, 18, 0.95);
-
-      padding: 10px;
-
-      border-radius: 14px;
-
-      border: 1px solid var(--accent-secondary);
-
-      margin-bottom: 12px;
-
-    }
-
-
-
-    @media (max-width: 720px) and (orientation: portrait) {
-
-      .compare-dual-wrap { grid-template-columns: 1fr; }
-
-    }
-
-
-
-    .compare-pane {
-
-      position: relative;
-
-      background: #060c18;
-
-      border: 1px solid var(--border-subtle);
-
-      border-radius: 10px;
-
-      min-height: 220px;
-
-      padding: 10px;
-
-      display: flex;
-
-      flex-direction: column;
-
-      justify-content: space-between;
-
-      overflow: hidden;
-
-    }
-
-
-
-    .hud-top-bar {
-
-      position: absolute;
-
-      top: 8px;
-
-      left: 8px;
-
-      right: 8px;
-
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: flex-start;
-
-      flex-wrap: wrap;
-
-      gap: 5px;
-
-      z-index: 25;
-
-      pointer-events: none;
-
-    }
-
-
-
-    .hud-pill {
-
-      background: rgba(5, 9, 20, 0.85);
-
-      backdrop-filter: blur(8px);
-
-      border: 1px solid var(--border-subtle);
-
-      padding: 4px 9px;
-
-      border-radius: 8px;
-
-      font-size: 0.72rem;
-
-      font-weight: 800;
-
-      pointer-events: auto;
+      outline-offset: -3px;
 
     }
 
@@ -1420,7 +1394,7 @@
 
       inset: 0;
 
-      background: rgba(4, 7, 15, 0.62);
+      background: rgba(4, 7, 15, 0.68);
 
       display: none;
 
@@ -1434,7 +1408,7 @@
 
       text-align: center;
 
-      padding: 16px;
+      padding: 14px;
 
       pointer-events: none;
 
@@ -1444,9 +1418,9 @@
 
     .banner-svg-arrow {
 
-      width: clamp(105px, 22vmin, 170px);
+      width: clamp(95px, 22vmin, 155px);
 
-      height: clamp(105px, 22vmin, 170px);
+      height: clamp(95px, 22vmin, 155px);
 
       margin-bottom: 6px;
 
@@ -1456,13 +1430,13 @@
 
     .banner-big-num {
 
-      font-size: clamp(1.9rem, 5.2vw, 3.3rem);
+      font-size: clamp(1.5rem, 5vw, 2.8rem);
 
       font-weight: 900;
 
       color: var(--accent-highlight);
 
-      text-shadow: 0 0 24px rgba(245, 158, 11, 0.7);
+      line-height: 1.2;
 
     }
 
@@ -1470,7 +1444,7 @@
 
     .banner-sub-text {
 
-      font-size: 0.88rem;
+      font-size: 0.82rem;
 
       font-weight: 800;
 
@@ -1482,25 +1456,35 @@
 
 
 
-    /* 4指標メトリクスカード */
+    /* ==========================================================
+
+       4指標メトリクスカード（スマホ2列でも見切れゼロ）
+
+    ========================================================== */
 
     .metrics-grid {
 
       display: grid;
 
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
 
-      gap: 8px;
+      gap: 7px;
 
       margin-top: 10px;
+
+      width: 100%;
 
     }
 
 
 
-    @media (max-width: 640px) {
+    @media (max-width: 680px) {
 
-      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .metrics-grid {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+      }
 
     }
 
@@ -1508,15 +1492,19 @@
 
     .metric-box {
 
-      background: rgba(7, 12, 24, 0.9);
+      background: var(--bg-surface);
 
       border: 1px solid var(--border-subtle);
 
-      border-radius: 12px;
+      border-radius: 10px;
 
-      padding: 9px 7px;
+      padding: 8px 6px;
 
       text-align: center;
+
+      width: 100%;
+
+      overflow: hidden;
 
     }
 
@@ -1530,9 +1518,9 @@
 
       margin-bottom: 2px;
 
-      font-weight: 700;
+      font-weight: 800;
 
-      white-space: nowrap;
+      line-height: 1.25;
 
     }
 
@@ -1540,11 +1528,13 @@
 
     .metric-val {
 
-      font-size: 1.15rem;
+      font-size: clamp(1rem, 3.4vw, 1.22rem);
 
       font-weight: 900;
 
       font-variant-numeric: tabular-nums;
+
+      line-height: 1.25;
 
     }
 
@@ -1552,13 +1542,13 @@
 
     .metric-peak {
 
-      font-size: 0.68rem;
+      font-size: 0.66rem;
 
       color: var(--text-secondary);
 
       margin-top: 2px;
 
-      white-space: nowrap;
+      line-height: 1.2;
 
     }
 
@@ -1570,15 +1560,17 @@
 
       margin-top: 4px;
 
-      padding: 2px 7px;
+      padding: 2px 6px;
 
       border-radius: 99px;
 
-      font-size: 0.68rem;
+      font-size: 0.66rem;
 
       font-weight: 800;
 
       background: rgba(255, 255, 255, 0.08);
+
+      max-width: 100%;
 
     }
 
@@ -1586,15 +1578,17 @@
 
     .breakdown-box {
 
-      background: rgba(7, 12, 24, 0.88);
+      background: var(--bg-surface);
 
       border: 1px solid var(--border-subtle);
 
-      border-radius: 12px;
+      border-radius: 11px;
 
-      padding: 11px;
+      padding: 10px;
 
       margin-top: 10px;
+
+      width: 100%;
 
     }
 
@@ -1612,7 +1606,9 @@
 
       justify-content: space-between;
 
-      font-size: 0.73rem;
+      gap: 6px;
+
+      font-size: 0.72rem;
 
       font-weight: 800;
 
@@ -1652,15 +1648,17 @@
 
     .summary-box {
 
-      background: linear-gradient(180deg, rgba(14, 25, 45, 0.95) 0%, rgba(7, 12, 24, 0.95) 100%);
+      background: var(--bg-surface);
 
       border: 1px solid var(--border-subtle);
 
-      border-radius: 12px;
+      border-radius: 11px;
 
-      padding: 13px;
+      padding: 11px;
 
       margin-top: 10px;
+
+      width: 100%;
 
     }
 
@@ -1680,13 +1678,15 @@
 
       margin-top: 10px;
 
-      padding: 8px 11px;
+      padding: 8px 10px;
 
-      background: rgba(7, 12, 24, 0.92);
+      background: var(--bg-surface);
 
       border: 1px solid var(--border-subtle);
 
       border-radius: 10px;
+
+      width: 100%;
 
     }
 
@@ -1704,9 +1704,45 @@
 
       cursor: pointer;
 
+      flex-shrink: 0;
+
     }
 
-    .color-dot.active { border-color: #fff; transform: scale(1.18); }
+    .color-dot.active { border-color: #fff; transform: scale(1.15); }
+
+
+
+    /* 過去ベスト比較テーブル */
+
+    .best-compare-table {
+
+      width: 100%;
+
+      border-collapse: collapse;
+
+      font-size: 0.74rem;
+
+      margin-top: 6px;
+
+    }
+
+    .best-compare-table th, .best-compare-table td {
+
+      padding: 5px 6px;
+
+      border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+
+      text-align: center;
+
+    }
+
+    .best-compare-table th {
+
+      color: var(--text-secondary);
+
+      font-weight: 800;
+
+    }
 
 
 
@@ -1716,11 +1752,13 @@
 
       display: grid;
 
-      grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 
       gap: 10px;
 
-      margin-bottom: 14px;
+      margin-bottom: 12px;
+
+      width: 100%;
 
     }
 
@@ -1732,13 +1770,11 @@
 
       border: 2px solid var(--border-subtle);
 
-      border-radius: 12px;
+      border-radius: 11px;
 
-      padding: 12px;
+      padding: 11px;
 
       cursor: pointer;
-
-      transition: all 0.16s;
 
       display: flex;
 
@@ -1756,8 +1792,6 @@
 
       border-color: var(--accent-primary);
 
-      box-shadow: 0 0 16px var(--accent-primary-glow);
-
       background: rgba(16, 185, 129, 0.12);
 
     }
@@ -1768,9 +1802,11 @@
 
       display: grid;
 
-      grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 
-      gap: 12px;
+      gap: 10px;
+
+      width: 100%;
 
     }
 
@@ -1782,9 +1818,9 @@
 
       border: 1px solid var(--border-subtle);
 
-      border-radius: 12px;
+      border-radius: 11px;
 
-      padding: 14px;
+      padding: 12px;
 
       display: flex;
 
@@ -1808,7 +1844,9 @@
 
       padding: 10px;
 
-      max-width: 640px;
+      max-width: 600px;
+
+      width: 100%;
 
       margin: 10px auto;
 
@@ -1820,7 +1858,7 @@
 
       display: grid;
 
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
 
       gap: 6px;
 
@@ -1852,17 +1890,17 @@
 
     .pos-box {
 
-      background: rgba(15, 23, 42, 0.68);
+      background: rgba(15, 23, 42, 0.72);
 
       border: 2px solid rgba(255, 255, 255, 0.3);
 
       border-radius: 8px;
 
-      padding: 9px 6px;
+      padding: 8px 4px;
 
       text-align: center;
 
-      min-height: 76px;
+      min-height: 74px;
 
       display: flex;
 
@@ -1884,7 +1922,7 @@
 
     .diagram-card {
 
-      background: rgba(7, 12, 24, 0.9);
+      background: var(--bg-surface);
 
       border: 1px solid var(--border-subtle);
 
@@ -1893,6 +1931,8 @@
       padding: 12px;
 
       text-align: center;
+
+      width: 100%;
 
     }
 
@@ -1916,23 +1956,21 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v7.0 iPad &amp; Pro</span>
+      <span class="badge-version">v7.5 完全版</span>
 
     </div>
 
     <div class="header-controls">
 
-      <select class="player-quick-select" id="headerPlayerSelect" onchange="switchActiveProfileById(this.value)" title="プレイヤー切替"></select>
-
-      <button class="btn" style="padding:4px 9px; font-size:0.73rem; border-radius:999px;" onclick="switchTab('tab-profile')">👤 メンバー管理</button>
+      <select class="player-quick-select" id="headerPlayerSelect" onchange="switchActiveProfileById(this.value)" title="メンバー切替"></select>
 
       <select class="theme-switcher" id="uiThemeSelect" onchange="changeUITheme(this.value)" title="UIデザイン切替">
 
-        <option value="cyber">🎨 サイバーネオン</option>
+        <option value="cyber">🎨 ネオン</option>
 
-        <option value="matte">🖤 マットブラック＆金</option>
+        <option value="matte">🖤 ブラック金</option>
 
-        <option value="street">🔥 ストリートライム</option>
+        <option value="street">🔥 ライム</option>
 
       </select>
 
@@ -1942,23 +1980,23 @@
 
 
 
-  <!-- 提案D：横スクロール不要で全タブが一目で見渡せるナビゲーションバー -->
+  <!-- 全タブが横スクロールなしで一目で見えるナビバー -->
 
   <nav class="nav-scroller">
 
-    <button class="nav-tab active" onclick="switchTab('tab-footwork')" id="btn-tab-footwork">🏃 1. フットワーク</button>
+    <button class="nav-tab active" onclick="switchTab('tab-footwork')" id="btn-tab-footwork">🏃 1.フットワーク</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-reflex')" id="btn-tab-reflex">⚡ 2. 初速＆矢印</button>
+    <button class="nav-tab" onclick="switchTab('tab-reflex')" id="btn-tab-reflex">⚡ 2.初速＆矢印</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-pose')" id="btn-tab-pose">🎥 3. AI骨格＆ベスト比較</button>
+    <button class="nav-tab" onclick="switchTab('tab-pose')" id="btn-tab-pose">🎥 3.構え＆骨格AI</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-racket')" id="btn-tab-racket">🏸 4. ラケット診断</button>
+    <button class="nav-tab" onclick="switchTab('tab-racket')" id="btn-tab-racket">🏸 4.ラケット診断</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-score')" id="btn-tab-score">🧮 5. スコア＆位置</button>
+    <button class="nav-tab" onclick="switchTab('tab-score')" id="btn-tab-score">🧮 5.スコア＆位置</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-profile')" id="btn-tab-profile">👤 6. プロフィール</button>
+    <button class="nav-tab" onclick="switchTab('tab-profile')" id="btn-tab-profile">👤 6.メンバー管理</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 7. 撮影ガイド</button>
+    <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 7.撮影ガイド</button>
 
   </nav>
 
@@ -1970,7 +2008,7 @@
 
     <!-- =========================================================
 
-         TAB 1: 🏃 声指示フットワーク（中央邪魔バッジ撤去・全画面比率完全補正）
+         TAB 1: 🏃 声指示フットワーク（全画面めり込みゼロ・右端見切れゼロ）
 
     ========================================================== -->
 
@@ -1982,7 +2020,7 @@
 
           <div class="card-title">
 
-            <span>🏃 声指示フットワーク練習（コート全画面ピタリ表示 ＆ 連続ラリー対応）</span>
+            <span>🏃 声指示フットワーク練習（6マスコート ＆ 実戦連続ラリー）</span>
 
           </div>
 
@@ -1990,7 +2028,7 @@
 
             <button class="btn btn-emerald" onclick="startVoiceFootwork(false)">▶️ スタート</button>
 
-            <button class="btn btn-amber" onclick="startVoiceFootwork(true)">⛶ コート全画面でスタート</button>
+            <button class="btn btn-amber" onclick="startVoiceFootwork(true)">⛶ コート全画面で開始</button>
 
             <button id="btnFwPause" class="btn" onclick="pauseVoiceFootwork()" disabled>⏸️ 一時停止</button>
 
@@ -2006,29 +2044,29 @@
 
         <div class="split-grid">
 
-          <!-- 左：邪魔な中央バッジを撤去した6マスバドミントンコート全画面ステージ -->
+          <!-- 左：6マスバドミントンコート（全画面時はヘッダーを自動非表示にして100%画面内に収める） -->
 
           <div class="fw-court-stage fullscreen-target" id="fwFullscreenStage">
 
             <div class="fw-top-bar">
 
-              <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
 
                 <span class="badge-version" id="fwStatusBadge">待機中</span>
 
-                <span style="font-weight:900; font-size:0.88rem;" id="fwSetProgressText">セット 1/3 ｜ 0/10 回</span>
+                <span style="font-weight:900; font-size:0.84rem;" id="fwSetProgressText">セット 1/3 ｜ 0/10 回</span>
 
-                <span style="font-weight:900; font-size:0.88rem; color:var(--accent-highlight);" id="fwCurrentCallLabel"></span>
+                <span style="font-weight:900; font-size:0.86rem; color:var(--accent-highlight);" id="fwCurrentCallLabel"></span>
 
               </div>
 
               <div class="btn-group">
 
-                <button class="btn btn-emerald" style="padding:5px 10px; font-size:0.75rem;" onclick="startVoiceFootwork(false)">▶️ 開始</button>
+                <button class="btn btn-emerald" style="padding:5px 9px; font-size:0.74rem;" onclick="startVoiceFootwork(false)">▶️ 開始</button>
 
-                <button class="btn btn-rose" style="padding:5px 10px; font-size:0.75rem;" onclick="stopVoiceFootwork()">⏹️ 停止</button>
+                <button class="btn btn-rose" style="padding:5px 9px; font-size:0.74rem;" onclick="stopVoiceFootwork()">⏹️ 停止</button>
 
-                <button class="btn" style="padding:5px 10px; font-size:0.75rem;" onclick="toggleSmartFullscreen('fwFullscreenStage')">⛶ 全画面切替</button>
+                <button class="btn btn-cyan-outline" style="padding:5px 9px; font-size:0.74rem;" onclick="toggleSmartFullscreen('fwFullscreenStage')">⛶ 全画面 ON/OFF</button>
 
               </div>
 
@@ -2092,7 +2130,7 @@
 
             <div class="fw-foot-note">
 
-              ※各マスをタップして練習箇所のON/OFFが可能。同じ場所が連続した際は一瞬消灯してピカッと再発光します
+              ※マスをタップして練習箇所のON/OFFが可能。同じ場所が連続した際は一瞬消灯してピカッと再発光します
 
             </div>
 
@@ -2100,165 +2138,79 @@
 
 
 
-          <!-- 右：フットワーク詳細設定 -->
+          <!-- 右：フットワーク設定パネル -->
 
-          <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="card" style="background:var(--bg-panel); margin:0;">
 
-            <div class="card" style="background:var(--bg-panel); margin:0;">
-
-              <div style="font-weight:900; color:var(--accent-secondary); margin-bottom:10px; font-size:0.9rem;">⚙️ フットワーク＆声指示の設定</div>
+            <div style="font-weight:900; color:var(--accent-secondary); margin-bottom:10px; font-size:0.88rem;">⚙️ フットワーク＆声指示の設定</div>
 
 
 
-              <div class="form-group" style="margin-bottom:10px;">
+            <div class="form-group" style="margin-bottom:10px;">
 
-                <label>① コースプリセット</label>
+              <label>① コースプリセット</label>
 
-                <select id="fwCoursePreset" onchange="applyFwCoursePreset()">
+              <select id="fwCoursePreset" onchange="applyFwCoursePreset()">
 
-                  <option value="all6" selected>🌟 全面 6方向すべて（①〜⑥）</option>
+                <option value="all6" selected>🌟 全面 6方向すべて（①〜⑥）</option>
 
-                  <option value="corners4">📐 四隅 4コーナー（①左前・②右前・⑤左奥・⑥右奥）</option>
+                <option value="corners4">📐 四隅 4コーナー（①・②・⑤・⑥）</option>
 
-                  <option value="front2">⬆️ 前衛 2点ネットダッシュ（①左前・②右前）</option>
+                <option value="front2">⬆️ 前衛 2点ネットダッシュ（①左前・②右前）</option>
 
-                  <option value="side2">↔️ 左右サイドレシーブ（③左サイド・④右サイド）</option>
+                <option value="side2">↔️ 左右サイドレシーブ（③左・④右）</option>
 
-                  <option value="back2">⬇️ 後衛 2点スマッシュ移動（⑤左奥・⑥右奥）</option>
+                <option value="back2">⬇️ 後衛 2点スマッシュ移動（⑤左奥・⑥右奥）</option>
 
-                  <option value="diagonal_r">↗️ 対角線（②右前 ⇔ ⑤左奥）</option>
+                <option value="diagonal_r">↗️ 対角線（②右前 ⇔ ⑤左奥）</option>
 
-                  <option value="diagonal_l">↖️ 対角線（①左前 ⇔ ⑥右奥）</option>
+                <option value="diagonal_l">↖️ 対角線（①左前 ⇔ ⑥右奥）</option>
+
+              </select>
+
+            </div>
+
+
+
+            <div class="form-grid" style="margin-bottom:10px;">
+
+              <div class="form-group">
+
+                <label>② 指示テンポ（間隔）</label>
+
+                <select id="fwIntervalSec">
+
+                  <option value="1.5">1.5秒（超高速）</option>
+
+                  <option value="2.0">2.0秒（速い・実戦）</option>
+
+                  <option value="2.5" selected>2.5秒（標準テンポ）</option>
+
+                  <option value="3.2">3.2秒（フォーム確認）</option>
+
+                  <option value="4.0">4.0秒（ジュニア基礎）</option>
 
                 </select>
 
               </div>
 
+              <div class="form-group">
 
+                <label>③ 1セットの回数</label>
 
-              <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-bottom:10px;">
+                <select id="fwRepsPerSet">
 
-                <div class="form-group">
+                  <option value="6">6回</option>
 
-                  <label>② 指示テンポ（間隔）</label>
+                  <option value="10" selected>10回（標準）</option>
 
-                  <select id="fwIntervalSec">
+                  <option value="15">15回</option>
 
-                    <option value="1.5">1.5秒（超高速・連続タッチ）</option>
+                  <option value="20">20回</option>
 
-                    <option value="2.0">2.0秒（速い・実戦ラリー）</option>
+                  <option value="30">30回</option>
 
-                    <option value="2.5" selected>2.5秒（標準テンポ）</option>
-
-                    <option value="3.2">3.2秒（フォーム確認）</option>
-
-                    <option value="4.0">4.0秒（ジュニア基礎）</option>
-
-                  </select>
-
-                </div>
-
-                <div class="form-group">
-
-                  <label>③ 1セットの回数</label>
-
-                  <select id="fwRepsPerSet">
-
-                    <option value="6">6回</option>
-
-                    <option value="10" selected>10回（標準）</option>
-
-                    <option value="15">15回</option>
-
-                    <option value="20">20回</option>
-
-                    <option value="30">30回</option>
-
-                  </select>
-
-                </div>
-
-              </div>
-
-
-
-              <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-bottom:10px;">
-
-                <div class="form-group">
-
-                  <label>④ セット数</label>
-
-                  <select id="fwTotalSets">
-
-                    <option value="1">1セット</option>
-
-                    <option value="2">2セット</option>
-
-                    <option value="3" selected>3セット</option>
-
-                    <option value="5">5セット</option>
-
-                  </select>
-
-                </div>
-
-                <div class="form-group">
-
-                  <label>⑤ セット間の休憩</label>
-
-                  <select id="fwRestSec">
-
-                    <option value="10">10秒</option>
-
-                    <option value="15" selected>15秒</option>
-
-                    <option value="30">30秒</option>
-
-                    <option value="60">60秒</option>
-
-                  </select>
-
-                </div>
-
-              </div>
-
-
-
-              <div class="form-grid" style="grid-template-columns:1fr 1fr;">
-
-                <div class="form-group">
-
-                  <label>⑥ 🔊 声指示モード</label>
-
-                  <select id="fwVoiceMode">
-
-                    <option value="direction" selected>🗣️ ピッ＋方向（「右前！」）</option>
-
-                    <option value="number">🔢 ピッ＋番号（「2番！」）</option>
-
-                    <option value="beep_only">🔔 電子音（ピッ！）のみ</option>
-
-                    <option value="mute">🔇 ミュート（光のみ）</option>
-
-                  </select>
-
-                </div>
-
-                <div class="form-group">
-
-                  <label>⑦ ラリー間の動き設定</label>
-
-                  <select id="fwCenterCallMode">
-
-                    <option value="continuous" selected>🔥 センター指示なし（実戦連続ラリー）</option>
-
-                    <option value="split_beep">⚡ 次の指示前に「抜重予告音（ピッ）」</option>
-
-                    <option value="no_repeat">🔄 センター指示なし＋同じ場所連続なし</option>
-
-                  </select>
-
-                </div>
+                </select>
 
               </div>
 
@@ -2266,19 +2218,83 @@
 
 
 
-            <div class="card" style="background:var(--bg-panel); margin:0;">
+            <div class="form-grid" style="margin-bottom:10px;">
 
-              <div style="font-weight:800; font-size:0.86rem; margin-bottom:8px;">📝 マイ練習メニュー帳（自動保存）</div>
+              <div class="form-group">
 
-              <div style="display:flex; gap:6px; margin-bottom:8px;">
+                <label>④ セット数</label>
 
-                <input type="text" id="customMenuInput" placeholder="例: 全面6点連続フットワーク 15回×3" />
+                <select id="fwTotalSets">
 
-                <button class="btn btn-emerald" onclick="addCustomMenu()">＋ 追加</button>
+                  <option value="1">1セット</option>
+
+                  <option value="2">2セット</option>
+
+                  <option value="3" selected>3セット</option>
+
+                  <option value="5">5セット</option>
+
+                </select>
 
               </div>
 
-              <ul id="customMenuList" style="list-style:none; font-size:0.79rem; display:flex; flex-direction:column; gap:6px;"></ul>
+              <div class="form-group">
+
+                <label>⑤ セット間の休憩</label>
+
+                <select id="fwRestSec">
+
+                  <option value="10">10秒</option>
+
+                  <option value="15" selected>15秒</option>
+
+                  <option value="30">30秒</option>
+
+                  <option value="60">60秒</option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+
+
+            <div class="form-grid">
+
+              <div class="form-group">
+
+                <label>⑥ 🔊 声指示モード</label>
+
+                <select id="fwVoiceMode">
+
+                  <option value="direction" selected>🗣️ ピッ＋方向（「右前！」）</option>
+
+                  <option value="number">🔢 ピッ＋番号（「2番！」）</option>
+
+                  <option value="beep_only">🔔 電子音（ピッ！）のみ</option>
+
+                  <option value="mute">🔇 ミュート（光のみ）</option>
+
+                </select>
+
+              </div>
+
+              <div class="form-group">
+
+                <label>⑦ ラリー間の動き設定</label>
+
+                <select id="fwCenterCallMode">
+
+                  <option value="continuous" selected>🔥 連続ラリー（センター強制なし）</option>
+
+                  <option value="split_beep">⚡ 指示前に「抜重予告音（ピッ）」</option>
+
+                  <option value="no_repeat">🔄 同じ場所の連続なし</option>
+
+                </select>
+
+              </div>
 
             </div>
 
@@ -2294,7 +2310,7 @@
 
     <!-- =========================================================
 
-         TAB 2: ⚡ 初速AI判定 ＆ サイバーSVG矢印リアクション練習
+         TAB 2: ⚡ 初速AI判定（構えチェック連動）＆ サイバーSVG矢印練習
 
     ========================================================== -->
 
@@ -2306,9 +2322,9 @@
 
           <div class="card-title">
 
-            <span class="badge-version">サイバーSVG矢印</span>
+            <span class="badge-version">ネオンSVG矢印</span>
 
-            <span>⚡ リアクションステップ初動練習（ネオンベクター矢印 ＆ AIカメラ初速測定）</span>
+            <span>⚡ リアクション初動練習 ＆ AIカメラ初速測定（構えチェック連動）</span>
 
           </div>
 
@@ -2326,7 +2342,7 @@
 
           <button class="mode-switch-btn" id="btnSubModeCamera" onclick="switchReflexSubMode('camera')">
 
-            📷 モード②：AIカメラ初速測定（抜重・飛び込み ms実測）
+            📷 モード②：AIカメラ初速測定（構え診断＋抜重ms実測）
 
           </button>
 
@@ -2348,19 +2364,19 @@
 
                   <span class="badge-version" id="arrowDrillBadge">待機中</span>
 
-                  <span style="font-weight:900; font-size:0.9rem;" id="arrowDrillProgress">0 / 10 回</span>
+                  <span style="font-weight:900; font-size:0.88rem;" id="arrowDrillProgress">0 / 10 回</span>
 
                 </div>
 
                 <div class="btn-group">
 
-                  <button class="btn btn-emerald" style="padding:6px 11px;" onclick="startArrowReactionDrill(false)">▶️ 矢印スタート</button>
+                  <button class="btn btn-emerald" style="padding:5px 10px;" onclick="startArrowReactionDrill(false)">▶️ 矢印スタート</button>
 
-                  <button class="btn btn-amber" style="padding:6px 11px;" onclick="startArrowReactionDrill(true)">⛶ 全画面スタート</button>
+                  <button class="btn btn-amber" style="padding:5px 10px;" onclick="startArrowReactionDrill(true)">⛶ 全画面で開始</button>
 
-                  <button class="btn btn-rose" style="padding:6px 11px;" onclick="stopArrowReactionDrill()">⏹️ 停止</button>
+                  <button class="btn btn-rose" style="padding:5px 10px;" onclick="stopArrowReactionDrill()">⏹️ 停止</button>
 
-                  <button class="btn" style="padding:6px 10px;" onclick="toggleSmartFullscreen('arrowFullscreenStage')">⛶ 全画面切替</button>
+                  <button class="btn btn-cyan-outline" style="padding:5px 9px;" onclick="toggleSmartFullscreen('arrowFullscreenStage')">⛶ 全画面 ON/OFF</button>
 
                 </div>
 
@@ -2378,7 +2394,7 @@
 
 
 
-              <div class="fw-foot-note" id="arrowDrillSubHint">
+              <div class="fw-foot-note">
 
                 予備音「ピッ（抜重）」で重心をスッと沈め、直後のシャープなネオン矢印方向へ一歩目を踏み出します！
 
@@ -2390,7 +2406,7 @@
 
             <div class="card" style="background:var(--bg-panel); margin:0;">
 
-              <div style="font-weight:900; color:var(--accent-highlight); margin-bottom:10px; font-size:0.92rem;">
+              <div style="font-weight:900; color:var(--accent-highlight); margin-bottom:10px; font-size:0.88rem;">
 
                 🏹 ネオン矢印リアクション練習の設定
 
@@ -2398,7 +2414,7 @@
 
 
 
-              <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-bottom:10px;">
+              <div class="form-grid" style="margin-bottom:10px;">
 
                 <div class="form-group">
 
@@ -2406,7 +2422,7 @@
 
                   <select id="arrowDirSet">
 
-                    <option value="all6" selected>6方向（左前・右前・左・右・左奥・右奥）</option>
+                    <option value="all6" selected>6方向すべて（前・横・奥）</option>
 
                     <option value="corners4">4隅（左前・右前・左奥・右奥）</option>
 
@@ -2440,7 +2456,7 @@
 
 
 
-              <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+              <div class="form-grid">
 
                 <div class="form-group">
 
@@ -2448,9 +2464,9 @@
 
                   <select id="arrowTimingStyle">
 
-                    <option value="split_rhythm" selected>👟 予備音「ピッ（抜重）」➔ 矢印出現（実戦推奨）</option>
+                    <option value="split_rhythm" selected>👟 予備音「ピッ(抜重)」➔ 矢印（実戦推奨）</option>
 
-                    <option value="random_feint">🎲 ランダム間合い（1.5〜3.2秒）でいきなり矢印</option>
+                    <option value="random_feint">🎲 ランダム間合い（1.5〜3.2秒）で矢印</option>
 
                     <option value="fixed_tempo">⏱️ 一定テンポ（2.2秒間隔）で連続矢印</option>
 
@@ -2482,21 +2498,19 @@
 
 
 
-        <!-- ▼ サブモードB：📷 AIカメラ初速測定（真实ミリ秒計測＋ネオンSVG矢印オーバーレイ） ▼ -->
+        <!-- ▼ サブモードB：📷 AIカメラ初速測定（待機中の「構えチェック」連動） ▼ -->
 
         <div id="subPanelCameraReflex" style="display:none;">
 
-          <div class="btn-group" style="margin-bottom:12px;">
+          <div class="btn-group" style="margin-bottom:10px;">
 
-            <button id="btnReflexCamToggle" class="btn btn-emerald" onclick="toggleCameraForMode('reflex')">📷 初速AIカメラ起動（オン）</button>
+            <button id="btnReflexCamToggle" class="btn btn-emerald" onclick="toggleCameraForMode('reflex')">📷 初速AIカメラ起動</button>
 
             <button class="btn" onclick="switchCameraFacing()">🔄 内/外カメラ切替</button>
 
             <button id="btnReflexMeasureStart" class="btn btn-amber" onclick="startReflexAISession()">▶️ 初速AI測定スタート</button>
 
             <button class="btn btn-rose" onclick="stopReflexAISession()">⏹️ 停止</button>
-
-            <button class="btn" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面表示</button>
 
           </div>
 
@@ -2506,19 +2520,17 @@
 
             <div>
 
-              <div class="viewport-box fullscreen-target" id="reflexViewport">
+              <div class="viewport-wrapper fullscreen-target" id="reflexViewport">
 
-                <canvas id="reflexCanvas" class="viewport-canvas" width="720" height="720" style="display:none;"></canvas>
+                <div class="viewport-header-bar">
 
+                  <span class="viewport-status-text" id="reflexHudStatus">⚪ カメラ待機中（正面2.5〜3.5m推奨）</span>
 
+                  <div style="display:flex; align-items:center; gap:6px;">
 
-                <div class="hud-top-bar">
+                    <span class="badge-version" id="reflexStanceLiveBadge" style="background:#334155; color:#fff;">🛡️ 構え判定: 待機中</span>
 
-                  <div class="hud-pill" id="reflexHudStatus">⚪ カメラ待機中（正面2.5〜3.5m推奨）</div>
-
-                  <div class="hud-pill">
-
-                    <button class="btn" style="padding:3px 8px; font-size:0.72rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面切替</button>
+                    <button class="btn btn-cyan-outline" style="padding:3px 8px; font-size:0.7rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面</button>
 
                   </div>
 
@@ -2526,25 +2538,33 @@
 
 
 
-                <div class="center-overlay-banner" id="reflexBanner">
+                <div class="viewport-stage">
 
-                  <div class="banner-svg-arrow" id="reflexBannerSvgHolder"></div>
-
-                  <div class="banner-big-num" id="reflexBannerMain">構えて待機...</div>
-
-                  <div class="banner-sub-text" id="reflexBannerSub">ネオン矢印＋ピッ！で素早く一歩目を動かしてください</div>
-
-                </div>
+                  <canvas id="reflexCanvas" class="viewport-canvas" width="720" height="720" style="display:none;"></canvas>
 
 
 
-                <div id="reflexPlaceholder" style="text-align:center; color:var(--text-secondary); padding:20px; z-index:5;">
+                  <div class="center-overlay-banner" id="reflexBanner">
 
-                  <div style="font-size:2.2rem; margin-bottom:6px;">📷⚡</div>
+                    <div class="banner-svg-arrow" id="reflexBannerSvgHolder"></div>
 
-                  <div style="font-weight:800; color:#f8fafc;">「📷 初速AIカメラ起動」を押して正面に構えてください</div>
+                    <div class="banner-big-num" id="reflexBannerMain">構えて待機...</div>
 
-                  <div style="font-size:0.76rem; margin-top:4px;">ネオン矢印が出た瞬間（0ms）から、抜重・飛び込みの一歩目が動くまでのミリ秒（ms）を実測します</div>
+                    <div class="banner-sub-text" id="reflexBannerSub">ネオン矢印＋ピッ！で素早く一歩目を動かしてください</div>
+
+                  </div>
+
+
+
+                  <div id="reflexPlaceholder" style="text-align:center; color:var(--text-secondary); padding:20px;">
+
+                    <div style="font-size:2rem; margin-bottom:6px;">📷⚡</div>
+
+                    <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📷 初速AIカメラ起動」を押して正面に構えてください</div>
+
+                    <div style="font-size:0.75rem; margin-top:4px;">待機中の「構え（ラケット高さ・膝のゆとり・無駄な揺れ）」も同時にAI診断します</div>
+
+                  </div>
 
                 </div>
 
@@ -2560,7 +2580,7 @@
 
                   <div class="metric-val" id="rxValProgress">0 / 5 回</div>
 
-                  <div class="metric-peak" id="rxSubLastType">直前判定: --</div>
+                  <div class="metric-peak" id="rxSubLastType">直前: --</div>
 
                 </div>
 
@@ -2570,7 +2590,7 @@
 
                   <div class="metric-val" style="color:var(--accent-secondary);" id="rxValLastMs">-- ms</div>
 
-                  <div class="metric-peak" id="rxValBestMs">最速ベスト: -- ms</div>
+                  <div class="metric-peak" id="rxValBestMs">最速: -- ms</div>
 
                 </div>
 
@@ -2580,17 +2600,17 @@
 
                   <div class="metric-val" style="color:var(--accent-highlight);" id="rxValAvgMs">-- ms</div>
 
-                  <div class="metric-peak">目標基準: 280ms以下</div>
+                  <div class="metric-peak">目標: 270ms以下</div>
 
                 </div>
 
                 <div class="metric-box">
 
-                  <div class="metric-title">初速AIスコア</div>
+                  <div class="metric-title">初速＆構えスコア</div>
 
-                  <div class="metric-val" style="color:var(--accent-primary);" id="rxValScorePt">-- / 100 pt</div>
+                  <div class="metric-val" style="color:var(--accent-primary);" id="rxValScorePt">-- pt</div>
 
-                  <div class="metric-score-tag" id="rxMaxScorePt">MAX: -- / 100 pt</div>
+                  <div class="metric-score-tag" id="rxMaxScorePt">構え安定: --%</div>
 
                 </div>
 
@@ -2600,15 +2620,15 @@
 
 
 
-            <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; flex-direction:column; gap:10px;">
 
               <div class="card" style="background:var(--bg-panel); margin:0;">
 
-                <div style="font-weight:900; color:var(--accent-secondary); margin-bottom:10px; font-size:0.9rem;">⚙️ 初速AI測定の設定（回数・抜重＆飛び込み）</div>
+                <div style="font-weight:900; color:var(--accent-secondary); margin-bottom:8px; font-size:0.88rem;">⚙️ 初速AI測定の設定</div>
 
 
 
-                <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-bottom:10px;">
+                <div class="form-grid" style="margin-bottom:8px;">
 
                   <div class="form-group">
 
@@ -2616,13 +2636,11 @@
 
                     <select id="rxTargetReps">
 
-                      <option value="3">3回（ウォームアップ）</option>
+                      <option value="3">3回</option>
 
-                      <option value="5" selected>5回（標準チェック）</option>
+                      <option value="5" selected>5回（標準）</option>
 
-                      <option value="10">10回（実戦反復測定）</option>
-
-                      <option value="15">15回（敏捷性強化）</option>
+                      <option value="10">10回</option>
 
                     </select>
 
@@ -2630,15 +2648,15 @@
 
                   <div class="form-group">
 
-                    <label>② リアクション測定モード</label>
+                    <label>② ステップ検知タイプ</label>
 
                     <select id="rxStepPattern">
 
-                      <option value="auto" selected>🔄 自動判別（抜重＆飛び込み両対応）</option>
+                      <option value="auto" selected>🔄 自動判別（抜重＆飛び込み）</option>
 
-                      <option value="unweight">👟 抜重パターン（重心の瞬間沈み込み）</option>
+                      <option value="unweight">👟 抜重（重心の瞬間沈み込み）</option>
 
-                      <option value="jump">🦘 飛び込みパターン（着地タメ＆蹴り出し）</option>
+                      <option value="jump">🦘 飛び込み（着地タメ＆蹴り出し）</option>
 
                     </select>
 
@@ -2648,7 +2666,7 @@
 
 
 
-                <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+                <div class="form-grid">
 
                   <div class="form-group">
 
@@ -2658,7 +2676,7 @@
 
                       <option value="voice_dir" selected>🗣️ ネオン矢印＋ピッ＋声</option>
 
-                      <option value="beep_only">🔔 ネオン矢印＋ピッ（電子音のみ）</option>
+                      <option value="beep_only">🔔 ネオン矢印＋ピッのみ</option>
 
                     </select>
 
@@ -2670,11 +2688,11 @@
 
                     <select id="rxSensitivity">
 
-                      <option value="high">高感度（微細な抜重も即座に検知）</option>
+                      <option value="high">高感度（微細な抜重も検知）</option>
 
-                      <option value="normal" selected>標準（抜重・一歩目をバランス検知）</option>
+                      <option value="normal" selected>標準（抜重・一歩目を検知）</option>
 
-                      <option value="low">低感度（大きな踏み出しのみ検知）</option>
+                      <option value="low">低感度（大きな踏み出しのみ）</option>
 
                     </select>
 
@@ -2686,19 +2704,19 @@
 
 
 
-              <div class="summary-box">
+              <div class="summary-box" style="margin-top:0;">
 
-                <div style="font-weight:800; color:var(--accent-highlight); margin-bottom:6px; display:flex; justify-content:space-between;">
+                <div style="font-weight:800; color:var(--accent-highlight); margin-bottom:6px; display:flex; justify-content:space-between; flex-wrap:wrap;">
 
-                  <span>📌 初速AI 総括レポート</span>
+                  <span>📌 初速＆構えAI 総括レポート</span>
 
-                  <span id="rxSessionBadge" style="color:var(--accent-secondary); font-size:0.8rem;">待機中</span>
+                  <span id="rxSessionBadge" style="color:var(--accent-secondary); font-size:0.78rem;">待機中</span>
 
                 </div>
 
-                <div id="rxSummaryText" style="font-size:0.83rem; color:#e2e8f0; line-height:1.6;">
+                <div id="rxSummaryText" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
 
-                  カメラを起動して<b>「▶️ 初速AI測定スタート」</b>を押すと、ネオン矢印が出た瞬間から一歩目が動くまでのミリ秒（ms）を測定します。
+                  カメラを起動して<b>「▶️ 初速AI測定スタート」</b>を押すと、待機中の<b>「構えの良さ（ラケット高さ・膝のゆとり）」</b>と、矢印が出てから一歩目が動くまでの<b>「ミリ秒（ms）」</b>を同時に診断します。
 
                 </div>
 
@@ -2718,7 +2736,7 @@
 
     <!-- =========================================================
 
-         TAB 3: 🎥 AI骨格・身体追従レーザーガイド・ディレイ再生・過去ベスト比較
+         TAB 3: 🎥 構え（レディポジション）＆ 全10種目AI骨格解析・過去ベスト比較
 
     ========================================================== -->
 
@@ -2730,9 +2748,9 @@
 
           <div class="card-title">
 
-            <span class="badge-version">10秒精密測定</span>
+            <span class="badge-version">構え＆フォーム診断</span>
 
-            <span>🎥 AI骨格解析（身体連動レーザーガイド ＆ ディレイ再生 ＆ 過去ベスト比較）</span>
+            <span>🎥 AI骨格解析（基本の構え診断・身体連動レーザー・ディレイ再生・過去ベスト比較）</span>
 
           </div>
 
@@ -2744,7 +2762,7 @@
 
             <label class="btn" style="cursor:pointer;">
 
-              📁 動画解析
+              📁 動画読込
 
               <input type="file" id="videoUploadInput" accept="video/*" style="display:none;" onchange="handleVideoUpload(event)" />
 
@@ -2752,21 +2770,15 @@
 
             <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
 
-            <!-- 提案C：3秒/5秒遅れディレイ再生ミラー -->
+            <select id="delayMirrorSelect" onchange="changeDelayMirrorSec(this.value)" style="width:auto; padding:6px 8px; font-size:0.75rem; font-weight:800;">
 
-            <select id="delayMirrorSelect" onchange="changeDelayMirrorSec(this.value)" style="width:auto; padding:6px 10px; font-size:0.77rem; font-weight:800;">
+              <option value="0" selected>⏪ ディレイ: OFF</option>
 
-              <option value="0" selected>⏪ ディレイ再生: OFF (リアルタイム)</option>
+              <option value="3">⏪ 3秒遅れ再生</option>
 
-              <option value="3">⏪ 3秒遅れ再生 (素振り直後に確認)</option>
-
-              <option value="5">⏪ 5秒遅れ再生 (移動打ち後に確認)</option>
+              <option value="5">⏪ 5秒遅れ再生</option>
 
             </select>
-
-            <button id="btnCompareDual" class="btn btn-cyan-outline" onclick="toggleDualComparePanel()">🌓 2画面・過去ベスト比較: OFF</button>
-
-            <button class="btn" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button>
 
           </div>
 
@@ -2776,57 +2788,23 @@
 
         <div class="split-grid">
 
+          <!-- 左カラム：カメラビューポート ＆ 4指標メトリクス ＆ 線引きバー -->
+
           <div>
 
-            <!-- 提案B：iPad/スマホ最適化 2画面比較＆過去ベスト・動画コマ送りパネル -->
+            <div class="viewport-wrapper fullscreen-target" id="poseViewport">
 
-            <div class="compare-dual-wrap" id="dualCompareWrap">
+              <!-- 上部ステータスバーをキャンバス外の上部に配置し、文字被り・右端切れを完全解消 -->
 
-              <div class="compare-pane">
+              <div class="viewport-header-bar">
 
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
+                <span class="viewport-status-text" id="poseHudStatus">⚪ カメラ待機中</span>
 
-                  <select id="dualLeftSourceSelect" onchange="renderReferenceCompareCanvas()" style="padding:4px 8px; font-size:0.75rem; width:auto;">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
 
-                    <option value="best" selected>🏆 自分の過去ベスト骨格（保存スナップ）</option>
+                  <span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 認識精度: --%</span>
 
-                    <option value="video">📁 お手本・比較動画ファイル</option>
-
-                  </select>
-
-                  <label class="btn" style="padding:3px 8px; font-size:0.72rem; cursor:pointer;">
-
-                    📁 比較動画読込
-
-                    <input type="file" accept="video/*" style="display:none;" onchange="loadCompareRefVideo(event)" />
-
-                  </label>
-
-                </div>
-
-
-
-                <div style="flex:1; display:flex; align-items:center; justify-content:center; background:#030711; border-radius:8px; overflow:hidden; min-height:170px;">
-
-                  <canvas id="refCompareCanvas" width="480" height="360" style="max-width:100%; max-height:220px; object-fit:contain;"></canvas>
-
-                  <video id="refCompareVideo" playsinline controls loop muted style="display:none; max-width:100%; max-height:220px; object-fit:contain;"></video>
-
-                </div>
-
-
-
-                <!-- 同時コマ送り・スロー再生バー -->
-
-                <div class="btn-group" style="justify-content:center; margin-top:8px;">
-
-                  <button class="btn" style="padding:4px 8px; font-size:0.72rem;" onclick="stepVideosFrame(-0.1)">⏪ -0.1秒</button>
-
-                  <button class="btn btn-cyan-outline" style="padding:4px 9px; font-size:0.72rem;" onclick="toggleSyncVideosPlay()">⏯️ 同時再生/一時停止</button>
-
-                  <button class="btn" style="padding:4px 8px; font-size:0.72rem;" onclick="stepVideosFrame(0.1)">⏩ +0.1秒</button>
-
-                  <button class="btn" style="padding:4px 8px; font-size:0.72rem;" onclick="toggleSlowMotionRate(this)">🐢 等倍 1.0x</button>
+                  <button class="btn btn-cyan-outline" style="padding:3px 8px; font-size:0.7rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面 ON/OFF</button>
 
                 </div>
 
@@ -2834,33 +2812,31 @@
 
 
 
-              <div class="compare-pane">
+              <div class="viewport-stage">
 
-                <div>
+                <canvas id="outputCanvas" class="viewport-canvas" width="720" height="720" style="display:none;"></canvas>
 
-                  <div style="font-weight:900; font-size:0.86rem; color:var(--accent-highlight); margin-bottom:6px;">
+                <canvas id="drawCanvas" width="720" height="720"></canvas>
 
-                    🏆 選択種目の「過去ベスト」＆「目標基準」比較カルテ
 
-                  </div>
 
-                  <div id="bestRecordCompareBox" style="font-size:0.8rem; color:#e2e8f0; line-height:1.65;"></div>
+                <div class="center-overlay-banner" id="poseCountdownOverlay">
+
+                  <div class="banner-big-num" id="poseCountdownNum">3</div>
+
+                  <div class="banner-sub-text">10秒精密測定スタートまで</div>
 
                 </div>
 
-                <div class="btn-group" style="justify-content:space-between; margin-top:10px;">
 
-                  <button class="btn btn-emerald" style="font-size:0.75rem; padding:6px 10px;" onclick="saveCurrentAsPersonalBest(true)">
 
-                    🏆 今の測定フォームを過去ベストに登録
+                <div id="posePlaceholder" style="text-align:center; color:var(--text-secondary); padding:18px;">
 
-                  </button>
+                  <div style="font-size:2rem; margin-bottom:6px;">🧠</div>
 
-                  <button class="btn btn-rose" style="font-size:0.72rem; padding:5px 9px;" onclick="clearPersonalBestForShot()">
+                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📷 AIカメラ起動」または「📁 動画読込」を選択</div>
 
-                    記録クリア
-
-                  </button>
+                  <div style="font-size:0.75rem; margin-top:4px;">「🛡️ 基本の構え診断」からスマッシュ・レシーブ・ヘアピンまで、あなたの肩・膝・足幅に合わせて理想ガイドを表示します</div>
 
                 </div>
 
@@ -2870,103 +2846,55 @@
 
 
 
-            <!-- メインAIカメラビューポート -->
-
-            <div class="viewport-box fullscreen-target" id="poseViewport">
-
-              <canvas id="outputCanvas" class="viewport-canvas" width="720" height="720" style="display:none;"></canvas>
-
-              <canvas id="drawCanvas" width="720" height="720"></canvas>
-
-
-
-              <div class="hud-top-bar">
-
-                <div class="hud-pill" id="poseHudStatus">⚪ カメラ待機中（斜め後ろ3〜4m推奨）</div>
-
-                <div class="hud-pill" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 AI認識精度: --%</div>
-
-                <div class="hud-pill">
-
-                  <button class="btn" style="padding:3px 8px; font-size:0.72rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面切替</button>
-
-                </div>
-
-              </div>
-
-
-
-              <div class="center-overlay-banner" id="poseCountdownOverlay">
-
-                <div class="banner-big-num" id="poseCountdownNum">3</div>
-
-                <div class="banner-sub-text">10秒精密測定スタートまで</div>
-
-              </div>
-
-
-
-              <div id="posePlaceholder" style="text-align:center; color:var(--text-secondary); padding:20px; z-index:5;">
-
-                <div style="font-size:2.2rem; margin-bottom:6px;">🧠</div>
-
-                <div style="font-weight:800; color:#f8fafc;">「📷 AIカメラ起動」または「📁 動画解析」を選択</div>
-
-                <div style="font-size:0.76rem; margin-top:4px;">あなたの肩・膝にピタッと追従する「理想角度レーザー＆過去ベストライン」を表示します</div>
-
-              </div>
-
-            </div>
-
-
+            <!-- 4指標メトリクス（種目に応じてラベルも自動最適化・スマホ2列でも見切れゼロ） -->
 
             <div class="metrics-grid">
 
               <div class="metric-box">
 
-                <div class="metric-title">利き腕・肘の角度</div>
+                <div class="metric-title" id="mTitle1">利き腕・肘の角度</div>
 
                 <div class="metric-val" style="color:#34d399;" id="valElbowDeg">-- °</div>
 
                 <div class="metric-peak" id="maxElbowDeg">MAX: --° / 最小: --°</div>
 
-                <div class="metric-score-tag" id="ptElbow">評価: -- / 100 pt</div>
+                <div class="metric-score-tag" id="ptElbow">評価: -- pt</div>
 
               </div>
 
               <div class="metric-box">
 
-                <div class="metric-title">肩・肘の挙上角（打点）</div>
+                <div class="metric-title" id="mTitle2">肩挙上角（打点/構え高）</div>
 
                 <div class="metric-val" style="color:#60a5fa;" id="valShoulderDeg">-- °</div>
 
-                <div class="metric-peak" id="maxShoulderDeg">MAX最高打点: -- °</div>
+                <div class="metric-peak" id="maxShoulderDeg">MAX打点: --°</div>
 
-                <div class="metric-score-tag" id="ptShoulder">評価: -- / 100 pt</div>
+                <div class="metric-score-tag" id="ptShoulder">評価: -- pt</div>
 
               </div>
 
               <div class="metric-box">
 
-                <div class="metric-title">膝の沈み込み角（タメ）</div>
+                <div class="metric-title" id="mTitle3">膝の角度（タメ/構え）</div>
 
                 <div class="metric-val" style="color:#fbbf24;" id="valKneeDeg">-- °</div>
 
-                <div class="metric-peak" id="maxKneeDeg">最深タメ: -- °</div>
+                <div class="metric-peak" id="maxKneeDeg">最深膝角: --°</div>
 
-                <div class="metric-score-tag" id="ptKnee">下半身: -- / 100 pt</div>
+                <div class="metric-score-tag" id="ptKnee">下半身: -- pt</div>
 
               </div>
 
               <div class="metric-box">
 
-                <div class="metric-title">腕振・初動速度指数</div>
+                <div class="metric-title" id="mTitle4">速度指数 / スタンス比</div>
 
-                <div class="metric-val" style="color:#f43f5e;" id="valSpeedPt">-- / 100 pt</div>
+                <div class="metric-val" style="color:#f43f5e;" id="valSpeedPt">-- pt</div>
 
-                <div class="metric-peak" id="maxSpeedPt">MAX最高値: -- / 100 pt</div>
+                <div class="metric-peak" id="maxSpeedPt">足幅比: --倍</div>
 
-                <div class="metric-score-tag" id="coreTiltTag">体幹ブレ: --°</div>
+                <div class="metric-score-tag" id="coreTiltTag">体幹傾き: --°</div>
 
               </div>
 
@@ -2974,15 +2902,15 @@
 
 
 
-            <!-- 修正④：線引きモードON/OFFスイッチ化（OFF時は自由にスクロール可能） -->
+            <!-- 線引きツールバー（普段はOFFでスクロール優先） -->
 
             <div class="pen-toolbar">
 
-              <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
 
-                <button id="btnToggleDrawMode" class="btn btn-cyan-outline" style="padding:5px 10px; font-size:0.76rem;" onclick="toggleDrawingLockMode()">
+                <button id="btnToggleDrawMode" class="btn btn-cyan-outline" style="padding:5px 9px; font-size:0.74rem;" onclick="toggleDrawingLockMode()">
 
-                  ✏️ 線引きモード: OFF (スクロール優先)
+                  ✏️ 線引き: OFF (スクロール優先)
 
                 </button>
 
@@ -2998,11 +2926,11 @@
 
               <div class="btn-group">
 
-                <button class="btn" style="padding:5px 9px; font-size:0.74rem;" onclick="resetMaxMetrics()">🔄 MAXリセット</button>
+                <button class="btn" style="padding:5px 8px; font-size:0.72rem;" onclick="resetMaxMetrics()">🔄 リセット</button>
 
-                <button class="btn" style="padding:5px 9px; font-size:0.74rem;" onclick="toggleVideoPause()">⏯️ 一時停止/再生</button>
+                <button class="btn" style="padding:5px 8px; font-size:0.72rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button>
 
-                <button class="btn btn-rose" style="padding:5px 9px; font-size:0.74rem;" onclick="clearDrawing()">🗑️ 線消去</button>
+                <button class="btn btn-rose" style="padding:5px 8px; font-size:0.72rem;" onclick="clearDrawing()">🗑️ 線消去</button>
 
               </div>
 
@@ -3012,55 +2940,63 @@
 
 
 
-          <div style="display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
+          <!-- 右カラム：種目選択・10秒測定・採点内訳・過去ベスト比較・AI総括レポート -->
 
-            <div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
 
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
+            <div class="card" style="background:var(--bg-panel); margin:0;">
 
-                <div style="font-weight:900; font-size:0.94rem;">🤖 基礎打ち・レシーブ・応用技チェッカー</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
 
-                <span class="badge-version" id="overallScoreBadge" style="font-size:0.8rem; padding:4px 10px;">総合スコア: -- / 100 pt</span>
+                <span style="font-weight:900; font-size:0.88rem;">🤖 構え・基礎打ち・応用技チェッカー</span>
+
+                <span class="badge-version" id="overallScoreBadge" style="font-size:0.76rem; padding:3px 9px;">総合スコア: -- / 100 pt</span>
 
               </div>
 
 
 
-              <!-- 全9種目（レシーブ＆ロブ含む）完全搭載 -->
+              <!-- プルダウン文字列をスマホ画面幅に収まる簡潔な表記に最適化（全10種目） -->
 
-              <div class="form-group" style="margin-bottom:10px;">
+              <div class="form-group" style="margin-bottom:8px;">
 
-                <label>① チェックする種目を選択（全9種目フル搭載）</label>
+                <label>① チェックする種目を選択（構え診断＋全9ストローク）</label>
 
                 <select id="shotTypeSelect" onchange="updateShotCriteriaUI()">
 
+                  <optgroup label="🛡️ 構え（レディポジション）編">
+
+                    <option value="ready_stance" selected>🛡️ 基本の構え・レディポジション診断（手首高・膝角・足幅・静止安定度）</option>
+
+                  </optgroup>
+
                   <optgroup label="🔥 基礎打ち・ストローク編">
 
-                    <option value="smash">💥 オーバーヘッド・スマッシュ（高打点＆肘伸展＆最高スイング速度）</option>
+                    <option value="smash">💥 スマッシュ（高打点・肘伸展・スイング速度）</option>
 
-                    <option value="clear">🌈 ハイクリア［基礎打ち］（深いテイクバック＆打点高＆体重移動）</option>
+                    <option value="clear">🌈 ハイクリア（深いテイクバック・高打点）</option>
 
-                    <option value="drop">🪶 ドロップ［基礎打ち］（クリアと同フォームからの減速コントロール）</option>
+                    <option value="drop">🪶 ドロップ（高打点維持・減速コントロール）</option>
 
-                    <option value="lob">🛡️ レシーブ＆ロブ［基礎打ち］（膝の深い沈み込み＆低い重心維持）</option>
+                    <option value="lob">🛡️ レシーブ＆ロブ（膝の深い沈み込み・低い重心）</option>
 
-                    <option value="drive">⚡ ドライブ＆プッシュ［基礎打ち］（肘の前方保持＆コンパクトな弾き）</option>
+                    <option value="drive">⚡ ドライブ＆プッシュ（肘の前方保持・弾き）</option>
 
                   </optgroup>
 
                   <optgroup label="👟 リアクションステップ編">
 
-                    <option value="reaction_unweight">👟 リアクションステップ［抜重パターン］（重心の瞬間沈み込み＆初動）</option>
+                    <option value="reaction_unweight">👟 リアクション［抜重］（瞬間沈み込み・初動）</option>
 
-                    <option value="reaction_jump">🦘 リアクションステップ［飛び込みパターン］（両足着地タメ＆蹴り出し）</option>
+                    <option value="reaction_jump">🦘 リアクション［飛び込み］（着地タメ・蹴り出し）</option>
 
                   </optgroup>
 
                   <optgroup label="✨ 応用テクニック編">
 
-                    <option value="cut_reverse">✂️ カット・リバースカット［応用技］（高打点フェイント一致度＆鋭い振り抜き）</option>
+                    <option value="cut_reverse">✂️ カット・リバースカット（高打点フェイント）</option>
 
-                    <option value="cross_hairpin">🕸️ ヘアピン・クロスヘアピン［応用技］（深いランジ膝角＆肘の前方安定度）</option>
+                    <option value="cross_hairpin">🕸️ ヘアピン・クロスヘアピン（深いランジ・体幹安定）</option>
 
                   </optgroup>
 
@@ -3070,21 +3006,19 @@
 
 
 
-              <!-- 提案A：自分の肩・膝に連動する「理想角度＆過去ベストレーザーガイド」 -->
-
               <div class="form-group" style="margin-bottom:10px;">
 
                 <label>② 画面上のターゲット＆過去ベスト表示モード</label>
 
-                <select id="ghostOverlaySelect" onchange="renderReferenceCompareCanvas()">
+                <select id="ghostOverlaySelect" onchange="updateComparisonTableUI()">
 
-                  <option value="body_laser" selected>🎯 身体追従レーザーガイド（自分の肩・膝に理想角度＆過去ベスト線を表示）</option>
+                  <option value="body_laser" selected>🎯 身体追従ガイド（肩・膝・足幅に理想＆過去ベスト線を表示）</option>
 
-                  <option value="personal_best">🏆 過去ベスト骨格ゴースト重ね表示（保存したベスト時の骨格を重ねる）</option>
+                  <option value="personal_best">🏆 過去ベスト骨格重ね表示（保存したベスト骨格を重ねる）</option>
 
                   <option value="heatmap">🔍 関節評価ヒートマップ色分け（緑=80pt+ / 黄 / 赤）</option>
 
-                  <option value="none">OFF（自分の骨格＋軌道アークのみ表示）</option>
+                  <option value="none">OFF（自分の骨格＋軌道アークのみ）</option>
 
                 </select>
 
@@ -3092,93 +3026,67 @@
 
 
 
-              <div style="display:flex; gap:8px; margin-bottom:10px;">
+              <button id="btnStartPoseSession" class="btn btn-amber" style="width:100%; padding:10px; font-size:0.84rem;" onclick="startTimedPoseSession()">
 
-                <button id="btnStartPoseSession" class="btn btn-amber" style="width:100%; padding:11px; font-size:0.9rem;" onclick="startTimedPoseSession()">
+                ▶️ 10秒間 精密測定スタート（過去ベスト自動判定）
 
-                  ▶️ 10秒間 精密測定スタート（過去ベスト自動判定付き）
+              </button>
 
-                </button>
-
-              </div>
+            </div>
 
 
 
-              <!-- 採点内訳プログレスバー -->
+            <!-- 採点内訳プログレスバー -->
 
-              <div class="breakdown-box">
+            <div class="breakdown-box" style="margin-top:0;">
 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
 
-                  <span style="font-size:0.75rem; font-weight:900; color:var(--accent-secondary);">📊 AIスコア採点内訳</span>
+                <span style="font-size:0.74rem; font-weight:900; color:var(--accent-secondary);">📊 AIスコア採点内訳</span>
 
-                  <span id="pbRecordTag" style="font-size:0.73rem; font-weight:900; color:var(--accent-highlight);">🏆 過去ベスト: 未記録</span>
-
-                </div>
-
-                <div class="bar-row">
-
-                  <div class="bar-label">
-
-                    <span>① 上半身・打点＆肘角度の正確性（40%）</span>
-
-                    <span id="bdUpperText">-- / 100</span>
-
-                  </div>
-
-                  <div class="bar-track"><div class="bar-fill" id="bdUpperBar" style="width:0%;"></div></div>
-
-                </div>
-
-                <div class="bar-row">
-
-                  <div class="bar-label">
-
-                    <span>② 下半身・膝のタメ＆体幹軸安定度（30%）</span>
-
-                    <span id="bdLowerText">-- / 100</span>
-
-                  </div>
-
-                  <div class="bar-track"><div class="bar-fill" id="bdLowerBar" style="width:0%; background:#fbbf24;"></div></div>
-
-                </div>
-
-                <div class="bar-row">
-
-                  <div class="bar-label">
-
-                    <span>③ スイング・抜重の最大初速指数（30%）</span>
-
-                    <span id="bdSpeedText">-- / 100</span>
-
-                  </div>
-
-                  <div class="bar-track"><div class="bar-fill" id="bdSpeedBar" style="width:0%; background:#f43f5e;"></div></div>
-
-                </div>
+                <span id="pbRecordTag" style="font-size:0.72rem; font-weight:900; color:var(--accent-highlight);">🏆 過去ベスト: 未記録</span>
 
               </div>
 
+              <div class="bar-row">
 
+                <div class="bar-label">
 
-              <div class="summary-box">
+                  <span id="bdLabel1">① ラケット位置・上半身フォーム（40%）</span>
 
-                <div style="font-weight:800; color:var(--accent-highlight); margin-bottom:6px; display:flex; justify-content:space-between;">
-
-                  <span>📌 AI総括フィードバック ＆ 過去ベスト比較</span>
-
-                  <span id="sessionTimerLabel" style="color:var(--accent-secondary); font-size:0.8rem;">待機中</span>
+                  <span id="bdUpperText">-- / 100</span>
 
                 </div>
 
-                <div id="shotCriteriaDesc" style="font-size:0.77rem; margin-bottom:6px; color:var(--text-secondary);"></div>
+                <div class="bar-track"><div class="bar-fill" id="bdUpperBar" style="width:0%;"></div></div>
 
-                <div id="aiSummaryContent" style="font-size:0.82rem; color:#e2e8f0; line-height:1.6;">
+              </div>
 
-                  <b>「▶️ 10秒間 精密測定スタート」</b>を押すと、10秒間の動作からベストなスイング・姿勢を抽出し、目標角度およびご自身の<b>「🏆 過去ベスト」</b>と比較したレポートを表示します。
+              <div class="bar-row">
+
+                <div class="bar-label">
+
+                  <span id="bdLabel2">② 膝のタメ・スタンス・体幹軸（30%）</span>
+
+                  <span id="bdLowerText">-- / 100</span>
 
                 </div>
+
+                <div class="bar-track"><div class="bar-fill" id="bdLowerBar" style="width:0%; background:#fbbf24;"></div></div>
+
+              </div>
+
+              <div class="bar-row">
+
+                <div class="bar-label">
+
+                  <span id="bdLabel3">③ 静止安定度 / スイング速度（30%）</span>
+
+                  <span id="bdSpeedText">-- / 100</span>
+
+                </div>
+
+                <div class="bar-track"><div class="bar-fill" id="bdSpeedBar" style="width:0%; background:#f43f5e;"></div></div>
 
               </div>
 
@@ -3186,11 +3094,51 @@
 
 
 
-            <button class="btn btn-emerald" style="width:100%; padding:11px; font-size:0.86rem;" onclick="switchTab('tab-racket')">
+            <!-- 一目でわかる「今回 vs 過去ベスト vs 理想基準」比較カード -->
 
-              ✨ 現在の選択メンバーの解析結果から「おすすめラケット診断」を見る
+            <div class="summary-box" style="margin-top:0;">
 
-            </button>
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:4px;">
+
+                <span style="font-weight:900; font-size:0.8rem; color:var(--accent-highlight);">🏆 目標基準 ＆ 過去ベスト比較表</span>
+
+                <div class="btn-group">
+
+                  <button class="btn btn-emerald" style="padding:3px 8px; font-size:0.7rem;" onclick="saveCurrentAsPersonalBest(true)">🏆 今の数値をベスト保存</button>
+
+                  <button class="btn" style="padding:3px 7px; font-size:0.68rem;" onclick="clearPersonalBestForShot()">クリア</button>
+
+                </div>
+
+              </div>
+
+              <div id="bestComparisonTableHolder"></div>
+
+            </div>
+
+
+
+            <!-- AI総括フィードバック -->
+
+            <div class="summary-box" style="margin-top:0;">
+
+              <div style="font-weight:800; color:var(--accent-highlight); margin-bottom:5px; display:flex; justify-content:space-between; flex-wrap:wrap;">
+
+                <span>📌 AIコーチ総括フィードバック</span>
+
+                <span id="sessionTimerLabel" style="color:var(--accent-secondary); font-size:0.76rem;">待機中</span>
+
+              </div>
+
+              <div id="shotCriteriaDesc" style="font-size:0.75rem; margin-bottom:6px; color:var(--text-secondary); line-height:1.45;"></div>
+
+              <div id="aiSummaryContent" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
+
+                <b>「▶️ 10秒間 精密測定スタート」</b>を押すと、10秒間の動作から構えの悪癖（ラケット下がり・棒立ち・無駄なバウンド）やスイング軌道を数値化して具体的な改善策を表示します。
+
+              </div>
+
+            </div>
 
           </div>
 
@@ -3216,17 +3164,17 @@
 
           <div class="card-title">🏸 4大ブランド別 AIラケット＆ガット診断カルテ</div>
 
-          <span class="badge-version">選択中メンバー＆AI実測連動</span>
+          <span class="badge-version">メンバー＆AI実測連動</span>
 
         </div>
 
 
 
-        <div class="summary-box" style="margin-top:0; margin-bottom:14px;" id="racketDiagnosisSummary"></div>
+        <div class="summary-box" style="margin-top:0; margin-bottom:12px;" id="racketDiagnosisSummary"></div>
 
 
 
-        <div class="btn-group" style="margin-bottom:14px;" id="brandFilterGroup">
+        <div class="btn-group" style="margin-bottom:12px;" id="brandFilterGroup">
 
           <button class="btn btn-emerald" onclick="filterRackets('ALL', this)">🌟 全ブランド推奨順</button>
 
@@ -3252,7 +3200,7 @@
 
     <!-- =========================================================
 
-         TAB 5: 🧮 試合スコア＆レシーブ位置 ＆ シングルス/ダブルス・Undo対応
+         TAB 5: 🧮 試合スコア＆サーブ・レシーブ位置ナビ（ダブルス/シングルス・Undo対応）
 
     ========================================================== -->
 
@@ -3262,17 +3210,17 @@
 
         <div class="card-header">
 
-          <div class="card-title">🧮 スコア連動・サーブ＆レシーブ立ち位置ナビ（ダブルス＆シングルス対応）</div>
+          <div class="card-title">🧮 スコア連動・サーブ＆レシーブ立ち位置ナビ</div>
 
           <div class="btn-group">
 
             <button class="btn btn-cyan-outline" id="btnMatchTypeToggle" onclick="toggleMatchFormat()">👥 現在: ダブルス</button>
 
-            <button class="btn" onclick="undoMatchPoint()" id="btnUndoScore" disabled>↩️ 1手戻す(Undo)</button>
+            <button class="btn" onclick="undoMatchPoint()" id="btnUndoScore" disabled>↩️ 1手戻す</button>
 
-            <button class="btn btn-cyan-outline" onclick="flipCourtSide()">🔄 コート向き反転</button>
+            <button class="btn btn-cyan-outline" onclick="flipCourtSide()">🔄 コート反転</button>
 
-            <button class="btn btn-amber" onclick="swapInitialPairPos()">🔄 初期位置(右⇔左)入替</button>
+            <button class="btn btn-amber" onclick="swapInitialPairPos()">🔄 左右入替</button>
 
             <button class="btn" onclick="toggleServeRight()">🏸 サーブ権切替</button>
 
@@ -3284,13 +3232,13 @@
 
 
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:640px; margin:0 auto 12px;">
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; max-width:600px; margin:0 auto 10px;">
 
-          <div class="card" style="background:var(--bg-panel); text-align:center; margin:0; padding:12px;">
+          <div class="card" style="background:var(--bg-panel); text-align:center; margin:0; padding:10px;">
 
-            <div style="font-weight:800; color:#38bdf8; font-size:0.84rem;">🟦 自分チーム（A）</div>
+            <div style="font-weight:800; color:#38bdf8; font-size:0.82rem;">🟦 自分チーム（A）</div>
 
-            <div style="font-size:2.2rem; font-weight:900; margin:4px 0;" id="scoreTeamA">0</div>
+            <div style="font-size:2rem; font-weight:900; margin:2px 0;" id="scoreTeamA">0</div>
 
             <div class="btn-group" style="justify-content:center;">
 
@@ -3302,11 +3250,11 @@
 
           </div>
 
-          <div class="card" style="background:var(--bg-panel); text-align:center; margin:0; padding:12px;">
+          <div class="card" style="background:var(--bg-panel); text-align:center; margin:0; padding:10px;">
 
-            <div style="font-weight:800; color:#fb7185; font-size:0.84rem;">🟥 相手チーム（B）</div>
+            <div style="font-weight:800; color:#fb7185; font-size:0.82rem;">🟥 相手チーム（B）</div>
 
-            <div style="font-size:2.2rem; font-weight:900; margin:4px 0;" id="scoreTeamB">0</div>
+            <div style="font-size:2rem; font-weight:900; margin:2px 0;" id="scoreTeamB">0</div>
 
             <div class="btn-group" style="justify-content:center;">
 
@@ -3324,28 +3272,6 @@
 
         <div class="match-court-wrap" id="matchCourtVisual"></div>
 
-
-
-        <div class="summary-box" style="max-width:640px; margin:14px auto 0;">
-
-          <div style="font-weight:800; color:var(--accent-highlight); margin-bottom:6px;">📍 決定ショット・着地コース簡易分析（タップで記録）</div>
-
-          <div class="btn-group" style="margin-bottom:8px;">
-
-            <button class="btn btn-cyan-outline" onclick="recordShotLog('前衛ヘアピン/プッシュ')">前衛ネット前</button>
-
-            <button class="btn btn-cyan-outline" onclick="recordShotLog('左右ドライブ/レシーブ')">中盤ドライブ</button>
-
-            <button class="btn btn-cyan-outline" onclick="recordShotLog('後衛スマッシュ/カット')">後衛スマッシュ・カット</button>
-
-            <button class="btn" onclick="clearShotLogs()" style="margin-left:auto; font-size:0.74rem;">クリア</button>
-
-          </div>
-
-          <div id="shotLogSummaryText" style="font-size:0.8rem; color:#cbd5e1;">まだコース記録がありません。</div>
-
-        </div>
-
       </div>
 
     </section>
@@ -3354,7 +3280,7 @@
 
     <!-- =========================================================
 
-         TAB 6: 👤 複数人マイプロフィール管理（タップで即選択・追加・保存）
+         TAB 6: 👤 複数人メンバー管理（タップで即選択・追加・保存）
 
     ========================================================== -->
 
@@ -3364,17 +3290,17 @@
 
         <div class="card-header">
 
-          <div class="card-title">👥 登録メンバー（プロフィール）一覧 ➔ タップで切り替え</div>
+          <div class="card-title">👥 登録メンバー一覧（タップで即切り替え）</div>
 
-          <button class="btn btn-amber" onclick="createNewProfileMember()">➕ 新しいメンバーを追加</button>
+          <button class="btn btn-amber" onclick="createNewProfileMember()">➕ メンバーを追加</button>
 
         </div>
 
 
 
-        <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:12px;">
+        <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">
 
-          家族やチームメンバーなど複数人を登録できます。カードをタップすると、そのメンバーの身長・パワー基準・利き腕・<b>「種目別の過去ベスト記録」</b>・ラケット診断へ即座に切り替わります。
+          カードをタップすると、そのメンバーの身長・パワー基準・利き腕・<b>「種目別の過去ベスト記録」</b>・ラケット診断へ即座に切り替わります。
 
         </p>
 
@@ -3392,9 +3318,9 @@
 
             <div class="btn-group">
 
-              <button class="btn btn-emerald" onclick="saveCurrentProfileChanges()">💾 この内容で保存</button>
+              <button class="btn btn-emerald" onclick="saveCurrentProfileChanges()">💾 保存する</button>
 
-              <button class="btn btn-rose" onclick="deleteCurrentProfileMember()">🗑️ このメンバーを削除</button>
+              <button class="btn btn-rose" onclick="deleteCurrentProfileMember()">🗑️ 削除</button>
 
             </div>
 
@@ -3438,15 +3364,15 @@
 
             <div class="form-group">
 
-              <label>パワー・筋力の自信度（身長とは独立）</label>
+              <label>パワー・筋力の自信度</label>
 
               <select id="profPower">
 
-                <option value="low">控えめ（軽い操作性・飛距離サポート重視）</option>
+                <option value="low">控えめ（操作性・飛距離重視）</option>
 
-                <option value="mid" selected>標準（バランスよく振れる）</option>
+                <option value="mid" selected>標準（バランス重視）</option>
 
-                <option value="high">強い・パワーヒッター（スマッシュ球威重視）</option>
+                <option value="high">強い（スマッシュ球威重視）</option>
 
               </select>
 
@@ -3454,13 +3380,13 @@
 
             <div class="form-group">
 
-              <label>得意・目指すプレイスタイル</label>
+              <label>プレイスタイル</label>
 
               <select id="profStyle">
 
                 <option value="power">🔥 パワー＆スマッシュ連打型</option>
 
-                <option value="speed">⚡ スピード＆ドライブ・前衛レシーブ型</option>
+                <option value="speed">⚡ スピード＆ドライブ・前衛型</option>
 
                 <option value="control" selected>🎯 オールラウンド＆コントロール型</option>
 
@@ -3494,7 +3420,7 @@
 
     <!-- =========================================================
 
-         TAB 7: 📖 操作説明＆撮影ガイド
+         TAB 7: 📖 撮影ガイド（構え診断・初速・ストローク別カメラ位置）
 
     ========================================================== -->
 
@@ -3504,45 +3430,27 @@
 
         <div class="card-header">
 
-          <div class="card-title">📖 バドトレPRO 操作説明 ＆ iPad・スマホ撮影ガイド</div>
+          <div class="card-title">📖 目的別 ベストなiPad・スマホ設置アングル</div>
 
         </div>
 
 
 
-        <div class="split-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="split-grid" style="grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));">
 
           <div class="diagram-card">
 
-            <div style="font-weight:800; color:#fbbf24; margin-bottom:6px; font-size:0.94rem;">
+            <div style="font-weight:900; color:#fbbf24; margin-bottom:6px; font-size:0.88rem;">
 
-              ⚡ 2. 初速＆矢印リアクション ➔ 「正面（目の前）」がベスト！
+              🛡️「基本の構え診断」＆「⚡初速AI」➔【正面 2.5〜3.5m】
 
             </div>
 
-            <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">
+            <p style="font-size:0.76rem; color:var(--text-secondary);">
 
-              iPadやスマホ画面の「ネオンSVG矢印」を正面から見ながら、試合と同じ目線で抜重・飛び込みの一歩目を踏み出せます。
+              正面から全身（頭〜足首）を映すことで、<b>「ラケット（手首）が下がっていないか」「足幅（スタンス比）が肩幅の1.3〜1.6倍あるか」「無駄にピョンピョン跳ねていないか」</b>を正確に診断できます。
 
             </p>
-
-            <svg viewBox="0 0 460 175" style="width:100%; max-width:420px; height:auto;">
-
-              <rect x="10" y="10" width="440" height="155" rx="10" fill="#0f172a" stroke="#334155" stroke-width="2"/>
-
-              <rect x="35" y="65" width="85" height="44" rx="8" fill="#f59e0b"/>
-
-              <text x="77" y="92" fill="#000" font-size="12" font-weight="bold" text-anchor="middle">📱 正面設置</text>
-
-              <line x1="125" y1="87" x2="310" y2="87" stroke="#fbbf24" stroke-width="3" stroke-dasharray="5,5"/>
-
-              <text x="218" y="76" fill="#fbbf24" font-size="11" font-weight="bold" text-anchor="middle">正面 約2.5m〜3.5m</text>
-
-              <circle cx="345" cy="87" r="22" fill="#10b981"/>
-
-              <text x="345" y="92" fill="#022c22" font-size="11" font-weight="bold" text-anchor="middle">あなた</text>
-
-            </svg>
 
           </div>
 
@@ -3550,37 +3458,17 @@
 
           <div class="diagram-card">
 
-            <div style="font-weight:800; color:#38bdf8; margin-bottom:6px; font-size:0.94rem;">
+            <div style="font-weight:900; color:#38bdf8; margin-bottom:6px; font-size:0.88rem;">
 
-              🎥 3. AI骨格＆ベスト比較 ➔ 「斜め後ろ」がベスト！
+              💥「スマッシュ・クリア・ロブ・ヘアピン」➔【斜め後ろ 3〜4m】
 
             </div>
 
-            <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">
+            <p style="font-size:0.76rem; color:var(--text-secondary);">
 
-              利き腕側の斜め後ろ（約3〜4m）から全身を映すことで、自分の肩・膝に追従する「理想角度レーザー＆過去ベスト線」が重ならずに高精度で表示されます。
+              利き腕側の斜め後ろから全身を映すことで、自分の肩・膝から伸びる<b>「🎯理想打点レーザー（水色）」と「🏆過去ベスト線（ゴールド）」</b>が重ならず、スイング軌道アークも綺麗に描画されます。
 
             </p>
-
-            <svg viewBox="0 0 460 175" style="width:100%; max-width:420px; height:auto;">
-
-              <rect x="10" y="10" width="440" height="155" rx="10" fill="#0f172a" stroke="#334155" stroke-width="2"/>
-
-              <line x1="385" y1="20" x2="385" y2="155" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5,5"/>
-
-              <text x="418" y="90" fill="#94a3b8" font-size="11" text-anchor="middle" font-weight="bold">打球方向➡</text>
-
-              <circle cx="285" cy="65" r="22" fill="#10b981"/>
-
-              <text x="285" y="70" fill="#022c22" font-size="11" font-weight="bold" text-anchor="middle">あなた</text>
-
-              <rect x="45" y="105" width="90" height="42" rx="8" fill="#3b82f6"/>
-
-              <text x="90" y="130" fill="#fff" font-size="12" font-weight="bold" text-anchor="middle">📱 斜め後ろ</text>
-
-              <line x1="138" y1="120" x2="262" y2="73" stroke="#38bdf8" stroke-width="3" stroke-dasharray="5,5"/>
-
-            </svg>
 
           </div>
 
@@ -3600,7 +3488,7 @@
 
     /* =========================================================================
 
-       1. グローバル状態・スリープ防止（Wake Lock）・UIテーマ切替
+       1. グローバル状態・スリープ防止（Wake Lock）・全画面管理
 
     ========================================================================= */
 
@@ -3608,7 +3496,7 @@
 
       { id: "p1", name: "プレイヤー1 (メイン)", height: 165, category: "adult", power: "mid", style: "control", hand: "right" },
 
-      { id: "p2", name: "メンバー2 (スピード型)", height: 158, category: "junior_high", power: "low", style: "speed", hand: "right" },
+      { id: "p2", name: "メンバー2 (スピード)", height: 158, category: "junior_high", power: "low", style: "speed", hand: "right" },
 
       { id: "p3", name: "メンバー3 (ジュニア)", height: 145, category: "junior_elem", power: "low", style: "control", hand: "right" }
 
@@ -3644,7 +3532,7 @@
 
 
 
-    // 提案C：ディレイ再生ミラー用のリングバッファ
+    // ディレイ再生ミラー用バッファ
 
     let delayMirrorSeconds = 0;
 
@@ -3652,7 +3540,7 @@
 
 
 
-    // 修正⑥：練習中の画面スリープ防止（Screen Wake Lock API）
+    // 画面スリープ防止（Wake Lock API）
 
     let wakeLockSentinel = null;
 
@@ -3694,13 +3582,15 @@
 
       document.documentElement.setAttribute('data-theme', themeName);
 
-      localStorage.setItem('badtore_ui_theme_v70', themeName);
+      localStorage.setItem('badtore_ui_theme_v75', themeName);
 
     }
 
 
 
     function switchTab(tabId) {
+
+      exitAllFullscreens();
 
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
 
@@ -3722,8 +3612,6 @@
 
         updateShotCriteriaUI();
 
-        renderReferenceCompareCanvas();
-
       }
 
       if (tabId === 'tab-racket') renderRacketRecommendations('ALL');
@@ -3735,6 +3623,8 @@
     }
 
 
+
+    // 全画面表示：body.is-fullscreen-mode を連動させ、上部ヘッダー・タブとの重なりを100%防ぐ
 
     function toggleSmartFullscreen(elemId) {
 
@@ -3748,6 +3638,8 @@
 
         el.classList.remove('pseudo-fullscreen');
 
+        document.body.classList.remove('is-fullscreen-mode');
+
         return;
 
       }
@@ -3760,23 +3652,23 @@
 
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
 
+        document.body.classList.remove('is-fullscreen-mode');
+
         return;
 
       }
 
 
 
+      // iPhone/iPad で最も安定して1画面に収まる擬似フルスクリーン＋ネイティブ併用
+
+      el.classList.add('pseudo-fullscreen');
+
+      document.body.classList.add('is-fullscreen-mode');
+
       if (el.requestFullscreen) {
 
-        el.requestFullscreen().catch(() => el.classList.add('pseudo-fullscreen'));
-
-      } else if (el.webkitRequestFullscreen) {
-
-        try { el.webkitRequestFullscreen(); } catch (e) { el.classList.add('pseudo-fullscreen'); }
-
-      } else {
-
-        el.classList.add('pseudo-fullscreen');
+        el.requestFullscreen().catch(() => {});
 
       }
 
@@ -3784,9 +3676,39 @@
 
 
 
+    function exitAllFullscreens() {
+
+      document.querySelectorAll('.pseudo-fullscreen').forEach(el => el.classList.remove('pseudo-fullscreen'));
+
+      document.body.classList.remove('is-fullscreen-mode');
+
+      if (document.fullscreenElement && document.exitFullscreen) {
+
+        document.exitFullscreen().catch(() => {});
+
+      }
+
+    }
+
+
+
+    document.addEventListener('fullscreenchange', () => {
+
+      if (!document.fullscreenElement) {
+
+        document.querySelectorAll('.pseudo-fullscreen').forEach(el => el.classList.remove('pseudo-fullscreen'));
+
+        document.body.classList.remove('is-fullscreen-mode');
+
+      }
+
+    });
+
+
+
     /* =========================================================================
 
-       2. シャープなサイバーSVGネオン矢印ジェネレーター（絵文字ゼロ）
+       2. シャープなサイバーSVGネオン矢印ジェネレーター
 
     ========================================================================= */
 
@@ -3798,19 +3720,7 @@
 
           <svg viewBox="0 0 120 120">
 
-            <defs>
-
-              <linearGradient id="cyberReadyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-
-                <stop offset="0%" stop-color="#06b6d4" />
-
-                <stop offset="100%" stop-color="#10b981" />
-
-              </linearGradient>
-
-            </defs>
-
-            <polygon points="60,12 102,36 102,84 60,108 18,84 18,36" fill="none" stroke="url(#cyberReadyGrad)" stroke-width="4" stroke-dasharray="10,6" />
+            <polygon points="60,12 102,36 102,84 60,108 18,84 18,36" fill="none" stroke="#06b6d4" stroke-width="4" stroke-dasharray="10,6" />
 
             <circle cx="60" cy="60" r="18" fill="none" stroke="#38bdf8" stroke-width="3" />
 
@@ -3828,9 +3738,9 @@
 
           <svg viewBox="0 0 120 120">
 
-            <path d="M25,42 L60,72 L95,42" fill="none" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 12px #06b6d4);" />
+            <path d="M25,42 L60,72 L95,42" fill="none" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
 
-            <path d="M25,68 L60,98 L95,68" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 12px #10b981);" />
+            <path d="M25,68 L60,98 L95,68" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
 
           </svg>
 
@@ -3858,7 +3768,7 @@
 
       return `
 
-        <svg viewBox="0 0 120 120" style="transform: rotate(${deg}deg); filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.88));">
+        <svg viewBox="0 0 120 120" style="transform: rotate(${deg}deg); filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.85));">
 
           <defs>
 
@@ -3888,7 +3798,7 @@
 
     /* =========================================================================
 
-       3. 🔊 遅延ゼロ電子ビープ音 ＆ 音声合成（iOS/iPadOS対策済み）
+       3. 🔊 電子ビープ音 ＆ 音声合成
 
     ========================================================================= */
 
@@ -3976,7 +3886,7 @@
 
     /* =========================================================================
 
-       4. TAB 1: 🏃 声指示フットワーク（連続時120ms消灯フラッシュ・全画面比率完全補正）
+       4. TAB 1: 🏃 声指示フットワーク（連続時120ms消灯フラッシュ）
 
     ========================================================================= */
 
@@ -4086,7 +3996,7 @@
 
         const stage = document.getElementById('fwFullscreenStage');
 
-        if (!stage.classList.contains('pseudo-fullscreen') && !document.fullscreenElement) {
+        if (!stage.classList.contains('pseudo-fullscreen')) {
 
           toggleSmartFullscreen('fwFullscreenStage');
 
@@ -4265,8 +4175,6 @@
       const voiceMode = document.getElementById('fwVoiceMode').value;
 
 
-
-      // 修正②：同じ場所が連続したときは120ms消灯してからピカッと再点灯させることで2球目を明確化
 
       const activateChosenCell = () => {
 
@@ -4568,7 +4476,7 @@
 
         const stage = document.getElementById('arrowFullscreenStage');
 
-        if (!stage.classList.contains('pseudo-fullscreen') && !document.fullscreenElement) {
+        if (!stage.classList.contains('pseudo-fullscreen')) {
 
           toggleSmartFullscreen('arrowFullscreenStage');
 
@@ -4766,7 +4674,7 @@
 
     /* =========================================================================
 
-       6. 共有MediaPipeカメラエンジン（iPad 4:3 / スマホ 16:9 縦横比完全自動同期）
+       6. 共有MediaPipeカメラエンジン
 
     ========================================================================= */
 
@@ -4808,19 +4716,9 @@
 
 
 
-      const canvases = [
+      ['reflexCanvas', 'outputCanvas', 'drawCanvas'].forEach(id => {
 
-        document.getElementById('reflexCanvas'),
-
-        document.getElementById('outputCanvas'),
-
-        document.getElementById('drawCanvas')
-
-      ];
-
-
-
-      canvases.forEach(c => {
+        const c = document.getElementById(id);
 
         if (c && (c.width !== vw || c.height !== vh)) {
 
@@ -4874,11 +4772,9 @@
 
 
 
-      const isReflex = (mode === 'reflex');
+      const statusEl = document.getElementById(mode === 'reflex' ? 'reflexHudStatus' : 'poseHudStatus');
 
-      const statusEl = document.getElementById(isReflex ? 'reflexHudStatus' : 'poseHudStatus');
-
-      statusEl.textContent = "⏳ AIカメラ起動中...";
+      statusEl.textContent = "⏳ カメラ起動中...";
 
 
 
@@ -5024,7 +4920,7 @@
 
       if (activeCameraMode === 'reflex') {
 
-        btnRx.textContent = "⏹️ 初速AIカメラ停止（オフ）";
+        btnRx.textContent = "⏹️ カメラ停止";
 
         btnRx.className = "btn btn-rose";
 
@@ -5034,11 +4930,11 @@
 
         document.getElementById('reflexHudStatus').textContent =
 
-          `🟢 初速AI稼働中（${currentFacingMode === 'user' ? '内カメラ' : '外カメラ'}）`;
+          `🟢 初速AI稼働中 (${currentFacingMode === 'user' ? '内カメラ' : '外カメラ'})`;
 
       } else {
 
-        btnRx.textContent = "📷 初速AIカメラ起動（オン）";
+        btnRx.textContent = "📷 初速AIカメラ起動";
 
         btnRx.className = "btn btn-emerald";
 
@@ -5046,7 +4942,7 @@
 
         document.getElementById('reflexPlaceholder').style.display = "block";
 
-        document.getElementById('reflexHudStatus').textContent = "⚪ カメラ停止中";
+        document.getElementById('reflexHudStatus').textContent = "⚪ カメラ待機中";
 
       }
 
@@ -5054,7 +4950,7 @@
 
       if (activeCameraMode === 'pose') {
 
-        btnPose.textContent = "⏹️ AIカメラ停止";
+        btnPose.textContent = "⏹️ カメラ停止";
 
         btnPose.className = "btn btn-rose";
 
@@ -5064,7 +4960,7 @@
 
         document.getElementById('poseHudStatus').textContent =
 
-          isUploadedVideo ? "🎞️ 動画AI解析中" : (delayMirrorSeconds > 0 ? `⏪ ${delayMirrorSeconds}秒ディレイ再生中` : `🟢 骨格AI稼働中（${currentFacingMode === 'user' ? '内カメラ' : '外カメラ'}）`);
+          isUploadedVideo ? "🎞️ 動画解析中" : (delayMirrorSeconds > 0 ? `⏪ ${delayMirrorSeconds}秒遅れ再生中` : `🟢 AI稼働中 (${currentFacingMode === 'user' ? '内' : '外'})`);
 
       } else {
 
@@ -5076,7 +4972,7 @@
 
         document.getElementById('posePlaceholder').style.display = "block";
 
-        document.getElementById('poseHudStatus').textContent = "⚪ カメラ停止中";
+        document.getElementById('poseHudStatus').textContent = "⚪ カメラ待機中";
 
       }
 
@@ -5122,7 +5018,137 @@
 
     /* =========================================================================
 
-       7. TAB 2 (モード②): 📷 初速AIカメラ測定エンジン（1ms単位の真实骨格初動検知）
+       7. 🛡️ 構え（レディポジション）リアルタイム診断ヘルパー（Tab 2 & Tab 3 共通）
+
+    ========================================================================= */
+
+    function evaluateReadyStanceQuality(lm) {
+
+      const isLeft = userProfile.hand === 'left';
+
+      const shoulder = isLeft ? lm[11] : lm[12];
+
+      const wrist    = isLeft ? lm[15] : lm[16];
+
+      const hip      = isLeft ? lm[23] : lm[24];
+
+      const knee     = isLeft ? lm[25] : lm[26];
+
+      const ankle    = isLeft ? lm[27] : lm[28];
+
+
+
+      const midShY = (lm[11].y + lm[12].y) / 2;
+
+      const midHipY = (lm[23].y + lm[24].y) / 2;
+
+      const torsoLen = Math.max(0.12, Math.abs(midHipY - midShY));
+
+
+
+      // ① ラケット（手首）の高さ：みぞおち〜胸の高さ（hipより上）にあるか
+
+      const wristRelHeight = (midHipY - wrist.y) / torsoLen; // 0 = 股関節と同じ高さ, 0.5 = 胸の高さ, 1.0 = 肩の高さ
+
+      let wristScore = 100;
+
+      let wristIssue = null;
+
+      if (wristRelHeight < 0.18) {
+
+        wristScore = Math.max(35, Math.round(40 + wristRelHeight * 250));
+
+        wristIssue = "ラケット(手首)が下がっています";
+
+      }
+
+
+
+      // ② 膝のゆとり角度（理想は130°〜152°。162°以上は棒立ち）
+
+      const kneeDeg = calcAngle(hip, knee, ankle);
+
+      let kneeScore = 100;
+
+      let kneeIssue = null;
+
+      if (kneeDeg > 160) {
+
+        kneeScore = Math.max(40, 100 - (kneeDeg - 155) * 3);
+
+        kneeIssue = "膝が棒立ちです（少し緩めて）";
+
+      } else if (kneeDeg < 112) {
+
+        kneeScore = Math.max(50, 100 - (115 - kneeDeg) * 2);
+
+        kneeIssue = "腰が落ちすぎています";
+
+      }
+
+
+
+      // ③ スタンス幅比（肩幅に対する足首間の幅：理想は1.25〜1.65倍）
+
+      const shWidth = Math.max(0.08, Math.hypot(lm[11].x - lm[12].x, lm[11].y - lm[12].y));
+
+      const ankleWidth = Math.hypot(lm[27].x - lm[28].x, lm[27].y - lm[28].y);
+
+      const stanceRatio = Number((ankleWidth / shWidth).toFixed(2));
+
+      let stanceScore = 100;
+
+      let stanceIssue = null;
+
+      if (stanceRatio < 1.1) {
+
+        stanceScore = 65;
+
+        stanceIssue = "足幅が狭いです（肩幅より広く）";
+
+      } else if (stanceRatio > 1.95) {
+
+        stanceScore = 70;
+
+        stanceIssue = "足幅が広すぎます";
+
+      }
+
+
+
+      const totalReadyPt = Math.round(wristScore * 0.4 + kneeScore * 0.35 + stanceScore * 0.25);
+
+      const mainIssue = wristIssue || kneeIssue || stanceIssue || "構え良好（ラケット高・膝OK）";
+
+
+
+      return {
+
+        totalReadyPt,
+
+        wristScore,
+
+        kneeScore,
+
+        stanceScore,
+
+        kneeDeg,
+
+        stanceRatio,
+
+        isGood: !wristIssue && !kneeIssue && !stanceIssue,
+
+        mainIssue
+
+      };
+
+    }
+
+
+
+    /* =========================================================================
+
+       8. TAB 2 (モード②): 📷 初速AIカメラ測定（構え診断連動＋ミリ秒実測）
 
     ========================================================================= */
 
@@ -5132,7 +5158,7 @@
 
       cueTime: 0, baselineHip: null, baselineKneeDeg: 160,
 
-      resultsMs: [], stepTypes: [], bestMs: 9999, maxScorePt: 0, timerId: null
+      resultsMs: [], stepTypes: [], stanceScores: [], bestMs: 9999, timerId: null
 
     };
 
@@ -5144,7 +5170,7 @@
 
       if (activeCameraMode !== 'reflex') {
 
-        alert("先に「📷 初速AIカメラ起動（オン）」を押してカメラの前に構えてください！");
+        alert("先に「📷 初速AIカメラ起動」を押してカメラの前に構えてください！");
 
         return;
 
@@ -5162,6 +5188,8 @@
 
       rxState.stepTypes = [];
 
+      rxState.stanceScores = [];
+
       rxState.bestMs = 9999;
 
       rxState.active = true;
@@ -5174,7 +5202,7 @@
 
       document.getElementById('rxValAvgMs').textContent = `-- ms`;
 
-      document.getElementById('rxValScorePt').textContent = `-- / 100 pt`;
+      document.getElementById('rxValScorePt').textContent = `-- pt`;
 
       document.getElementById('rxSessionBadge').textContent = `🔴 測定中 (全${rxState.targetReps}回)`;
 
@@ -5226,7 +5254,7 @@
 
       mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：構えて待機...`;
 
-      subTxt.textContent = "ネオン矢印＋ピッ！が出た瞬間に一歩目を動かしてください";
+      subTxt.textContent = "ラケットを上げ、膝を軽く緩めて矢印を待ってください";
 
 
 
@@ -5290,9 +5318,37 @@
 
         const lm = results.poseLandmarks;
 
-        drawConnectors(ctx, lm, POSE_CONNECTIONS, { color: '#10b981', lineWidth: 3 });
+        const stanceEval = evaluateReadyStanceQuality(lm);
 
-        drawLandmarks(ctx, lm, { color: '#fbbf24', lineWidth: 2, radius: 4 });
+
+
+        // 構えのライブバッジ更新
+
+        const liveBadge = document.getElementById('reflexStanceLiveBadge');
+
+        if (stanceEval.isGood) {
+
+          liveBadge.style.background = '#10b981';
+
+          liveBadge.style.color = '#020617';
+
+          liveBadge.textContent = `🟢 ${stanceEval.mainIssue}`;
+
+        } else {
+
+          liveBadge.style.background = '#f59e0b';
+
+          liveBadge.style.color = '#020617';
+
+          liveBadge.textContent = `⚠️ ${stanceEval.mainIssue}`;
+
+        }
+
+
+
+        drawConnectors(ctx, lm, POSE_CONNECTIONS, { color: stanceEval.isGood ? '#10b981' : '#fbbf24', lineWidth: 3 });
+
+        drawLandmarks(ctx, lm, { color: '#38bdf8', lineWidth: 2, radius: 4 });
 
 
 
@@ -5300,15 +5356,17 @@
 
         const hipY = (lm[23].y + lm[24].y) / 2;
 
-        const shWidth = Math.hypot(lm[11].x - lm[12].x, lm[11].y - lm[12].y) || 0.2;
+        const midShY = (lm[11].y + lm[12].y) / 2;
 
-        const kneeDeg = calcAngle(lm[24], lm[26], lm[28]);
+        const torsoLen = Math.max(0.12, Math.abs(hipY - midShY));
+
+        const kneeDeg = stanceEval.kneeDeg;
 
 
 
         if (rxState.phase === 'ready_wait') {
 
-          rxState.baselineHip = { x: hipX, y: hipY };
+          rxState.baselineHip = { x: hipX, y: hipY, stancePt: stanceEval.totalReadyPt };
 
           rxState.baselineKneeDeg = kneeDeg;
 
@@ -5320,13 +5378,13 @@
 
           const sens = document.getElementById('rxSensitivity').value;
 
-          const thresh = sens === 'high' ? 0.085 : (sens === 'low' ? 0.16 : 0.115);
+          const thresh = sens === 'high' ? 0.075 : (sens === 'low' ? 0.14 : 0.10);
 
 
 
-          const dx = Math.abs(hipX - rxState.baselineHip.x) / shWidth;
+          const dx = Math.abs(hipX - rxState.baselineHip.x) / torsoLen;
 
-          const dy = (hipY - rxState.baselineHip.y) / shWidth;
+          const dy = (hipY - rxState.baselineHip.y) / torsoLen;
 
           const totalMove = Math.hypot(dx, dy);
 
@@ -5334,7 +5392,7 @@
 
 
 
-          if (totalMove > thresh || kneeChange >= 11) {
+          if (totalMove > thresh || kneeChange >= 9) {
 
             const reactionMs = Math.max(115, Math.round(performance.now() - rxState.cueTime));
 
@@ -5346,7 +5404,7 @@
 
             let detectedType = "抜重ステップ";
 
-            if (modeSetting === 'jump' || (modeSetting === 'auto' && dy < -0.04)) {
+            if (modeSetting === 'jump' || (modeSetting === 'auto' && dy < -0.035)) {
 
               detectedType = "飛び込みステップ";
 
@@ -5354,7 +5412,7 @@
 
 
 
-            recordSingleReflexResult(reactionMs, detectedType);
+            recordSingleReflexResult(reactionMs, detectedType, rxState.baselineHip.stancePt);
 
           }
 
@@ -5368,7 +5426,7 @@
 
 
 
-    function recordSingleReflexResult(ms, stepType) {
+    function recordSingleReflexResult(ms, stepType, stancePt) {
 
       rxState.currentRep++;
 
@@ -5376,15 +5434,19 @@
 
       rxState.stepTypes.push(stepType);
 
+      rxState.stanceScores.push(stancePt || 85);
+
       if (ms < rxState.bestMs) rxState.bestMs = ms;
 
 
 
       const avgMs = Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length);
 
-      const scorePt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
+      const avgStance = Math.round(rxState.stanceScores.reduce((a, b) => a + b, 0) / rxState.stanceScores.length);
 
-      if (scorePt > rxState.maxScorePt) rxState.maxScorePt = scorePt;
+      const speedPt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
+
+      const combinedPt = Math.round(speedPt * 0.7 + avgStance * 0.3);
 
 
 
@@ -5394,13 +5456,13 @@
 
       document.getElementById('rxValLastMs').textContent = `${ms} ms`;
 
-      document.getElementById('rxValBestMs').textContent = `最速ベスト: ${rxState.bestMs} ms`;
+      document.getElementById('rxValBestMs').textContent = `最速: ${rxState.bestMs} ms`;
 
       document.getElementById('rxValAvgMs').textContent = `${avgMs} ms`;
 
-      document.getElementById('rxValScorePt').textContent = `${scorePt} / 100 pt`;
+      document.getElementById('rxValScorePt').textContent = `${combinedPt} pt`;
 
-      document.getElementById('rxMaxScorePt').textContent = `MAX: ${rxState.maxScorePt} / 100 pt`;
+      document.getElementById('rxMaxScorePt').textContent = `構え安定: ${avgStance}%`;
 
 
 
@@ -5416,13 +5478,13 @@
 
       mainTxt.textContent = `${ms} ms！（${stepType}）`;
 
-      subTxt.textContent = "ナイスリアクション！構え直してください";
+      subTxt.textContent = `待機時の構え評価: ${stancePt}pt ｜ 次の合図に備えて構え直してください`;
 
       playBeep(1320, 90);
 
 
 
-      rxState.timerId = setTimeout(scheduleNextReflexRep, 1450);
+      rxState.timerId = setTimeout(scheduleNextReflexRep, 1500);
 
     }
 
@@ -5444,27 +5506,41 @@
 
       const avgMs = Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length);
 
-      const scorePt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
+      const avgStance = Math.round(rxState.stanceScores.reduce((a, b) => a + b, 0) / rxState.stanceScores.length);
+
+      const speedPt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
+
+      const combinedPt = Math.round(speedPt * 0.7 + avgStance * 0.3);
 
 
 
       let advice = avgMs <= 270
 
-        ? "非常に鋭い初動スピードです！ネオン矢印が出た瞬間にカカトが浮いて抜重・飛び出しができています。"
+        ? "非常に鋭い初動スピードです！合図の瞬間に抜重して一歩目が出ています。"
 
-        : "構えた際に膝が伸びきっていると初動が300msを超えやすくなります。合図の直前に軽く膝の力を抜く予備動作を意識しましょう！";
+        : "初動をさらに速くするには、待っている間に膝をロックせず（約140°）、合図の瞬間にフッと重心を抜く抜重を意識しましょう。";
+
+
+
+      let stanceAdvice = avgStance >= 85
+
+        ? "待機中のラケット高さと膝の構えも非常に安定しています。"
+
+        : "待機中にラケット（手首）が腰付近まで下がる、または膝が伸びきる場面がありました。胸の前でラケットを構え続けるとさらに初速が上がります！";
 
 
 
       document.getElementById('rxSummaryText').innerHTML = `
 
-        <div style="font-weight:800; color:#34d399; margin-bottom:6px;">
+        <div style="font-weight:800; color:#34d399; margin-bottom:5px;">
 
-          🏆 全${rxState.targetReps}回 平均反応タイム: ${avgMs} ms ｜ 初速AIスコア: ${scorePt} / 100 pt（最速 ${rxState.bestMs} ms）
+          🏆 平均反応: ${avgMs} ms（最速 ${rxState.bestMs} ms）｜ 構え安定度: ${avgStance} pt ｜ 総合: ${combinedPt} pt
 
         </div>
 
-        <div>・<b>AIコーチ総評:</b> ${advice}</div>
+        <div>・<b>初速分析:</b> ${advice}</div>
+
+        <div>・<b>構え診断:</b> ${stanceAdvice}</div>
 
       `;
 
@@ -5490,11 +5566,21 @@
 
     /* =========================================================================
 
-       8. TAB 3: 🎥 AI骨格・身体追従レーザーガイド・ディレイ再生・過去ベスト比較
+       9. TAB 3: 🎥 構え（レディポジション）＆ 全10種目AI骨格解析エンジン
 
     ========================================================================= */
 
     const SHOT_IDEAL_MODELS = {
+
+      ready_stance: {
+
+        title: "基本の構え・レディポジション診断",
+
+        focus: "stance", idealShoulder: 55, idealElbow: 105, idealKnee: 140, idealStance: 1.45,
+
+        desc: "🛡️ <b>基本の構え100pt基準:</b> ①ラケット(手首)をみぞおちより上でキープ、②膝角度132°〜150°＆足幅が肩幅の約1.4倍、③無駄な上下バウンドのない静止安定度を採点します。"
+
+      },
 
       smash: {
 
@@ -5502,7 +5588,7 @@
 
         focus: "overhead", idealShoulder: 145, idealElbow: 162, idealKnee: 132,
 
-        desc: "🎯 <b>スマッシュ100pt基準:</b> 肩挙上角140°以上（高打点）・肘伸展155°以上・腕振速度100pt到達で満点。"
+        desc: "🎯 <b>スマッシュ100pt基準:</b> 肩挙上角140°以上（高打点）・インパクト肘伸展155°以上・体幹長正規化スイング速度で採点します。"
 
       },
 
@@ -5512,7 +5598,7 @@
 
         focus: "overhead", idealShoulder: 148, idealElbow: 165, idealKnee: 130,
 
-        desc: "🎯 <b>ハイクリア100pt基準:</b> 深いテイクバック（肘90°以下）からの最高打点（肩145°以上）と下半身の伸び上がりを評価。"
+        desc: "🎯 <b>ハイクリア100pt基準:</b> 深いテイクバックからの最高打点（肩145°以上）と下半身のタメ・伸び上がりを評価します。"
 
       },
 
@@ -5522,7 +5608,7 @@
 
         focus: "overhead", idealShoulder: 138, idealElbow: 148, idealKnee: 136,
 
-        desc: "🎯 <b>ドロップ100pt基準:</b> クリアと同じ高い準備姿勢（肩135°以上）から体幹がブレない減速コントロールを評価。"
+        desc: "🎯 <b>ドロップ100pt基準:</b> クリアと同じ高い準備打点（肩135°以上）から体幹軸がブレない減速コントロールを評価します。"
 
       },
 
@@ -5532,7 +5618,7 @@
 
         focus: "lower", idealShoulder: 95, idealElbow: 138, idealKnee: 122,
 
-        desc: "🎯 <b>レシーブ＆ロブ100pt基準:</b> 膝の沈み込み角120°〜132°の深い腰落としと、肘を前に出したラケットワークを重点評価。"
+        desc: "🎯 <b>レシーブ＆ロブ100pt基準:</b> 膝の沈み込み角120°〜132°の深い腰落としと、肘を前に出したラケットワークを重点評価します。"
 
       },
 
@@ -5542,7 +5628,7 @@
 
         focus: "lower", idealShoulder: 105, idealElbow: 132, idealKnee: 130,
 
-        desc: "🎯 <b>ドライブ＆プッシュ100pt基準:</b> 肘を体の前に保ち（約110°〜135°）、コンパクトに弾く初速を評価。"
+        desc: "🎯 <b>ドライブ＆プッシュ100pt基準:</b> 肘を体の前に保ち（約110°〜135°）、コンパクトに弾く初速を評価します。"
 
       },
 
@@ -5552,7 +5638,7 @@
 
         focus: "lower", idealShoulder: 85, idealElbow: 115, idealKnee: 124,
 
-        desc: "🎯 <b>リアクション［抜重］100pt基準:</b> 瞬間にフッと重心を落とす膝角度（120°〜130°）と直後の初動速度を採点。"
+        desc: "🎯 <b>リアクション［抜重］100pt基準:</b> 瞬間にフッと重心を落とす膝角度（120°〜130°）と直後の初動速度を採点します。"
 
       },
 
@@ -5562,7 +5648,7 @@
 
         focus: "lower", idealShoulder: 90, idealElbow: 120, idealKnee: 120,
 
-        desc: "🎯 <b>リアクション［飛び込み］100pt基準:</b> 両足着地時の股関節・膝の深いタメ（120°前後）と蹴り出し速度を採点。"
+        desc: "🎯 <b>リアクション［飛び込み］100pt基準:</b> 両足着地時の股関節・膝の深いタメ（120°前後）と蹴り出し速度を採点します。"
 
       },
 
@@ -5572,7 +5658,7 @@
 
         focus: "overhead", idealShoulder: 142, idealElbow: 155, idealKnee: 134,
 
-        desc: "🎯 <b>カット・リバースカット100pt基準:</b> スマッシュと見分けがつかない高打点（肩140°以上）とスイング初速で相手を騙せているかを評価。"
+        desc: "🎯 <b>カット100pt基準:</b> スマッシュと見分けがつかない高打点（肩140°以上）とスイング初速で相手を騙せているかを評価します。"
 
       },
 
@@ -5582,7 +5668,7 @@
 
         focus: "lower", idealShoulder: 92, idealElbow: 145, idealKnee: 118,
 
-        desc: "🎯 <b>ヘアピン・クロスヘアピン100pt基準:</b> 深いランジ姿勢（膝115°〜130°）と頭が突っ込まない体幹軸・肘の伸び（140°前後）を評価。"
+        desc: "🎯 <b>クロスヘアピン100pt基準:</b> 深いランジ姿勢（膝115°〜130°）と頭が突っ込まない体幹軸・肘の前方安定度を評価します。"
 
       }
 
@@ -5600,7 +5686,11 @@
 
       speedPt: 0, maxSpeedPt: 0,
 
+      stanceRatio: 1.35, stabilityPt: 90, wristKeepPt: 90,
+
       coreTiltDeg: 0, confidencePct: 0,
+
+      hipYHistory: [],
 
       prevWrist: null, prevHipY: null, prevTime: 0,
 
@@ -5649,130 +5739,6 @@
         btn.textContent = "🌈 軌道アーク: OFF";
 
       }
-
-    }
-
-
-
-    function toggleDualComparePanel() {
-
-      const wrap = document.getElementById('dualCompareWrap');
-
-      const btn = document.getElementById('btnCompareDual');
-
-      const isHidden = (wrap.style.display === 'none' || !wrap.style.display);
-
-      wrap.style.display = isHidden ? 'grid' : 'none';
-
-      if (isHidden) {
-
-        btn.classList.add('active');
-
-        btn.textContent = "🌓 2画面・過去ベスト比較: ON";
-
-        renderReferenceCompareCanvas();
-
-      } else {
-
-        btn.classList.remove('active');
-
-        btn.textContent = "🌓 2画面・過去ベスト比較: OFF";
-
-      }
-
-    }
-
-
-
-    function loadCompareRefVideo(e) {
-
-      const file = e.target.files[0];
-
-      if (!file) return;
-
-      document.getElementById('dualLeftSourceSelect').value = 'video';
-
-      const v = document.getElementById('refCompareVideo');
-
-      v.src = URL.createObjectURL(file);
-
-      v.play();
-
-      renderReferenceCompareCanvas();
-
-    }
-
-
-
-    // 提案B：2画面同時コマ送り・スロー再生
-
-    function stepVideosFrame(deltaSec) {
-
-      const vMain = document.getElementById('sharedInputVideo');
-
-      const vRef = document.getElementById('refCompareVideo');
-
-      if (isUploadedVideo && vMain) {
-
-        vMain.pause();
-
-        vMain.currentTime = Math.max(0, vMain.currentTime + deltaSec);
-
-        poseInstance.send({ image: vMain });
-
-      }
-
-      if (vRef && vRef.src) {
-
-        vRef.pause();
-
-        vRef.currentTime = Math.max(0, vRef.currentTime + deltaSec);
-
-      }
-
-    }
-
-
-
-    function toggleSyncVideosPlay() {
-
-      const vMain = document.getElementById('sharedInputVideo');
-
-      const vRef = document.getElementById('refCompareVideo');
-
-      const shouldPlay = (vMain && vMain.paused) || (vRef && vRef.src && vRef.paused);
-
-      if (vMain && (isUploadedVideo || activeMediaStream)) {
-
-        if (shouldPlay) vMain.play(); else vMain.pause();
-
-      }
-
-      if (vRef && vRef.src) {
-
-        if (shouldPlay) vRef.play(); else vRef.pause();
-
-      }
-
-    }
-
-
-
-    function toggleSlowMotionRate(btnEl) {
-
-      const vMain = document.getElementById('sharedInputVideo');
-
-      const vRef = document.getElementById('refCompareVideo');
-
-      const currentRate = (vRef && vRef.src ? vRef.playbackRate : (vMain ? vMain.playbackRate : 1.0));
-
-      const nextRate = currentRate === 1.0 ? 0.5 : (currentRate === 0.5 ? 0.25 : 1.0);
-
-      if (vMain) vMain.playbackRate = nextRate;
-
-      if (vRef) vRef.playbackRate = nextRate;
-
-      if (btnEl) btnEl.textContent = `🐢 速度 ${nextRate}x`;
 
     }
 
@@ -5834,7 +5800,7 @@
 
         video.pause();
 
-        document.getElementById('poseHudStatus').textContent = "⏸️ 一時停止中（線引き確認可）";
+        document.getElementById('poseHudStatus').textContent = "⏸️ 一時停止中（線引き可）";
 
       }
 
@@ -5922,25 +5888,25 @@
 
           confEl.style.color = '#10b981';
 
-          confEl.textContent = `🎯 AI認識精度: ${confPct}% (良好)`;
+          confEl.textContent = `🎯 認識精度: ${confPct}%`;
 
         } else if (confPct >= 55) {
 
           confEl.style.color = '#fbbf24';
 
-          confEl.textContent = `⚠️ AI認識精度: ${confPct}%`;
+          confEl.textContent = `⚠️ 認識精度: ${confPct}%`;
 
         } else {
 
           confEl.style.color = '#f43f5e';
 
-          confEl.textContent = `🔴 AI認識精度: ${confPct}% (全身を映してください)`;
+          confEl.textContent = `🔴 全身を映してください (${confPct}%)`;
 
         }
 
 
 
-        // 体幹センター軸の描画とブレ角計算
+        // 体幹センター軸と体幹長（カメラの向きに左右されない基準長）の算出
 
         const midShX = (lm[11].x + lm[12].x) / 2;
 
@@ -5949,6 +5915,8 @@
         const midHipX = (lm[23].x + lm[24].x) / 2;
 
         const midHipY = (lm[23].y + lm[24].y) / 2;
+
+        const torsoLength = Math.max(0.14, Math.hypot(midShX - midHipX, midShY - midHipY));
 
         const tiltRad = Math.atan2(midShX - midHipX, midHipY - midShY);
 
@@ -5974,13 +5942,13 @@
 
 
 
-        // スイング軌道アーク残像の描画
+        // スイング軌道アークの描画
 
         if (swingArcEnabled && wrist && (wrist.visibility || 0) > 0.5) {
 
           wristArcTrail.push({ x: wrist.x * canvas.width, y: wrist.y * canvas.height });
 
-          if (wristArcTrail.length > 26) wristArcTrail.shift();
+          if (wristArcTrail.length > 24) wristArcTrail.shift();
 
           if (wristArcTrail.length > 2) {
 
@@ -5998,17 +5966,11 @@
 
             ctx.strokeStyle = '#fbbf24';
 
-            ctx.lineWidth = 5;
+            ctx.lineWidth = 4;
 
             ctx.lineCap = 'round';
 
-            ctx.shadowColor = '#f59e0b';
-
-            ctx.shadowBlur = 10;
-
             ctx.stroke();
-
-            ctx.shadowBlur = 0;
 
           }
 
@@ -6064,11 +6026,37 @@
 
 
 
+          // 構え診断用：スタンス幅比・手首高さ・上下バウンド静止安定度
+
+          const stanceEval = evaluateReadyStanceQuality(lm);
+
+          aiMetrics.stanceRatio = stanceEval.stanceRatio;
+
+          aiMetrics.wristKeepPt = stanceEval.wristScore;
+
+
+
+          aiMetrics.hipYHistory.push(midHipY / torsoLength);
+
+          if (aiMetrics.hipYHistory.length > 20) aiMetrics.hipYHistory.shift();
+
+          if (aiMetrics.hipYHistory.length >= 6) {
+
+            const meanY = aiMetrics.hipYHistory.reduce((a, b) => a + b, 0) / aiMetrics.hipYHistory.length;
+
+            const maxDev = Math.max(...aiMetrics.hipYHistory.map(v => Math.abs(v - meanY)));
+
+            // 無駄な上下バウンドが少ないほど100ptに近い
+
+            aiMetrics.stabilityPt = Math.min(100, Math.max(40, Math.round(105 - maxDev * 320)));
+
+          }
+
+
+
+          // 体幹長（torsoLength）で正規化した角度非依存のスイング速度計算
+
           const now = performance.now();
-
-          const shoulderWidth = Math.hypot((lm[11].x - lm[12].x), (lm[11].y - lm[12].y)) || 0.18;
-
-
 
           if (aiMetrics.prevWrist && aiMetrics.prevTime > 0) {
 
@@ -6078,19 +6066,17 @@
 
               const wristDist = Math.hypot(wrist.x - aiMetrics.prevWrist.x, wrist.y - aiMetrics.prevWrist.y);
 
-              const hipDropSpeed = Math.abs(hip.y - (aiMetrics.prevHipY || hip.y)) / dt;
+              const hipDropSpeed = Math.abs(midHipY - (aiMetrics.prevHipY || midHipY)) / (torsoLength * dt);
 
 
 
-              if (wristDist / shoulderWidth < 2.2) {
+              if (wristDist / torsoLength < 2.5) {
 
                 let profileMultiplier = 1.0;
 
-                if (userProfile.height < 150) profileMultiplier += 0.15;
+                if (userProfile.height < 150) profileMultiplier += 0.14;
 
-                if (userProfile.power === 'low') profileMultiplier += 0.12;
-
-                if (userProfile.power === 'high') profileMultiplier -= 0.08;
+                if (userProfile.power === 'low') profileMultiplier += 0.10;
 
 
 
@@ -6098,13 +6084,13 @@
 
                 if (shotType.startsWith('reaction_')) {
 
-                  rawSpeedPt = Math.min(100, Math.round((hipDropSpeed * 62 + (wristDist / dt) * 11) * profileMultiplier));
+                  rawSpeedPt = Math.min(100, Math.round((hipDropSpeed * 22 + (wristDist / (torsoLength * dt)) * 6) * profileMultiplier));
 
                 } else {
 
-                  const normVel = (wristDist / shoulderWidth) / dt;
+                  const normVel = (wristDist / torsoLength) / dt;
 
-                  rawSpeedPt = Math.min(100, Math.round(normVel * 11.2 * profileMultiplier));
+                  rawSpeedPt = Math.min(100, Math.round(normVel * 10.5 * profileMultiplier));
 
                 }
 
@@ -6124,7 +6110,7 @@
 
           aiMetrics.prevWrist = { x: wrist.x, y: wrist.y };
 
-          aiMetrics.prevHipY = hip.y;
+          aiMetrics.prevHipY = midHipY;
 
           aiMetrics.prevTime = now;
 
@@ -6134,7 +6120,13 @@
 
 
 
-          const frameComposite = aiMetrics.shoulderPt * 0.4 + aiMetrics.kneePt * 0.3 + aiMetrics.elbowPt * 0.3;
+          const frameComposite = shotType === 'ready_stance'
+
+            ? (aiMetrics.wristKeepPt * 0.4 + aiMetrics.kneePt * 0.35 + aiMetrics.stabilityPt * 0.25)
+
+            : (aiMetrics.shoulderPt * 0.4 + aiMetrics.kneePt * 0.3 + aiMetrics.elbowPt * 0.3);
+
+
 
           if (frameComposite >= aiMetrics.bestFrameScore) {
 
@@ -6146,7 +6138,7 @@
 
 
 
-          updatePoseMetricsUI();
+          updatePoseMetricsUI(shotType);
 
         }
 
@@ -6166,11 +6158,9 @@
 
 
 
-        // 提案A：自分の肩・膝にピタッと追従する「理想角度＆過去ベストレーザーガイド」
-
         if (ghostMode === 'body_laser') {
 
-          drawBodyAttachedLaserGuide(ctx, canvas.width, canvas.height, shotType, shoulder, elbow, hip, knee, ankle);
+          drawBodyAttachedLaserGuide(ctx, canvas.width, canvas.height, shotType, lm, shoulder, elbow, wrist, hip, knee);
 
         }
 
@@ -6178,7 +6168,7 @@
 
 
 
-      // 提案C：ディレイ再生ミラーがON（3秒/5秒）の場合はリングバッファ経由で遅延描画
+      // ディレイ再生ミラー処理
 
       if (delayMirrorSeconds > 0 && !isUploadedVideo) {
 
@@ -6206,15 +6196,15 @@
 
         } else {
 
-          ctx.fillStyle = 'rgba(5, 9, 20, 0.75)';
+          ctx.fillStyle = 'rgba(5, 9, 20, 0.8)';
 
-          ctx.fillRect(14, canvas.height - 46, 330, 32);
+          ctx.fillRect(10, canvas.height - 42, 290, 30);
 
           ctx.fillStyle = '#fbbf24';
 
-          ctx.font = 'bold 13px sans-serif';
+          ctx.font = 'bold 12px sans-serif';
 
-          ctx.fillText(`⏳ ${delayMirrorSeconds}秒ディレイ映像をバッファ中...`, 22, canvas.height - 25);
+          ctx.fillText(`⏳ ${delayMirrorSeconds}秒ディレイ映像を準備中...`, 18, canvas.height - 22);
 
         }
 
@@ -6228,9 +6218,9 @@
 
 
 
-    // 🎯 提案A：立ち位置がどこでも自分の肩・膝から理想ラインと過去ベストラインが出るレーザーガイド
+    // 🎯 身体追従レーザーガイド（構え時はラケット高さライン＆理想スタンス幅ガイド、ストローク時は理想打点＆膝角）
 
-    function drawBodyAttachedLaserGuide(ctx, w, h, shotType, shoulder, elbow, hip, knee, ankle) {
+    function drawBodyAttachedLaserGuide(ctx, w, h, shotType, lm, shoulder, elbow, wrist, hip, knee) {
 
       const model = SHOT_IDEAL_MODELS[shotType] || SHOT_IDEAL_MODELS.smash;
 
@@ -6240,7 +6230,91 @@
 
       ctx.save();
 
-      if (model.focus === 'overhead' && shoulder && hip) {
+
+
+      if (model.focus === 'stance') {
+
+        // 🛡️ 構えモード専用ガイド：①みぞおちのラケット最低維持ライン ＋ ②理想スタンス幅（肩幅の1.4倍）マーカー
+
+        const chestGuideY = ((shoulder.y * 0.35 + hip.y * 0.65) * h);
+
+        const wristY = wrist.y * h;
+
+        const isWristOk = wristY <= chestGuideY;
+
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(w * 0.15, chestGuideY);
+
+        ctx.lineTo(w * 0.85, chestGuideY);
+
+        ctx.strokeStyle = isWristOk ? '#10b981' : '#f43f5e';
+
+        ctx.lineWidth = 3;
+
+        ctx.setLineDash([8, 5]);
+
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+
+
+
+        ctx.fillStyle = 'rgba(5, 9, 20, 0.86)';
+
+        ctx.fillRect(w * 0.15, chestGuideY - 24, 235, 20);
+
+        ctx.fillStyle = isWristOk ? '#10b981' : '#fb7185';
+
+        ctx.font = 'bold 11px sans-serif';
+
+        ctx.fillText(isWristOk ? '🟢 ラケット高さOK (この線より上)' : '⚠️ ラケットをこの線より上に上げて！', w * 0.15 + 6, chestGuideY - 10);
+
+
+
+        // 足元の理想スタンス幅マーカー（肩幅×1.45倍）
+
+        const midAnkleX = ((lm[27].x + lm[28].x) / 2) * w;
+
+        const midAnkleY = ((lm[27].y + lm[28].y) / 2) * h;
+
+        const shPx = Math.hypot((lm[11].x - lm[12].x) * w, (lm[11].y - lm[12].y) * h);
+
+        const idealHalfSpan = (shPx * 1.45) / 2;
+
+
+
+        ctx.strokeStyle = '#06b6d4';
+
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+
+        ctx.moveTo(midAnkleX - idealHalfSpan, midAnkleY - 15);
+
+        ctx.lineTo(midAnkleX - idealHalfSpan, midAnkleY + 15);
+
+        ctx.moveTo(midAnkleX + idealHalfSpan, midAnkleY - 15);
+
+        ctx.lineTo(midAnkleX + idealHalfSpan, midAnkleY + 15);
+
+        ctx.stroke();
+
+
+
+        ctx.fillStyle = 'rgba(5, 9, 20, 0.86)';
+
+        ctx.fillRect(midAnkleX - 85, midAnkleY + 16, 170, 20);
+
+        ctx.fillStyle = '#38bdf8';
+
+        ctx.fillText(`🎯理想足幅 1.45倍 (現在 ${aiMetrics.stanceRatio}倍)`, midAnkleX - 78, midAnkleY + 30);
+
+
+
+      } else if (model.focus === 'overhead' && shoulder && hip) {
 
         const sx = shoulder.x * w;
 
@@ -6249,8 +6323,6 @@
         const armLen = Math.hypot((elbow.x - shoulder.x) * w, (elbow.y - shoulder.y) * h) * 1.65 || 110;
 
 
-
-        // 胴体下方向ベクトルを基準に理想挙上角（例:145°）方向を計算
 
         const trunkAngle = Math.atan2((hip.y - shoulder.y) * h, (hip.x - shoulder.x) * w);
 
@@ -6265,8 +6337,6 @@
         const iy = sy + Math.sin(idealRad) * armLen;
 
 
-
-        // シアンの理想打点レーザー
 
         ctx.beginPath();
 
@@ -6286,19 +6356,17 @@
 
 
 
-        ctx.fillStyle = 'rgba(5, 9, 20, 0.85)';
+        ctx.fillStyle = 'rgba(5, 9, 20, 0.86)';
 
-        ctx.fillRect(ix - 55, iy - 26, 135, 22);
+        ctx.fillRect(ix - 55, iy - 24, 130, 20);
 
         ctx.fillStyle = '#38bdf8';
 
         ctx.font = 'bold 11px sans-serif';
 
-        ctx.fillText(`🎯理想打点 ${model.idealShoulder}°`, ix - 50, iy - 11);
+        ctx.fillText(`🎯理想打点 ${model.idealShoulder}°`, ix - 50, iy - 10);
 
 
-
-        // 過去ベストがあればゴールド破線で同時表示
 
         if (bestRec && bestRec.maxSh) {
 
@@ -6328,13 +6396,11 @@
 
           ctx.fillStyle = '#fbbf24';
 
-          ctx.fillText(`🏆自己ベスト ${bestRec.maxSh}°`, bx - 50, by + 16);
+          ctx.fillText(`🏆自己ベスト ${bestRec.maxSh}°`, bx - 50, by + 15);
 
         }
 
-      } else if (knee && hip && ankle) {
-
-        // レシーブ・ロブ・ヘアピン・抜重時は自分の膝にターゲットゲージを表示
+      } else if (knee) {
 
         const kx = knee.x * w;
 
@@ -6346,7 +6412,7 @@
 
         ctx.beginPath();
 
-        ctx.arc(kx, ky, 26, 0, Math.PI * 2);
+        ctx.arc(kx, ky, 24, 0, Math.PI * 2);
 
         ctx.strokeStyle = isGoodBend ? '#10b981' : '#fbbf24';
 
@@ -6362,19 +6428,19 @@
 
         ctx.fillStyle = 'rgba(5, 9, 20, 0.88)';
 
-        ctx.fillRect(kx + 28, ky - 22, 165, 38);
+        ctx.fillRect(kx + 26, ky - 20, 155, 36);
 
         ctx.fillStyle = isGoodBend ? '#10b981' : '#fbbf24';
 
         ctx.font = 'bold 11px sans-serif';
 
-        ctx.fillText(`🎯目標膝角 ${model.idealKnee}° (現在 ${aiMetrics.kneeDeg}°)`, kx + 33, ky - 6);
+        ctx.fillText(`🎯目標膝角 ${model.idealKnee}° (現在 ${aiMetrics.kneeDeg}°)`, kx + 30, ky - 5);
 
         if (bestRec && bestRec.minKn) {
 
           ctx.fillStyle = '#fde047';
 
-          ctx.fillText(`🏆自己ベスト最深: ${bestRec.minKn}°`, kx + 33, ky + 10);
+          ctx.fillText(`🏆自己ベスト: ${bestRec.minKn}°`, kx + 30, ky + 11);
 
         }
 
@@ -6398,7 +6464,7 @@
 
         ctx.font = 'bold 12px sans-serif';
 
-        ctx.fillText('🏆 この種目の過去ベストはまだ保存されていません（10秒測定で自動保存されます）', 14, h - 16);
+        ctx.fillText('🏆 この種目の過去ベストはまだ未記録です（10秒測定で自動保存）', 12, h - 14);
 
         ctx.restore();
 
@@ -6410,129 +6476,17 @@
 
       ctx.save();
 
-      drawConnectors(ctx, rec.landmarks, POSE_CONNECTIONS, { color: 'rgba(251, 191, 36, 0.58)', lineWidth: 4 });
+      drawConnectors(ctx, rec.landmarks, POSE_CONNECTIONS, { color: 'rgba(251, 191, 36, 0.6)', lineWidth: 4 });
 
-      drawLandmarks(ctx, rec.landmarks, { color: 'rgba(245, 158, 11, 0.7)', lineWidth: 1, radius: 4 });
+      drawLandmarks(ctx, rec.landmarks, { color: 'rgba(245, 158, 11, 0.75)', lineWidth: 1, radius: 4 });
 
       ctx.fillStyle = 'rgba(251, 191, 36, 0.95)';
 
       ctx.font = 'bold 12px sans-serif';
 
-      ctx.fillText(`🏆 過去ベスト骨格重ね表示中 (${rec.score}pt / 打点${rec.maxSh}° / 膝${rec.minKn}°)`, 14, h - 16);
+      ctx.fillText(`🏆 過去ベスト骨格重ね表示中 (${rec.score}pt)`, 12, h - 14);
 
       ctx.restore();
-
-    }
-
-
-
-    function renderReferenceCompareCanvas() {
-
-      const shotType = document.getElementById('shotTypeSelect').value;
-
-      const sourceMode = document.getElementById('dualLeftSourceSelect').value;
-
-      const canvas = document.getElementById('refCompareCanvas');
-
-      const video = document.getElementById('refCompareVideo');
-
-      const compareBox = document.getElementById('bestRecordCompareBox');
-
-      const model = SHOT_IDEAL_MODELS[shotType] || SHOT_IDEAL_MODELS.smash;
-
-      const bestRec = getPersonalBestRecord(activeProfileId, shotType);
-
-
-
-      const pbTag = document.getElementById('pbRecordTag');
-
-      if (bestRec) {
-
-        pbTag.textContent = `🏆 過去ベスト: ${bestRec.score} pt (${bestRec.date})`;
-
-      } else {
-
-        pbTag.textContent = `🏆 過去ベスト: 未記録`;
-
-      }
-
-
-
-      if (compareBox) {
-
-        compareBox.innerHTML = `
-
-          <div>・<b>種目:</b> ${model.title}</div>
-
-          <div>・<b>🎯 理想ターゲット基準:</b> 肩挙上 ${model.idealShoulder}° / 肘 ${model.idealElbow}° / 膝タメ ${model.idealKnee}°</div>
-
-          <div>・<b>🏆 自分の過去ベスト:</b> ${bestRec ? `<span style="color:#34d399; font-weight:900;">${bestRec.score} pt</span>（肩 ${bestRec.maxSh}° / 肘 ${bestRec.maxEl}° / 膝 ${bestRec.minKn}° / 速度 ${bestRec.maxSp}pt）` : 'まだ記録がありません（10秒測定で自動保存）'}</div>
-
-        `;
-
-      }
-
-
-
-      if (!canvas) return;
-
-      if (sourceMode === 'video') {
-
-        canvas.style.display = 'none';
-
-        video.style.display = 'block';
-
-        return;
-
-      }
-
-      canvas.style.display = 'block';
-
-      video.style.display = 'none';
-
-
-
-      const ctx = canvas.getContext('2d');
-
-      const w = canvas.width;
-
-      const h = canvas.height;
-
-      ctx.clearRect(0, 0, w, h);
-
-
-
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
-
-      ctx.lineWidth = 1;
-
-      for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-
-      for (let y = 0; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-
-
-
-      if (bestRec && bestRec.landmarks) {
-
-        drawConnectors(ctx, bestRec.landmarks, POSE_CONNECTIONS, { color: '#fbbf24', lineWidth: 4 });
-
-        drawLandmarks(ctx, bestRec.landmarks, { color: '#10b981', lineWidth: 2, radius: 5 });
-
-        ctx.fillStyle = '#fbbf24';
-
-        ctx.font = 'bold 14px sans-serif';
-
-        ctx.fillText(`🏆 ${userProfile.name}の過去ベスト骨格 (${bestRec.score}pt)`, 14, h - 14);
-
-      } else {
-
-        ctx.fillStyle = '#94a3b8';
-
-        ctx.font = 'bold 13px sans-serif';
-
-        ctx.fillText('🏆 10秒精密測定を行うと、ベスト時のあなたの骨格がここに保存されます', 18, h / 2);
-
-      }
 
     }
 
@@ -6542,7 +6496,17 @@
 
       const model = SHOT_IDEAL_MODELS[shotType] || SHOT_IDEAL_MODELS.smash;
 
-      if (model.focus === 'overhead') {
+      if (model.focus === 'stance') {
+
+        aiMetrics.shoulderPt = aiMetrics.wristKeepPt;
+
+        aiMetrics.elbowPt = Math.min(100, Math.max(45, 100 - Math.abs(105 - elbowDeg)));
+
+        const diffKnee = Math.abs(model.idealKnee - kneeDeg);
+
+        aiMetrics.kneePt = Math.max(35, Math.min(100, 100 - Math.round(diffKnee * 1.5)));
+
+      } else if (model.focus === 'overhead') {
 
         aiMetrics.shoulderPt = Math.min(100, Math.max(25, Math.round((shoulderDeg / model.idealShoulder) * 100)));
 
@@ -6598,13 +6562,13 @@
 
         ctx.beginPath();
 
-        ctx.arc(x, y, 12, 0, Math.PI * 2);
+        ctx.arc(x, y, 11, 0, Math.PI * 2);
 
         ctx.fillStyle = col;
 
         ctx.fill();
 
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2.5;
 
         ctx.strokeStyle = '#fff';
 
@@ -6614,13 +6578,13 @@
 
         ctx.fillStyle = 'rgba(9, 15, 29, 0.9)';
 
-        ctx.fillRect(x + 14, y - 12, 95, 22);
+        ctx.fillRect(x + 12, y - 11, 88, 20);
 
         ctx.fillStyle = col;
 
-        ctx.font = 'bold 12px sans-serif';
+        ctx.font = 'bold 11px sans-serif';
 
-        ctx.fillText(item.label, x + 18, y + 3);
+        ctx.fillText(item.label, x + 16, y + 3);
 
       });
 
@@ -6628,7 +6592,13 @@
 
 
 
-    function updatePoseMetricsUI() {
+    function updatePoseMetricsUI(shotType) {
+
+      const st = shotType || document.getElementById('shotTypeSelect').value;
+
+      const isStance = (st === 'ready_stance');
+
+
 
       document.getElementById('valElbowDeg').textContent = `${aiMetrics.elbowDeg} °`;
 
@@ -6636,15 +6606,17 @@
 
         `MAX: ${aiMetrics.maxElbowDeg}° / 最小: ${aiMetrics.minElbowDeg === 180 ? '--' : aiMetrics.minElbowDeg}°`;
 
-      document.getElementById('ptElbow').textContent = `評価: ${aiMetrics.elbowPt} / 100 pt`;
+      document.getElementById('ptElbow').textContent = `評価: ${aiMetrics.elbowPt} pt`;
 
 
 
       document.getElementById('valShoulderDeg').textContent = `${aiMetrics.shoulderDeg} °`;
 
-      document.getElementById('maxShoulderDeg').textContent = `MAX最高打点: ${aiMetrics.maxShoulderDeg} °`;
+      document.getElementById('maxShoulderDeg').textContent =
 
-      document.getElementById('ptShoulder').textContent = `評価: ${aiMetrics.shoulderPt} / 100 pt`;
+        isStance ? `ラケット高維持: ${aiMetrics.wristKeepPt}pt` : `MAX打点: ${aiMetrics.maxShoulderDeg} °`;
+
+      document.getElementById('ptShoulder').textContent = `評価: ${aiMetrics.shoulderPt} pt`;
 
 
 
@@ -6652,41 +6624,67 @@
 
       document.getElementById('maxKneeDeg').textContent =
 
-        `最深タメ: ${aiMetrics.minKneeDeg === 180 ? '--' : aiMetrics.minKneeDeg} °`;
+        `最深膝角: ${aiMetrics.minKneeDeg === 180 ? '--' : aiMetrics.minKneeDeg} °`;
 
-      document.getElementById('ptKnee').textContent = `下半身: ${aiMetrics.kneePt} / 100 pt`;
-
-
-
-      document.getElementById('valSpeedPt').textContent = `${aiMetrics.speedPt} / 100 pt`;
-
-      document.getElementById('maxSpeedPt').textContent = `MAX最高値: ${aiMetrics.maxSpeedPt} / 100 pt`;
-
-      document.getElementById('coreTiltTag').textContent = `体幹ブレ: ${aiMetrics.coreTiltDeg}°`;
+      document.getElementById('ptKnee').textContent = `下半身: ${aiMetrics.kneePt} pt`;
 
 
 
-      const upperBest = Math.min(100, Math.round(((aiMetrics.maxShoulderDeg / 142) * 60) + ((aiMetrics.maxElbowDeg / 155) * 40)));
+      if (isStance) {
 
-      const minKn = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
+        document.getElementById('valSpeedPt').textContent = `${aiMetrics.stabilityPt} pt`;
 
-      const lowerBest = minKn <= 135 ? 100 : Math.max(40, 100 - (minKn - 135) * 2);
+        document.getElementById('maxSpeedPt').textContent = `足幅比: ${aiMetrics.stanceRatio}倍 (理想1.4倍)`;
 
-      const speedBest = aiMetrics.maxSpeedPt;
+      } else {
+
+        document.getElementById('valSpeedPt').textContent = `${aiMetrics.speedPt} pt`;
+
+        document.getElementById('maxSpeedPt').textContent = `MAX速度: ${aiMetrics.maxSpeedPt} pt`;
+
+      }
+
+      document.getElementById('coreTiltTag').textContent = `体幹傾き: ${aiMetrics.coreTiltDeg}°`;
 
 
 
-      document.getElementById('bdUpperText').textContent = `${upperBest} / 100`;
+      // プログレスバー更新
 
-      document.getElementById('bdUpperBar').style.width = `${upperBest}%`;
+      let upperVal, lowerVal, thirdVal;
 
-      document.getElementById('bdLowerText').textContent = `${lowerBest} / 100`;
+      if (isStance) {
 
-      document.getElementById('bdLowerBar').style.width = `${lowerBest}%`;
+        upperVal = aiMetrics.wristKeepPt;
 
-      document.getElementById('bdSpeedText').textContent = `${speedBest} / 100`;
+        lowerVal = aiMetrics.kneePt;
 
-      document.getElementById('bdSpeedBar').style.width = `${speedBest}%`;
+        thirdVal = aiMetrics.stabilityPt;
+
+      } else {
+
+        upperVal = Math.min(100, Math.round(((aiMetrics.maxShoulderDeg / 142) * 60) + ((aiMetrics.maxElbowDeg / 155) * 40)));
+
+        const minKn = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
+
+        lowerVal = minKn <= 135 ? 100 : Math.max(40, 100 - (minKn - 135) * 2);
+
+        thirdVal = aiMetrics.maxSpeedPt;
+
+      }
+
+
+
+      document.getElementById('bdUpperText').textContent = `${upperVal} / 100`;
+
+      document.getElementById('bdUpperBar').style.width = `${upperVal}%`;
+
+      document.getElementById('bdLowerText').textContent = `${lowerVal} / 100`;
+
+      document.getElementById('bdLowerBar').style.width = `${lowerVal}%`;
+
+      document.getElementById('bdSpeedText').textContent = `${thirdVal} / 100`;
+
+      document.getElementById('bdSpeedBar').style.width = `${thirdVal}%`;
 
     }
 
@@ -6704,6 +6702,8 @@
 
       aiMetrics.maxSpeedPt = 0;
 
+      aiMetrics.hipYHistory = [];
+
       aiMetrics.smoothElbow = null;
 
       aiMetrics.smoothShoulder = null;
@@ -6720,6 +6720,8 @@
 
       updatePoseMetricsUI();
 
+      updateComparisonTableUI();
+
     }
 
 
@@ -6734,7 +6736,135 @@
 
       if (box) box.innerHTML = model.desc;
 
-      renderReferenceCompareCanvas();
+
+
+      if (shot === 'ready_stance') {
+
+        document.getElementById('bdLabel1').textContent = "① ラケット(手首)の高さキープ率（40%）";
+
+        document.getElementById('bdLabel2').textContent = "② 膝のゆとり角＆スタンス幅比（35%）";
+
+        document.getElementById('bdLabel3').textContent = "③ 無駄な上下動のない静止安定度（25%）";
+
+      } else {
+
+        document.getElementById('bdLabel1').textContent = "① 上半身・打点＆肘角度の正確性（40%）";
+
+        document.getElementById('bdLabel2').textContent = "② 下半身・膝のタメ＆体幹軸安定度（30%）";
+
+        document.getElementById('bdLabel3').textContent = "③ スイング・抜重の最大初速指数（30%）";
+
+      }
+
+
+
+      updateComparisonTableUI();
+
+    }
+
+
+
+    function updateComparisonTableUI() {
+
+      const shot = document.getElementById('shotTypeSelect').value;
+
+      const model = SHOT_IDEAL_MODELS[shot] || SHOT_IDEAL_MODELS.smash;
+
+      const bestRec = getPersonalBestRecord(activeProfileId, shot);
+
+      const pbTag = document.getElementById('pbRecordTag');
+
+
+
+      if (bestRec) {
+
+        pbTag.textContent = `🏆 自己ベスト: ${bestRec.score} pt (${bestRec.date})`;
+
+      } else {
+
+        pbTag.textContent = `🏆 自己ベスト: 未記録`;
+
+      }
+
+
+
+      const holder = document.getElementById('bestComparisonTableHolder');
+
+      if (!holder) return;
+
+
+
+      const curKn = aiMetrics.minKneeDeg === 180 ? '--' : `${aiMetrics.minKneeDeg}°`;
+
+      const curSh = aiMetrics.maxShoulderDeg === 0 ? '--' : `${aiMetrics.maxShoulderDeg}°`;
+
+      const curEl = aiMetrics.maxElbowDeg === 0 ? '--' : `${aiMetrics.maxElbowDeg}°`;
+
+
+
+      holder.innerHTML = `
+
+        <table class="best-compare-table">
+
+          <thead>
+
+            <tr>
+
+              <th>項目</th>
+
+              <th>🎯 理想基準</th>
+
+              <th>🏆 過去ベスト</th>
+
+              <th>📍 今回の最大値</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr>
+
+              <td style="font-weight:800;">肩挙上 / 構え高</td>
+
+              <td>${model.idealShoulder}°</td>
+
+              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.maxSh + '°' : '未記録'}</td>
+
+              <td style="color:#38bdf8; font-weight:800;">${curSh}</td>
+
+            </tr>
+
+            <tr>
+
+              <td style="font-weight:800;">肘伸展角</td>
+
+              <td>${model.idealElbow}°</td>
+
+              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.maxEl + '°' : '未記録'}</td>
+
+              <td style="color:#38bdf8; font-weight:800;">${curEl}</td>
+
+            </tr>
+
+            <tr>
+
+              <td style="font-weight:800;">最深膝角（タメ）</td>
+
+              <td>${model.idealKnee}°</td>
+
+              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.minKn + '°' : '未記録'}</td>
+
+              <td style="color:#38bdf8; font-weight:800;">${curKn}</td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      `;
 
     }
 
@@ -6746,7 +6876,7 @@
 
       if (activeCameraMode !== 'pose') {
 
-        alert("先に「📷 AIカメラ起動」または「📁 動画解析」を開始してください！");
+        alert("先に「📷 AIカメラ起動」または「📁 動画読込」を開始してください！");
 
         return;
 
@@ -6820,7 +6950,7 @@
 
 
 
-      document.getElementById('sessionTimerLabel').textContent = `🔴 10秒精密測定中... 残り ${dur} 秒`;
+      document.getElementById('sessionTimerLabel').textContent = `🔴 測定中... 残り ${dur} 秒`;
 
       poseSession.timerId = setInterval(() => {
 
@@ -6828,7 +6958,7 @@
 
         if (poseSession.remainingSec > 0) {
 
-          document.getElementById('sessionTimerLabel').textContent = `🔴 10秒精密測定中... 残り ${poseSession.remainingSec} 秒`;
+          document.getElementById('sessionTimerLabel').textContent = `🔴 測定中... 残り ${poseSession.remainingSec} 秒`;
 
         } else {
 
@@ -6886,17 +7016,77 @@
 
 
 
-      const upperBest = Math.min(100, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)));
+      let totalScore = 80;
 
-      const lowerBest = minKn <= (model.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8);
+      let goodPoints = [];
 
-      let totalScore = Math.round(upperBest * 0.40 + lowerBest * 0.30 + maxSp * 0.30);
+      let improvePoints = [];
 
 
 
-      if (model.focus === 'lower') {
+      if (shot === 'ready_stance') {
+
+        totalScore = Math.round(aiMetrics.wristKeepPt * 0.4 + aiMetrics.kneePt * 0.35 + aiMetrics.stabilityPt * 0.25);
+
+
+
+        if (aiMetrics.wristKeepPt >= 85) goodPoints.push(`ラケット（手首）がみぞおち・胸の高さでしっかりキープできており、ドライブやプッシュに即座に反応できる理想の構えです。`);
+
+        else improvePoints.push(`構えている間に手首が腰付近まで下がるクセが見られます。画面の緑ラインより上にラケットヘッド・手首を保つ意識を持ちましょう。`);
+
+
+
+        if (minKn >= 125 && minKn <= 152 && aiMetrics.stanceRatio >= 1.2) goodPoints.push(`膝のゆとり角度（${aiMetrics.kneeDeg}°）とスタンス幅（肩幅の${aiMetrics.stanceRatio}倍）のバランスが良く、どの方向にもすぐ抜重できます。`);
+
+        else improvePoints.push(`膝角度（現在${aiMetrics.kneeDeg}°）または足幅（肩幅の${aiMetrics.stanceRatio}倍）を見直しましょう。足幅を肩幅の約1.4倍に広げ、膝を軽く緩める（約140°）と一歩目が劇的に速くなります。`);
+
+
+
+        if (aiMetrics.stabilityPt >= 82) goodPoints.push(`待機中の無駄な上下バウンドが少なく（静止安定度 ${aiMetrics.stabilityPt}pt）、目線と体幹軸（傾き${aiMetrics.coreTiltDeg}°）が安定しています。`);
+
+        else improvePoints.push(`待機中に小刻みに上下に跳ねすぎる傾向があります（静止安定度 ${aiMetrics.stabilityPt}pt）。待つときは静かに構え、相手が打つ瞬間にだけスッと抜重しましょう。`);
+
+
+
+      } else if (model.focus === 'lower') {
+
+        const lowerBest = minKn <= (model.idealKnee + 6) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8);
 
         totalScore = Math.round(lowerBest * 0.55 + maxSp * 0.45);
+
+
+
+        if (minKn <= model.idealKnee + 8) goodPoints.push(`下半身の沈み込み（最深膝角 ${minKn}°）が目標基準（${model.idealKnee}°）に達しており、低い重心から安定したラケット面が作れています。`);
+
+        else improvePoints.push(`膝の沈み込みが最深 ${minKn}° でした。目標基準（${model.idealKnee}°）のようにあと${minKn - model.idealKnee}°ほど腰を落とすとレシーブやネット前の安定感が向上します。`);
+
+
+
+        if (aiMetrics.coreTiltDeg <= 12) goodPoints.push(`体幹軸の傾きが ${aiMetrics.coreTiltDeg}° 以内に収まっており、上体が突っ込まずに戻りも速い姿勢です。`);
+
+        else improvePoints.push(`打つ瞬間に体幹軸が ${aiMetrics.coreTiltDeg}° 傾いています。頭の位置をブラさずに股関節と膝で沈み込みましょう。`);
+
+
+
+      } else {
+
+        const upperBest = Math.min(100, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)));
+
+        const lowerBest = minKn <= (model.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8);
+
+        totalScore = Math.round(upperBest * 0.40 + lowerBest * 0.30 + maxSp * 0.30);
+
+
+
+        if (maxSh >= model.idealShoulder - 5) goodPoints.push(`最大肩挙上角 ${maxSh}°（肘伸展 ${maxEl}°）と理想ターゲットレベルの高い打点でシャトルを捉えられています。`);
+
+        else improvePoints.push(`最大肩挙上角が ${maxSh}° でした。画面の水色レーザー（${model.idealShoulder}°）の位置まで肘・肩を引き上げると角度と球威が増します。`);
+
+
+
+        if (maxSp >= 80) goodPoints.push(`体幹長正規化スイング速度指数は ${maxSp}/100pt と非常にシャープです！`);
+
+        else improvePoints.push(`最高速度指数は ${maxSp}/100pt でした。テイクバックで胸を開き、インパクトの瞬間にグリップを握り込む緩急を意識しましょう。`);
 
       }
 
@@ -6912,7 +7102,7 @@
 
       if (!prevBest || totalScore >= prevBest.score) {
 
-        const diffStr = prevBest ? `（前回ベスト ${prevBest.score}pt から ＋${totalScore - prevBest.score}pt 更新！）` : `（初回ベスト記録として自動保存されました！）`;
+        const diffStr = prevBest ? `（前回ベスト ${prevBest.score}pt から ＋${totalScore - prevBest.score}pt 更新！）` : `（初回ベストとして自動保存されました！）`;
 
         savePersonalBestData(activeProfileId, shot, {
 
@@ -6926,45 +7116,17 @@
 
         });
 
-        recordBannerHtml = `<div style="background:rgba(16,185,129,0.2); border:1px solid #10b981; padding:6px 10px; border-radius:8px; margin-bottom:8px; font-weight:900; color:#34d399;">🎉 NEW PERSONAL BEST! 過去ベスト更新: ${totalScore} pt ${diffStr}</div>`;
+        recordBannerHtml = `<div style="background:rgba(16,185,129,0.18); border:1px solid #10b981; padding:6px 9px; border-radius:8px; margin-bottom:8px; font-weight:900; color:#34d399;">🎉 自己ベスト更新: ${totalScore} pt ${diffStr}</div>`;
 
       } else {
 
-        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 10px; border-radius:8px; margin-bottom:8px; font-size:0.8rem; color:#fde047;">🏆 あなたの過去ベスト（${prevBest.score}pt / 打点${prevBest.maxSh}° / 膝${prevBest.minKn}°）まであと <b>${prevBest.score - totalScore} pt</b>！ <button class="btn" style="padding:2px 7px; font-size:0.7rem; margin-left:6px;" onclick="saveCurrentAsPersonalBest(true)">今回のフォームで上書き保存</button></div>`;
+        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:#fde047;">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>！</div>`;
 
       }
 
 
 
-      renderReferenceCompareCanvas();
-
-
-
-      let goodPoints = [];
-
-      let improvePoints = [];
-
-
-
-      if (model.focus === 'lower') {
-
-        if (minKn <= model.idealKnee + 8) goodPoints.push(`下半身の沈み込み（最深膝角 ${minKn}°）が目標基準（${model.idealKnee}°）に達しており、低い重心から安定したラケット面が作れています。`);
-
-        else improvePoints.push(`膝の沈み込みが最深 ${minKn}° でした。目標基準（${model.idealKnee}°）のようにあと${minKn - model.idealKnee}°ほど腰を落とすとレシーブやネット前の安定感が向上します。`);
-
-      } else {
-
-        if (maxSh >= model.idealShoulder - 5) goodPoints.push(`最大肩挙上角 ${maxSh}°（肘伸展 ${maxEl}°）と理想ターゲットレベルの高い打点でシャトルを捉えられています。`);
-
-        else improvePoints.push(`最大肩挙上角が ${maxSh}° でした。画面の青色レーザー（${model.idealShoulder}°）の位置まで肘・肩を引き上げると角度と球威が増します。`);
-
-      }
-
-
-
-      if (maxSp >= 80) goodPoints.push(`スイング・初動の最高速度指数は ${maxSp}/100pt と非常にシャープです！`);
-
-      else improvePoints.push(`最高速度指数は ${maxSp}/100pt でした。インパクトの瞬間にグリップを握り込む緩急を意識しましょう。`);
+      updateComparisonTableUI();
 
 
 
@@ -6972,15 +7134,13 @@
 
         ${recordBannerHtml}
 
-        <div style="margin-bottom:6px; font-weight:900; color:var(--accent-primary);">
+        <div style="margin-bottom:5px; font-weight:900; color:var(--accent-primary);">
 
           🏆 今回の10秒精密スコア: ${totalScore} / 100 pt
 
-          <span style="font-size:0.75rem; color:var(--text-secondary);">（打点:${upperBest}pt / 下半身:${lowerBest}pt / 速度:${maxSp}pt）</span>
-
         </div>
 
-        <div style="margin-bottom:6px;">
+        <div style="margin-bottom:5px;">
 
           <b>⭕ 良かった点:</b><br>${goodPoints.length ? goodPoints.map(p => "・" + p).join("<br>") : "・全身の連動がスムーズです。"}
 
@@ -7000,13 +7160,13 @@
 
     /* =========================================================================
 
-       9. 🏆 過去ベスト（Personal Best）の保存・取得・クリア管理
+       10. 🏆 過去ベスト（Personal Best）管理
 
     ========================================================================= */
 
     function loadPersonalBestsDB() {
 
-      const raw = localStorage.getItem('badtore_personal_bests_v70');
+      const raw = localStorage.getItem('badtore_personal_bests_v75');
 
       if (raw) {
 
@@ -7034,7 +7194,7 @@
 
       personalBestsDB[profileId][shotType] = recordObj;
 
-      localStorage.setItem('badtore_personal_bests_v70', JSON.stringify(personalBestsDB));
+      localStorage.setItem('badtore_personal_bests_v75', JSON.stringify(personalBestsDB));
 
     }
 
@@ -7046,13 +7206,13 @@
 
       if (aiMetrics.maxShoulderDeg === 0 && aiMetrics.maxSpeedPt === 0) {
 
-        alert("まだ測定データがありません。カメラまたは動画でスイング・測定してから保存してください！");
+        alert("まだ測定データがありません。カメラまたは動画で動作を測定してから保存してください！");
 
         return;
 
       }
 
-      const minKn = aiMetrics.minKneeDeg === 180 ? 150 : aiMetrics.minKneeDeg;
+      const minKn = aiMetrics.minKneeDeg === 180 ? 145 : aiMetrics.minKneeDeg;
 
       const score = Math.min(100, Math.round((aiMetrics.shoulderPt * 0.4) + (aiMetrics.kneePt * 0.3) + (aiMetrics.maxSpeedPt * 0.3)));
 
@@ -7076,7 +7236,7 @@
 
       });
 
-      renderReferenceCompareCanvas();
+      updateComparisonTableUI();
 
       if (manualAlert) alert(`「${userProfile.name}」の過去ベストとして保存しました！`);
 
@@ -7092,9 +7252,9 @@
 
         delete personalBestsDB[activeProfileId][shot];
 
-        localStorage.setItem('badtore_personal_bests_v70', JSON.stringify(personalBestsDB));
+        localStorage.setItem('badtore_personal_bests_v75', JSON.stringify(personalBestsDB));
 
-        renderReferenceCompareCanvas();
+        updateComparisonTableUI();
 
       }
 
@@ -7104,13 +7264,13 @@
 
     /* =========================================================================
 
-       10. 👥 複数人マイプロフィール管理（追加・切替・削除・保存）
+       11. 👥 複数人メンバー管理（追加・切替・削除・保存）
 
     ========================================================================= */
 
     function loadAllProfiles() {
 
-      const savedTheme = localStorage.getItem('badtore_ui_theme_v70') || 'cyber';
+      const savedTheme = localStorage.getItem('badtore_ui_theme_v75') || 'cyber';
 
       changeUITheme(savedTheme);
 
@@ -7122,9 +7282,9 @@
 
 
 
-      const savedList = localStorage.getItem('badtore_profiles_list_v70');
+      const savedList = localStorage.getItem('badtore_profiles_list_v75');
 
-      const savedActiveId = localStorage.getItem('badtore_active_profile_id_v70');
+      const savedActiveId = localStorage.getItem('badtore_active_profile_id_v75');
 
 
 
@@ -7182,8 +7342,6 @@
 
 
 
-      // スコア画面の自分プレイヤー名にも連動
-
       matchState.playersA[0] = userProfile.name;
 
 
@@ -7192,7 +7350,7 @@
 
       renderProfileMembersGrid();
 
-      renderReferenceCompareCanvas();
+      updateComparisonTableUI();
 
       renderRacketRecommendations('ALL');
 
@@ -7208,11 +7366,9 @@
 
       if (!sel) return;
 
-      const pMap = { low: "操作性", mid: "標準", high: "パワー" };
-
       sel.innerHTML = profilesList.map(p =>
 
-        `<option value="${p.id}" ${p.id === activeProfileId ? 'selected' : ''}>👤 ${p.name} (${p.height}cm/${pMap[p.power] || '標準'})</option>`
+        `<option value="${p.id}" ${p.id === activeProfileId ? 'selected' : ''}>👤 ${p.name} (${p.height}cm)</option>`
 
       ).join('');
 
@@ -7226,9 +7382,9 @@
 
       if (!grid) return;
 
-      const pMap = { low: "操作性重視", mid: "標準パワー", high: "パワーヒッター" };
+      const pMap = { low: "操作性重視", mid: "標準パワー", high: "パワー型" };
 
-      const sMap = { power: "攻撃型", speed: "スピード型", control: "オールラウンダー" };
+      const sMap = { power: "攻撃型", speed: "スピード型", control: "オールラウンド" };
 
 
 
@@ -7246,13 +7402,13 @@
 
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
 
-                <span style="font-weight:900; font-size:0.94rem;">👤 ${p.name}</span>
+                <span style="font-weight:900; font-size:0.9rem;">👤 ${p.name}</span>
 
-                ${isCurrent ? `<span class="badge-version">✅ 選択中</span>` : `<span style="font-size:0.72rem; color:var(--text-secondary);">タップで切替</span>`}
+                ${isCurrent ? `<span class="badge-version">✅ 選択中</span>` : `<span style="font-size:0.7rem; color:var(--text-secondary);">切替</span>`}
 
               </div>
 
-              <div style="font-size:0.77rem; color:var(--text-secondary);">
+              <div style="font-size:0.75rem; color:var(--text-secondary);">
 
                 身長: <b>${p.height}cm</b> ｜ ${p.hand === 'left' ? '左利き' : '右利き'}<br>
 
@@ -7262,9 +7418,9 @@
 
             </div>
 
-            <div style="font-size:0.73rem; color:var(--accent-highlight); font-weight:800; border-top:1px solid rgba(255,255,255,0.08); padding-top:5px;">
+            <div style="font-size:0.72rem; color:var(--accent-highlight); font-weight:800; border-top:1px solid rgba(255,255,255,0.08); padding-top:4px;">
 
-              🏆 過去ベスト保存数: ${bestCount} 種目
+              🏆 過去ベスト記録: ${bestCount} 種目
 
             </div>
 
@@ -7282,7 +7438,7 @@
 
       activeProfileId = id;
 
-      localStorage.setItem('badtore_active_profile_id_v70', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v75', activeProfileId);
 
       syncActiveProfileToState();
 
@@ -7318,7 +7474,7 @@
 
 
 
-      localStorage.setItem('badtore_profiles_list_v70', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v75', JSON.stringify(profilesList));
 
       syncActiveProfileToState();
 
@@ -7354,9 +7510,9 @@
 
       activeProfileId = newId;
 
-      localStorage.setItem('badtore_profiles_list_v70', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v75', JSON.stringify(profilesList));
 
-      localStorage.setItem('badtore_active_profile_id_v70', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v75', activeProfileId);
 
       syncActiveProfileToState();
 
@@ -7378,9 +7534,9 @@
 
       activeProfileId = profilesList[0].id;
 
-      localStorage.setItem('badtore_profiles_list_v70', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v75', JSON.stringify(profilesList));
 
-      localStorage.setItem('badtore_active_profile_id_v70', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v75', activeProfileId);
 
       syncActiveProfileToState();
 
@@ -7390,7 +7546,7 @@
 
     /* =========================================================================
 
-       11. 修正④：線引きモードON/OFFスイッチ化（スクロール阻害ゼロ）
+       12. 線引きモードON/OFFスイッチ（スクロール阻害ゼロ）
 
     ========================================================================= */
 
@@ -7418,7 +7574,7 @@
 
         btn.classList.add('active');
 
-        btn.textContent = "✏️ 線引きモード: ON (画面に描画中)";
+        btn.textContent = "✏️ 線引き: ON (描画中)";
 
       } else {
 
@@ -7426,7 +7582,7 @@
 
         btn.classList.remove('active');
 
-        btn.textContent = "✏️ 線引きモード: OFF (スクロール優先)";
+        btn.textContent = "✏️ 線引き: OFF (スクロール優先)";
 
       }
 
@@ -7540,69 +7696,9 @@
 
 
 
-    function loadCustomMenus() {
-
-      const listEl = document.getElementById('customMenuList');
-
-      const saved = JSON.parse(localStorage.getItem('badtore_custom_menus_v70') || '["センター指示なし連続6点フットワーク 15回×3", "ネオン矢印リアクションステップ 10回×3"]');
-
-      listEl.innerHTML = '';
-
-      saved.forEach((item, index) => {
-
-        const li = document.createElement('li');
-
-        li.style.cssText = "background:#090f1d; padding:7px 10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(148,163,184,0.15);";
-
-        li.innerHTML = `<span>✅ ${item}</span><button class="btn btn-rose" style="padding:2px 8px; font-size:0.7rem;" onclick="removeCustomMenu(${index})">削除</button>`;
-
-        listEl.appendChild(li);
-
-      });
-
-    }
-
-
-
-    function addCustomMenu() {
-
-      const input = document.getElementById('customMenuInput');
-
-      const val = input.value.trim();
-
-      if (!val) return;
-
-      const saved = JSON.parse(localStorage.getItem('badtore_custom_menus_v70') || '[]');
-
-      saved.push(val);
-
-      localStorage.setItem('badtore_custom_menus_v70', JSON.stringify(saved));
-
-      input.value = '';
-
-      loadCustomMenus();
-
-    }
-
-
-
-    function removeCustomMenu(idx) {
-
-      const saved = JSON.parse(localStorage.getItem('badtore_custom_menus_v70') || '[]');
-
-      saved.splice(idx, 1);
-
-      localStorage.setItem('badtore_custom_menus_v70', JSON.stringify(saved));
-
-      loadCustomMenus();
-
-    }
-
-
-
     /* =========================================================================
 
-       12. ラケット診断 ＆ 修正⑦：試合スコア（シングルス/ダブルス切替・Undo対応）
+       13. ラケット診断 ＆ 試合スコア（ダブルス/シングルス・Undo対応）
 
     ========================================================================= */
 
@@ -7612,19 +7708,19 @@
 
       { brand: "YONEX", name: "ARCSABER 11 PRO", type: "control", powerReq: "mid", weight: "4U5 / 3U5", balance: "イーブンバランス", stringRec: "EXBOLT 65 / BG66 ULTIMAX (22-26 lbs)", desc: "球持ちが抜群で、体格やパワーを問わずカットやクロスヘアピンも狙い通りにコントロールできる万能名機。" },
 
-      { brand: "YONEX", name: "NANOFLARE 700 PRO / 800", type: "speed", powerReq: "low", weight: "4U5 / 5U5", balance: "ヘッドライト", stringRec: "EXBOLT 63 / 65 (20-25 lbs)", desc: "振り抜きが非常に軽く、パワーに頼らずコンパクトな弾きでドライブ・レシーブを制するスピードモデル。" },
+      { brand: "YONEX", name: "NANOFLARE 800 / 700 PRO", type: "speed", powerReq: "low", weight: "4U5 / 5U5", balance: "ヘッドライト", stringRec: "EXBOLT 65 / 63 (20-25 lbs)", desc: "振り抜きが非常に軽く、パワーに頼らずコンパクトな弾きでドライブ・レシーブを制するスピードモデル。" },
 
       { brand: "MIZUNO", name: "ALTIUS 01 SPEED / 01 FEEL", type: "control", powerReq: "mid", weight: "4U5", balance: "イーブン", stringRec: "M-SMOOTH 65R / EXBOLT 65 (22-26 lbs)", desc: "ミズノ独自の球持ちと鋭い弾きを両立。ラリーを組み立てながら機を見てスマッシュを打ち込む選手に最適。" },
 
-      { brand: "MIZUNO", name: "ACROSPEED 0 / ACROSPEED 1", type: "power", powerReq: "high", weight: "4U6", balance: "ヘッドヘビー寄り", stringRec: "M-SMOOTH 65H (23-27 lbs)", desc: "小柄でもスイングが速いハードヒッターの力をロスなく伝え、爆発的な初速を生む攻撃型ラケット。" },
+      { brand: "MIZUNO", name: "ACROSPEED 0 / ACROSPEED 1", type: "power", powerReq: "high", weight: "4U6", balance: "ヘッドヘビー寄り", stringRec: "M-SMOOTH 65H (23-27 lbs)", desc: "スイングが速いプレイヤーの力をロスなく伝え、爆発的な初速を生む攻撃型ラケット。" },
 
       { brand: "GOSEN", name: "INFERNO RAID / INFERNO SMART", type: "power", powerReq: "high", weight: "4U5", balance: "トップヘビー〜イーブン", stringRec: "ライゾニック 65 / EXBOLT 65 (22-26 lbs)", desc: "独自の波型フレーム形状により、インパクト時の強烈な弾きとスマッシュの伸びを実現するインフェルノシリーズ。" },
 
       { brand: "GOSEN", name: "GRAVITAS 8.5-SX / 7.5-SR", type: "control", powerReq: "mid", weight: "4U5 / 5U5", balance: "イーブン", stringRec: "ライゾニック 58 / 65 (20-25 lbs)", desc: "芯を捉えた際のソリッドな打球感と安定性が特徴。基礎打ちから試合のレシーブまでブレない面を作れます。" },
 
-      { brand: "LINING", name: "AXFORCE 80 / AXFORCE 90 (雷霆)", type: "power", powerReq: "high", weight: "4U5 / 5U5", balance: "ヘッドヘビー", stringRec: "Li-Ning No.1 / EXBOLT 65 (23-27 lbs)", desc: "しなりからの圧倒的な復元力で、コンパクトなスイングからも重く沈むスマッシュを放つリーニン最高峰の攻撃シリーズ。" },
+      { brand: "LINING", name: "AXFORCE 80 / AXFORCE 90", type: "power", powerReq: "high", weight: "4U5 / 5U5", balance: "ヘッドヘビー", stringRec: "Li-Ning No.1 / EXBOLT 65 (23-27 lbs)", desc: "しなりからの復元力で、コンパクトなスイングからも重く沈むスマッシュを放つ攻撃シリーズ。" },
 
-      { brand: "LINING", name: "HALBERTEC 8000 / BLADEX 800", type: "speed", powerReq: "mid", weight: "4U5", balance: "イーブン〜ヘッドライト", stringRec: "Li-Ning No.1 / BG66UM (21-26 lbs)", desc: "極限まで高められた振り抜き速度と面安定性により、高速ドライブ戦や前衛のプッシュ・レシーブで強さを発揮。" }
+      { brand: "LINING", name: "HALBERTEC 8000 / BLADEX 800", type: "speed", powerReq: "mid", weight: "4U5", balance: "イーブン〜ヘッドライト", stringRec: "Li-Ning No.1 / EXBOLT 65 (21-26 lbs)", desc: "高い振り抜き速度と面安定性により、高速ドライブ戦や前衛のプッシュ・レシーブで強さを発揮。" }
 
     ];
 
@@ -7664,9 +7760,9 @@
 
         <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 AIギア＆体格マッチング診断</div>
 
-        <div style="font-size:0.83rem; color:#e2e8f0;">
+        <div style="font-size:0.8rem; color:#e2e8f0;">
 
-          身長 ${userProfile.height}cm・パワー設定（${userProfile.power}）・プレイスタイル（${userProfile.style}）およびAI速度指数（${effectiveSpeed}/100pt）を掛け合わせ、4大ブランドからマッチ度順にご提案します。
+          身長 ${userProfile.height}cm・パワー設定（${userProfile.power}）・スタイル（${userProfile.style}）・AI速度指数（${effectiveSpeed}pt）から最適モデルを提案します。
 
         </div>
 
@@ -7702,19 +7798,19 @@
 
               <span class="badge-version" style="background:${brandColors[r.brand]}; color:#090d16;">${r.brand}</span>
 
-              <span style="font-weight:800; color:#34d399; font-size:0.82rem;">AIマッチ度: ${r.matchPt} / 100 pt</span>
+              <span style="font-weight:800; color:#34d399; font-size:0.8rem;">マッチ度: ${r.matchPt}%</span>
 
             </div>
 
-            <div style="font-size:1rem; font-weight:800; margin-bottom:5px;">${r.name}</div>
+            <div style="font-size:0.95rem; font-weight:800; margin-bottom:4px;">${r.name}</div>
 
-            <p style="font-size:0.79rem; color:var(--text-secondary); margin-bottom:8px;">${r.desc}</p>
+            <p style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:8px;">${r.desc}</p>
 
           </div>
 
-          <div style="background:#090f1d; padding:8px 10px; border-radius:8px; font-size:0.75rem; color:#cbd5e1;">
+          <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.73rem; color:#cbd5e1;">
 
-            <div>⚖️ 推奨規格: <b>${r.weight}</b>（${r.balance}）</div>
+            <div>⚖️ 規格: <b>${r.weight}</b>（${r.balance}）</div>
 
             <div>🧵 推奨ガット: <b>${r.stringRec}</b></div>
 
@@ -7730,7 +7826,7 @@
 
     let matchState = {
 
-      format: 'doubles', // 'doubles' | 'singles'
+      format: 'doubles',
 
       scoreA: 0, scoreB: 0, servingTeam: 'A', courtFlipped: false, swapPairInit: false,
 
@@ -7738,9 +7834,7 @@
 
       playersB: ["相手1（B1）", "相手2（B2）"],
 
-      history: [],
-
-      shotLogs: {}
+      history: []
 
     };
 
@@ -7795,28 +7889,6 @@
       document.getElementById('btnUndoScore').disabled = (matchState.history.length === 0);
 
       renderMatchCourt();
-
-    }
-
-
-
-    function recordShotLog(label) {
-
-      matchState.shotLogs[label] = (matchState.shotLogs[label] || 0) + 1;
-
-      const entries = Object.entries(matchState.shotLogs).map(([k, v]) => `${k}: <b>${v}回</b>`).join(' ／ ');
-
-      document.getElementById('shotLogSummaryText').innerHTML = `📊 累計内訳 ➔ ${entries}`;
-
-    }
-
-
-
-    function clearShotLogs() {
-
-      matchState.shotLogs = {};
-
-      document.getElementById('shotLogSummaryText').textContent = "まだコース記録がありません。";
 
     }
 
@@ -7892,7 +7964,7 @@
 
         if (matchState.servingTeam !== team && isRightCourt === isRightServiceCourt) return `<span class="badge-version" style="background:#06b6d4; color:#000;">🛡️ レシーバー</span>`;
 
-        return `<span style="font-size:0.68rem; color:#cbd5e1;">${matchState.format === 'singles' ? '空きコート' : 'パートナー待機'}</span>`;
+        return `<span style="font-size:0.66rem; color:#cbd5e1;">${matchState.format === 'singles' ? '空きコート' : 'パートナー'}</span>`;
 
       };
 
@@ -7964,19 +8036,19 @@
 
         <div class="match-half">
 
-          <div class="${getBoxClass(topTeam, true)}"><div style="font-size:0.68rem; opacity:0.8;">右(偶数)</div><div style="font-weight:800;">${topRightPlayer}</div>${getRoleBadge(topTeam, true)}</div>
+          <div class="${getBoxClass(topTeam, true)}"><div style="font-size:0.66rem; opacity:0.8;">右(偶数)</div><div style="font-weight:800; font-size:0.84rem;">${topRightPlayer}</div>${getRoleBadge(topTeam, true)}</div>
 
-          <div class="${getBoxClass(topTeam, false)}"><div style="font-size:0.68rem; opacity:0.8;">左(奇数)</div><div style="font-weight:800;">${topLeftPlayer}</div>${getRoleBadge(topTeam, false)}</div>
+          <div class="${getBoxClass(topTeam, false)}"><div style="font-size:0.66rem; opacity:0.8;">左(奇数)</div><div style="font-weight:800; font-size:0.84rem;">${topLeftPlayer}</div>${getRoleBadge(topTeam, false)}</div>
 
         </div>
 
-        <div class="net-divider">━━━━━━━━━━ NET（ネット） ━━━━━━━━━━</div>
+        <div class="net-divider">━━━━━━━━ NET（ネット） ━━━━━━━━</div>
 
         <div class="match-half">
 
-          <div class="${getBoxClass(bottomTeam, false)}"><div style="font-size:0.68rem; opacity:0.8;">左(奇数)</div><div style="font-weight:800;">${botLeftPlayer}</div>${getRoleBadge(bottomTeam, false)}</div>
+          <div class="${getBoxClass(bottomTeam, false)}"><div style="font-size:0.66rem; opacity:0.8;">左(奇数)</div><div style="font-weight:800; font-size:0.84rem;">${botLeftPlayer}</div>${getRoleBadge(bottomTeam, false)}</div>
 
-          <div class="${getBoxClass(bottomTeam, true)}"><div style="font-size:0.68rem; opacity:0.8;">右(偶数)</div><div style="font-weight:800;">${botRightPlayer}</div>${getRoleBadge(bottomTeam, true)}</div>
+          <div class="${getBoxClass(bottomTeam, true)}"><div style="font-size:0.66rem; opacity:0.8;">右(偶数)</div><div style="font-weight:800; font-size:0.84rem;">${botRightPlayer}</div>${getRoleBadge(bottomTeam, true)}</div>
 
         </div>
 
@@ -7995,8 +8067,6 @@
       updateShotCriteriaUI();
 
       initDrawingCanvas();
-
-      loadCustomMenus();
 
       renderFwNodesUI();
 
