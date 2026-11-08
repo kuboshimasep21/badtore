@@ -1,624 +1,4 @@
-<!DOCTYPE html>
 
-<html lang="ja" data-theme="cyber">
-
-<head>
-
-  <meta charset="UTF-8" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-
-  <title>バドトレPRO v7.5 - バドミントン専用 AI動作解析＆実践トレーニング</title>
-
-  <!-- MediaPipe Pose & Drawing Utils -->
-
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
-
-
-
-  <style>
-
-    /* ==========================================================
-
-       🎨 3種類のUIテーマ（ワンタップ切替）
-
-    ========================================================== */
-
-    :root, [data-theme="cyber"] {
-
-      --bg-base: #060b16;
-
-      --bg-surface: #0c1528;
-
-      --bg-card: #111d36;
-
-      --bg-panel: #172645;
-
-      --accent-primary: #10b981;
-
-      --accent-primary-glow: rgba(16, 185, 129, 0.42);
-
-      --accent-secondary: #06b6d4;
-
-      --accent-highlight: #fbbf24;
-
-      --accent-danger: #f43f5e;
-
-      --text-primary: #f8fafc;
-
-      --text-secondary: #94a3b8;
-
-      --border-subtle: rgba(56, 189, 248, 0.24);
-
-      --court-surface: linear-gradient(160deg, #065f46 0%, #044e3a 100%);
-
-      --court-line: rgba(255, 255, 255, 0.92);
-
-      --cell-bg: rgba(9, 14, 26, 0.72);
-
-    }
-
-
-
-    [data-theme="matte"] {
-
-      --bg-base: #09090b;
-
-      --bg-surface: #121216;
-
-      --bg-card: #18181d;
-
-      --bg-panel: #222229;
-
-      --accent-primary: #eab308;
-
-      --accent-primary-glow: rgba(234, 179, 8, 0.38);
-
-      --accent-secondary: #38bdf8;
-
-      --accent-highlight: #facc15;
-
-      --accent-danger: #ef4444;
-
-      --text-primary: #fafafa;
-
-      --text-secondary: #a1a1aa;
-
-      --border-subtle: rgba(234, 179, 8, 0.28);
-
-      --court-surface: linear-gradient(160deg, #18181b 0%, #0f172a 100%);
-
-      --court-line: rgba(234, 179, 8, 0.92);
-
-      --cell-bg: rgba(10, 14, 24, 0.82);
-
-    }
-
-
-
-    [data-theme="street"] {
-
-      --bg-base: #090d16;
-
-      --bg-surface: #111827;
-
-      --bg-card: #172033;
-
-      --bg-panel: #1f2b44;
-
-      --accent-primary: #84cc16;
-
-      --accent-primary-glow: rgba(132, 204, 22, 0.42);
-
-      --accent-secondary: #22d3ee;
-
-      --accent-highlight: #a3e635;
-
-      --accent-danger: #fb7185;
-
-      --text-primary: #ffffff;
-
-      --text-secondary: #9ca3af;
-
-      --border-subtle: rgba(163, 230, 53, 0.28);
-
-      --court-surface: linear-gradient(160deg, #064e3b 0%, #0f172a 100%);
-
-      --court-line: rgba(255, 255, 255, 0.92);
-
-      --cell-bg: rgba(9, 14, 26, 0.75);
-
-    }
-
-
-
-    /* ==========================================================
-
-       🛠️ 横はみ出し・見切れ完全防止リセット
-
-    ========================================================== */
-
-    *, *::before, *::after {
-
-      box-sizing: border-box;
-
-      margin: 0;
-
-      padding: 0;
-
-      min-width: 0; /* Grid/Flex子要素の横膨張を100%阻止 */
-
-      -webkit-tap-highlight-color: transparent;
-
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Sans", "Noto Sans JP", sans-serif;
-
-    }
-
-
-
-    html, body {
-
-      width: 100%;
-
-      max-width: 100vw;
-
-      overflow-x: hidden;
-
-      background-color: var(--bg-base);
-
-      color: var(--text-primary);
-
-      line-height: 1.45;
-
-      min-height: 100dvh;
-
-      padding-bottom: 40px;
-
-    }
-
-
-
-    /* 全画面モード時はヘッダーとナビを完全に隠してめり込みをゼロにする */
-
-    body.is-fullscreen-mode {
-
-      overflow: hidden !important;
-
-    }
-
-    body.is-fullscreen-mode header,
-
-    body.is-fullscreen-mode .nav-scroller {
-
-      display: none !important;
-
-    }
-
-
-
-    /* ヘッダー */
-
-    header {
-
-      background: var(--bg-surface);
-
-      border-bottom: 1px solid var(--border-subtle);
-
-      padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px 12px;
-
-      position: sticky;
-
-      top: 0;
-
-      z-index: 100;
-
-      display: flex;
-
-      flex-wrap: wrap;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-      gap: 6px;
-
-      width: 100%;
-
-    }
-
-
-
-    .brand-wrap {
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 6px;
-
-    }
-
-
-
-    .brand-logo {
-
-      font-size: 1.05rem;
-
-      font-weight: 900;
-
-      letter-spacing: 0.3px;
-
-      color: var(--text-primary);
-
-    }
-
-
-
-    .badge-version {
-
-      background: var(--accent-primary);
-
-      color: #020617;
-
-      font-size: 0.68rem;
-
-      padding: 2px 7px;
-
-      border-radius: 999px;
-
-      font-weight: 900;
-
-      white-space: nowrap;
-
-      flex-shrink: 0;
-
-    }
-
-
-
-    .header-controls {
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 6px;
-
-      flex-wrap: wrap;
-
-      max-width: 100%;
-
-    }
-
-
-
-    .theme-switcher, .player-quick-select {
-
-      background: var(--bg-panel);
-
-      color: var(--text-primary);
-
-      border: 1px solid var(--border-subtle);
-
-      padding: 5px 8px;
-
-      border-radius: 999px;
-
-      font-size: 0.74rem;
-
-      font-weight: 800;
-
-      width: auto;
-
-      max-width: 175px;
-
-      text-overflow: ellipsis;
-
-      overflow: hidden;
-
-      white-space: nowrap;
-
-      cursor: pointer;
-
-    }
-
-
-
-    /* ナビゲーション（スマホは2段・iPad/PCは1列で全タブが一目で見える） */
-
-    .nav-scroller {
-
-      background: var(--bg-surface);
-
-      border-bottom: 1px solid var(--border-subtle);
-
-      padding: 6px 8px;
-
-      display: grid;
-
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-
-      gap: 5px;
-
-      position: sticky;
-
-      top: 45px;
-
-      z-index: 95;
-
-      width: 100%;
-
-    }
-
-
-
-    @media (min-width: 768px) {
-
-      .nav-scroller {
-
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-
-      }
-
-    }
-
-
-
-    .nav-tab {
-
-      background: var(--bg-panel);
-
-      color: var(--text-secondary);
-
-      border: 1px solid var(--border-subtle);
-
-      padding: 6px 4px;
-
-      border-radius: 8px;
-
-      font-size: clamp(0.68rem, 2.2vw, 0.78rem);
-
-      font-weight: 800;
-
-      white-space: nowrap;
-
-      overflow: hidden;
-
-      text-overflow: ellipsis;
-
-      cursor: pointer;
-
-      text-align: center;
-
-      transition: background 0.15s, color 0.15s;
-
-    }
-
-
-
-    .nav-tab.active {
-
-      background: var(--accent-primary);
-
-      color: #020617;
-
-      border-color: transparent;
-
-      box-shadow: 0 2px 10px var(--accent-primary-glow);
-
-    }
-
-
-
-    .main-container {
-
-      width: 100%;
-
-      max-width: 1240px;
-
-      margin: 0 auto;
-
-      padding: 10px;
-
-    }
-
-
-
-    /* ※重要: backdrop-filter や transform アニメーションを使わないことで
-
-       iOS Safari でも position:fixed 全画面が絶対に親要素に閉じ込められない */
-
-    .tab-panel { display: none !important; width: 100%; }
-
-    .tab-panel.active { display: block !important; width: 100%; }
-
-
-
-    .card {
-
-      background: var(--bg-card);
-
-      border: 1px solid var(--border-subtle);
-
-      border-radius: 14px;
-
-      padding: 12px;
-
-      margin-bottom: 12px;
-
-      width: 100%;
-
-      max-width: 100%;
-
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-
-    }
-
-
-
-    .card-header {
-
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-      flex-wrap: wrap;
-
-      gap: 8px;
-
-      margin-bottom: 10px;
-
-      padding-bottom: 8px;
-
-      border-bottom: 1px solid var(--border-subtle);
-
-      width: 100%;
-
-    }
-
-
-
-    .card-title {
-
-      font-size: 0.92rem;
-
-      font-weight: 900;
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 6px;
-
-      flex-wrap: wrap;
-
-      line-height: 1.35;
-
-    }
-
-
-
-    .btn-group {
-
-      display: flex;
-
-      flex-wrap: wrap;
-
-      gap: 6px;
-
-      align-items: center;
-
-      max-width: 100%;
-
-    }
-
-
-
-    .btn {
-
-      border: 1px solid var(--border-subtle);
-
-      background: var(--bg-panel);
-
-      color: var(--text-primary);
-
-      padding: 7px 11px;
-
-      border-radius: 9px;
-
-      font-size: 0.78rem;
-
-      font-weight: 800;
-
-      cursor: pointer;
-
-      display: inline-flex;
-
-      align-items: center;
-
-      justify-content: center;
-
-      gap: 4px;
-
-      transition: transform 0.1s ease, opacity 0.15s;
-
-      user-select: none;
-
-      max-width: 100%;
-
-      line-height: 1.25;
-
-      text-align: center;
-
-    }
-
-
-
-    .btn:active { transform: scale(0.97); }
-
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-
-
-    .btn-emerald {
-
-      background: var(--accent-primary);
-
-      color: #020617;
-
-      border-color: transparent;
-
-    }
-
-    .btn-amber {
-
-      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-
-      color: #020617;
-
-      border-color: transparent;
-
-    }
-
-    .btn-rose {
-
-      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-
-      color: #fff;
-
-      border-color: transparent;
-
-    }
-
-    .btn-cyan-outline {
-
-      background: rgba(6, 182, 212, 0.12);
-
-      color: var(--accent-secondary);
-
-      border-color: var(--accent-secondary);
-
-    }
-
-    .btn-cyan-outline.active {
-
-      background: var(--accent-secondary);
-
-      color: #020617;
-
-    }
-
-
-
-    .mode-switch-bar {
 
       display: grid;
 
@@ -686,8 +66,6 @@
 
 
 
-    /* iPad横向き・PCでは2カラム、スマホ・iPad縦向きでは1カラム */
-
     .split-grid {
 
       display: grid;
@@ -712,7 +90,7 @@
 
 
 
-    select, input[type="number"], input[type="text"] {
+    select, input[type="number"], input[type="text"], textarea {
 
       background: var(--bg-base);
 
@@ -1212,7 +590,7 @@
 
     /* ==========================================================
 
-       カメラビューポート（上部ステータスバーを独立させ文字被り・見切れゼロ）
+       カメラビューポート
 
     ========================================================== */
 
@@ -1348,8 +726,6 @@
 
 
 
-    /* 線引きキャンバス（OFF時はスクロールを一切妨げない） */
-
     #drawCanvas {
 
       position: absolute;
@@ -1458,7 +834,7 @@
 
     /* ==========================================================
 
-       4指標メトリクスカード（スマホ2列でも見切れゼロ）
+       4指標メトリクスカード
 
     ========================================================== */
 
@@ -1664,6 +1040,74 @@
 
 
 
+    /* 📸 ベストインパクト瞬間の自動キャプチャカード */
+
+    .snapshot-card {
+
+      background: var(--bg-surface);
+
+      border: 1px solid var(--accent-primary);
+
+      border-radius: 11px;
+
+      padding: 10px;
+
+      margin-top: 10px;
+
+      width: 100%;
+
+      display: none;
+
+    }
+
+
+
+    .snapshot-preview-wrap {
+
+      display: grid;
+
+      grid-template-columns: 140px minmax(0, 1fr);
+
+      gap: 10px;
+
+      align-items: center;
+
+      margin-top: 6px;
+
+    }
+
+
+
+    @media (max-width: 480px) {
+
+      .snapshot-preview-wrap {
+
+        grid-template-columns: 1fr;
+
+      }
+
+    }
+
+
+
+    #bestMomentCanvas {
+
+      width: 100%;
+
+      max-height: 150px;
+
+      object-fit: contain;
+
+      background: #020617;
+
+      border-radius: 8px;
+
+      border: 1px solid var(--border-subtle);
+
+    }
+
+
+
     .pen-toolbar {
 
       display: flex;
@@ -1712,8 +1156,6 @@
 
 
 
-    /* 過去ベスト比較テーブル */
-
     .best-compare-table {
 
       width: 100%;
@@ -1745,8 +1187,6 @@
     }
 
 
-
-    /* プロフィール複数人リスト */
 
     .profile-cards-grid {
 
@@ -1956,7 +1396,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v7.5 完全版</span>
+      <span class="badge-version">v8.0 完全版</span>
 
     </div>
 
@@ -1979,8 +1419,6 @@
   </header>
 
 
-
-  <!-- 全タブが横スクロールなしで一目で見えるナビバー -->
 
   <nav class="nav-scroller">
 
@@ -2008,7 +1446,7 @@
 
     <!-- =========================================================
 
-         TAB 1: 🏃 声指示フットワーク（全画面めり込みゼロ・右端見切れゼロ）
+         TAB 1: 🏃 声指示フットワーク（移動用カウントダウン＆全画面対応）
 
     ========================================================== -->
 
@@ -2043,8 +1481,6 @@
 
 
         <div class="split-grid">
-
-          <!-- 左：6マスバドミントンコート（全画面時はヘッダーを自動非表示にして100%画面内に収める） -->
 
           <div class="fw-court-stage fullscreen-target" id="fwFullscreenStage">
 
@@ -2138,8 +1574,6 @@
 
 
 
-          <!-- 右：フットワーク設定パネル -->
-
           <div class="card" style="background:var(--bg-panel); margin:0;">
 
             <div style="font-weight:900; color:var(--accent-secondary); margin-bottom:10px; font-size:0.88rem;">⚙️ フットワーク＆声指示の設定</div>
@@ -2196,7 +1630,29 @@
 
               <div class="form-group">
 
-                <label>③ 1セットの回数</label>
+                <label>③ 開始前カウント（移動時間）</label>
+
+                <select id="fwCountdownSec">
+
+                  <option value="3">3秒（すぐ開始）</option>
+
+                  <option value="5" selected>5秒（iPad設置・移動用）</option>
+
+                  <option value="8">8秒（コート中央まで余裕）</option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+
+
+            <div class="form-grid" style="margin-bottom:10px;">
+
+              <div class="form-group">
+
+                <label>④ 1セットの回数</label>
 
                 <select id="fwRepsPerSet">
 
@@ -2214,45 +1670,35 @@
 
               </div>
 
-            </div>
-
-
-
-            <div class="form-grid" style="margin-bottom:10px;">
-
               <div class="form-group">
 
-                <label>④ セット数</label>
+                <label>⑤ セット数 ＆ 休憩</label>
 
-                <select id="fwTotalSets">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
 
-                  <option value="1">1セット</option>
+                  <select id="fwTotalSets">
 
-                  <option value="2">2セット</option>
+                    <option value="1">1セット</option>
 
-                  <option value="3" selected>3セット</option>
+                    <option value="2">2セット</option>
 
-                  <option value="5">5セット</option>
+                    <option value="3" selected>3セット</option>
 
-                </select>
+                    <option value="5">5セット</option>
 
-              </div>
+                  </select>
 
-              <div class="form-group">
+                  <select id="fwRestSec">
 
-                <label>⑤ セット間の休憩</label>
+                    <option value="10">休10秒</option>
 
-                <select id="fwRestSec">
+                    <option value="15" selected>休15秒</option>
 
-                  <option value="10">10秒</option>
+                    <option value="30">休30秒</option>
 
-                  <option value="15" selected>15秒</option>
+                  </select>
 
-                  <option value="30">30秒</option>
-
-                  <option value="60">60秒</option>
-
-                </select>
+                </div>
 
               </div>
 
@@ -2310,7 +1756,7 @@
 
     <!-- =========================================================
 
-         TAB 2: ⚡ 初速AI判定（構えチェック連動）＆ サイバーSVG矢印練習
+         TAB 2: ⚡ 初速AI判定（構え＆リストスタンド連動）＆ サイバーSVG矢印練習
 
     ========================================================== -->
 
@@ -2324,7 +1770,7 @@
 
             <span class="badge-version">ネオンSVG矢印</span>
 
-            <span>⚡ リアクション初動練習 ＆ AIカメラ初速測定（構えチェック連動）</span>
+            <span>⚡ リアクション初動練習 ＆ AIカメラ初速測定（構え・リストスタンド連動）</span>
 
           </div>
 
@@ -2349,8 +1795,6 @@
         </div>
 
 
-
-        <!-- ▼ サブモードA：🏹 ネオンSVG矢印リアクション初動練習 ▼ -->
 
         <div id="subPanelArrowDrill">
 
@@ -2498,8 +1942,6 @@
 
 
 
-        <!-- ▼ サブモードB：📷 AIカメラ初速測定（待機中の「構えチェック」連動） ▼ -->
-
         <div id="subPanelCameraReflex" style="display:none;">
 
           <div class="btn-group" style="margin-bottom:10px;">
@@ -2562,7 +2004,7 @@
 
                     <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📷 初速AIカメラ起動」を押して正面に構えてください</div>
 
-                    <div style="font-size:0.75rem; margin-top:4px;">待機中の「構え（ラケット高さ・膝のゆとり・無駄な揺れ）」も同時にAI診断します</div>
+                    <div style="font-size:0.75rem; margin-top:4px;">待機中の「構え（ラケット高さ・リストスタンド・膝・小刻みな跳ね）」も同時にAI診断します</div>
 
                   </div>
 
@@ -2716,7 +2158,7 @@
 
                 <div id="rxSummaryText" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
 
-                  カメラを起動して<b>「▶️ 初速AI測定スタート」</b>を押すと、待機中の<b>「構えの良さ（ラケット高さ・膝のゆとり）」</b>と、矢印が出てから一歩目が動くまでの<b>「ミリ秒（ms）」</b>を同時に診断します。
+                  カメラを起動して<b>「▶️ 初速AI測定スタート」</b>を押すと、待機中の<b>「構えの良さ（ラケット高さ・リストスタンド・膝のゆとり）」</b>と、矢印が出てから一歩目が動くまでの<b>「ミリ秒（ms）」</b>を同時に診断します。
 
                 </div>
 
@@ -2736,7 +2178,7 @@
 
     <!-- =========================================================
 
-         TAB 3: 🎥 構え（レディポジション）＆ 全10種目AI骨格解析・過去ベスト比較
+         TAB 3: 🎥 構え＆全10種目AI骨格解析（動画読込で自動診断スタート・ベスト瞬間キャプチャ・スロー再生）
 
     ========================================================== -->
 
@@ -2748,9 +2190,9 @@
 
           <div class="card-title">
 
-            <span class="badge-version">構え＆フォーム診断</span>
+            <span class="badge-version">動画自動診断＆瞬間キャプチャ</span>
 
-            <span>🎥 AI骨格解析（基本の構え診断・身体連動レーザー・ディレイ再生・過去ベスト比較）</span>
+            <span>🎥 AI骨格解析（基本の構え・リストスタンド・身体連動レーザー・過去ベスト比較）</span>
 
           </div>
 
@@ -2760,13 +2202,23 @@
 
             <button class="btn" onclick="switchCameraFacing()">🔄 内/外切替</button>
 
-            <label class="btn" style="cursor:pointer;">
+            <label class="btn btn-amber" style="cursor:pointer;">
 
-              📁 動画読込
+              📁 動画読込（即・自動診断）
 
               <input type="file" id="videoUploadInput" accept="video/*" style="display:none;" onchange="handleVideoUpload(event)" />
 
             </label>
+
+            <select id="videoSpeedSelect" onchange="changeVideoPlaybackSpeed(this.value)" style="width:auto; padding:6px 8px; font-size:0.75rem; font-weight:800;" title="動画再生スピード">
+
+              <option value="1.0" selected>▶️ 動画速度: 1.0x (等倍)</option>
+
+              <option value="0.5">🐢 動画速度: 0.5x (スロー高精度)</option>
+
+              <option value="0.25">🔬 動画速度: 0.25x (超スロー解析)</option>
+
+            </select>
 
             <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
 
@@ -2788,13 +2240,9 @@
 
         <div class="split-grid">
 
-          <!-- 左カラム：カメラビューポート ＆ 4指標メトリクス ＆ 線引きバー -->
-
           <div>
 
             <div class="viewport-wrapper fullscreen-target" id="poseViewport">
-
-              <!-- 上部ステータスバーをキャンバス外の上部に配置し、文字被り・右端切れを完全解消 -->
 
               <div class="viewport-header-bar">
 
@@ -2832,11 +2280,11 @@
 
                 <div id="posePlaceholder" style="text-align:center; color:var(--text-secondary); padding:18px;">
 
-                  <div style="font-size:2rem; margin-bottom:6px;">🧠</div>
+                  <div style="font-size:2rem; margin-bottom:6px;">🧠🎬</div>
 
-                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📷 AIカメラ起動」または「📁 動画読込」を選択</div>
+                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカウントダウンなしで即座に自動診断がスタートします！</div>
 
-                  <div style="font-size:0.75rem; margin-top:4px;">「🛡️ 基本の構え診断」からスマッシュ・レシーブ・ヘアピンまで、あなたの肩・膝・足幅に合わせて理想ガイドを表示します</div>
+                  <div style="font-size:0.75rem; margin-top:4px;">カメラ撮影時は「📷 AIカメラ起動」➔「▶️ 10秒間 精密測定スタート」で診断します</div>
 
                 </div>
 
@@ -2845,8 +2293,6 @@
             </div>
 
 
-
-            <!-- 4指標メトリクス（種目に応じてラベルも自動最適化・スマホ2列でも見切れゼロ） -->
 
             <div class="metrics-grid">
 
@@ -2858,7 +2304,7 @@
 
                 <div class="metric-peak" id="maxElbowDeg">MAX: --° / 最小: --°</div>
 
-                <div class="metric-score-tag" id="ptElbow">評価: -- pt</div>
+                <div class="metric-score-tag" id="ptElbow">リスト: --</div>
 
               </div>
 
@@ -2902,8 +2348,6 @@
 
 
 
-            <!-- 線引きツールバー（普段はOFFでスクロール優先） -->
-
             <div class="pen-toolbar">
 
               <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -2928,7 +2372,7 @@
 
                 <button class="btn" style="padding:5px 8px; font-size:0.72rem;" onclick="resetMaxMetrics()">🔄 リセット</button>
 
-                <button class="btn" style="padding:5px 8px; font-size:0.72rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button>
+                <button class="btn" style="padding:5px 8px; font-size:0.72rem;" onclick="toggleVideoPause()">⏯️ 一時停止/再生</button>
 
                 <button class="btn btn-rose" style="padding:5px 8px; font-size:0.72rem;" onclick="clearDrawing()">🗑️ 線消去</button>
 
@@ -2939,8 +2383,6 @@
           </div>
 
 
-
-          <!-- 右カラム：種目選択・10秒測定・採点内訳・過去ベスト比較・AI総括レポート -->
 
           <div style="display:flex; flex-direction:column; gap:10px;">
 
@@ -2956,17 +2398,15 @@
 
 
 
-              <!-- プルダウン文字列をスマホ画面幅に収まる簡潔な表記に最適化（全10種目） -->
-
               <div class="form-group" style="margin-bottom:8px;">
 
-                <label>① チェックする種目を選択（構え診断＋全9ストローク）</label>
+                <label>① チェックする種目を選択（動画読込中に変えると先頭から自動再診断します）</label>
 
-                <select id="shotTypeSelect" onchange="updateShotCriteriaUI()">
+                <select id="shotTypeSelect" onchange="onShotTypeChanged()">
 
                   <optgroup label="🛡️ 構え（レディポジション）編">
 
-                    <option value="ready_stance" selected>🛡️ 基本の構え・レディポジション診断（手首高・膝角・足幅・静止安定度）</option>
+                    <option value="ready_stance" selected>🛡️ 基本の構え・レディポジション診断（手首高・リストスタンド・膝角・静止安定度）</option>
 
                   </optgroup>
 
@@ -2980,7 +2420,7 @@
 
                     <option value="lob">🛡️ レシーブ＆ロブ（膝の深い沈み込み・低い重心）</option>
 
-                    <option value="drive">⚡ ドライブ＆プッシュ（肘の前方保持・弾き）</option>
+                    <option value="drive">⚡ ドライブ＆プッシュ（リストスタンド・肘の前方保持）</option>
 
                   </optgroup>
 
@@ -2996,7 +2436,7 @@
 
                     <option value="cut_reverse">✂️ カット・リバースカット（高打点フェイント）</option>
 
-                    <option value="cross_hairpin">🕸️ ヘアピン・クロスヘアピン（深いランジ・体幹安定）</option>
+                    <option value="cross_hairpin">🕸️ ヘアピン・クロスヘアピン（深いランジ・リストスタンド）</option>
 
                   </optgroup>
 
@@ -3028,15 +2468,13 @@
 
               <button id="btnStartPoseSession" class="btn btn-amber" style="width:100%; padding:10px; font-size:0.84rem;" onclick="startTimedPoseSession()">
 
-                ▶️ 10秒間 精密測定スタート（過去ベスト自動判定）
+                ▶️ 精密測定スタート（動画時は先頭から即・再診断）
 
               </button>
 
             </div>
 
 
-
-            <!-- 採点内訳プログレスバー -->
 
             <div class="breakdown-box" style="margin-top:0;">
 
@@ -3094,7 +2532,29 @@
 
 
 
-            <!-- 一目でわかる「今回 vs 過去ベスト vs 理想基準」比較カード -->
+            <!-- 📸 ベスト打点・構え瞬間の自動キャプチャカード -->
+
+            <div class="snapshot-card" id="bestMomentCard">
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+
+                <span style="font-weight:900; font-size:0.78rem; color:var(--accent-primary);">📸 自動キャプチャ：今回のベスト瞬間フレーム</span>
+
+                <button class="btn btn-cyan-outline" style="padding:3px 8px; font-size:0.68rem;" onclick="downloadBestMomentImage()">💾 画像保存</button>
+
+              </div>
+
+              <div class="snapshot-preview-wrap">
+
+                <canvas id="bestMomentCanvas" width="360" height="360"></canvas>
+
+                <div id="bestMomentMetaText" style="font-size:0.75rem; color:#e2e8f0; line-height:1.45;"></div>
+
+              </div>
+
+            </div>
+
+
 
             <div class="summary-box" style="margin-top:0;">
 
@@ -3118,8 +2578,6 @@
 
 
 
-            <!-- AI総括フィードバック -->
-
             <div class="summary-box" style="margin-top:0;">
 
               <div style="font-weight:800; color:var(--accent-highlight); margin-bottom:5px; display:flex; justify-content:space-between; flex-wrap:wrap;">
@@ -3134,7 +2592,7 @@
 
               <div id="aiSummaryContent" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
 
-                <b>「▶️ 10秒間 精密測定スタート」</b>を押すと、10秒間の動作から構えの悪癖（ラケット下がり・棒立ち・無駄なバウンド）やスイング軌道を数値化して具体的な改善策を表示します。
+                <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、動画の最初から最後まで自動でフォームを解析し、ベスト瞬間の静止画キャプチャと改善アドバイスを表示します。
 
               </div>
 
@@ -3200,7 +2658,7 @@
 
     <!-- =========================================================
 
-         TAB 5: 🧮 試合スコア＆サーブ・レシーブ位置ナビ（ダブルス/シングルス・Undo対応）
+         TAB 5: 🧮 試合スコア＆サーブ・レシーブ位置ナビ
 
     ========================================================== -->
 
@@ -3280,7 +2738,7 @@
 
     <!-- =========================================================
 
-         TAB 6: 👤 複数人メンバー管理（タップで即選択・追加・保存）
+         TAB 6: 👤 複数人メンバー管理 ＆ iPhone/iPadデータ引き継ぎ
 
     ========================================================== -->
 
@@ -3310,7 +2768,7 @@
 
 
 
-        <div class="card" style="background:var(--bg-panel); margin:0;">
+        <div class="card" style="background:var(--bg-panel); margin-bottom:12px;">
 
           <div class="card-header">
 
@@ -3412,6 +2870,36 @@
 
         </div>
 
+
+
+        <!-- 📲 iPhone / iPad 間のデータ引き継ぎ（書き出し・読み込み） -->
+
+        <div class="card" style="background:var(--bg-surface); margin:0;">
+
+          <div class="card-header">
+
+            <div class="card-title">📲 iPhone ⇄ iPad データ引き継ぎ（メンバー＆過去ベスト一括共有）</div>
+
+            <div class="btn-group">
+
+              <button class="btn btn-cyan-outline" onclick="exportAllAppData()">📤 引き継ぎコードを書き出してコピー</button>
+
+              <button class="btn btn-emerald" onclick="importAllAppData()">📥 貼り付けたコードを読み込む</button>
+
+            </div>
+
+          </div>
+
+          <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px;">
+
+            iPhoneで「📤 書き出してコピー」を押し、AirDropやメモ帳でiPadへ送って下の枠に貼り付け「📥 読み込む」を押すと、全メンバーと過去ベスト記録がそのまま同期されます。
+
+          </p>
+
+          <textarea id="dataSyncTextarea" rows="2" placeholder="ここに引き継ぎコードが表示されます（または別端末からコピーしたコードをここに貼り付け）" style="font-size:0.75rem; font-family:monospace;"></textarea>
+
+        </div>
+
       </div>
 
     </section>
@@ -3420,7 +2908,7 @@
 
     <!-- =========================================================
 
-         TAB 7: 📖 撮影ガイド（構え診断・初速・ストローク別カメラ位置）
+         TAB 7: 📖 撮影ガイド ＆ iPadホーム画面アプリ化手順
 
     ========================================================== -->
 
@@ -3430,7 +2918,7 @@
 
         <div class="card-header">
 
-          <div class="card-title">📖 目的別 ベストなiPad・スマホ設置アングル</div>
+          <div class="card-title">📖 目的別 ベストなiPad・スマホ設置アングル ＆ フルスクリーン化手順</div>
 
         </div>
 
@@ -3448,7 +2936,7 @@
 
             <p style="font-size:0.76rem; color:var(--text-secondary);">
 
-              正面から全身（頭〜足首）を映すことで、<b>「ラケット（手首）が下がっていないか」「足幅（スタンス比）が肩幅の1.3〜1.6倍あるか」「無駄にピョンピョン跳ねていないか」</b>を正確に診断できます。
+              正面から全身（頭〜足首）を映すことで、<b>「ラケット（手首）が下がっていないか」「リストスタンドできているか」「足幅（スタンス比）が肩幅の1.3〜1.6倍あるか」「小刻みに跳ねていないか」</b>を正確に診断できます。
 
             </p>
 
@@ -3467,6 +2955,24 @@
             <p style="font-size:0.76rem; color:var(--text-secondary);">
 
               利き腕側の斜め後ろから全身を映すことで、自分の肩・膝から伸びる<b>「🎯理想打点レーザー（水色）」と「🏆過去ベスト線（ゴールド）」</b>が重ならず、スイング軌道アークも綺麗に描画されます。
+
+            </p>
+
+          </div>
+
+
+
+          <div class="diagram-card">
+
+            <div style="font-weight:900; color:#10b981; margin-bottom:6px; font-size:0.88rem;">
+
+              📱 iPad / iPhoneでアドレスバーを消して100%全画面アプリ化する手順
+
+            </div>
+
+            <p style="font-size:0.76rem; color:var(--text-secondary);">
+
+              Safari上部の共有ボタン（四角から上矢印 📤）をタップし、メニューから<b>「ホーム画面に追加」</b>を押してください。ホーム画面に作られた「バドトレPRO」アイコンから開くと、上のURLバーが完全に消えて専用アプリとして広く使えます。
 
             </p>
 
@@ -3494,11 +3000,11 @@
 
     const DEFAULT_PROFILES = [
 
-      { id: "p1", name: "プレイヤー1 (メイン)", height: 165, category: "adult", power: "mid", style: "control", hand: "right" },
+      { id: "p1", name: "プレイヤー1 (メイン)", height: 165, category: "adult", power: "mid", style: "speed", hand: "right" },
 
-      { id: "p2", name: "メンバー2 (スピード)", height: 158, category: "junior_high", power: "low", style: "speed", hand: "right" },
+      { id: "p2", name: "メンバー2 (中3)", height: 158, category: "junior_high", power: "mid", style: "control", hand: "right" },
 
-      { id: "p3", name: "メンバー3 (ジュニア)", height: 145, category: "junior_elem", power: "low", style: "control", hand: "right" }
+      { id: "p3", name: "メンバー3 (中学)", height: 152, category: "junior_high", power: "low", style: "speed", hand: "right" }
 
     ];
 
@@ -3532,15 +3038,11 @@
 
 
 
-    // ディレイ再生ミラー用バッファ
-
     let delayMirrorSeconds = 0;
 
     let delayFrameBuffer = [];
 
 
-
-    // 画面スリープ防止（Wake Lock API）
 
     let wakeLockSentinel = null;
 
@@ -3582,7 +3084,7 @@
 
       document.documentElement.setAttribute('data-theme', themeName);
 
-      localStorage.setItem('badtore_ui_theme_v75', themeName);
+      localStorage.setItem('badtore_ui_theme_v80', themeName);
 
     }
 
@@ -3608,11 +3110,7 @@
 
 
 
-      if (tabId === 'tab-pose') {
-
-        updateShotCriteriaUI();
-
-      }
+      if (tabId === 'tab-pose') updateShotCriteriaUI();
 
       if (tabId === 'tab-racket') renderRacketRecommendations('ALL');
 
@@ -3623,8 +3121,6 @@
     }
 
 
-
-    // 全画面表示：body.is-fullscreen-mode を連動させ、上部ヘッダー・タブとの重なりを100%防ぐ
 
     function toggleSmartFullscreen(elemId) {
 
@@ -3659,8 +3155,6 @@
       }
 
 
-
-      // iPhone/iPad で最も安定して1画面に収まる擬似フルスクリーン＋ネイティブ併用
 
       el.classList.add('pseudo-fullscreen');
 
@@ -3886,7 +3380,7 @@
 
     /* =========================================================================
 
-       4. TAB 1: 🏃 声指示フットワーク（連続時120ms消灯フラッシュ）
+       4. TAB 1: 🏃 声指示フットワーク（移動用カウントダウン対応）
 
     ========================================================================= */
 
@@ -4054,15 +3548,15 @@
 
 
 
-      let cd = 3;
+      let cd = Number(document.getElementById('fwCountdownSec').value) || 5;
 
       const callLabel = document.getElementById('fwCurrentCallLabel');
 
-      callLabel.textContent = `⏳ 開始まで ${cd}`;
+      callLabel.textContent = `⏳ 開始まで ${cd}秒`;
 
       playBeep(660, 90);
 
-      speakText("3");
+      speakText(String(cd));
 
 
 
@@ -4072,11 +3566,11 @@
 
         if (cd > 0) {
 
-          callLabel.textContent = `⏳ 開始まで ${cd}`;
+          callLabel.textContent = `⏳ 開始まで ${cd}秒`;
 
           playBeep(660, 90);
 
-          speakText(String(cd));
+          if (cd <= 5) speakText(String(cd));
 
         } else {
 
@@ -4674,7 +4168,7 @@
 
     /* =========================================================================
 
-       6. 共有MediaPipeカメラエンジン
+       6. 共有MediaPipeカメラ＆動画エンジン
 
     ========================================================================= */
 
@@ -4742,7 +4236,7 @@
 
 
 
-      if (!keepFacing && activeCameraMode === mode) {
+      if (!keepFacing && activeCameraMode === mode && !isUploadedVideo) {
 
         stopSharedCamera();
 
@@ -4848,7 +4342,7 @@
 
       currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
 
-      if (activeCameraMode) {
+      if (activeCameraMode && !isUploadedVideo) {
 
         toggleCameraForMode(activeCameraMode, true);
 
@@ -4868,6 +4362,14 @@
 
       delayFrameBuffer = [];
 
+      if (poseSession.active) {
+
+        clearInterval(poseSession.timerId);
+
+        poseSession.active = false;
+
+      }
+
       releaseAppWakeLock();
 
       if (animFrameId) {
@@ -4881,6 +4383,8 @@
       const video = document.getElementById('sharedInputVideo');
 
       video.pause();
+
+      video.onended = null;
 
       if (activeMediaStream) {
 
@@ -4950,17 +4454,19 @@
 
       if (activeCameraMode === 'pose') {
 
-        btnPose.textContent = "⏹️ カメラ停止";
+        btnPose.textContent = isUploadedVideo ? "📷 カメラへ切替" : "⏹️ カメラ停止";
 
-        btnPose.className = "btn btn-rose";
+        btnPose.className = isUploadedVideo ? "btn btn-emerald" : "btn btn-rose";
 
         poseCanvas.style.display = "block";
 
         document.getElementById('posePlaceholder').style.display = "none";
 
+        const speedRate = document.getElementById('videoSpeedSelect').value;
+
         document.getElementById('poseHudStatus').textContent =
 
-          isUploadedVideo ? "🎞️ 動画解析中" : (delayMirrorSeconds > 0 ? `⏪ ${delayMirrorSeconds}秒遅れ再生中` : `🟢 AI稼働中 (${currentFacingMode === 'user' ? '内' : '外'})`);
+          isUploadedVideo ? `🎞️ 動画自動診断 (${speedRate}x)` : (delayMirrorSeconds > 0 ? `⏪ ${delayMirrorSeconds}秒遅れ再生中` : `🟢 AI稼働中 (${currentFacingMode === 'user' ? '内' : '外'})`);
 
       } else {
 
@@ -5018,7 +4524,7 @@
 
     /* =========================================================================
 
-       7. 🛡️ 構え（レディポジション）リアルタイム診断ヘルパー（Tab 2 & Tab 3 共通）
+       7. 🛡️ 構え（レディポジション）＆ リストスタンド（手首角度）判定ヘルパー
 
     ========================================================================= */
 
@@ -5026,9 +4532,11 @@
 
       const isLeft = userProfile.hand === 'left';
 
-      const shoulder = isLeft ? lm[11] : lm[12];
+      const elbow    = isLeft ? lm[13] : lm[14];
 
       const wrist    = isLeft ? lm[15] : lm[16];
+
+      const indexTip = isLeft ? lm[19] : lm[20];
 
       const hip      = isLeft ? lm[23] : lm[24];
 
@@ -5046,9 +4554,9 @@
 
 
 
-      // ① ラケット（手首）の高さ：みぞおち〜胸の高さ（hipより上）にあるか
+      // ① ラケット（手首）の高さ：みぞおち〜胸の高さにあるか
 
-      const wristRelHeight = (midHipY - wrist.y) / torsoLen; // 0 = 股関節と同じ高さ, 0.5 = 胸の高さ, 1.0 = 肩の高さ
+      const wristRelHeight = (midHipY - wrist.y) / torsoLen;
 
       let wristScore = 100;
 
@@ -5064,7 +4572,37 @@
 
 
 
-      // ② 膝のゆとり角度（理想は130°〜152°。162°以上は棒立ち）
+      // ② リストスタンド判定（肘→手首→人差し指の角度と指先の高さ）
+
+      let wristStandPt = 92;
+
+      let isWristStandOk = true;
+
+      if (elbow && wrist && indexTip) {
+
+        const wristCockDeg = calcAngle(elbow, wrist, indexTip);
+
+        const fingerDrop = (indexTip.y - wrist.y) / torsoLen;
+
+        if (fingerDrop > 0.12) {
+
+          wristStandPt = 58;
+
+          isWristStandOk = false;
+
+          if (!wristIssue) wristIssue = "手首が寝ています(リストを立てて)";
+
+        } else if (wristCockDeg <= 165 || fingerDrop <= 0.04) {
+
+          wristStandPt = 96;
+
+        }
+
+      }
+
+
+
+      // ③ 膝のゆとり角度（理想は130°〜152°）
 
       const kneeDeg = calcAngle(hip, knee, ankle);
 
@@ -5088,7 +4626,7 @@
 
 
 
-      // ③ スタンス幅比（肩幅に対する足首間の幅：理想は1.25〜1.65倍）
+      // ④ スタンス幅比（肩幅に対する足幅：理想1.25〜1.65倍）
 
       const shWidth = Math.max(0.08, Math.hypot(lm[11].x - lm[12].x, lm[11].y - lm[12].y));
 
@@ -5116,9 +4654,9 @@
 
 
 
-      const totalReadyPt = Math.round(wristScore * 0.4 + kneeScore * 0.35 + stanceScore * 0.25);
+      const totalReadyPt = Math.round(wristScore * 0.3 + wristStandPt * 0.15 + kneeScore * 0.35 + stanceScore * 0.2);
 
-      const mainIssue = wristIssue || kneeIssue || stanceIssue || "構え良好（ラケット高・膝OK）";
+      const mainIssue = wristIssue || kneeIssue || stanceIssue || "構え＆リストスタンド良好";
 
 
 
@@ -5127,6 +4665,10 @@
         totalReadyPt,
 
         wristScore,
+
+        wristStandPt,
+
+        isWristStandOk,
 
         kneeScore,
 
@@ -5148,7 +4690,7 @@
 
     /* =========================================================================
 
-       8. TAB 2 (モード②): 📷 初速AIカメラ測定（構え診断連動＋ミリ秒実測）
+       8. TAB 2 (モード②): 📷 初速AIカメラ測定
 
     ========================================================================= */
 
@@ -5254,7 +4796,7 @@
 
       mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：構えて待機...`;
 
-      subTxt.textContent = "ラケットを上げ、膝を軽く緩めて矢印を待ってください";
+      subTxt.textContent = "ラケットを上げ、リストを立てて矢印を待ってください";
 
 
 
@@ -5321,8 +4863,6 @@
         const stanceEval = evaluateReadyStanceQuality(lm);
 
 
-
-        // 構えのライブバッジ更新
 
         const liveBadge = document.getElementById('reflexStanceLiveBadge');
 
@@ -5524,9 +5064,9 @@
 
       let stanceAdvice = avgStance >= 85
 
-        ? "待機中のラケット高さと膝の構えも非常に安定しています。"
+        ? "待機中のラケット高さ・リストスタンドと膝の構えも非常に安定しています。"
 
-        : "待機中にラケット（手首）が腰付近まで下がる、または膝が伸びきる場面がありました。胸の前でラケットを構え続けるとさらに初速が上がります！";
+        : "待機中にラケット（手首）が下がる、または膝が伸びきる場面がありました。胸の前でリストを立てて構え続けるとさらに初速が上がります！";
 
 
 
@@ -5566,7 +5106,7 @@
 
     /* =========================================================================
 
-       9. TAB 3: 🎥 構え（レディポジション）＆ 全10種目AI骨格解析エンジン
+       9. TAB 3: 🎥 構え＆全10種目AI骨格解析（動画自動診断・ベスト瞬間キャプチャ・スロー再生）
 
     ========================================================================= */
 
@@ -5578,7 +5118,7 @@
 
         focus: "stance", idealShoulder: 55, idealElbow: 105, idealKnee: 140, idealStance: 1.45,
 
-        desc: "🛡️ <b>基本の構え100pt基準:</b> ①ラケット(手首)をみぞおちより上でキープ、②膝角度132°〜150°＆足幅が肩幅の約1.4倍、③無駄な上下バウンドのない静止安定度を採点します。"
+        desc: "🛡️ <b>基本の構え100pt基準:</b> ①ラケット(手首)をみぞおちより上でキープ＆リストスタンド、②膝角度132°〜150°＆足幅が肩幅の約1.4倍、③小刻みな上下バウンドのない静止安定度を採点します。"
 
       },
 
@@ -5618,7 +5158,7 @@
 
         focus: "lower", idealShoulder: 95, idealElbow: 138, idealKnee: 122,
 
-        desc: "🎯 <b>レシーブ＆ロブ100pt基準:</b> 膝の沈み込み角120°〜132°の深い腰落としと、肘を前に出したラケットワークを重点評価します。"
+        desc: "🎯 <b>レシーブ＆ロブ100pt基準:</b> 膝の沈み込み角120°〜132°の深い腰落としと、リストを立てて肘を前に出したラケットワークを評価します。"
 
       },
 
@@ -5628,7 +5168,7 @@
 
         focus: "lower", idealShoulder: 105, idealElbow: 132, idealKnee: 130,
 
-        desc: "🎯 <b>ドライブ＆プッシュ100pt基準:</b> 肘を体の前に保ち（約110°〜135°）、コンパクトに弾く初速を評価します。"
+        desc: "🎯 <b>ドライブ＆プッシュ100pt基準:</b> リストスタンドを保ち、肘を体の前に出して（約110°〜135°）コンパクトに弾く初速を評価します。"
 
       },
 
@@ -5668,7 +5208,7 @@
 
         focus: "lower", idealShoulder: 92, idealElbow: 145, idealKnee: 118,
 
-        desc: "🎯 <b>クロスヘアピン100pt基準:</b> 深いランジ姿勢（膝115°〜130°）と頭が突っ込まない体幹軸・肘の前方安定度を評価します。"
+        desc: "🎯 <b>クロスヘアピン100pt基準:</b> 深いランジ姿勢（膝115°〜130°）と頭が突っ込まない体幹軸・リストスタンドの安定度を評価します。"
 
       }
 
@@ -5686,7 +5226,7 @@
 
       speedPt: 0, maxSpeedPt: 0,
 
-      stanceRatio: 1.35, stabilityPt: 90, wristKeepPt: 90,
+      stanceRatio: 1.35, stabilityPt: 90, wristKeepPt: 90, wristStandPt: 92, isWristStandOk: true,
 
       coreTiltDeg: 0, confidencePct: 0,
 
@@ -5696,7 +5236,9 @@
 
       smoothElbow: null, smoothShoulder: null, smoothKnee: null, smoothSpeed: 0,
 
-      bestFrameLandmarks: null, bestFrameScore: 0
+      bestFrameLandmarks: null, bestFrameScore: 0,
+
+      bestSnapshotMeta: null
 
     };
 
@@ -5711,6 +5253,20 @@
       delayMirrorSeconds = Number(val) || 0;
 
       delayFrameBuffer = [];
+
+      updateCameraToggleButtonsUI();
+
+    }
+
+
+
+    function changeVideoPlaybackSpeed(rateVal) {
+
+      const video = document.getElementById('sharedInputVideo');
+
+      const rate = Number(rateVal) || 1.0;
+
+      if (video) video.playbackRate = rate;
 
       updateCameraToggleButtonsUI();
 
@@ -5744,6 +5300,8 @@
 
 
 
+    // 🎬 動画を読み込んだ瞬間に自動で診断スタート！
+
     function handleVideoUpload(event) {
 
       const file = event.target.files[0];
@@ -5762,11 +5320,15 @@
 
       video.src = URL.createObjectURL(file);
 
-      video.loop = true;
+      video.loop = false; // 自動診断時は動画終了を検知するためループしない
+
+      const rate = Number(document.getElementById('videoSpeedSelect').value) || 1.0;
+
+
 
       video.onloadeddata = () => {
 
-        video.play();
+        video.playbackRate = rate;
 
         syncCanvasDimensionsToVideo(video);
 
@@ -5774,11 +5336,121 @@
 
         updateCameraToggleButtonsUI();
 
-        resetMaxMetrics();
-
         processSharedVideoFrame();
 
+        // カウントダウンなしで即座に自動診断開始
+
+        startAutoVideoDiagnosis();
+
       };
+
+
+
+      // 同じファイルを再度選んだときも発火するようにリセット
+
+      event.target.value = "";
+
+    }
+
+
+
+    function startAutoVideoDiagnosis() {
+
+      const video = document.getElementById('sharedInputVideo');
+
+      if (!video || !isUploadedVideo) return;
+
+
+
+      clearInterval(poseSession.timerId);
+
+      resetMaxMetrics();
+
+      document.getElementById('bestMomentCard').style.display = 'none';
+
+
+
+      const rate = Number(document.getElementById('videoSpeedSelect').value) || 1.0;
+
+      video.currentTime = 0;
+
+      video.playbackRate = rate;
+
+      video.loop = false;
+
+
+
+      poseSession.active = true;
+
+      poseSession.validFrames = 0;
+
+
+
+      // 動画の長さ（最大12秒まで）に合わせて自動測定
+
+      const vidDur = (video.duration && isFinite(video.duration)) ? Math.min(12, Math.ceil(video.duration / rate)) : 10;
+
+      poseSession.durationSec = vidDur;
+
+      poseSession.remainingSec = vidDur;
+
+
+
+      document.getElementById('btnStartPoseSession').disabled = true;
+
+      document.getElementById('sessionTimerLabel').textContent = `🔴 動画自動診断中... (${rate}x)`;
+
+      document.getElementById('aiSummaryContent').innerHTML = `🎬 動画を最初から自動解析しています。完了するとベスト瞬間キャプチャと総合スコアが表示されます...`;
+
+
+
+      video.onended = () => {
+
+        if (poseSession.active) {
+
+          finishPoseRecording(true);
+
+        }
+
+      };
+
+
+
+      video.play().catch(() => {});
+
+
+
+      poseSession.timerId = setInterval(() => {
+
+        poseSession.remainingSec--;
+
+        if (poseSession.remainingSec > 0) {
+
+          document.getElementById('sessionTimerLabel').textContent = `🔴 動画自動診断中... 残り約 ${poseSession.remainingSec} 秒`;
+
+        } else {
+
+          finishPoseRecording(true);
+
+        }
+
+      }, 1000);
+
+    }
+
+
+
+    function onShotTypeChanged() {
+
+      updateShotCriteriaUI();
+
+      // 動画が読み込まれている状態で種目を変えたら、自動的に先頭からその種目で再診断！
+
+      if (activeCameraMode === 'pose' && isUploadedVideo) {
+
+        startAutoVideoDiagnosis();
+
+      }
 
     }
 
@@ -5866,6 +5538,8 @@
 
         const wrist    = isLeft ? lm[15] : lm[16];
 
+        const indexTip = isLeft ? lm[19] : lm[20];
+
         const hip      = isLeft ? lm[23] : lm[24];
 
         const knee     = isLeft ? lm[25] : lm[26];
@@ -5906,8 +5580,6 @@
 
 
 
-        // 体幹センター軸と体幹長（カメラの向きに左右されない基準長）の算出
-
         const midShX = (lm[11].x + lm[12].x) / 2;
 
         const midShY = (lm[11].y + lm[12].y) / 2;
@@ -5941,8 +5613,6 @@
         ctx.setLineDash([]);
 
 
-
-        // スイング軌道アークの描画
 
         if (swingArcEnabled && wrist && (wrist.visibility || 0) > 0.5) {
 
@@ -5978,7 +5648,29 @@
 
 
 
-        if (confPct >= 55) {
+        if (ghostMode === 'heatmap') {
+
+          drawProHeatmapSkeleton(ctx, canvas, lm, shoulder, elbow, knee);
+
+        } else {
+
+          drawConnectors(ctx, lm, POSE_CONNECTIONS, { color: '#10b981', lineWidth: 3 });
+
+          drawLandmarks(ctx, lm, { color: '#38bdf8', lineWidth: 2, radius: 4 });
+
+        }
+
+
+
+        if (ghostMode === 'body_laser') {
+
+          drawBodyAttachedLaserGuide(ctx, canvas.width, canvas.height, shotType, lm, shoulder, elbow, wrist, indexTip, hip, knee);
+
+        }
+
+
+
+        if (confPct >= 52) {
 
           if (poseSession.active) poseSession.validFrames++;
 
@@ -6026,13 +5718,15 @@
 
 
 
-          // 構え診断用：スタンス幅比・手首高さ・上下バウンド静止安定度
-
           const stanceEval = evaluateReadyStanceQuality(lm);
 
           aiMetrics.stanceRatio = stanceEval.stanceRatio;
 
           aiMetrics.wristKeepPt = stanceEval.wristScore;
+
+          aiMetrics.wristStandPt = stanceEval.wristStandPt;
+
+          aiMetrics.isWristStandOk = stanceEval.isWristStandOk;
 
 
 
@@ -6046,23 +5740,21 @@
 
             const maxDev = Math.max(...aiMetrics.hipYHistory.map(v => Math.abs(v - meanY)));
 
-            // 無駄な上下バウンドが少ないほど100ptに近い
-
             aiMetrics.stabilityPt = Math.min(100, Math.max(40, Math.round(105 - maxDev * 320)));
 
           }
 
 
 
-          // 体幹長（torsoLength）で正規化した角度非依存のスイング速度計算
-
           const now = performance.now();
 
           if (aiMetrics.prevWrist && aiMetrics.prevTime > 0) {
 
-            const dt = (now - aiMetrics.prevTime) / 1000;
+            const videoRate = isUploadedVideo ? (Number(document.getElementById('videoSpeedSelect').value) || 1.0) : 1.0;
 
-            if (dt >= 0.015 && dt < 0.25) {
+            const dt = ((now - aiMetrics.prevTime) / 1000) * videoRate;
+
+            if (dt >= 0.005 && dt < 0.28) {
 
               const wristDist = Math.hypot(wrist.x - aiMetrics.prevWrist.x, wrist.y - aiMetrics.prevWrist.y);
 
@@ -6120,19 +5812,49 @@
 
 
 
-          const frameComposite = shotType === 'ready_stance'
+          const model = SHOT_IDEAL_MODELS[shotType] || SHOT_IDEAL_MODELS.smash;
 
-            ? (aiMetrics.wristKeepPt * 0.4 + aiMetrics.kneePt * 0.35 + aiMetrics.stabilityPt * 0.25)
+          let frameComposite = 0;
 
-            : (aiMetrics.shoulderPt * 0.4 + aiMetrics.kneePt * 0.3 + aiMetrics.elbowPt * 0.3);
+          if (shotType === 'ready_stance') {
+
+            frameComposite = aiMetrics.wristKeepPt * 0.35 + aiMetrics.wristStandPt * 0.15 + aiMetrics.kneePt * 0.3 + aiMetrics.stabilityPt * 0.2;
+
+          } else if (model.focus === 'overhead') {
+
+            frameComposite = shoulderDeg * 0.55 + elbowDeg * 0.25 + aiMetrics.speedPt * 0.2;
+
+          } else {
+
+            frameComposite = (180 - kneeDeg) * 0.6 + aiMetrics.speedPt * 0.4;
+
+          }
 
 
+
+          // 📸 ベスト瞬間フレームの自動キャプチャ更新
 
           if (frameComposite >= aiMetrics.bestFrameScore) {
 
             aiMetrics.bestFrameScore = frameComposite;
 
             aiMetrics.bestFrameLandmarks = lm.map(pt => ({ x: pt.x, y: pt.y }));
+
+            aiMetrics.bestSnapshotMeta = {
+
+              shoulderDeg,
+
+              elbowDeg,
+
+              kneeDeg,
+
+              speedPt: aiMetrics.speedPt,
+
+              wristStandOk: aiMetrics.isWristStandOk
+
+            };
+
+            captureBestMomentCanvas(canvas);
 
           }
 
@@ -6142,33 +5864,9 @@
 
         }
 
-
-
-        if (ghostMode === 'heatmap') {
-
-          drawProHeatmapSkeleton(ctx, canvas, lm, shoulder, elbow, knee);
-
-        } else {
-
-          drawConnectors(ctx, lm, POSE_CONNECTIONS, { color: '#10b981', lineWidth: 3 });
-
-          drawLandmarks(ctx, lm, { color: '#38bdf8', lineWidth: 2, radius: 4 });
-
-        }
-
-
-
-        if (ghostMode === 'body_laser') {
-
-          drawBodyAttachedLaserGuide(ctx, canvas.width, canvas.height, shotType, lm, shoulder, elbow, wrist, hip, knee);
-
-        }
-
       }
 
 
-
-      // ディレイ再生ミラー処理
 
       if (delayMirrorSeconds > 0 && !isUploadedVideo) {
 
@@ -6218,9 +5916,43 @@
 
 
 
-    // 🎯 身体追従レーザーガイド（構え時はラケット高さライン＆理想スタンス幅ガイド、ストローク時は理想打点＆膝角）
+    function captureBestMomentCanvas(sourceCanvas) {
 
-    function drawBodyAttachedLaserGuide(ctx, w, h, shotType, lm, shoulder, elbow, wrist, hip, knee) {
+      const snapCanvas = document.getElementById('bestMomentCanvas');
+
+      if (!snapCanvas || !sourceCanvas) return;
+
+      snapCanvas.width = sourceCanvas.width;
+
+      snapCanvas.height = sourceCanvas.height;
+
+      const sCtx = snapCanvas.getContext('2d');
+
+      sCtx.drawImage(sourceCanvas, 0, 0);
+
+    }
+
+
+
+    function downloadBestMomentImage() {
+
+      const snapCanvas = document.getElementById('bestMomentCanvas');
+
+      if (!snapCanvas) return;
+
+      const link = document.createElement('a');
+
+      link.download = `badtore_best_${Date.now()}.png`;
+
+      link.href = snapCanvas.toDataURL('image/png');
+
+      link.click();
+
+    }
+
+
+
+    function drawBodyAttachedLaserGuide(ctx, w, h, shotType, lm, shoulder, elbow, wrist, indexTip, hip, knee) {
 
       const model = SHOT_IDEAL_MODELS[shotType] || SHOT_IDEAL_MODELS.smash;
 
@@ -6232,9 +5964,31 @@
 
 
 
-      if (model.focus === 'stance') {
+      // 🏸 リストスタンド（手首→人差し指）インジケーター描画
 
-        // 🛡️ 構えモード専用ガイド：①みぞおちのラケット最低維持ライン ＋ ②理想スタンス幅（肩幅の1.4倍）マーカー
+      if (wrist && indexTip && (wrist.visibility || 0) > 0.5) {
+
+        const wx = wrist.x * w, wy = wrist.y * h;
+
+        const ix = indexTip.x * w, iy = indexTip.y * h;
+
+        ctx.beginPath();
+
+        ctx.moveTo(wx, wy);
+
+        ctx.lineTo(ix, iy);
+
+        ctx.strokeStyle = aiMetrics.isWristStandOk ? '#34d399' : '#f43f5e';
+
+        ctx.lineWidth = 4;
+
+        ctx.stroke();
+
+      }
+
+
+
+      if (model.focus === 'stance') {
 
         const chestGuideY = ((shoulder.y * 0.35 + hip.y * 0.65) * h);
 
@@ -6264,17 +6018,15 @@
 
         ctx.fillStyle = 'rgba(5, 9, 20, 0.86)';
 
-        ctx.fillRect(w * 0.15, chestGuideY - 24, 235, 20);
+        ctx.fillRect(w * 0.15, chestGuideY - 24, 245, 20);
 
         ctx.fillStyle = isWristOk ? '#10b981' : '#fb7185';
 
         ctx.font = 'bold 11px sans-serif';
 
-        ctx.fillText(isWristOk ? '🟢 ラケット高さOK (この線より上)' : '⚠️ ラケットをこの線より上に上げて！', w * 0.15 + 6, chestGuideY - 10);
+        ctx.fillText(isWristOk ? '🟢 ラケット高＆リストOK (この線より上)' : '⚠️ ラケットをこの線より上に上げて！', w * 0.15 + 6, chestGuideY - 10);
 
 
-
-        // 足元の理想スタンス幅マーカー（肩幅×1.45倍）
 
         const midAnkleX = ((lm[27].x + lm[28].x) / 2) * w;
 
@@ -6306,7 +6058,7 @@
 
         ctx.fillStyle = 'rgba(5, 9, 20, 0.86)';
 
-        ctx.fillRect(midAnkleX - 85, midAnkleY + 16, 170, 20);
+        ctx.fillRect(midAnkleX - 85, midAnkleY + 16, 175, 20);
 
         ctx.fillStyle = '#38bdf8';
 
@@ -6464,7 +6216,7 @@
 
         ctx.font = 'bold 12px sans-serif';
 
-        ctx.fillText('🏆 この種目の過去ベストはまだ未記録です（10秒測定で自動保存）', 12, h - 14);
+        ctx.fillText('🏆 この種目の過去ベストはまだ未記録です（測定で自動保存）', 12, h - 14);
 
         ctx.restore();
 
@@ -6498,9 +6250,9 @@
 
       if (model.focus === 'stance') {
 
-        aiMetrics.shoulderPt = aiMetrics.wristKeepPt;
+        aiMetrics.shoulderPt = Math.round(aiMetrics.wristKeepPt * 0.7 + aiMetrics.wristStandPt * 0.3);
 
-        aiMetrics.elbowPt = Math.min(100, Math.max(45, 100 - Math.abs(105 - elbowDeg)));
+        aiMetrics.elbowPt = aiMetrics.wristStandPt;
 
         const diffKnee = Math.abs(model.idealKnee - kneeDeg);
 
@@ -6606,7 +6358,9 @@
 
         `MAX: ${aiMetrics.maxElbowDeg}° / 最小: ${aiMetrics.minElbowDeg === 180 ? '--' : aiMetrics.minElbowDeg}°`;
 
-      document.getElementById('ptElbow').textContent = `評価: ${aiMetrics.elbowPt} pt`;
+      document.getElementById('ptElbow').textContent =
+
+        aiMetrics.isWristStandOk ? `🟢 リストスタンドOK` : `⚠️ 手首寝すぎ`;
 
 
 
@@ -6648,13 +6402,11 @@
 
 
 
-      // プログレスバー更新
-
       let upperVal, lowerVal, thirdVal;
 
       if (isStance) {
 
-        upperVal = aiMetrics.wristKeepPt;
+        upperVal = Math.round(aiMetrics.wristKeepPt * 0.7 + aiMetrics.wristStandPt * 0.3);
 
         lowerVal = aiMetrics.kneePt;
 
@@ -6716,6 +6468,8 @@
 
       aiMetrics.bestFrameScore = 0;
 
+      aiMetrics.bestSnapshotMeta = null;
+
       wristArcTrail = [];
 
       updatePoseMetricsUI();
@@ -6740,7 +6494,7 @@
 
       if (shot === 'ready_stance') {
 
-        document.getElementById('bdLabel1').textContent = "① ラケット(手首)の高さキープ率（40%）";
+        document.getElementById('bdLabel1').textContent = "① ラケット高さ＆リストスタンド（40%）";
 
         document.getElementById('bdLabel2').textContent = "② 膝のゆとり角＆スタンス幅比（35%）";
 
@@ -6882,6 +6636,20 @@
 
       }
 
+
+
+      // 動画モード時はカウントダウンなしで動画を0秒に巻き戻して即再診断！
+
+      if (isUploadedVideo) {
+
+        startAutoVideoDiagnosis();
+
+        return;
+
+      }
+
+
+
       if (poseSession.active) return;
 
 
@@ -6940,6 +6708,8 @@
 
       resetMaxMetrics();
 
+      document.getElementById('bestMomentCard').style.display = 'none';
+
       poseSession.active = true;
 
       poseSession.durationSec = dur;
@@ -6962,7 +6732,7 @@
 
         } else {
 
-          finishPoseRecording();
+          finishPoseRecording(false);
 
         }
 
@@ -6972,7 +6742,7 @@
 
 
 
-    function finishPoseRecording() {
+    function finishPoseRecording(fromVideoAuto = false) {
 
       clearInterval(poseSession.timerId);
 
@@ -6980,19 +6750,29 @@
 
       document.getElementById('btnStartPoseSession').disabled = false;
 
-      document.getElementById('sessionTimerLabel').textContent = `✅ 10秒精密測定完了`;
+      document.getElementById('sessionTimerLabel').textContent = fromVideoAuto ? `✅ 動画自動診断完了` : `✅ 10秒精密測定完了`;
 
       playBeep(1200, 250);
 
 
 
-      if (poseSession.validFrames < 8) {
+      if (fromVideoAuto) {
+
+        const video = document.getElementById('sharedInputVideo');
+
+        if (video) video.pause();
+
+      }
+
+
+
+      if (poseSession.validFrames < 5) {
 
         document.getElementById('aiSummaryContent').innerHTML = `
 
           <div style="color:#f43f5e; font-weight:800;">⚠️ 全身の関節が十分に映っていませんでした（有効フレーム不足）</div>
 
-          <div>カメラから約3〜4m離れ、頭から足首までが画面内に収まる位置で再度測定してみてください。</div>
+          <div>頭から足首までが画面内に収まる動画またはカメラ位置で再度測定してみてください。</div>
 
         `;
 
@@ -7016,6 +6796,32 @@
 
 
 
+      // 📸 ベスト瞬間キャプチャカードの表示
+
+      if (aiMetrics.bestSnapshotMeta) {
+
+        const bmCard = document.getElementById('bestMomentCard');
+
+        const bmMeta = document.getElementById('bestMomentMetaText');
+
+        bmCard.style.display = 'block';
+
+        bmMeta.innerHTML = `
+
+          <div><b>🎯 ベスト瞬間の関節データ:</b></div>
+
+          <div>・肩挙上角: <b style="color:#38bdf8;">${aiMetrics.bestSnapshotMeta.shoulderDeg}°</b> ｜ 肘伸展: <b style="color:#34d399;">${aiMetrics.bestSnapshotMeta.elbowDeg}°</b></div>
+
+          <div>・膝沈み込み角: <b style="color:#fbbf24;">${aiMetrics.bestSnapshotMeta.kneeDeg}°</b> ｜ 速度指数: <b>${aiMetrics.bestSnapshotMeta.speedPt}pt</b></div>
+
+          <div>・リストスタンド: <b>${aiMetrics.bestSnapshotMeta.wristStandOk ? '🟢 良好' : '⚠️ 手首寝すぎ'}</b></div>
+
+        `;
+
+      }
+
+
+
       let totalScore = 80;
 
       let goodPoints = [];
@@ -7026,13 +6832,13 @@
 
       if (shot === 'ready_stance') {
 
-        totalScore = Math.round(aiMetrics.wristKeepPt * 0.4 + aiMetrics.kneePt * 0.35 + aiMetrics.stabilityPt * 0.25);
+        totalScore = Math.round(aiMetrics.wristKeepPt * 0.3 + aiMetrics.wristStandPt * 0.15 + aiMetrics.kneePt * 0.3 + aiMetrics.stabilityPt * 0.25);
 
 
 
-        if (aiMetrics.wristKeepPt >= 85) goodPoints.push(`ラケット（手首）がみぞおち・胸の高さでしっかりキープできており、ドライブやプッシュに即座に反応できる理想の構えです。`);
+        if (aiMetrics.wristKeepPt >= 85 && aiMetrics.isWristStandOk) goodPoints.push(`ラケット（手首）がみぞおち・胸の高さでキープされ、リストスタンドも維持できています。`);
 
-        else improvePoints.push(`構えている間に手首が腰付近まで下がるクセが見られます。画面の緑ラインより上にラケットヘッド・手首を保つ意識を持ちましょう。`);
+        else improvePoints.push(`構えている間に手首が下がるか、手首が寝てラケットヘッドが落ちる場面があります。胸の前でリストを立てて構えましょう。`);
 
 
 
@@ -7042,7 +6848,7 @@
 
 
 
-        if (aiMetrics.stabilityPt >= 82) goodPoints.push(`待機中の無駄な上下バウンドが少なく（静止安定度 ${aiMetrics.stabilityPt}pt）、目線と体幹軸（傾き${aiMetrics.coreTiltDeg}°）が安定しています。`);
+        if (aiMetrics.stabilityPt >= 82) goodPoints.push(`待機中の小刻みな上下バウンドが少なく（静止安定度 ${aiMetrics.stabilityPt}pt）、目線と体幹軸（傾き${aiMetrics.coreTiltDeg}°）が安定しています。`);
 
         else improvePoints.push(`待機中に小刻みに上下に跳ねすぎる傾向があります（静止安定度 ${aiMetrics.stabilityPt}pt）。待つときは静かに構え、相手が打つ瞬間にだけスッと抜重しましょう。`);
 
@@ -7062,9 +6868,9 @@
 
 
 
-        if (aiMetrics.coreTiltDeg <= 12) goodPoints.push(`体幹軸の傾きが ${aiMetrics.coreTiltDeg}° 以内に収まっており、上体が突っ込まずに戻りも速い姿勢です。`);
+        if (aiMetrics.isWristStandOk) goodPoints.push(`インパクト時のリストスタンドが保たれており、面ブレの少ないラケットワークです。`);
 
-        else improvePoints.push(`打つ瞬間に体幹軸が ${aiMetrics.coreTiltDeg}° 傾いています。頭の位置をブラさずに股関節と膝で沈み込みましょう。`);
+        else improvePoints.push(`手首が寝てラケットヘッドが下がりやすい傾向があります。手首の角度を立てて肘を前に出しましょう。`);
 
 
 
@@ -7136,7 +6942,7 @@
 
         <div style="margin-bottom:5px; font-weight:900; color:var(--accent-primary);">
 
-          🏆 今回の10秒精密スコア: ${totalScore} / 100 pt
+          🏆 今回の診断スコア: ${totalScore} / 100 pt
 
         </div>
 
@@ -7160,13 +6966,13 @@
 
     /* =========================================================================
 
-       10. 🏆 過去ベスト（Personal Best）管理
+       10. 🏆 過去ベスト（Personal Best）＆ データ引き継ぎ管理
 
     ========================================================================= */
 
     function loadPersonalBestsDB() {
 
-      const raw = localStorage.getItem('badtore_personal_bests_v75');
+      const raw = localStorage.getItem('badtore_personal_bests_v80') || localStorage.getItem('badtore_personal_bests_v75');
 
       if (raw) {
 
@@ -7194,7 +7000,7 @@
 
       personalBestsDB[profileId][shotType] = recordObj;
 
-      localStorage.setItem('badtore_personal_bests_v75', JSON.stringify(personalBestsDB));
+      localStorage.setItem('badtore_personal_bests_v80', JSON.stringify(personalBestsDB));
 
     }
 
@@ -7252,7 +7058,7 @@
 
         delete personalBestsDB[activeProfileId][shot];
 
-        localStorage.setItem('badtore_personal_bests_v75', JSON.stringify(personalBestsDB));
+        localStorage.setItem('badtore_personal_bests_v80', JSON.stringify(personalBestsDB));
 
         updateComparisonTableUI();
 
@@ -7262,15 +7068,105 @@
 
 
 
+    function exportAllAppData() {
+
+      const payload = {
+
+        profilesList,
+
+        activeProfileId,
+
+        personalBestsDB
+
+      };
+
+      const encoded = JSON.stringify(payload);
+
+      const area = document.getElementById('dataSyncTextarea');
+
+      area.value = encoded;
+
+      area.select();
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+
+        navigator.clipboard.writeText(encoded).then(() => {
+
+          alert("引き継ぎコードをクリップボードにコピーしました！iPadへ送って貼り付けてください。");
+
+        }).catch(() => {
+
+          alert("下の枠に表示されたコードをコピーしてください。");
+
+        });
+
+      }
+
+    }
+
+
+
+    function importAllAppData() {
+
+      const area = document.getElementById('dataSyncTextarea');
+
+      const raw = area.value.trim();
+
+      if (!raw) {
+
+        alert("引き継ぎコードを枠内に貼り付けてから押してください。");
+
+        return;
+
+      }
+
+      try {
+
+        const parsed = JSON.parse(raw);
+
+        if (parsed.profilesList && Array.isArray(parsed.profilesList)) {
+
+          profilesList = parsed.profilesList;
+
+          activeProfileId = parsed.activeProfileId || profilesList[0].id;
+
+          personalBestsDB = parsed.personalBestsDB || {};
+
+          localStorage.setItem('badtore_profiles_list_v80', JSON.stringify(profilesList));
+
+          localStorage.setItem('badtore_active_profile_id_v80', activeProfileId);
+
+          localStorage.setItem('badtore_personal_bests_v80', JSON.stringify(personalBestsDB));
+
+          syncActiveProfileToState();
+
+          alert("メンバー情報と過去ベスト記録の読み込みが完了しました！");
+
+        } else {
+
+          alert("引き継ぎコードの形式が正しくありません。");
+
+        }
+
+      } catch (e) {
+
+        alert("コードの読み込みに失敗しました。");
+
+      }
+
+    }
+
+
+
     /* =========================================================================
 
-       11. 👥 複数人メンバー管理（追加・切替・削除・保存）
+       11. 👥 複数人メンバー管理
 
     ========================================================================= */
 
     function loadAllProfiles() {
 
-      const savedTheme = localStorage.getItem('badtore_ui_theme_v75') || 'cyber';
+      const savedTheme = localStorage.getItem('badtore_ui_theme_v80') || localStorage.getItem('badtore_ui_theme_v75') || 'cyber';
 
       changeUITheme(savedTheme);
 
@@ -7282,9 +7178,9 @@
 
 
 
-      const savedList = localStorage.getItem('badtore_profiles_list_v75');
+      const savedList = localStorage.getItem('badtore_profiles_list_v80') || localStorage.getItem('badtore_profiles_list_v75');
 
-      const savedActiveId = localStorage.getItem('badtore_active_profile_id_v75');
+      const savedActiveId = localStorage.getItem('badtore_active_profile_id_v80') || localStorage.getItem('badtore_active_profile_id_v75');
 
 
 
@@ -7438,7 +7334,7 @@
 
       activeProfileId = id;
 
-      localStorage.setItem('badtore_active_profile_id_v75', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v80', activeProfileId);
 
       syncActiveProfileToState();
 
@@ -7474,7 +7370,7 @@
 
 
 
-      localStorage.setItem('badtore_profiles_list_v75', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v80', JSON.stringify(profilesList));
 
       syncActiveProfileToState();
 
@@ -7510,9 +7406,9 @@
 
       activeProfileId = newId;
 
-      localStorage.setItem('badtore_profiles_list_v75', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v80', JSON.stringify(profilesList));
 
-      localStorage.setItem('badtore_active_profile_id_v75', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v80', activeProfileId);
 
       syncActiveProfileToState();
 
@@ -7534,9 +7430,9 @@
 
       activeProfileId = profilesList[0].id;
 
-      localStorage.setItem('badtore_profiles_list_v75', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v80', JSON.stringify(profilesList));
 
-      localStorage.setItem('badtore_active_profile_id_v75', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v80', activeProfileId);
 
       syncActiveProfileToState();
 
@@ -7546,7 +7442,7 @@
 
     /* =========================================================================
 
-       12. 線引きモードON/OFFスイッチ（スクロール阻害ゼロ）
+       12. 線引きモードON/OFFスイッチ
 
     ========================================================================= */
 
@@ -7698,17 +7594,17 @@
 
     /* =========================================================================
 
-       13. ラケット診断 ＆ 試合スコア（ダブルス/シングルス・Undo対応）
+       13. ラケット診断 ＆ 試合スコア
 
     ========================================================================= */
 
     const RACKET_DB = [
 
-      { brand: "YONEX", name: "ASTROX 88D PRO / 77 PRO", type: "power", powerReq: "high", weight: "4U5", balance: "ヘッドヘビー", stringRec: "EXBOLT 65 / BG80 (24-27 lbs)", desc: "高い打点と強いスイングスピードを活かし、後衛から角度のある連続スマッシュを叩き込む攻撃型モデル。" },
+      { brand: "YONEX", name: "NANOFLARE 800 GAME / 800 PRO", type: "speed", powerReq: "mid", weight: "4U5 / 4U6", balance: "ヘッドライト", stringRec: "EXBOLT 65 (22-26 lbs)", desc: "鋭い振り抜きと高反発な弾きで、コンパクトなスイングから高速ドライブ・鋭角レシーブを制するスピード系メインモデル。" },
 
       { brand: "YONEX", name: "ARCSABER 11 PRO", type: "control", powerReq: "mid", weight: "4U5 / 3U5", balance: "イーブンバランス", stringRec: "EXBOLT 65 / BG66 ULTIMAX (22-26 lbs)", desc: "球持ちが抜群で、体格やパワーを問わずカットやクロスヘアピンも狙い通りにコントロールできる万能名機。" },
 
-      { brand: "YONEX", name: "NANOFLARE 800 / 700 PRO", type: "speed", powerReq: "low", weight: "4U5 / 5U5", balance: "ヘッドライト", stringRec: "EXBOLT 65 / 63 (20-25 lbs)", desc: "振り抜きが非常に軽く、パワーに頼らずコンパクトな弾きでドライブ・レシーブを制するスピードモデル。" },
+      { brand: "YONEX", name: "ASTROX 88D PRO / 77 PRO", type: "power", powerReq: "high", weight: "4U5", balance: "ヘッドヘビー", stringRec: "EXBOLT 65 / BG80 (24-27 lbs)", desc: "高い打点と強いスイングスピードを活かし、後衛から角度のある連続スマッシュを叩き込む攻撃型モデル。" },
 
       { brand: "MIZUNO", name: "ALTIUS 01 SPEED / 01 FEEL", type: "control", powerReq: "mid", weight: "4U5", balance: "イーブン", stringRec: "M-SMOOTH 65R / EXBOLT 65 (22-26 lbs)", desc: "ミズノ独自の球持ちと鋭い弾きを両立。ラリーを組み立てながら機を見てスマッシュを打ち込む選手に最適。" },
 
