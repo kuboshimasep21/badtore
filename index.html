@@ -20,7 +20,7 @@
 
   <meta name="theme-color" content="#060b16" />
 
-  <title>バドトレPRO v8.0 - バドミントン専用 AI動作解析＆実践トレーニング</title>
+  <title>バドトレPRO v9.0 - バドミントン専用 AI動作解析＆実践トレーニング</title>
 
   <!-- MediaPipe Pose & Drawing Utils -->
 
@@ -738,6 +738,18 @@
 
 
 
+    input[type="range"] {
+
+      accent-color: var(--accent-primary);
+
+      width: 100%;
+
+      cursor: pointer;
+
+    }
+
+
+
     .form-grid {
 
       display: grid;
@@ -1212,7 +1224,7 @@
 
     /* ==========================================================
 
-       カメラビューポート
+       カメラ＆動画ビューポート
 
     ========================================================== */
 
@@ -1454,6 +1466,62 @@
 
 
 
+    /* 🎬 動画専用シーク＆区間切り出しコントロールパネル */
+
+    .video-control-panel {
+
+      background: var(--bg-panel);
+
+      border: 1px solid var(--accent-highlight);
+
+      border-radius: 11px;
+
+      padding: 10px;
+
+      margin-top: 8px;
+
+      width: 100%;
+
+      display: none;
+
+    }
+
+
+
+    .video-seek-row {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 8px;
+
+      margin: 6px 0;
+
+      width: 100%;
+
+    }
+
+
+
+    .time-readout {
+
+      font-size: 0.72rem;
+
+      font-weight: 900;
+
+      font-variant-numeric: tabular-nums;
+
+      color: var(--accent-highlight);
+
+      white-space: nowrap;
+
+      flex-shrink: 0;
+
+    }
+
+
+
     /* ==========================================================
 
        4指標メトリクスカード
@@ -1661,8 +1729,6 @@
     }
 
 
-
-    /* 📸 ベストインパクト瞬間の自動キャプチャカード */
 
     .snapshot-card {
 
@@ -2006,9 +2072,11 @@
 
 
 
-  <!-- 共有隠しビデオ要素 -->
+  <!-- 🛠️ カメラ用とアップロード動画用のVideo要素を完全に分離（競合・黒画面ゼロ設計） -->
 
-  <video id="sharedInputVideo" playsinline muted style="display:none;"></video>
+  <video id="cameraVideo" playsinline muted style="display:none;"></video>
+
+  <video id="uploadedVideo" playsinline muted preload="auto" style="display:none;"></video>
 
 
 
@@ -2018,7 +2086,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v8.0 完全版</span>
+      <span class="badge-version">v9.0 完全版</span>
 
     </div>
 
@@ -2068,7 +2136,7 @@
 
     <!-- =========================================================
 
-         TAB 1: 🏃 声指示フットワーク（移動用カウントダウン＆全画面対応）
+         TAB 1: 🏃 声指示フットワーク（ジュニア向け順番送り＆時間制対応）
 
     ========================================================== -->
 
@@ -2080,7 +2148,7 @@
 
           <div class="card-title">
 
-            <span>🏃 声指示フットワーク練習（6マスコート ＆ 実戦連続ラリー）</span>
+            <span>🏃 声指示フットワーク練習（ランダム・順番送り・時間制ラリー対応）</span>
 
           </div>
 
@@ -2204,23 +2272,39 @@
 
             <div class="form-group" style="margin-bottom:10px;">
 
-              <label>① コースプリセット</label>
+              <label>① コースプリセット（実戦ランダム ＆ ジュニア基礎反復）</label>
 
               <select id="fwCoursePreset" onchange="applyFwCoursePreset()">
 
-                <option value="all6" selected>🌟 全面 6方向すべて（①〜⑥）</option>
+                <optgroup label="🔥 実戦コース（ランダム選出）">
 
-                <option value="corners4">📐 四隅 4コーナー（①・②・⑤・⑥）</option>
+                  <option value="all6" selected>🌟 全面 6方向すべて（①〜⑥）</option>
 
-                <option value="front2">⬆️ 前衛 2点ネットダッシュ（①左前・②右前）</option>
+                  <option value="corners4">📐 四隅 4コーナー（①・②・⑤・⑥）</option>
 
-                <option value="side2">↔️ 左右サイドレシーブ（③左・④右）</option>
+                  <option value="front2">⬆️ 前衛 2点ネットダッシュ（①左前・②右前）</option>
 
-                <option value="back2">⬇️ 後衛 2点スマッシュ移動（⑤左奥・⑥右奥）</option>
+                  <option value="side2">↔️ 左右サイドレシーブ（③左・④右）</option>
 
-                <option value="diagonal_r">↗️ 対角線（②右前 ⇔ ⑤左奥）</option>
+                  <option value="back2">⬇️ 後衛 2点スマッシュ移動（⑤左奥・⑥右奥）</option>
 
-                <option value="diagonal_l">↖️ 対角線（①左前 ⇔ ⑥右奥）</option>
+                </optgroup>
+
+                <optgroup label="🌱 ジュニア・基礎ステップ習得（規則的な順番送り）">
+
+                  <option value="seq_cw">🔄 6点 時計回り順番送り（①➔②➔④➔⑥➔⑤➔③）</option>
+
+                  <option value="seq_ccw">🔄 6点 反時計回り順番送り（②➔①➔③➔⑤➔⑥➔④）</option>
+
+                  <option value="diagonal_r">↗️ 対角線クロス交互（②右前 ⇔ ⑤左奥）</option>
+
+                  <option value="diagonal_l">↖️ 対角線クロス交互（①左前 ⇔ ⑥右奥）</option>
+
+                  <option value="straight_r">↕️ 右ストレート前後交互（②右前 ⇔ ⑥右奥）</option>
+
+                  <option value="straight_l">↕️ 左ストレート前後交互（①左前 ⇔ ⑤左奥）</option>
+
+                </optgroup>
 
               </select>
 
@@ -2274,19 +2358,33 @@
 
               <div class="form-group">
 
-                <label>④ 1セットの回数</label>
+                <label>④ 1セットの回数 / 時間制</label>
 
                 <select id="fwRepsPerSet">
 
-                  <option value="6">6回</option>
+                  <optgroup label="🔢 回数制">
 
-                  <option value="10" selected>10回（標準）</option>
+                    <option value="6">6回</option>
 
-                  <option value="15">15回</option>
+                    <option value="10" selected>10回（標準）</option>
 
-                  <option value="20">20回</option>
+                    <option value="15">15回</option>
 
-                  <option value="30">30回</option>
+                    <option value="20">20回</option>
+
+                  </optgroup>
+
+                  <optgroup label="⏱️ 時間制インターバル">
+
+                    <option value="time_20">⏱️ 20秒間 連続</option>
+
+                    <option value="time_30">⏱️ 30秒間 連続（実戦ラリー）</option>
+
+                    <option value="time_45">⏱️ 45秒間 連続（持久力強化）</option>
+
+                    <option value="time_60">⏱️ 60秒間 連続（ハード）</option>
+
+                  </optgroup>
 
                 </select>
 
@@ -2568,7 +2666,7 @@
 
           <div class="btn-group" style="margin-bottom:10px;">
 
-            <button id="btnReflexCamToggle" class="btn btn-emerald" onclick="toggleCameraForMode('reflex')">📷 初速AIカメラ起動</button>
+            <button id="btnReflexCamToggle" class="btn btn-emerald" onclick="toggleLiveCamera('reflex')">📷 初速AIカメラ起動</button>
 
             <button class="btn" onclick="switchCameraFacing()">🔄 内/外カメラ切替</button>
 
@@ -2800,7 +2898,7 @@
 
     <!-- =========================================================
 
-         TAB 3: 🎥 構え＆全10種目AI骨格解析（動画読込で自動診断スタート・ベスト瞬間キャプチャ・スロー再生）
+         TAB 3: 🎥 構え＆全10種目AI骨格解析（動画独立パイプライン・区間切り出し・瞬間キャプチャ）
 
     ========================================================== -->
 
@@ -2812,17 +2910,17 @@
 
           <div class="card-title">
 
-            <span class="badge-version">動画自動診断＆瞬間キャプチャ</span>
+            <span class="badge-version">独立パイプライン＆区間解析</span>
 
-            <span>🎥 AI骨格解析（基本の構え・リストスタンド・身体連動レーザー・過去ベスト比較）</span>
+            <span>🎥 AI骨格解析（動画即時スタート・区間切り出し・身体連動レーザー）</span>
 
           </div>
 
           <div class="btn-group">
 
-            <button id="btnPoseCamToggle" class="btn btn-emerald" onclick="toggleCameraForMode('pose')">📷 AIカメラ起動</button>
+            <button id="btnPoseCamToggle" class="btn btn-emerald" onclick="toggleLiveCamera('pose')">📷 AIカメラ起動</button>
 
-            <button class="btn" onclick="switchCameraFacing()">🔄 内/外切替</button>
+            <button class="btn" id="btnPoseCamFlip" onclick="switchCameraFacing()">🔄 内/外切替</button>
 
             <label class="btn btn-amber" style="cursor:pointer;">
 
@@ -2831,16 +2929,6 @@
               <input type="file" id="videoUploadInput" accept="video/*" style="display:none;" onchange="handleVideoUpload(event)" />
 
             </label>
-
-            <select id="videoSpeedSelect" onchange="changeVideoPlaybackSpeed(this.value)" style="width:auto; padding:6px 8px; font-size:0.75rem; font-weight:800;" title="動画再生スピード">
-
-              <option value="1.0" selected>▶️ 動画速度: 1.0x (等倍)</option>
-
-              <option value="0.5">🐢 動画速度: 0.5x (スロー高精度)</option>
-
-              <option value="0.25">🔬 動画速度: 0.25x (超スロー解析)</option>
-
-            </select>
 
             <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
 
@@ -2868,7 +2956,7 @@
 
               <div class="viewport-header-bar">
 
-                <span class="viewport-status-text" id="poseHudStatus">⚪ カメラ待機中</span>
+                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（カメラ起動 または 動画読込を選択）</span>
 
                 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
 
@@ -2904,11 +2992,83 @@
 
                   <div style="font-size:2rem; margin-bottom:6px;">🧠🎬</div>
 
-                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカウントダウンなしで即座に自動診断がスタートします！</div>
+                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカメラ起動不要で即座に動画が表示され自動診断がスタートします！</div>
 
-                  <div style="font-size:0.75rem; margin-top:4px;">カメラ撮影時は「📷 AIカメラ起動」➔「▶️ 10秒間 精密測定スタート」で診断します</div>
+                  <div style="font-size:0.75rem; margin-top:4px;">リアルタイム撮影時は「📷 AIカメラ起動」を押してください</div>
 
                 </div>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- 🎬 動画読み込み時のみ自動表示される専用シーク＆区間切り出しパネル -->
+
+            <div class="video-control-panel" id="videoControlPanel">
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+
+                <span style="font-weight:900; font-size:0.78rem; color:var(--accent-highlight);">🎬 動画再生 ＆ ラリー区間切り出しコントローラー</span>
+
+                <div class="btn-group">
+
+                  <button class="btn btn-emerald" id="btnVideoPlayPause" style="padding:4px 9px; font-size:0.72rem;" onclick="toggleVideoPause()">⏸️ 一時停止</button>
+
+                  <button class="btn" style="padding:4px 9px; font-size:0.72rem;" onclick="seekUploadedVideoBy(-0.1)">⏪ -0.1秒</button>
+
+                  <button class="btn" style="padding:4px 9px; font-size:0.72rem;" onclick="seekUploadedVideoBy(0.1)">⏩ +0.1秒</button>
+
+                  <select id="videoSpeedSelect" onchange="changeVideoPlaybackSpeed(this.value)" style="width:auto; padding:4px 7px; font-size:0.72rem; font-weight:800;">
+
+                    <option value="1.0" selected>1.0x (等倍)</option>
+
+                    <option value="0.5">0.5x (スロー)</option>
+
+                    <option value="0.25">0.25x (超スロー)</option>
+
+                  </select>
+
+                </div>
+
+              </div>
+
+
+
+              <!-- 現在再生位置シークバー -->
+
+              <div class="video-seek-row">
+
+                <span style="font-size:0.7rem; color:var(--text-secondary); width:52px;">再生位置</span>
+
+                <input type="range" id="videoSeekSlider" min="0" max="100" step="0.05" value="0" oninput="onVideoSeekSliderInput(this.value)" />
+
+                <span class="time-readout" id="videoTimeLabel">0.0s / 0.0s</span>
+
+              </div>
+
+
+
+              <!-- 開始A〜終了B 区間切り出し設定 -->
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.1);">
+
+                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:0.72rem;">
+
+                  <span style="color:var(--text-secondary); font-weight:800;">✂️ 診断区間:</span>
+
+                  <button class="btn" style="padding:3px 7px; font-size:0.68rem;" onclick="setVideoTrimPoint('start')">📍現在位置を開始(A)に</button>
+
+                  <span id="trimRangeText" style="color:var(--accent-secondary); font-weight:900;">先頭(0.0s) 〜 終了</span>
+
+                  <button class="btn" style="padding:3px 7px; font-size:0.68rem;" onclick="setVideoTrimPoint('end')">🏁現在位置を終了(B)に</button>
+
+                  <button class="btn" style="padding:3px 7px; font-size:0.68rem;" onclick="resetVideoTrimRange()">全区間戻す</button>
+
+                </div>
+
+                <button class="btn btn-amber" style="padding:4px 10px; font-size:0.72rem;" onclick="startAutoVideoDiagnosis()">🔄 この区間を再診断</button>
 
               </div>
 
@@ -2992,7 +3152,7 @@
 
               <div class="btn-group">
 
-                <button class="btn" style="padding:5px 8px; font-size:0.72rem;" onclick="resetMaxMetrics()">🔄 リセット</button>
+                <button class="btn" style="padding:5px 8px; font-size:0.72rem;" onclick="resetMaxMetrics()">🔄 数値リセット</button>
 
                 <button class="btn" style="padding:5px 8px; font-size:0.72rem;" onclick="toggleVideoPause()">⏯️ 一時停止/再生</button>
 
@@ -3022,7 +3182,7 @@
 
               <div class="form-group" style="margin-bottom:8px;">
 
-                <label>① チェックする種目を選択（動画読込中に変えると先頭から自動再診断します）</label>
+                <label>① チェックする種目を選択（動画読込中に変えると即座に自動再診断します）</label>
 
                 <select id="shotTypeSelect" onchange="onShotTypeChanged()">
 
@@ -3068,6 +3228,28 @@
 
 
 
+              <!-- 🛡️ 構え診断の基準値・場面モード切替 -->
+
+              <div class="form-group" id="stanceCriteriaGroup" style="margin-bottom:8px;">
+
+                <label>🛡️ 構え診断の場面＆基準モード切替</label>
+
+                <select id="stanceModeSelect" onchange="onStanceModeChanged()">
+
+                  <option value="standard" selected>⚖️ オールラウンド標準（みぞおち上キープ・膝132°〜150°）</option>
+
+                  <option value="doubles_front">⚡ ダブルス前衛・ドライブ待機（ラケット胸高・リスト厳しめ）</option>
+
+                  <option value="singles_receive">🛡️ シングルス・スマッシュレシーブ待機（低い重心・抜重重視）</option>
+
+                  <option value="junior_basic">🌱 ジュニア・基礎フォーム習得（判定基準やや甘め）</option>
+
+                </select>
+
+              </div>
+
+
+
               <div class="form-group" style="margin-bottom:10px;">
 
                 <label>② 画面上のターゲット＆過去ベスト表示モード</label>
@@ -3090,7 +3272,7 @@
 
               <button id="btnStartPoseSession" class="btn btn-amber" style="width:100%; padding:10px; font-size:0.84rem;" onclick="startTimedPoseSession()">
 
-                ▶️ 精密測定スタート（動画時は先頭から即・再診断）
+                ▶️ 10秒間 精密測定スタート
 
               </button>
 
@@ -3214,7 +3396,7 @@
 
               <div id="aiSummaryContent" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
 
-                <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、動画の最初から最後まで自動でフォームを解析し、ベスト瞬間の静止画キャプチャと改善アドバイスを表示します。
+                <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、カメラボタンを押さなくても動画がすぐに画面に表示されて自動解析が始まります。長い動画はシークバーで診断したい区間（開始A〜終了B）を切り出せます。
 
               </div>
 
@@ -3642,17 +3824,27 @@
 
 
 
+    // 🛠️ カメラと動画を厳密に分離管理する状態変数
+
     let activeCameraMode = null; // null | 'reflex' | 'pose'
+
+    let activeInputType = 'idle'; // 'idle' | 'camera' | 'video'
 
     let currentFacingMode = 'environment';
 
-    let isUploadedVideo = false;
-
     let activeMediaStream = null;
+
+    let currentVideoObjectUrl = null;
+
+
 
     let poseInstance = null;
 
     let animFrameId = null;
+
+    let isProcessingPoseFrame = false; // 多重送信ロック（フリーズ防止）
+
+
 
     let swingArcEnabled = true;
 
@@ -3663,6 +3855,20 @@
     let delayMirrorSeconds = 0;
 
     let delayFrameBuffer = [];
+
+
+
+    // 🎬 動画の区間切り出し（開始A〜終了B）状態
+
+    let videoTrimState = {
+
+      duration: 0,
+
+      startSec: 0,
+
+      endSec: 0
+
+    };
 
 
 
@@ -3706,7 +3912,7 @@
 
       document.documentElement.setAttribute('data-theme', themeName);
 
-      localStorage.setItem('badtore_ui_theme_v80', themeName);
+      localStorage.setItem('badtore_ui_theme_v90', themeName);
 
     }
 
@@ -4002,7 +4208,7 @@
 
     /* =========================================================================
 
-       4. TAB 1: 🏃 声指示フットワーク（移動用カウントダウン対応）
+       4. TAB 1: 🏃 声指示フットワーク（順番送り＆時間制対応）
 
     ========================================================================= */
 
@@ -4024,15 +4230,37 @@
 
 
 
+    // ジュニア向け順番送りシーケンス定義
+
+    const FW_SEQUENCES = {
+
+      seq_cw:     [0, 1, 3, 5, 4, 2], // 時計回り：①左前→②右前→④右サイド→⑥右奥→⑤左奥→③左サイド
+
+      seq_ccw:    [1, 0, 2, 4, 5, 3], // 反時計回り
+
+      diagonal_r: [1, 4],             // ②右前 ⇔ ⑤左奥
+
+      diagonal_l: [0, 5],             // ①左前 ⇔ ⑥右奥
+
+      straight_r: [1, 5],             // ②右前 ⇔ ⑥右奥
+
+      straight_l: [0, 4]              // ①左前 ⇔ ⑤左奥
+
+    };
+
+
+
     let fwEnabledNodes = [true, true, true, true, true, true];
 
     let fwState = {
 
       running: false, paused: false, currentSet: 1, totalSets: 3,
 
-      currentRep: 0, repsPerSet: 10, intervalMs: 2500, restSec: 15,
+      currentRep: 0, repsPerSet: 10, isTimeMode: false, durationSec: 30, remainingSetSec: 30,
 
-      lastChosenIdx: -1, timerId: null, subTimerId: null
+      intervalMs: 2500, restSec: 15, seqCursor: 0,
+
+      lastChosenIdx: -1, timerId: null, subTimerId: null, secIntervalId: null
 
     };
 
@@ -4054,9 +4282,17 @@
 
         back2:      [false, false, false, false, true, true],
 
+        seq_cw:     [true, true, true, true, true, true],
+
+        seq_ccw:    [true, true, true, true, true, true],
+
         diagonal_r: [false, true, false, false, true, false],
 
-        diagonal_l: [true, false, false, false, false, true]
+        diagonal_l: [true, false, false, false, false, true],
+
+        straight_r: [false, true, false, false, false, true],
+
+        straight_l: [true, false, false, false, true, false]
 
       };
 
@@ -4130,6 +4366,8 @@
 
         document.getElementById('fwStatusBadge').textContent = "🟢 稼働中";
 
+        if (fwState.isTimeMode) startFwTimeModeClock();
+
         runNextFootworkCall();
 
         return;
@@ -4146,7 +4384,27 @@
 
       fwState.totalSets = Number(document.getElementById('fwTotalSets').value) || 3;
 
-      fwState.repsPerSet = Number(document.getElementById('fwRepsPerSet').value) || 10;
+      const repVal = document.getElementById('fwRepsPerSet').value;
+
+      if (repVal.startsWith('time_')) {
+
+        fwState.isTimeMode = true;
+
+        fwState.durationSec = Number(repVal.replace('time_', '')) || 30;
+
+        fwState.remainingSetSec = fwState.durationSec;
+
+        fwState.repsPerSet = 999;
+
+      } else {
+
+        fwState.isTimeMode = false;
+
+        fwState.repsPerSet = Number(repVal) || 10;
+
+      }
+
+
 
       fwState.intervalMs = (Number(document.getElementById('fwIntervalSec').value) || 2.5) * 1000;
 
@@ -4155,6 +4413,8 @@
       fwState.currentSet = 1;
 
       fwState.currentRep = 0;
+
+      fwState.seqCursor = 0;
 
       fwState.lastChosenIdx = -1;
 
@@ -4202,11 +4462,75 @@
 
           document.getElementById('fwStatusBadge').textContent = "🟢 稼働中";
 
+          if (fwState.isTimeMode) startFwTimeModeClock();
+
           runNextFootworkCall();
 
         }
 
       }, 1000);
+
+    }
+
+
+
+    function startFwTimeModeClock() {
+
+      clearInterval(fwState.secIntervalId);
+
+      fwState.secIntervalId = setInterval(() => {
+
+        if (!fwState.running || fwState.paused) return;
+
+        fwState.remainingSetSec--;
+
+        updateFwHeaderUI();
+
+        if (fwState.remainingSetSec <= 0) {
+
+          clearInterval(fwState.secIntervalId);
+
+          clearTimeout(fwState.timerId);
+
+          clearTimeout(fwState.subTimerId);
+
+          handleFwSetComplete();
+
+        }
+
+      }, 1000);
+
+    }
+
+
+
+    function handleFwSetComplete() {
+
+      clearFwHighlights();
+
+      const callLabel = document.getElementById('fwCurrentCallLabel');
+
+      if (fwState.currentSet >= fwState.totalSets) {
+
+        playBeep(1200, 350);
+
+        speakText("全セット完了！お疲れ様でした！");
+
+        callLabel.textContent = "🏆 全セット完了！";
+
+        document.getElementById('fwStatusBadge').textContent = "✅ 完了";
+
+        fwState.running = false;
+
+        document.getElementById('btnFwPause').disabled = true;
+
+        releaseAppWakeLock();
+
+      } else {
+
+        startFwRestCountdown();
+
+      }
 
     }
 
@@ -4220,57 +4544,47 @@
 
 
 
-      const callLabel = document.getElementById('fwCurrentCallLabel');
+      if (!fwState.isTimeMode && fwState.currentRep >= fwState.repsPerSet) {
 
+        handleFwSetComplete();
 
-
-      if (fwState.currentRep >= fwState.repsPerSet) {
-
-        if (fwState.currentSet >= fwState.totalSets) {
-
-          playBeep(1200, 350);
-
-          speakText("全セット完了！お疲れ様でした！");
-
-          callLabel.textContent = "🏆 全セット完了！";
-
-          document.getElementById('fwStatusBadge').textContent = "✅ 完了";
-
-          fwState.running = false;
-
-          document.getElementById('btnFwPause').disabled = true;
-
-          releaseAppWakeLock();
-
-          return;
-
-        } else {
-
-          startFwRestCountdown();
-
-          return;
-
-        }
+        return;
 
       }
 
 
+
+      const preset = document.getElementById('fwCoursePreset').value;
 
       const centerMode = document.getElementById('fwCenterCallMode').value;
 
-      let activeIndices = fwEnabledNodes.map((v, i) => v ? i : -1).filter(i => i !== -1);
+      let chosenIdx = 0;
 
 
 
-      if (centerMode === 'no_repeat' && activeIndices.length > 1 && fwState.lastChosenIdx !== -1) {
+      if (FW_SEQUENCES[preset]) {
 
-        activeIndices = activeIndices.filter(i => i !== fwState.lastChosenIdx);
+        const seq = FW_SEQUENCES[preset];
+
+        chosenIdx = seq[fwState.seqCursor % seq.length];
+
+        fwState.seqCursor++;
+
+      } else {
+
+        let activeIndices = fwEnabledNodes.map((v, i) => v ? i : -1).filter(i => i !== -1);
+
+        if (centerMode === 'no_repeat' && activeIndices.length > 1 && fwState.lastChosenIdx !== -1) {
+
+          activeIndices = activeIndices.filter(i => i !== fwState.lastChosenIdx);
+
+        }
+
+        chosenIdx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
 
       }
 
 
-
-      const chosenIdx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
 
       const posObj = FW_POSITIONS[chosenIdx];
 
@@ -4289,6 +4603,8 @@
       const cellEl = document.getElementById('fw-node-' + chosenIdx);
 
       const voiceMode = document.getElementById('fwVoiceMode').value;
+
+      const callLabel = document.getElementById('fwCurrentCallLabel');
 
 
 
@@ -4398,13 +4714,23 @@
 
           fwState.currentRep = 0;
 
+          fwState.seqCursor = 0;
+
+          fwState.remainingSetSec = fwState.durationSec;
+
           fwState.lastChosenIdx = -1;
 
           document.getElementById('fwStatusBadge').textContent = "🟢 稼働中";
 
           speakText(`第${fwState.currentSet}セット、スタート！`);
 
-          setTimeout(runNextFootworkCall, 900);
+          setTimeout(() => {
+
+            if (fwState.isTimeMode) startFwTimeModeClock();
+
+            runNextFootworkCall();
+
+          }, 900);
 
         }
 
@@ -4426,6 +4752,8 @@
 
       clearInterval(fwState.timerId);
 
+      clearInterval(fwState.secIntervalId);
+
 
 
       const btn = document.getElementById('btnFwPause');
@@ -4443,6 +4771,8 @@
         btn.textContent = "⏸️ 一時停止";
 
         document.getElementById('fwStatusBadge').textContent = "🟢 稼働中";
+
+        if (fwState.isTimeMode) startFwTimeModeClock();
 
         runNextFootworkCall();
 
@@ -4463,6 +4793,8 @@
       clearTimeout(fwState.subTimerId);
 
       clearInterval(fwState.timerId);
+
+      clearInterval(fwState.secIntervalId);
 
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
@@ -4502,9 +4834,19 @@
 
     function updateFwHeaderUI() {
 
-      document.getElementById('fwSetProgressText').textContent =
+      if (fwState.isTimeMode) {
 
-        `セット ${fwState.currentSet}/${fwState.totalSets} ｜ ${fwState.currentRep}/${fwState.repsPerSet} 回`;
+        document.getElementById('fwSetProgressText').textContent =
+
+          `セット ${fwState.currentSet}/${fwState.totalSets} ｜ 残り ${fwState.remainingSetSec}秒 (${fwState.currentRep}球)`;
+
+      } else {
+
+        document.getElementById('fwSetProgressText').textContent =
+
+          `セット ${fwState.currentSet}/${fwState.totalSets} ｜ ${fwState.currentRep}/${fwState.repsPerSet} 回`;
+
+      }
 
     }
 
@@ -4790,7 +5132,7 @@
 
     /* =========================================================================
 
-       6. 共有MediaPipeカメラ＆動画エンジン
+       6. 🛠️ 独立パイプライン化したMediaPipeカメラ ＆ 動画ファイルエンジン
 
     ========================================================================= */
 
@@ -4810,9 +5152,9 @@
 
         smoothLandmarks: true,
 
-        minDetectionConfidence: 0.55,
+        minDetectionConfidence: 0.52,
 
-        minTrackingConfidence: 0.55
+        minTrackingConfidence: 0.52
 
       });
 
@@ -4822,11 +5164,23 @@
 
 
 
+    function getActiveSourceVideoElement() {
+
+      if (activeInputType === 'video') return document.getElementById('uploadedVideo');
+
+      return document.getElementById('cameraVideo');
+
+    }
+
+
+
     function syncCanvasDimensionsToVideo(videoEl) {
 
-      const vw = videoEl.videoWidth;
+      if (!videoEl) return;
 
-      const vh = videoEl.videoHeight;
+      const vw = videoEl.videoWidth || 720;
+
+      const vh = videoEl.videoHeight || 720;
 
       if (!vw || !vh) return;
 
@@ -4850,17 +5204,19 @@
 
 
 
-    async function toggleCameraForMode(mode, keepFacing = false) {
+    // 📷 ライブカメラ起動・停止（動画モードからカメラへの復帰もワンタップ）
+
+    async function toggleLiveCamera(mode, keepFacing = false) {
 
       unlockAudioContext();
 
-      const video = document.getElementById('sharedInputVideo');
 
 
+      // すでに同じモードでライブカメラ稼働中なら停止する
 
-      if (!keepFacing && activeCameraMode === mode && !isUploadedVideo) {
+      if (!keepFacing && activeCameraMode === mode && activeInputType === 'camera') {
 
-        stopSharedCamera();
+        stopAllMediaAndLoops();
 
         return;
 
@@ -4876,17 +5232,15 @@
 
 
 
-      stopSharedCamera();
+      stopAllMediaAndLoops();
 
       initSharedPose();
 
       requestAppWakeLock();
 
-      isUploadedVideo = false;
-
-      delayFrameBuffer = [];
 
 
+      const camVideo = document.getElementById('cameraVideo');
 
       const statusEl = document.getElementById(mode === 'reflex' ? 'reflexHudStatus' : 'poseHudStatus');
 
@@ -4904,47 +5258,11 @@
 
         });
 
-        video.srcObject = activeMediaStream;
-
-        video.onloadedmetadata = () => {
-
-          video.play();
-
-          syncCanvasDimensionsToVideo(video);
-
-          activeCameraMode = mode;
-
-          updateCameraToggleButtonsUI();
-
-          resetMaxMetrics();
-
-          processSharedVideoFrame();
-
-        };
-
-      } catch (err) {
+      } catch (err1) {
 
         try {
 
           activeMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-
-          video.srcObject = activeMediaStream;
-
-          video.onloadedmetadata = () => {
-
-            video.play();
-
-            syncCanvasDimensionsToVideo(video);
-
-            activeCameraMode = mode;
-
-            updateCameraToggleButtonsUI();
-
-            resetMaxMetrics();
-
-            processSharedVideoFrame();
-
-          };
 
         } catch (err2) {
 
@@ -4952,9 +5270,35 @@
 
           statusEl.textContent = "🔴 カメラ未許可";
 
+          return;
+
         }
 
       }
+
+
+
+      camVideo.srcObject = activeMediaStream;
+
+      camVideo.onloadedmetadata = async () => {
+
+        try { await camVideo.play(); } catch (e) {}
+
+        syncCanvasDimensionsToVideo(camVideo);
+
+        activeCameraMode = mode;
+
+        activeInputType = 'camera';
+
+        delayFrameBuffer = [];
+
+        updateMediaControlsUI();
+
+        resetMaxMetrics();
+
+        startUnifiedFrameLoop();
+
+      };
 
     }
 
@@ -4964,9 +5308,9 @@
 
       currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
 
-      if (activeCameraMode && !isUploadedVideo) {
+      if (activeInputType === 'camera' && activeCameraMode) {
 
-        toggleCameraForMode(activeCameraMode, true);
+        toggleLiveCamera(activeCameraMode, true);
 
       } else {
 
@@ -4978,11 +5322,17 @@
 
 
 
-    function stopSharedCamera() {
+    function stopAllMediaAndLoops() {
 
       activeCameraMode = null;
 
+      activeInputType = 'idle';
+
+      isProcessingPoseFrame = false;
+
       delayFrameBuffer = [];
+
+
 
       if (poseSession.active) {
 
@@ -4992,8 +5342,6 @@
 
       }
 
-      releaseAppWakeLock();
-
       if (animFrameId) {
 
         cancelAnimationFrame(animFrameId);
@@ -5002,11 +5350,17 @@
 
       }
 
-      const video = document.getElementById('sharedInputVideo');
 
-      video.pause();
 
-      video.onended = null;
+      const camVideo = document.getElementById('cameraVideo');
+
+      if (camVideo) {
+
+        camVideo.pause();
+
+        camVideo.srcObject = null;
+
+      }
 
       if (activeMediaStream) {
 
@@ -5016,27 +5370,45 @@
 
       }
 
-      video.srcObject = null;
 
-      updateCameraToggleButtonsUI();
+
+      const upVideo = document.getElementById('uploadedVideo');
+
+      if (upVideo) {
+
+        upVideo.pause();
+
+        upVideo.onended = null;
+
+      }
+
+
+
+      releaseAppWakeLock();
+
+      updateMediaControlsUI();
 
     }
 
 
 
-    function updateCameraToggleButtonsUI() {
+    function updateMediaControlsUI() {
 
       const btnRx = document.getElementById('btnReflexCamToggle');
 
-      const btnPose = document.getElementById('btnPoseCamToggle');
+      const btnPoseCam = document.getElementById('btnPoseCamToggle');
+
+      const btnStartSession = document.getElementById('btnStartPoseSession');
 
       const rxCanvas = document.getElementById('reflexCanvas');
 
       const poseCanvas = document.getElementById('outputCanvas');
 
+      const videoCtrlPanel = document.getElementById('videoControlPanel');
 
 
-      const mirrorStyle = (!isUploadedVideo && currentFacingMode === 'user') ? 'scaleX(-1)' : 'none';
+
+      const mirrorStyle = (activeInputType === 'camera' && currentFacingMode === 'user') ? 'scaleX(-1)' : 'none';
 
       rxCanvas.style.transform = mirrorStyle;
 
@@ -5044,7 +5416,9 @@
 
 
 
-      if (activeCameraMode === 'reflex') {
+      // TAB 2: 初速AIカメラUI
+
+      if (activeCameraMode === 'reflex' && activeInputType === 'camera') {
 
         btnRx.textContent = "⏹️ カメラ停止";
 
@@ -5056,7 +5430,7 @@
 
         document.getElementById('reflexHudStatus').textContent =
 
-          `🟢 初速AI稼働中 (${currentFacingMode === 'user' ? '内カメラ' : '外カメラ'})`;
+          `🟢 初速AIカメラ稼働中 (${currentFacingMode === 'user' ? '内カメラ' : '外カメラ'})`;
 
       } else {
 
@@ -5074,33 +5448,61 @@
 
 
 
+      // TAB 3: 骨格AI（カメラ or 動画）UI
+
       if (activeCameraMode === 'pose') {
-
-        btnPose.textContent = isUploadedVideo ? "📷 カメラへ切替" : "⏹️ カメラ停止";
-
-        btnPose.className = isUploadedVideo ? "btn btn-emerald" : "btn btn-rose";
 
         poseCanvas.style.display = "block";
 
         document.getElementById('posePlaceholder').style.display = "none";
 
-        const speedRate = document.getElementById('videoSpeedSelect').value;
 
-        document.getElementById('poseHudStatus').textContent =
 
-          isUploadedVideo ? `🎞️ 動画自動診断 (${speedRate}x)` : (delayMirrorSeconds > 0 ? `⏪ ${delayMirrorSeconds}秒遅れ再生中` : `🟢 AI稼働中 (${currentFacingMode === 'user' ? '内' : '外'})`);
+        if (activeInputType === 'video') {
+
+          btnPoseCam.textContent = "📷 カメラモードへ切替";
+
+          btnPoseCam.className = "btn btn-emerald";
+
+          videoCtrlPanel.style.display = "block";
+
+          btnStartSession.textContent = "🔄 動画の指定区間(A〜B)を先頭から再診断";
+
+          const speedRate = document.getElementById('videoSpeedSelect').value;
+
+          document.getElementById('poseHudStatus').textContent = `🎬 動画解析モード稼働中 (${speedRate}x)`;
+
+        } else {
+
+          btnPoseCam.textContent = "⏹️ カメラ停止";
+
+          btnPoseCam.className = "btn btn-rose";
+
+          videoCtrlPanel.style.display = "none";
+
+          btnStartSession.textContent = "▶️ 10秒間 カメラ精密測定スタート";
+
+          document.getElementById('poseHudStatus').textContent =
+
+            delayMirrorSeconds > 0 ? `⏪ ${delayMirrorSeconds}秒遅れ再生中` : `🟢 AIカメラ稼働中 (${currentFacingMode === 'user' ? '内' : '外'})`;
+
+        }
 
       } else {
 
-        btnPose.textContent = "📷 AIカメラ起動";
+        btnPoseCam.textContent = "📷 AIカメラ起動";
 
-        btnPose.className = "btn btn-emerald";
+        btnPoseCam.className = "btn btn-emerald";
 
         poseCanvas.style.display = "none";
 
+        videoCtrlPanel.style.display = "none";
+
+        btnStartSession.textContent = "▶️ 10秒間 精密測定スタート";
+
         document.getElementById('posePlaceholder').style.display = "block";
 
-        document.getElementById('poseHudStatus').textContent = "⚪ カメラ待機中";
+        document.getElementById('poseHudStatus').textContent = "⚪ 待機中（カメラ起動 または 動画読込を選択）";
 
       }
 
@@ -5108,21 +5510,115 @@
 
 
 
-    async function processSharedVideoFrame() {
+    // 🔄 多重送信ロック付きの統合フレーム処理ループ（カメラ＆動画両対応）
 
-      const video = document.getElementById('sharedInputVideo');
+    function startUnifiedFrameLoop() {
 
-      if (!activeCameraMode) return;
+      if (animFrameId) cancelAnimationFrame(animFrameId);
 
-      if (!video.paused && !video.ended && video.readyState >= 2) {
 
-        syncCanvasDimensionsToVideo(video);
 
-        await poseInstance.send({ image: video });
+      const stepFrame = async () => {
+
+        if (!activeCameraMode || activeInputType === 'idle') return;
+
+
+
+        const videoEl = getActiveSourceVideoElement();
+
+        if (videoEl && videoEl.readyState >= 2) {
+
+          syncCanvasDimensionsToVideo(videoEl);
+
+
+
+          // 動画再生中はシークバーと区間終了判定を更新
+
+          if (activeInputType === 'video') {
+
+            updateVideoSeekUI(videoEl);
+
+            if (!videoEl.paused && videoTrimState.endSec > 0 && videoEl.currentTime >= videoTrimState.endSec) {
+
+              if (poseSession.active) {
+
+                finishPoseRecording(true);
+
+              } else {
+
+                videoEl.currentTime = videoTrimState.startSec;
+
+              }
+
+            }
+
+          }
+
+
+
+          // 再生中かつ前のフレーム解析が終わっていればMediaPipeへ送信
+
+          if (!videoEl.paused && !videoEl.ended && !isProcessingPoseFrame) {
+
+            isProcessingPoseFrame = true;
+
+            try {
+
+              await poseInstance.send({ image: videoEl });
+
+            } catch (e) {}
+
+            isProcessingPoseFrame = false;
+
+          }
+
+        }
+
+
+
+        animFrameId = requestAnimationFrame(stepFrame);
+
+      };
+
+
+
+      animFrameId = requestAnimationFrame(stepFrame);
+
+    }
+
+
+
+    // 静止中（シーク操作直後や読み込み直後）でも1フレーム即座にAI骨格解析を実行する関数
+
+    async function sendSingleFrameToPose(videoEl) {
+
+      if (!videoEl || videoEl.readyState < 2 || !poseInstance) return;
+
+      syncCanvasDimensionsToVideo(videoEl);
+
+      if (isProcessingPoseFrame) return;
+
+      isProcessingPoseFrame = true;
+
+      try {
+
+        await poseInstance.send({ image: videoEl });
+
+      } catch (e) {
+
+        // 万一MediaPipeモデルのロード前なら生フレームをCanvasに描いておく
+
+        const canvas = document.getElementById('outputCanvas');
+
+        if (canvas) {
+
+          canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+        }
 
       }
 
-      animFrameId = requestAnimationFrame(processSharedVideoFrame);
+      isProcessingPoseFrame = false;
 
     }
 
@@ -5146,9 +5642,61 @@
 
     /* =========================================================================
 
-       7. 🛡️ 構え（レディポジション）＆ リストスタンド（手首角度）判定ヘルパー
+       7. 🛡️ 構え（レディポジション）＆ リストスタンド（場面別基準モード対応）
 
     ========================================================================= */
+
+    const STANCE_CRITERIA_MODES = {
+
+      standard: {
+
+        minWristHeight: 0.18, maxFingerDrop: 0.12, minKnee: 128, maxKnee: 158, minStance: 1.15,
+
+        label: "オールラウンド標準"
+
+      },
+
+      doubles_front: {
+
+        minWristHeight: 0.30, maxFingerDrop: 0.06, minKnee: 130, maxKnee: 155, minStance: 1.20,
+
+        label: "ダブルス前衛・ドライブ待機"
+
+      },
+
+      singles_receive: {
+
+        minWristHeight: 0.12, maxFingerDrop: 0.14, minKnee: 115, maxKnee: 146, minStance: 1.32,
+
+        label: "シングルス・レシーブ待機"
+
+      },
+
+      junior_basic: {
+
+        minWristHeight: 0.10, maxFingerDrop: 0.18, minKnee: 120, maxKnee: 164, minStance: 1.05,
+
+        label: "ジュニア・基礎習得"
+
+      }
+
+    };
+
+
+
+    function onStanceModeChanged() {
+
+      updateShotCriteriaUI();
+
+      if (activeCameraMode === 'pose' && activeInputType === 'video') {
+
+        startAutoVideoDiagnosis();
+
+      }
+
+    }
+
+
 
     function evaluateReadyStanceQuality(lm) {
 
@@ -5168,6 +5716,12 @@
 
 
 
+      const stanceModeKey = document.getElementById('stanceModeSelect') ? document.getElementById('stanceModeSelect').value : 'standard';
+
+      const crit = STANCE_CRITERIA_MODES[stanceModeKey] || STANCE_CRITERIA_MODES.standard;
+
+
+
       const midShY = (lm[11].y + lm[12].y) / 2;
 
       const midHipY = (lm[23].y + lm[24].y) / 2;
@@ -5176,7 +5730,7 @@
 
 
 
-      // ① ラケット（手首）の高さ：みぞおち〜胸の高さにあるか
+      // ① ラケット（手首）の高さ判定
 
       const wristRelHeight = (midHipY - wrist.y) / torsoLen;
 
@@ -5184,9 +5738,9 @@
 
       let wristIssue = null;
 
-      if (wristRelHeight < 0.18) {
+      if (wristRelHeight < crit.minWristHeight) {
 
-        wristScore = Math.max(35, Math.round(40 + wristRelHeight * 250));
+        wristScore = Math.max(35, Math.round(45 + (wristRelHeight / crit.minWristHeight) * 45));
 
         wristIssue = "ラケット(手首)が下がっています";
 
@@ -5194,7 +5748,7 @@
 
 
 
-      // ② リストスタンド判定（肘→手首→人差し指の角度と指先の高さ）
+      // ② リストスタンド判定
 
       let wristStandPt = 92;
 
@@ -5206,7 +5760,7 @@
 
         const fingerDrop = (indexTip.y - wrist.y) / torsoLen;
 
-        if (fingerDrop > 0.12) {
+        if (fingerDrop > crit.maxFingerDrop) {
 
           wristStandPt = 58;
 
@@ -5224,7 +5778,7 @@
 
 
 
-      // ③ 膝のゆとり角度（理想は130°〜152°）
+      // ③ 膝のゆとり角度判定
 
       const kneeDeg = calcAngle(hip, knee, ankle);
 
@@ -5232,15 +5786,15 @@
 
       let kneeIssue = null;
 
-      if (kneeDeg > 160) {
+      if (kneeDeg > crit.maxKnee) {
 
-        kneeScore = Math.max(40, 100 - (kneeDeg - 155) * 3);
+        kneeScore = Math.max(40, 100 - (kneeDeg - crit.maxKnee) * 3);
 
         kneeIssue = "膝が棒立ちです（少し緩めて）";
 
-      } else if (kneeDeg < 112) {
+      } else if (kneeDeg < crit.minKnee) {
 
-        kneeScore = Math.max(50, 100 - (115 - kneeDeg) * 2);
+        kneeScore = Math.max(50, 100 - (crit.minKnee - kneeDeg) * 2);
 
         kneeIssue = "腰が落ちすぎています";
 
@@ -5248,7 +5802,7 @@
 
 
 
-      // ④ スタンス幅比（肩幅に対する足幅：理想1.25〜1.65倍）
+      // ④ スタンス幅比判定
 
       const shWidth = Math.max(0.08, Math.hypot(lm[11].x - lm[12].x, lm[11].y - lm[12].y));
 
@@ -5260,13 +5814,13 @@
 
       let stanceIssue = null;
 
-      if (stanceRatio < 1.1) {
+      if (stanceRatio < crit.minStance) {
 
         stanceScore = 65;
 
         stanceIssue = "足幅が狭いです（肩幅より広く）";
 
-      } else if (stanceRatio > 1.95) {
+      } else if (stanceRatio > 1.98) {
 
         stanceScore = 70;
 
@@ -5278,7 +5832,7 @@
 
       const totalReadyPt = Math.round(wristScore * 0.3 + wristStandPt * 0.15 + kneeScore * 0.35 + stanceScore * 0.2);
 
-      const mainIssue = wristIssue || kneeIssue || stanceIssue || "構え＆リストスタンド良好";
+      const mainIssue = wristIssue || kneeIssue || stanceIssue || `構え良好 (${crit.label})`;
 
 
 
@@ -5332,7 +5886,7 @@
 
       unlockAudioContext();
 
-      if (activeCameraMode !== 'reflex') {
+      if (activeCameraMode !== 'reflex' || activeInputType !== 'camera') {
 
         alert("先に「📷 初速AIカメラ起動」を押してカメラの前に構えてください！");
 
@@ -5728,7 +6282,7 @@
 
     /* =========================================================================
 
-       9. TAB 3: 🎥 構え＆全10種目AI骨格解析（動画自動診断・ベスト瞬間キャプチャ・スロー再生）
+       9. TAB 3: 🎥 動画独立パイプライン ＆ 区間切り出し ＆ 骨格解析エンジン
 
     ========================================================================= */
 
@@ -5740,7 +6294,7 @@
 
         focus: "stance", idealShoulder: 55, idealElbow: 105, idealKnee: 140, idealStance: 1.45,
 
-        desc: "🛡️ <b>基本の構え100pt基準:</b> ①ラケット(手首)をみぞおちより上でキープ＆リストスタンド、②膝角度132°〜150°＆足幅が肩幅の約1.4倍、③小刻みな上下バウンドのない静止安定度を採点します。"
+        desc: "🛡️ <b>基本の構え100pt基準:</b> ①ラケット(手首)の高さキープ＆リストスタンド、②膝のゆとり角＆スタンス幅比、③小刻みな上下バウンドのない静止安定度を採点します。"
 
       },
 
@@ -5876,7 +6430,7 @@
 
       delayFrameBuffer = [];
 
-      updateCameraToggleButtonsUI();
+      updateMediaControlsUI();
 
     }
 
@@ -5884,13 +6438,13 @@
 
     function changeVideoPlaybackSpeed(rateVal) {
 
-      const video = document.getElementById('sharedInputVideo');
+      const upVideo = document.getElementById('uploadedVideo');
 
       const rate = Number(rateVal) || 1.0;
 
-      if (video) video.playbackRate = rate;
+      if (upVideo) upVideo.playbackRate = rate;
 
-      updateCameraToggleButtonsUI();
+      updateMediaControlsUI();
 
     }
 
@@ -5922,53 +6476,133 @@
 
 
 
-    // 🎬 動画を読み込んだ瞬間に自動で診断スタート！
+    // 🎬 動画読み込み（カメラ起動不要で即座に表示＆自動診断を開始する独立パイプライン）
 
     function handleVideoUpload(event) {
 
-      const file = event.target.files[0];
+      const file = event.target.files && event.target.files[0];
 
       if (!file) return;
 
-      stopSharedCamera();
+
+
+      unlockAudioContext();
+
+      stopAllMediaAndLoops();
 
       initSharedPose();
 
-      isUploadedVideo = true;
+
+
+      if (currentVideoObjectUrl) {
+
+        try { URL.revokeObjectURL(currentVideoObjectUrl); } catch (e) {}
+
+      }
+
+      currentVideoObjectUrl = URL.createObjectURL(file);
 
 
 
-      const video = document.getElementById('sharedInputVideo');
+      const upVideo = document.getElementById('uploadedVideo');
 
-      video.src = URL.createObjectURL(file);
+      upVideo.muted = true;
 
-      video.loop = false; // 自動診断時は動画終了を検知するためループしない
+      upVideo.playsInline = true;
 
-      const rate = Number(document.getElementById('videoSpeedSelect').value) || 1.0;
+      upVideo.setAttribute('playsinline', '');
+
+      upVideo.setAttribute('webkit-playsinline', '');
+
+      upVideo.loop = false;
+
+      upVideo.src = currentVideoObjectUrl;
 
 
 
-      video.onloadeddata = () => {
+      // カメラを起動しなくても即座に動画モードとしてCanvasとコントロールパネルを表示
 
-        video.playbackRate = rate;
+      activeCameraMode = 'pose';
 
-        syncCanvasDimensionsToVideo(video);
+      activeInputType = 'video';
 
-        activeCameraMode = 'pose';
+      updateMediaControlsUI();
 
-        updateCameraToggleButtonsUI();
+      document.getElementById('poseHudStatus').textContent = "⏳ 動画を読み込み中...";
 
-        processSharedVideoFrame();
 
-        // カウントダウンなしで即座に自動診断開始
 
-        startAutoVideoDiagnosis();
+      let initialized = false;
+
+      const onVideoReady = async () => {
+
+        if (initialized) return;
+
+        initialized = true;
+
+
+
+        syncCanvasDimensionsToVideo(upVideo);
+
+
+
+        // 先頭フレームをまず即座にCanvasへ描画（真っ黒画面防止）
+
+        const outCanvas = document.getElementById('outputCanvas');
+
+        if (outCanvas && upVideo.videoWidth) {
+
+          outCanvas.getContext('2d').drawImage(upVideo, 0, 0, outCanvas.width, outCanvas.height);
+
+        }
+
+
+
+        const dur = (upVideo.duration && isFinite(upVideo.duration)) ? upVideo.duration : 10;
+
+        videoTrimState.duration = dur;
+
+        videoTrimState.startSec = 0;
+
+        videoTrimState.endSec = Number(dur.toFixed(1));
+
+        updateTrimRangeLabel();
+
+
+
+        const seekSlider = document.getElementById('videoSeekSlider');
+
+        if (seekSlider) {
+
+          seekSlider.min = 0;
+
+          seekSlider.max = dur.toFixed(2);
+
+          seekSlider.value = 0;
+
+        }
+
+
+
+        startUnifiedFrameLoop();
+
+        await startAutoVideoDiagnosis();
 
       };
 
 
 
-      // 同じファイルを再度選んだときも発火するようにリセット
+      upVideo.onloadeddata = onVideoReady;
+
+      upVideo.onloadedmetadata = () => {
+
+        syncCanvasDimensionsToVideo(upVideo);
+
+      };
+
+      upVideo.load();
+
+
 
       event.target.value = "";
 
@@ -5976,11 +6610,135 @@
 
 
 
-    function startAutoVideoDiagnosis() {
+    function updateVideoSeekUI(videoEl) {
 
-      const video = document.getElementById('sharedInputVideo');
+      const slider = document.getElementById('videoSeekSlider');
 
-      if (!video || !isUploadedVideo) return;
+      const label = document.getElementById('videoTimeLabel');
+
+      if (!slider || !label || !videoEl) return;
+
+
+
+      const cur = videoEl.currentTime || 0;
+
+      const dur = (videoEl.duration && isFinite(videoEl.duration)) ? videoEl.duration : videoTrimState.duration;
+
+      slider.value = cur;
+
+      label.textContent = `${cur.toFixed(1)}s / ${dur.toFixed(1)}s`;
+
+    }
+
+
+
+    function onVideoSeekSliderInput(val) {
+
+      if (activeInputType !== 'video') return;
+
+      const upVideo = document.getElementById('uploadedVideo');
+
+      const targetSec = Number(val) || 0;
+
+      upVideo.currentTime = targetSec;
+
+      updateVideoSeekUI(upVideo);
+
+
+
+      // 一時停止中にシークバーを動かしたときも、その瞬間の骨格を即時解析してCanvas更新
+
+      setTimeout(() => {
+
+        if (upVideo.paused) sendSingleFrameToPose(upVideo);
+
+      }, 60);
+
+    }
+
+
+
+    function seekUploadedVideoBy(deltaSec) {
+
+      if (activeInputType !== 'video') return;
+
+      const upVideo = document.getElementById('uploadedVideo');
+
+      upVideo.pause();
+
+      document.getElementById('btnVideoPlayPause').textContent = "▶️ 再生";
+
+      const nextTime = Math.max(0, Math.min(upVideo.duration || 10, upVideo.currentTime + deltaSec));
+
+      upVideo.currentTime = nextTime;
+
+      updateVideoSeekUI(upVideo);
+
+      setTimeout(() => sendSingleFrameToPose(upVideo), 50);
+
+    }
+
+
+
+    function setVideoTrimPoint(type) {
+
+      if (activeInputType !== 'video') return;
+
+      const upVideo = document.getElementById('uploadedVideo');
+
+      const cur = Number((upVideo.currentTime || 0).toFixed(1));
+
+      if (type === 'start') {
+
+        videoTrimState.startSec = Math.min(cur, Math.max(0, videoTrimState.endSec - 0.5));
+
+      } else {
+
+        videoTrimState.endSec = Math.max(cur, videoTrimState.startSec + 0.5);
+
+      }
+
+      updateTrimRangeLabel();
+
+    }
+
+
+
+    function resetVideoTrimRange() {
+
+      videoTrimState.startSec = 0;
+
+      videoTrimState.endSec = Number((videoTrimState.duration || 10).toFixed(1));
+
+      updateTrimRangeLabel();
+
+    }
+
+
+
+    function updateTrimRangeLabel() {
+
+      const el = document.getElementById('trimRangeText');
+
+      if (el) {
+
+        el.textContent = `${videoTrimState.startSec.toFixed(1)}s 〜 ${videoTrimState.endSec.toFixed(1)}s`;
+
+      }
+
+    }
+
+
+
+    // 🎬 動画の指定区間（または全体）を自動診断スタート
+
+    async function startAutoVideoDiagnosis() {
+
+      if (activeInputType !== 'video') return;
+
+      const upVideo = document.getElementById('uploadedVideo');
+
+      if (!upVideo) return;
 
 
 
@@ -5994,11 +6752,9 @@
 
       const rate = Number(document.getElementById('videoSpeedSelect').value) || 1.0;
 
-      video.currentTime = 0;
+      upVideo.playbackRate = rate;
 
-      video.playbackRate = rate;
-
-      video.loop = false;
+      upVideo.currentTime = videoTrimState.startSec || 0;
 
 
 
@@ -6008,25 +6764,23 @@
 
 
 
-      // 動画の長さ（最大12秒まで）に合わせて自動測定
+      const clipLen = Math.max(1, (videoTrimState.endSec || upVideo.duration || 10) - (videoTrimState.startSec || 0));
 
-      const vidDur = (video.duration && isFinite(video.duration)) ? Math.min(12, Math.ceil(video.duration / rate)) : 10;
+      const diagSec = Math.min(15, Math.ceil(clipLen / rate));
 
-      poseSession.durationSec = vidDur;
+      poseSession.durationSec = diagSec;
 
-      poseSession.remainingSec = vidDur;
+      poseSession.remainingSec = diagSec;
 
 
-
-      document.getElementById('btnStartPoseSession').disabled = true;
 
       document.getElementById('sessionTimerLabel').textContent = `🔴 動画自動診断中... (${rate}x)`;
 
-      document.getElementById('aiSummaryContent').innerHTML = `🎬 動画を最初から自動解析しています。完了するとベスト瞬間キャプチャと総合スコアが表示されます...`;
+      document.getElementById('aiSummaryContent').innerHTML = `🎬 動画（${videoTrimState.startSec.toFixed(1)}s〜${videoTrimState.endSec.toFixed(1)}s）を自動解析しています。完了するとベスト瞬間キャプチャと総合スコアが表示されます...`;
 
 
 
-      video.onended = () => {
+      upVideo.onended = () => {
 
         if (poseSession.active) {
 
@@ -6038,11 +6792,31 @@
 
 
 
-      video.play().catch(() => {});
+      try {
+
+        await upVideo.play();
+
+        document.getElementById('btnVideoPlayPause').textContent = "⏸️ 一時停止";
+
+      } catch (err) {
+
+        // Safari等で自動再生がブロックされた場合は1フレーム解析して案内を表示
+
+        document.getElementById('btnVideoPlayPause').textContent = "▶️ 再生";
+
+        document.getElementById('poseHudStatus').textContent = "▶️ 「再生」ボタンを押すと動画診断が始まります";
+
+        await sendSingleFrameToPose(upVideo);
+
+        return;
+
+      }
 
 
 
       poseSession.timerId = setInterval(() => {
+
+        if (upVideo.paused) return; // 一時停止中はタイマーを減らさない
 
         poseSession.remainingSec--;
 
@@ -6066,9 +6840,7 @@
 
       updateShotCriteriaUI();
 
-      // 動画が読み込まれている状態で種目を変えたら、自動的に先頭からその種目で再診断！
-
-      if (activeCameraMode === 'pose' && isUploadedVideo) {
+      if (activeCameraMode === 'pose' && activeInputType === 'video') {
 
         startAutoVideoDiagnosis();
 
@@ -6080,21 +6852,29 @@
 
     function toggleVideoPause() {
 
-      const video = document.getElementById('sharedInputVideo');
+      const videoEl = getActiveSourceVideoElement();
 
-      if (!video.src && !video.srcObject) return;
+      if (!videoEl || activeInputType === 'idle') return;
 
-      if (video.paused) {
 
-        video.play();
 
-        document.getElementById('poseHudStatus').textContent = "🟢 再生・解析中";
+      const btnPlayPause = document.getElementById('btnVideoPlayPause');
+
+      if (videoEl.paused) {
+
+        videoEl.play().catch(() => {});
+
+        if (btnPlayPause) btnPlayPause.textContent = "⏸️ 一時停止";
+
+        document.getElementById('poseHudStatus').textContent = activeInputType === 'video' ? "🎬 動画再生・解析中" : "🟢 カメラ解析中";
 
       } else {
 
-        video.pause();
+        videoEl.pause();
 
-        document.getElementById('poseHudStatus').textContent = "⏸️ 一時停止中（線引き可）";
+        if (btnPlayPause) btnPlayPause.textContent = "▶️ 再生";
+
+        document.getElementById('poseHudStatus').textContent = "⏸️ 一時停止中（シーク＆線引き可）";
 
       }
 
@@ -6186,7 +6966,7 @@
 
           confEl.textContent = `🎯 認識精度: ${confPct}%`;
 
-        } else if (confPct >= 55) {
+        } else if (confPct >= 52) {
 
           confEl.style.color = '#fbbf24';
 
@@ -6292,7 +7072,7 @@
 
 
 
-        if (confPct >= 52) {
+        if (confPct >= 48) {
 
           if (poseSession.active) poseSession.validFrames++;
 
@@ -6372,7 +7152,7 @@
 
           if (aiMetrics.prevWrist && aiMetrics.prevTime > 0) {
 
-            const videoRate = isUploadedVideo ? (Number(document.getElementById('videoSpeedSelect').value) || 1.0) : 1.0;
+            const videoRate = activeInputType === 'video' ? (Number(document.getElementById('videoSpeedSelect').value) || 1.0) : 1.0;
 
             const dt = ((now - aiMetrics.prevTime) / 1000) * videoRate;
 
@@ -6454,8 +7234,6 @@
 
 
 
-          // 📸 ベスト瞬間フレームの自動キャプチャ更新
-
           if (frameComposite >= aiMetrics.bestFrameScore) {
 
             aiMetrics.bestFrameScore = frameComposite;
@@ -6490,13 +7268,21 @@
 
 
 
-      if (delayMirrorSeconds > 0 && !isUploadedVideo) {
+      // ディレイ再生ミラー（ライブカメラモード時のみ）
+
+      if (delayMirrorSeconds > 0 && activeInputType === 'camera') {
 
         const nowMs = performance.now();
 
         const currentSnap = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
         delayFrameBuffer.push({ time: nowMs, imageData: currentSnap });
+
+
+
+        // メモリ肥大化防止上限
+
+        if (delayFrameBuffer.length > 180) delayFrameBuffer.shift();
 
 
 
@@ -6586,8 +7372,6 @@
 
 
 
-      // 🏸 リストスタンド（手首→人差し指）インジケーター描画
-
       if (wrist && indexTip && (wrist.visibility || 0) > 0.5) {
 
         const wx = wrist.x * w, wy = wrist.y * h;
@@ -6612,7 +7396,13 @@
 
       if (model.focus === 'stance') {
 
-        const chestGuideY = ((shoulder.y * 0.35 + hip.y * 0.65) * h);
+        const stanceModeKey = document.getElementById('stanceModeSelect') ? document.getElementById('stanceModeSelect').value : 'standard';
+
+        const crit = STANCE_CRITERIA_MODES[stanceModeKey] || STANCE_CRITERIA_MODES.standard;
+
+        const chestRatio = stanceModeKey === 'doubles_front' ? 0.45 : (stanceModeKey === 'singles_receive' ? 0.25 : 0.35);
+
+        const chestGuideY = ((shoulder.y * chestRatio + hip.y * (1 - chestRatio)) * h);
 
         const wristY = wrist.y * h;
 
@@ -6640,13 +7430,13 @@
 
         ctx.fillStyle = 'rgba(5, 9, 20, 0.86)';
 
-        ctx.fillRect(w * 0.15, chestGuideY - 24, 245, 20);
+        ctx.fillRect(w * 0.15, chestGuideY - 24, 265, 20);
 
         ctx.fillStyle = isWristOk ? '#10b981' : '#fb7185';
 
         ctx.font = 'bold 11px sans-serif';
 
-        ctx.fillText(isWristOk ? '🟢 ラケット高＆リストOK (この線より上)' : '⚠️ ラケットをこの線より上に上げて！', w * 0.15 + 6, chestGuideY - 10);
+        ctx.fillText(isWristOk ? `🟢 ラケット高OK (${crit.label})` : `⚠️ ラケットをこの線より上に上げて！`, w * 0.15 + 6, chestGuideY - 10);
 
 
 
@@ -7108,6 +7898,8 @@
 
       const box = document.getElementById('shotCriteriaDesc');
 
+      const stanceGroup = document.getElementById('stanceCriteriaGroup');
+
       const model = SHOT_IDEAL_MODELS[shot] || SHOT_IDEAL_MODELS.smash;
 
       if (box) box.innerHTML = model.desc;
@@ -7116,6 +7908,8 @@
 
       if (shot === 'ready_stance') {
 
+        if (stanceGroup) stanceGroup.style.display = 'block';
+
         document.getElementById('bdLabel1').textContent = "① ラケット高さ＆リストスタンド（40%）";
 
         document.getElementById('bdLabel2').textContent = "② 膝のゆとり角＆スタンス幅比（35%）";
@@ -7123,6 +7917,8 @@
         document.getElementById('bdLabel3').textContent = "③ 無駄な上下動のない静止安定度（25%）";
 
       } else {
+
+        if (stanceGroup) stanceGroup.style.display = 'none';
 
         document.getElementById('bdLabel1').textContent = "① 上半身・打点＆肘角度の正確性（40%）";
 
@@ -7250,9 +8046,9 @@
 
       unlockAudioContext();
 
-      if (activeCameraMode !== 'pose') {
+      if (activeCameraMode !== 'pose' || activeInputType === 'idle') {
 
-        alert("先に「📷 AIカメラ起動」または「📁 動画読込」を開始してください！");
+        alert("先に「📷 AIカメラ起動」または「📁 動画読込」を選択してください！");
 
         return;
 
@@ -7260,9 +8056,7 @@
 
 
 
-      // 動画モード時はカウントダウンなしで動画を0秒に巻き戻して即再診断！
-
-      if (isUploadedVideo) {
+      if (activeInputType === 'video') {
 
         startAutoVideoDiagnosis();
 
@@ -7372,29 +8166,33 @@
 
       document.getElementById('btnStartPoseSession').disabled = false;
 
-      document.getElementById('sessionTimerLabel').textContent = fromVideoAuto ? `✅ 動画自動診断完了` : `✅ 10秒精密測定完了`;
+      document.getElementById('sessionTimerLabel').textContent = fromVideoAuto ? `✅ 動画区間診断完了` : `✅ 10秒精密測定完了`;
 
       playBeep(1200, 250);
 
 
 
-      if (fromVideoAuto) {
+      if (fromVideoAuto && activeInputType === 'video') {
 
-        const video = document.getElementById('sharedInputVideo');
+        const upVideo = document.getElementById('uploadedVideo');
 
-        if (video) video.pause();
+        if (upVideo) upVideo.pause();
+
+        const btnPlayPause = document.getElementById('btnVideoPlayPause');
+
+        if (btnPlayPause) btnPlayPause.textContent = "▶️ 再生";
 
       }
 
 
 
-      if (poseSession.validFrames < 5) {
+      if (poseSession.validFrames < 3) {
 
         document.getElementById('aiSummaryContent').innerHTML = `
 
           <div style="color:#f43f5e; font-weight:800;">⚠️ 全身の関節が十分に映っていませんでした（有効フレーム不足）</div>
 
-          <div>頭から足首までが画面内に収まる動画またはカメラ位置で再度測定してみてください。</div>
+          <div>頭から足首までが画面内に収まる区間またはカメラ位置で再度測定してみてください。</div>
 
         `;
 
@@ -7417,8 +8215,6 @@
       const maxSp = aiMetrics.maxSpeedPt;
 
 
-
-      // 📸 ベスト瞬間キャプチャカードの表示
 
       if (aiMetrics.bestSnapshotMeta) {
 
@@ -7458,13 +8254,13 @@
 
 
 
-        if (aiMetrics.wristKeepPt >= 85 && aiMetrics.isWristStandOk) goodPoints.push(`ラケット（手首）がみぞおち・胸の高さでキープされ、リストスタンドも維持できています。`);
+        if (aiMetrics.wristKeepPt >= 85 && aiMetrics.isWristStandOk) goodPoints.push(`ラケット（手首）が基準ラインより上でキープされ、リストスタンドも維持できています。`);
 
         else improvePoints.push(`構えている間に手首が下がるか、手首が寝てラケットヘッドが落ちる場面があります。胸の前でリストを立てて構えましょう。`);
 
 
 
-        if (minKn >= 125 && minKn <= 152 && aiMetrics.stanceRatio >= 1.2) goodPoints.push(`膝のゆとり角度（${aiMetrics.kneeDeg}°）とスタンス幅（肩幅の${aiMetrics.stanceRatio}倍）のバランスが良く、どの方向にもすぐ抜重できます。`);
+        if (minKn >= 120 && minKn <= 155 && aiMetrics.stanceRatio >= 1.15) goodPoints.push(`膝のゆとり角度（${aiMetrics.kneeDeg}°）とスタンス幅（肩幅の${aiMetrics.stanceRatio}倍）のバランスが良く、どの方向にもすぐ抜重できます。`);
 
         else improvePoints.push(`膝角度（現在${aiMetrics.kneeDeg}°）または足幅（肩幅の${aiMetrics.stanceRatio}倍）を見直しましょう。足幅を肩幅の約1.4倍に広げ、膝を軽く緩める（約140°）と一歩目が劇的に速くなります。`);
 
@@ -7594,7 +8390,7 @@
 
     function loadPersonalBestsDB() {
 
-      const raw = localStorage.getItem('badtore_personal_bests_v80') || localStorage.getItem('badtore_personal_bests_v75');
+      const raw = localStorage.getItem('badtore_personal_bests_v90') || localStorage.getItem('badtore_personal_bests_v80') || localStorage.getItem('badtore_personal_bests_v75');
 
       if (raw) {
 
@@ -7622,7 +8418,7 @@
 
       personalBestsDB[profileId][shotType] = recordObj;
 
-      localStorage.setItem('badtore_personal_bests_v80', JSON.stringify(personalBestsDB));
+      localStorage.setItem('badtore_personal_bests_v90', JSON.stringify(personalBestsDB));
 
     }
 
@@ -7680,7 +8476,7 @@
 
         delete personalBestsDB[activeProfileId][shot];
 
-        localStorage.setItem('badtore_personal_bests_v80', JSON.stringify(personalBestsDB));
+        localStorage.setItem('badtore_personal_bests_v90', JSON.stringify(personalBestsDB));
 
         updateComparisonTableUI();
 
@@ -7754,11 +8550,11 @@
 
           personalBestsDB = parsed.personalBestsDB || {};
 
-          localStorage.setItem('badtore_profiles_list_v80', JSON.stringify(profilesList));
+          localStorage.setItem('badtore_profiles_list_v90', JSON.stringify(profilesList));
 
-          localStorage.setItem('badtore_active_profile_id_v80', activeProfileId);
+          localStorage.setItem('badtore_active_profile_id_v90', activeProfileId);
 
-          localStorage.setItem('badtore_personal_bests_v80', JSON.stringify(personalBestsDB));
+          localStorage.setItem('badtore_personal_bests_v90', JSON.stringify(personalBestsDB));
 
           syncActiveProfileToState();
 
@@ -7788,7 +8584,7 @@
 
     function loadAllProfiles() {
 
-      const savedTheme = localStorage.getItem('badtore_ui_theme_v80') || localStorage.getItem('badtore_ui_theme_v75') || 'cyber';
+      const savedTheme = localStorage.getItem('badtore_ui_theme_v90') || localStorage.getItem('badtore_ui_theme_v80') || 'cyber';
 
       changeUITheme(savedTheme);
 
@@ -7800,9 +8596,9 @@
 
 
 
-      const savedList = localStorage.getItem('badtore_profiles_list_v80') || localStorage.getItem('badtore_profiles_list_v75');
+      const savedList = localStorage.getItem('badtore_profiles_list_v90') || localStorage.getItem('badtore_profiles_list_v80') || localStorage.getItem('badtore_profiles_list_v75');
 
-      const savedActiveId = localStorage.getItem('badtore_active_profile_id_v80') || localStorage.getItem('badtore_active_profile_id_v75');
+      const savedActiveId = localStorage.getItem('badtore_active_profile_id_v90') || localStorage.getItem('badtore_active_profile_id_v80') || localStorage.getItem('badtore_active_profile_id_v75');
 
 
 
@@ -7956,7 +8752,7 @@
 
       activeProfileId = id;
 
-      localStorage.setItem('badtore_active_profile_id_v80', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v90', activeProfileId);
 
       syncActiveProfileToState();
 
@@ -7992,7 +8788,7 @@
 
 
 
-      localStorage.setItem('badtore_profiles_list_v80', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v90', JSON.stringify(profilesList));
 
       syncActiveProfileToState();
 
@@ -8028,9 +8824,9 @@
 
       activeProfileId = newId;
 
-      localStorage.setItem('badtore_profiles_list_v80', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v90', JSON.stringify(profilesList));
 
-      localStorage.setItem('badtore_active_profile_id_v80', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v90', activeProfileId);
 
       syncActiveProfileToState();
 
@@ -8052,9 +8848,9 @@
 
       activeProfileId = profilesList[0].id;
 
-      localStorage.setItem('badtore_profiles_list_v80', JSON.stringify(profilesList));
+      localStorage.setItem('badtore_profiles_list_v90', JSON.stringify(profilesList));
 
-      localStorage.setItem('badtore_active_profile_id_v80', activeProfileId);
+      localStorage.setItem('badtore_active_profile_id_v90', activeProfileId);
 
       syncActiveProfileToState();
 
