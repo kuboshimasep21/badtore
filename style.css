@@ -367,4 +367,380 @@ body.is-fullscreen-mode .nav-tabs {
 .court-cell {
   position: relative;
   background: #0d1526;
-  border: 2
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.08s, background-color 0.08s, border-color 0.08s, box-shadow 0.08s;
+  min-width: 0;
+}
+
+.cell-num {
+  font-size: clamp(1.05rem, 3.6vw, 1.55rem);
+  font-weight: 900;
+  color: #f8fafc;
+  white-space: nowrap !important;
+  line-height: 1.2;
+}
+
+.cell-sub {
+  font-size: clamp(0.68rem, 2.2vw, 0.85rem);
+  color: var(--text-sub);
+  margin-top: 3px;
+  white-space: nowrap !important;
+}
+
+.court-cell.active {
+  background: radial-gradient(circle at center, #fde047 0%, #f59e0b 85%) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 28px rgba(250, 204, 21, 0.85);
+  transform: scale(0.99);
+}
+
+.court-cell.active .cell-num,
+.court-cell.active .cell-sub {
+  color: #070b14 !important;
+  font-weight: 900;
+}
+
+/* 同じ場所が連続した際の一瞬消灯フラッシュ用 */
+.court-cell.retrigger {
+  background: #0d1526 !important;
+  box-shadow: none !important;
+}
+
+.court-cell.disabled-zone {
+  opacity: 0.28;
+  border-style: dashed;
+}
+
+.court-caption {
+  font-size: 0.74rem;
+  color: var(--text-sub);
+  text-align: center;
+  margin-top: 6px;
+  word-break: break-word;
+}
+
+/* カウントダウンオーバーレイ */
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 11, 20, 0.86);
+  border-radius: 12px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  text-align: center;
+  padding: 12px;
+}
+.countdown-overlay.show {
+  display: flex;
+}
+.countdown-num {
+  font-size: 4.2rem;
+  font-weight: 900;
+  color: var(--gold-bright);
+  line-height: 1;
+}
+.countdown-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-top: 8px;
+}
+
+/* =========================================================
+   2 & 3. カメラ・動画AIステージ ＆ 4数値カード
+   ========================================================= */
+.vision-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.vision-canvas-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 250px;
+  background: #050811;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fs-target.is-fullscreen .vision-canvas-wrap {
+  flex: 1 1 auto;
+  max-height: calc(100dvh - 180px);
+}
+
+.vision-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 68vh;
+  object-fit: contain;
+}
+
+.draw-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  touch-action: pan-y;
+  z-index: 10;
+}
+
+.draw-canvas.drawing-enabled {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.vision-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  background: rgba(7, 11, 20, 0.92);
+  z-index: 5;
+}
+
+.vision-placeholder.hidden {
+  display: none !important;
+}
+
+/* 動画シークバー＆区間A-Bループパネル */
+.video-ctrl-bar {
+  display: none;
+  background: #0d1526;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 10px;
+  padding: 9px 10px;
+  margin-top: 8px;
+  width: 100%;
+}
+.video-ctrl-bar.show {
+  display: block;
+}
+
+.seek-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 6px;
+}
+.seek-slider {
+  flex: 1 1 auto;
+  min-width: 0;
+  accent-color: var(--cyan);
+}
+.time-readout {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #bae6fd;
+  white-space: nowrap;
+}
+
+/* 4つの角度・速度メトリクス（スマホ2列でも見切れない設計） */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.metric-box {
+  background: #0b111e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 6px;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  color: var(--text-sub);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-val {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--cyan);
+  margin: 2px 0;
+}
+
+.metric-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-score {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+/* 線引きカラーパレット */
+.color-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.color-dot.active {
+  border-color: #ffffff;
+  transform: scale(1.12);
+}
+
+/* =========================================================
+   ジュニア向け感覚ワード解説 ＆ 3段階改善ドリル処方箋
+   ========================================================= */
+.diagnosis-card {
+  background: #0c1322;
+  border: 1px solid rgba(245, 196, 81, 0.35);
+  border-radius: 12px;
+  padding: 11px;
+  margin-top: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.junior-sense-box {
+  background: rgba(56, 189, 248, 0.1);
+  border-left: 4px solid var(--cyan);
+  border-radius: 8px;
+  padding: 9px 10px;
+  margin-top: 8px;
+  font-size: 0.82rem;
+}
+
+.drill-prescription-box {
+  background: rgba(16, 185, 129, 0.09);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.drill-step-item {
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  margin-top: 6px;
+  padding-left: 6px;
+  border-left: 2px solid var(--gold);
+}
+
+.capture-preview-box {
+  display: none;
+  margin-top: 10px;
+  background: #090e1a;
+  border: 1px solid rgba(245, 196, 81, 0.4);
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+}
+.capture-preview-box.show {
+  display: block;
+}
+.capture-preview-img {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* =========================================================
+   5. スコア＆サーブ位置コート
+   ========================================================= */
+.score-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.score-team {
+  background: #0b111e;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  min-width: 0;
+}
+.score-team.serving {
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(245, 196, 81, 0.2);
+}
+.score-num {
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: var(--gold-bright);
+  line-height: 1.1;
+  margin: 6px 0;
+}
+
+.service-court {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  background: #064e3b;
+  border: 2px solid #ffffff;
+  border-radius: 10px;
+  padding: 8px;
+}
+.service-box {
+  background: rgba(6, 78, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 6px;
+  padding: 10px 6px;
+  text-align: center;
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.service-box.server-box {
+  background: rgba(245, 196, 81, 0.32);
+  border: 2px solid var(--gold-bright);
+}
+.service-box.receiver-box {
+  background: rgba(56, 189, 248, 0.28);
+  border: 2px dashed #7dd3fc;
+}
