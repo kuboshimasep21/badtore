@@ -9387,66 +9387,86 @@
       renderMatchCourt();
 
     });
-    /* =========================================================================
-       🚀 v9.0 AI頭脳アップグレードパッチ (AI改善 1〜3 完全統合)
-       - 既存UI・ネオン矢印・動画機能を1ミリも変えずにAI診断ロジックのみを強化
+   /* =========================================================================
+       🚀 v9.5 PRO アップグレードパッチ
+       1. バージョン表記 v9.5 PRO 自動反映
+       2. 競技者・実戦向け標準コーチング表現 ＆ 3段階処方箋ドリル
+       3. 前腕「回内・回外（Pronation / Supination）」連動解析エンジン
+       4. スコアボード「ゲーム取得数（セットカウント）＆ゲーム履歴」拡張
     ========================================================================= */
 
-    // 1. 弱点原因別の「ジュニア感覚ワード」＆「3段階ドリル処方箋」データベース
+    // 0. 起動時にバージョン表記とスコアボード拡張UIを自動適用
+    window.addEventListener('DOMContentLoaded', () => {
+      document.title = "バドトレPRO v9.5 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
+      const verBadge = document.querySelector('header .badge-version');
+      if (verBadge) verBadge.textContent = "v9.5 PRO";
+      initGameCountScoreboardUI();
+    });
+
+    // 1. 原因特定別の「競技者向け標準コーチング解説」＆「3段階ドリル処方箋」
     const AI_CAUSE_PRESCRIPTIONS = {
       racket_drop: {
-        title: "ラケット下がり・リストスタンド不足",
-        sense: "「動いている時や待っている時にラケットが腰の下まで落ちているよ！」球際でラケットを上げる時間がもったいないので、『手首をキュッと立てて（リストスタンド）、みぞおちの前で構えたまま』足を動かそう！",
-        drillName: "ラケット胸前固定ステップ ➔ 至近距離・手投げ連続レシーブ",
-        step1: "【Step1 分解・素振り】グリップをおへそ〜みぞおちの前に構え、手首を立ててラケットヘッドを目の高さに保ったまま左右へシャッセで動く（10往復）。",
-        step2: "【Step2 手投げノック】3〜4mの至近距離からテンポよく手投げでシャトルを出してもらい、大振りせず「立てた手首の指先の握り込みだけ」で前に弾き返す（15球×2）。",
-        step3: "【Step3 基礎打ち・パターン】ドライブ＆プッシュの基礎打ちに入り、1球ごとに打った直後のラケットが腰の下へ落ちないかチェックする。",
+        title: "待機・移動時のラケットヘッド低下 ＆ リストスタンド不足",
+        coaching: "構えおよび移動局面において手首の位置が下がり、リストスタンドが解けています。ラケットヘッドが落ちるとインパクトまでの準備時間（テイクバック）にロスが生じ、ドライブやプッシュに対する反応が遅れます。グリップをみぞおち〜胸の高さに保ち、手関節を背屈・尺屈（リストスタンド）させた状態でフットワークを行ってください。",
+        drillName: "リストスタンド固定シャッセ ➔ ショートレンジ高速ドライビング",
+        step1: "【Step1 分解・素振り】グリップをみぞおち前にセットし、リストを立ててラケットヘッドを目の高さに維持したまま左右へシャッセ移動（10往復）。",
+        step2: "【Step2 フィーディングノック】コート中央〜前衛の近距離から手投げ（またはラケット出し）で連続配球し、バックスイングを取らず指先の握り込みと前腕の小さな回内のみで弾き返す（20球×2セット）。",
+        step3: "【Step3 基礎打ち・パターン】ドライブ＆プッシュの連続ラリーにおいて、1球ごとのフォロースルー直後にラケットヘッドが胸より下へ落ちないよう意識して反復する。",
         fwPreset: "front2",
-        fwLabel: "⬆️ 前衛2点ネットダッシュ（ラケット高位置キープ練習）"
+        fwLabel: "⬆️ 前衛2点ネットダッシュ（ラケット高位置キープ強化）"
+      },
+      pronation_lack: {
+        title: "前腕の回外（溜め）〜回内（インパクト）の運動連鎖不足",
+        coaching: "テイクバックでの前腕の回外（肩関節外旋を含む溜め）から、インパクトに向けた急峻な回内（面返し）の角速度が不足しており、肘から先を前に押し出すスイングになっています。シャトルに最大の初速と角度を与えるため、トップで肘を高く保って胸を開き、インパクト直前に前腕を鋭く回内させてリストを返す運動連鎖を意識してください。",
+        drillName: "トップ外旋キープ素振り ➔ ハイポイント回内タッピング",
+        step1: "【Step1 分解・素振り】テイクバック完了時の「肘を肩より高く上げ、前腕を回外させたトップ姿勢」で一度静止し、そこから肘を支点に前腕を回内させて一気に振り抜く分解素振り（10回）。",
+        step2: "【Step2 フィーディングノック】斜め前から山なりに配球されたシャトルに対し、落下を待たず最高打点で捉え、前腕の回内とグリップの握り込み（インパクトの収縮）だけで鋭く沈めるノック。",
+        step3: "【Step3 基礎打ち・パターン】クリアおよびスマッシュの基礎打ちにて、フォロースルーでラケット面が外側〜下方を向く正しい回内軌道になっているか確認する。",
+        fwPreset: "back2",
+        fwLabel: "⬇️ 後衛2点スマッシュ移動（トップ形成＆回内スイング強化）"
       },
       excess_bounce: {
-        title: "待機中の小刻みな上下バウンド（抜重タイミングのズレ）",
-        sense: "「待つときにピョンピョン跳ねちゃっているよ！」空中に浮いている瞬間は一歩目が動かせません。『静かにピタッと待って、相手が打つ瞬間にだけフッと足の裏の力を抜いて2cm沈む（抜重）』を意識しよう！",
-        drillName: "無反動ストップ＆ゴー（抜重感覚づくり）",
-        step1: "【Step1 分解・素振り】リズム取りのジャンプを禁止し、膝を軽く曲げた静止状態から合図で「上に跳ねずに2cmスッと沈んで一歩目を踏み出す」練習（5回×2セット）。",
-        step2: "【Step2 手投げノック】静止した構えから、左右に手投げしてもらったシャトルへ無反動の一歩目で入ってラケット面を合わせる確認ノック。",
-        step3: "【Step3 基礎打ち・パターン】レシーブ＆ロブの基礎打ちで、相手がインパクトする瞬間に空中に浮いていないかタイミングを合わせる。",
+        title: "待機時の不要な上下動（スプリット・抜重タイミングの不一致）",
+        coaching: "レディポジションでの待機中に重心が小刻みに上下動しており、方向指示（相手のインパクト）の瞬間に空中に浮いているケースが見られます。接地していない瞬間は床反力を得られず初動が遅れます。待機時は重心を静かに保ち、始動の瞬間にのみ膝・足関節の力を瞬間的に抜いて重心を2〜3cm沈める「抜重（アンウェイティング）」へ切り替えてください。",
+        drillName: "静止待機からの無反動抜重ステップ ➔ 左右リアクションノック",
+        step1: "【Step1 分解・素振り】待機中の予備ジャンプを止め、膝を軽く緩めた静止状態から合図と同時に「上に跳ねず、真下にスッと重心を落として一歩目を出す」抜重ドリル（5回×2セット）。",
+        step2: "【Step2 フィーディングノック】静止した構えから、配球者がシャトルをリリースした瞬間に抜重を入れて左右のサイドへ一歩目を踏み出す反応ノック。",
+        step3: "【Step3 基礎打ち・パターン】スマッシュレシーブおよびロブの基礎打ちにて、相手のインパクトと自分の抜重（着地）のタイミングを完全にシンクロさせる。",
         fwPreset: "side2",
-        fwLabel: "↔️ 左右サイドレシーブ（無反動・抜重ステップ練習）"
+        fwLabel: "↔️ 左右サイドレシーブ（無反動・抜重ステップ強化）"
       },
       lunge_lean: {
-        title: "踏み込み（ランジ）時の頭・上体の突っ込み＆膝の浅さ",
-        sense: "「止まる時にアタマが膝より前に突っ込んでいるよ！」頭が前に倒れるとブレーキが効かず、次の一歩が戻りません。『おへその下に重心を落として、胸を張ってカカトから着地してピタッと止まる』とバネのように戻れるよ！",
-        drillName: "ランジ2秒ピタ止め ➔ 手投げタッチ＆蹴り戻し",
-        step1: "【Step1 分解・素振り】右前・左前へ踏み込んだ瞬間、すぐ戻らずに「胸を起こし、カカトから着地して2秒間ピタッと静止」して頭が突っ込まない姿勢を体に覚えさせる。",
-        step2: "【Step2 手投げノック】ネット前から手投げでシャトルを出してもらい、上体を倒さず手首を立てたままシャトルを捉え、前足の蹴り戻し1発でセンターへ戻る。",
-        step3: "【Step3 基礎打ち・パターン】カット＆ネット（または対角線クロス）のパターン練習に移り、実戦スピードでも上体が前に崩れないか確認する。",
+        title: "ランジ（踏み込み）時の体幹前傾過多 ＆ 膝のタメ不足",
+        coaching: "踏み込み着地時に股関節・膝関節の屈曲（タメ）よりも先に頭と上体が前方へ突っ込んでおり、体幹軸が傾いています。上体が被るとブレーキ動作に負荷がかかり、打球面のブレや蹴り戻し（リカバリー）の遅れに直結します。ランジ時は踵から着地して股関節で荷重を受け止め、胸を起こして頭の位置を骨盤の上に保つ意識を持ってください。",
+        drillName: "ランジ着地2秒ホールド ➔ ネット前タッチ＆キックバック",
+        step1: "【Step1 分解・素振り】前衛左右へ深く踏み込んだ着地姿勢で2秒間静止し、「膝がつま先より前に出すぎないか」「胸が起きて体幹軸が垂直に近いか」を確認してから蹴り戻る。",
+        step2: "【Step2 フィーディングノック】ネット前への配球に対し、上体を倒さず深いランジとリストスタンドでシャトルを捉え、前足の1回の蹴り戻しでセンターへ復帰するノック。",
+        step3: "【Step3 基礎打ち・パターン】対角線クロスまたはカット＆ネットのパターン練習にて、球際でも頭の位置が上下・前後にブレないフォームを定着させる。",
         fwPreset: "diagonal_r",
-        fwLabel: "↗️ 対角線クロス交互（ランジ姿勢＆蹴り戻し強化）"
+        fwLabel: "↗️ 対角線クロス交互（ランジ体幹軸＆リカバリー強化）"
       },
       low_contact: {
-        title: "打点の低下・テイクバックでの肘下がり（押し出し打ち）",
-        sense: "「打つ時にヒジが肩より下がって、前に押し出す打ち方になっているよ！」パワーが逃げてネットにかかりやすい形です。『最初にヒジを耳の横まで高く上げて、胸を開いてからうちわを仰ぐように上へ振る』イメージで打ってみよう！",
-        drillName: "トップ固定の分解スイング ➔ 手投げハイキャッチ＆ストローク",
-        step1: "【Step1 分解・素振り】テイクバックを省略し、最初から「利き肘を肩より高く上げ、非利き手を前に伸ばしたトップの形」を作って2秒止まり、そこから一気に振る分解素振り（8回）。",
-        step2: "【Step2 手投げノック】斜め前から山なりに手投げしてもらったシャトルを、落ちてくるのを待たずに「一番高い打点（額の斜め前）でキャッチ／軽く打つ」ドリル。",
-        step3: "【Step3 基礎打ち・パターン】クリア・スマッシュの基礎打ちに入り、手投げで確認した一番高い打点でシャトルを捉え続ける。",
+        title: "インパクト打点の低下 ＆ テイクバックでの肘の引き上げ不足",
+        coaching: "オーバーヘッドストロークにおいて肩挙上角およびインパクト時の肘伸展角が基準値を下回っており、打点が低く頭の後方や横で捉える形になっています。打点が下がるとコースの角度が甘くなり、球威も減衰します。非利き手を高く掲げて身体の開きを抑え、利き腕の肘を耳の横を通る高さまで引き上げて最高打点でインパクトしてください。",
+        drillName: "非利き手ガイド付きハイトップ素振り ➔ 高打点キャッチ＆ショット",
+        step1: "【Step1 分解・素振り】非利き手を斜め上へ伸ばして照準を作り、利き肘を肩のラインより高く引き上げたトップ姿勢を確認してからスイングする（10回）。",
+        step2: "【Step2 フィーディングノック】高めに配球されたシャトルに対し、落下を待たず最も高いポイント（額の斜め前上方）でインパクトする連続ノック。",
+        step3: "【Step3 基礎打ち・パターン】ハイクリアおよびスマッシュの基礎打ちにて、画面の理想打点レーザー（145°前後）のライン上で捉えられているか確認する。",
         fwPreset: "back2",
-        fwLabel: "⬇️ 後衛2点スマッシュ移動（高打点トップ作り）"
+        fwLabel: "⬇️ 後衛2点スマッシュ移動（最高打点キープ練習）"
       },
       slow_recovery: {
-        title: "蹴り戻しスピード不足 ＆ 後半のラケット下がり",
-        sense: "「一歩目は速いけれど、打ったあとにその場で居座っちゃっているか、後半に疲れて手が下がっているよ！」『打つ瞬間と前足で床を蹴り戻す瞬間をセットにする』意識で、最後まで胸の前にラケットを戻そう！",
-        drillName: "着地即キックバック ➔ 連続前後手投げノック",
-        step1: "【Step1 分解・素振り】踏み込みの足が床につく「タン・タン」のリズムで、2拍目で必ず元の構え位置へ跳ね返るステップ反復。",
-        step2: "【Step2 手投げノック】ネット前に手投げ ➔ センターへ戻る ➔ すぐ奥へ手投げの連続2球ノックで、戻りの一歩目を速くする。",
-        step3: "【Step3 基礎打ち・パターン】前後ストレート交互または6点順番送りコース（30秒連続）で、後半もラケットの高さを落とさず動き切る。",
+        title: "打球後の蹴り戻し（リカバリー）遅延 ＆ 後半のフォーム低下",
+        coaching: "踏み込みやスイング自体の初速は出ていますが、インパクト後に前足で床を蹴り戻すリカバリー動作に遅れがあるか、測定後半にかけてラケット位置と姿勢が低下しています。打球動作と着地からの蹴り戻しを1つの連動したリズムとして捉え、センターへ戻るまでリストスタンドと構えの高さを維持してください。",
+        drillName: "着地即リバウンドステップ ➔ 前後連続フィーディング",
+        step1: "【Step1 分解・素振り】踏み込み足の着地（「タン・タン」の2拍目）と同時に床を蹴り、滞留時間ゼロでベースポジションへ跳ね返るフットワーク反復。",
+        step2: "【Step2 フィーディングノック】前衛ネット前 ➔ センター復帰 ➔ 後衛奥への連続交互配球により、打球直後の戻り出しの一歩目を速くする強化ノック。",
+        step3: "【Step3 基礎打ち・パターン】前後ストレート交互または時間制（30秒〜45秒）コースにて、後半も前半と同じラケット高さを維持して動き切る。",
         fwPreset: "straight_r",
-        fwLabel: "↕️ 右ストレート前後交互（蹴り戻し＆持久力強化）"
+        fwLabel: "↕️ 右ストレート前後交互（蹴り戻し速度＆持久力強化）"
       }
     };
 
-    // ワンタップで推奨フットワークコースへ移動＆自動セットする連携関数
     function jumpToPrescribedFootwork(presetKey, useSplitBeep = false) {
       switchTab('tab-footwork');
       const presetSel = document.getElementById('fwCoursePreset');
@@ -9462,38 +9482,127 @@
     }
 
     // =========================================================================
-    // 2. TAB 3（骨格フォームAI）のフレーム詳細追跡＆5局面原因特定オーバーライド
+    // 2. 前腕「回内・回外（Pronation / Supination）」連動解析 ＆ 5局面診断エンジン
     // =========================================================================
     let poseDetailTracker = {
-      frames: []
+      frames: [],
+      prevHandRelRad: null,
+      prevTimeMs: 0,
+      maxPronationPt: 0,
+      supinationReady: false
     };
 
     const _origResetMaxMetrics = resetMaxMetrics;
     resetMaxMetrics = function() {
       poseDetailTracker.frames = [];
+      poseDetailTracker.prevHandRelRad = null;
+      poseDetailTracker.prevTimeMs = 0;
+      poseDetailTracker.maxPronationPt = 0;
+      poseDetailTracker.supinationReady = false;
       _origResetMaxMetrics();
     };
 
+    // 手首・肘・人差し指・小指の幾何学ベクトルから「回外（溜め）〜回内（面返し）」を算出
+    function evaluateForearmPronation(lm, dtSec) {
+      const isLeft = userProfile.hand === 'left';
+      const shoulder = isLeft ? lm[11] : lm[12];
+      const elbow    = isLeft ? lm[13] : lm[14];
+      const wrist    = isLeft ? lm[15] : lm[16];
+      const pinky    = isLeft ? lm[17] : lm[18];
+      const indexTip = isLeft ? lm[19] : lm[20];
+
+      if (!elbow || !wrist || !indexTip) {
+        return { pronationPt: 75, statusText: "標準", isSupinated: false };
+      }
+
+      // 前腕ベクトル(肘→手首)に対する手部ベクトル(手首→人差し指)の相対角度
+      const forearmRad = Math.atan2(wrist.y - elbow.y, wrist.x - elbow.x);
+      const handRad = Math.atan2(indexTip.y - wrist.y, indexTip.x - wrist.x);
+      let relRad = handRad - forearmRad;
+      while (relRad > Math.PI) relRad -= Math.PI * 2;
+      while (relRad < -Math.PI) relRad += Math.PI * 2;
+
+      // 小指と人差し指の交差幅（面の向き・回旋指標）
+      let palmSpread = 0;
+      if (pinky && (pinky.visibility || 0) > 0.4) {
+        palmSpread = (indexTip.x - pinky.x) * (isLeft ? -1 : 1);
+      }
+
+      // テイクバック時の回外・外旋の溜め判定（肘が曲がり、手首がコックされている状態）
+      const wristCockDeg = calcAngle(elbow, wrist, indexTip);
+      const isTakebackSupinated = (aiMetrics.elbowDeg <= 125 && wristCockDeg <= 165 && wrist.y <= shoulder.y + 0.15);
+      if (isTakebackSupinated) {
+        poseDetailTracker.supinationReady = true;
+      }
+
+      // フレーム間の前腕に対する手部ベクトルの回転角速度（回内スピード）
+      let rotVelDegPerSec = 0;
+      if (poseDetailTracker.prevHandRelRad !== null && dtSec >= 0.005 && dtSec < 0.3) {
+        let deltaRad = relRad - poseDetailTracker.prevHandRelRad;
+        while (deltaRad > Math.PI) deltaRad -= Math.PI * 2;
+        while (deltaRad < -Math.PI) deltaRad += Math.PI * 2;
+        rotVelDegPerSec = Math.abs(deltaRad * 180 / Math.PI) / dtSec;
+      }
+      poseDetailTracker.prevHandRelRad = relRad;
+
+      // スイング速度・回外準備・手首角度から回内スコア(0〜100pt)を算出
+      const rotScore = Math.min(100, Math.round(rotVelDegPerSec / 6.5));
+      const supBonus = poseDetailTracker.supinationReady ? 12 : 0;
+      const wristBonus = aiMetrics.isWristStandOk ? 10 : -12;
+      const pronationPt = Math.min(100, Math.max(35, Math.round(
+        rotScore * 0.55 + aiMetrics.speedPt * 0.35 + supBonus + wristBonus
+      )));
+
+      if (pronationPt > poseDetailTracker.maxPronationPt) {
+        poseDetailTracker.maxPronationPt = pronationPt;
+      }
+
+      return {
+        pronationPt,
+        rotVelDegPerSec: Math.round(rotVelDegPerSec),
+        palmSpread,
+        isSupinated: poseDetailTracker.supinationReady
+      };
+    }
+
     const _origRenderPoseBiomechanics = renderPoseBiomechanics;
     renderPoseBiomechanics = function(results) {
+      const nowMs = performance.now();
+      const videoRate = activeInputType === 'video' ? (Number(document.getElementById('videoSpeedSelect').value) || 1.0) : 1.0;
+      const dtSec = poseDetailTracker.prevTimeMs > 0 ? ((nowMs - poseDetailTracker.prevTimeMs) / 1000) * videoRate : 0.033;
+      poseDetailTracker.prevTimeMs = nowMs;
+
       _origRenderPoseBiomechanics(results);
-      if (poseSession.active && results && results.poseLandmarks && aiMetrics.confidencePct >= 48) {
-        poseDetailTracker.frames.push({
-          shoulderDeg: aiMetrics.shoulderDeg,
-          elbowDeg: aiMetrics.elbowDeg,
-          kneeDeg: aiMetrics.kneeDeg,
-          speedPt: aiMetrics.speedPt,
-          wristKeepPt: aiMetrics.wristKeepPt,
-          wristStandPt: aiMetrics.wristStandPt,
-          isWristStandOk: aiMetrics.isWristStandOk,
-          coreTiltDeg: aiMetrics.coreTiltDeg,
-          stabilityPt: aiMetrics.stabilityPt,
-          stanceRatio: aiMetrics.stanceRatio
-        });
+
+      if (results && results.poseLandmarks && aiMetrics.confidencePct >= 48) {
+        const proEval = evaluateForearmPronation(results.poseLandmarks, dtSec);
+        aiMetrics.pronationPt = proEval.pronationPt;
+        aiMetrics.maxPronationPt = poseDetailTracker.maxPronationPt;
+
+        if (aiMetrics.bestSnapshotMeta) {
+          aiMetrics.bestSnapshotMeta.pronationPt = poseDetailTracker.maxPronationPt;
+          aiMetrics.bestSnapshotMeta.supinationReady = poseDetailTracker.supinationReady;
+        }
+
+        if (poseSession.active) {
+          poseDetailTracker.frames.push({
+            shoulderDeg: aiMetrics.shoulderDeg,
+            elbowDeg: aiMetrics.elbowDeg,
+            kneeDeg: aiMetrics.kneeDeg,
+            speedPt: aiMetrics.speedPt,
+            wristKeepPt: aiMetrics.wristKeepPt,
+            wristStandPt: aiMetrics.wristStandPt,
+            isWristStandOk: aiMetrics.isWristStandOk,
+            coreTiltDeg: aiMetrics.coreTiltDeg,
+            stabilityPt: aiMetrics.stabilityPt,
+            stanceRatio: aiMetrics.stanceRatio,
+            pronationPt: proEval.pronationPt
+          });
+        }
       }
     };
 
-    // 5局面評価＋ジュニア感覚ワード＋3段階ドリル付きの診断完了処理
+    // 競技者向け標準コーチング＋回内・回外評価＋3段階処方箋による診断完了処理
     finishPoseRecording = function(fromVideoAuto = false) {
       clearInterval(poseSession.timerId);
       poseSession.active = false;
@@ -9511,7 +9620,7 @@
       if (poseSession.validFrames < 3) {
         document.getElementById('aiSummaryContent').innerHTML = `
           <div style="color:#f43f5e; font-weight:800;">⚠️ 全身の関節が十分に映っていませんでした（有効フレーム不足）</div>
-          <div>頭から足首までが画面内に収まる区間またはカメラ位置で再度測定してみてください。</div>
+          <div>頭から足首までが画面内に収まる区間またはカメラ位置で再度測定してください。</div>
         `;
         return;
       }
@@ -9522,32 +9631,40 @@
       const maxEl = aiMetrics.maxElbowDeg;
       const minKn = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
       const maxSp = aiMetrics.maxSpeedPt;
+      const maxPro = poseDetailTracker.maxPronationPt || Math.min(95, Math.round(maxSp * 0.9 + 10));
+      const hasSupination = poseDetailTracker.supinationReady;
+
+      let pronationLabel = "🟢 良好（回外の溜め➔インパクト回内が連動）";
+      if (!aiMetrics.isWristStandOk) {
+        pronationLabel = "⚠️ 早期回内・リスト寝すぎ（面が開きやすい状態）";
+      } else if (maxPro < 68) {
+        pronationLabel = "⚠️ 回内角速度不足（肘からの押し出し・手打ち傾向）";
+      }
 
       if (aiMetrics.bestSnapshotMeta) {
         const bmCard = document.getElementById('bestMomentCard');
         const bmMeta = document.getElementById('bestMomentMetaText');
         bmCard.style.display = 'block';
         bmMeta.innerHTML = `
-          <div><b>🎯 ベスト瞬間の関節データ:</b></div>
+          <div><b>🎯 ベスト瞬間のバイオメカニクス数値:</b></div>
           <div>・肩挙上角: <b style="color:#38bdf8;">${aiMetrics.bestSnapshotMeta.shoulderDeg}°</b> ｜ 肘伸展: <b style="color:#34d399;">${aiMetrics.bestSnapshotMeta.elbowDeg}°</b></div>
-          <div>・膝沈み込み角: <b style="color:#fbbf24;">${aiMetrics.bestSnapshotMeta.kneeDeg}°</b> ｜ 速度指数: <b>${aiMetrics.bestSnapshotMeta.speedPt}pt</b></div>
-          <div>・リストスタンド: <b>${aiMetrics.bestSnapshotMeta.wristStandOk ? '🟢 良好' : '⚠️ 手首寝すぎ'}</b></div>
+          <div>・膝屈曲角: <b style="color:#fbbf24;">${aiMetrics.bestSnapshotMeta.kneeDeg}°</b> ｜ スイング速度: <b>${aiMetrics.bestSnapshotMeta.speedPt}pt</b></div>
+          <div>・リストスタンド: <b>${aiMetrics.bestSnapshotMeta.wristStandOk ? '🟢 維持' : '⚠️ 背屈不足(手首寝)'}</b></div>
+          <div>・回内・回外連動: <b style="color:#a3e635;">${maxPro}pt</b>（${hasSupination ? '回外の溜め有り' : 'トップ浅め'}）</div>
         `;
       }
 
-      // フレーム履歴から前半vs後半のラケット維持率・上体突っ込み・居座りを解析
       const fList = poseDetailTracker.frames;
       const fCount = Math.max(1, fList.length);
       const halfIdx = Math.max(1, Math.floor(fCount / 2));
 
       let firstHalfWristSum = 0, secondHalfWristSum = 0;
-      let wristOkCount = 0, maxLungeTilt = 0, avgTilt = 0, deepKneeFrames = 0;
+      let wristOkCount = 0, maxLungeTilt = 0, deepKneeFrames = 0;
 
       fList.forEach((f, i) => {
         if (i < halfIdx) firstHalfWristSum += f.wristKeepPt;
         else secondHalfWristSum += f.wristKeepPt;
         if (f.isWristStandOk && f.wristKeepPt >= 80) wristOkCount++;
-        avgTilt += f.coreTiltDeg;
         if (f.kneeDeg <= 138 && f.coreTiltDeg > maxLungeTilt) maxLungeTilt = f.coreTiltDeg;
         if (f.kneeDeg <= 128) deepKneeFrames++;
       });
@@ -9555,78 +9672,66 @@
       const firstHalfWristAvg = fList.length ? Math.round(firstHalfWristSum / halfIdx) : aiMetrics.wristKeepPt;
       const secondHalfWristAvg = fList.length > halfIdx ? Math.round(secondHalfWristSum / (fCount - halfIdx)) : aiMetrics.wristKeepPt;
       const wristKeepRate = fList.length ? Math.round((wristOkCount / fCount) * 100) : aiMetrics.wristKeepPt;
-      avgTilt = fList.length ? Math.round(avgTilt / fCount) : aiMetrics.coreTiltDeg;
       if (maxLungeTilt === 0) maxLungeTilt = aiMetrics.coreTiltDeg;
       const deepStayRatio = Math.round((deepKneeFrames / fCount) * 100);
 
-      // 5局面の個別採点 (0〜100pt)
       const isOverhead = (model.focus === 'overhead');
       const isStance = (model.focus === 'stance');
 
-      // 局面①: 打点の高さ＆肘の伸展
-      const scoreContact = Math.min(100, Math.max(35, Math.round(
-        ((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)
-      )));
-
-      // 局面②: ラケット高さ維持＆リストスタンド
-      const scoreRacketKeep = Math.min(100, Math.max(35, Math.round(
-        firstHalfWristAvg * 0.35 + secondHalfWristAvg * 0.35 + (wristKeepRate * 0.30)
-      )));
-
-      // 局面③: 膝のタメ＆上体突っ込み抑止（体幹軸の安定）
+      // 各局面の採点 (0〜100pt)
+      const scoreContact = Math.min(100, Math.max(35, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40))));
+      const scorePronation = isStance ? aiMetrics.wristStandPt : maxPro;
+      const scoreRacketKeep = Math.min(100, Math.max(35, Math.round(firstHalfWristAvg * 0.35 + secondHalfWristAvg * 0.35 + (wristKeepRate * 0.30))));
       const kneeTargetDiff = Math.abs(minKn - model.idealKnee);
       const tiltPenalty = Math.max(0, maxLungeTilt - 11) * 2.2;
       const scoreLungeAxis = Math.min(100, Math.max(35, Math.round(100 - kneeTargetDiff * 1.3 - tiltPenalty)));
-
-      // 局面④: 待機・始動時の無駄な上下バウンド抑止
       const scoreUnweight = Math.min(100, Math.max(40, aiMetrics.stabilityPt));
-
-      // 局面⑤: スイング・蹴り戻し初速＆後半の姿勢維持
       const lateDropPenalty = Math.max(0, firstHalfWristAvg - secondHalfWristAvg) * 0.6;
       const stayPenalty = (!isStance && deepStayRatio > 50) ? (deepStayRatio - 50) * 0.7 : 0;
-      const scoreRecoverySpeed = Math.min(100, Math.max(35, Math.round(
-        (isStance ? aiMetrics.stabilityPt : maxSp) - lateDropPenalty - stayPenalty
-      )));
+      const scoreRecoverySpeed = Math.min(100, Math.max(35, Math.round((isStance ? aiMetrics.stabilityPt : maxSp) - lateDropPenalty - stayPenalty)));
 
-      // 種目特性に応じた総合スコア算出
       let totalScore = 80;
       if (isStance) {
         totalScore = Math.round(scoreRacketKeep * 0.40 + scoreLungeAxis * 0.35 + scoreUnweight * 0.25);
       } else if (isOverhead) {
-        totalScore = Math.round(scoreContact * 0.40 + scoreLungeAxis * 0.30 + scoreRecoverySpeed * 0.30);
+        totalScore = Math.round(scoreContact * 0.35 + scorePronation * 0.25 + scoreLungeAxis * 0.20 + scoreRecoverySpeed * 0.20);
       } else {
-        totalScore = Math.round(scoreRacketKeep * 0.30 + scoreLungeAxis * 0.35 + scoreRecoverySpeed * 0.35);
+        totalScore = Math.round(scoreRacketKeep * 0.25 + scorePronation * 0.25 + scoreLungeAxis * 0.25 + scoreRecoverySpeed * 0.25);
       }
       totalScore = Math.min(100, Math.max(35, totalScore));
 
       document.getElementById('overallScoreBadge').textContent = `総合スコア: ${totalScore} / 100 pt`;
 
-      // 5局面をランキングして「最大の長所」と「最優先の改善原因」を特定
       const factorCandidates = [
         {
           key: 'low_contact',
-          score: isOverhead ? scoreContact : scoreContact + 12,
-          goodText: `最高打点（肩挙上角 ${maxSh}°・肘伸展 ${maxEl}°）が目標基準（${model.idealShoulder}°）に対して高く、威力のあるトップが作れています`
+          score: isOverhead ? scoreContact : scoreContact + 15,
+          goodText: `最高打点（肩挙上角 ${maxSh}°・肘伸展 ${maxEl}°）が基準値（${model.idealShoulder}°）を満たし、高い打点でシャトルを捉えられています`
+        },
+        {
+          key: 'pronation_lack',
+          score: isStance ? scorePronation + 15 : scorePronation,
+          goodText: `テイクバックの回外（外旋の溜め）からインパクトでの前腕回内（連動指数 ${maxPro}pt）が鋭く機能しています`
         },
         {
           key: 'racket_drop',
           score: scoreRacketKeep,
-          goodText: `ラケット高位置キープ＆リストスタンド維持率（${wristKeepRate}%）が高く、球際に強い構えが作れています`
+          goodText: `ラケット高位置キープ＆リストスタンド維持率（${wristKeepRate}%）が高く、次の球への準備が速い構えです`
         },
         {
           key: 'lunge_lean',
           score: scoreLungeAxis,
-          goodText: `最深膝角 ${minKn}° のタメに対して体幹の傾きが ${maxLungeTilt}° 以内に収まり、頭が突っ込まない安定した軸です`
+          goodText: `最深膝角 ${minKn}° の荷重に対して体幹傾きが ${maxLungeTilt}° 以内に制御され、頭が突っ込まない安定した体幹軸です`
         },
         {
           key: 'excess_bounce',
           score: scoreUnweight,
-          goodText: `無駄な上下バウンドが少なく（静止安定度 ${scoreUnweight}pt）、いつでもスムーズに抜重できる状態です`
+          goodText: `待機中の不要な上下動が抑えられており（静止安定度 ${scoreUnweight}pt）、スムーズに抜重へ入れる状態です`
         },
         {
           key: 'slow_recovery',
           score: scoreRecoverySpeed,
-          goodText: `初動・スイング速度（最大 ${maxSp}pt）が鋭く、後半までラケット高さが落ちずに動き切れています`
+          goodText: `スイング・初動速度（最大 ${maxSp}pt）が高く、後半までフォームの崩れなく動き切れています`
         }
       ];
 
@@ -9636,14 +9741,13 @@
       const rxPlan = AI_CAUSE_PRESCRIPTIONS[worstFactor.key] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
 
       const staminaComment = (firstHalfWristAvg - secondHalfWristAvg >= 12)
-        ? `⚠️ 測定の前半（ラケット維持 ${firstHalfWristAvg}pt）に比べて後半（${secondHalfWristAvg}pt）に手が下がる傾向が出ています。`
-        : `🟢 測定の前半（${firstHalfWristAvg}pt）から後半（${secondHalfWristAvg}pt）まで集中してラケット高さを維持できています。`;
+        ? `⚠️ 前半（ラケット維持 ${firstHalfWristAvg}pt）に対し、後半（${secondHalfWristAvg}pt）に手首とラケット位置が低下しています。`
+        : `🟢 前半（${firstHalfWristAvg}pt）から後半（${secondHalfWristAvg}pt）まで一貫してラケット高さを維持できています。`;
 
-      // 自己ベスト保存判定
       const prevBest = getPersonalBestRecord(activeProfileId, shot);
       let recordBannerHtml = "";
       if (!prevBest || totalScore >= prevBest.score) {
-        const diffStr = prevBest ? `（前回ベスト ${prevBest.score}pt から ＋${totalScore - prevBest.score}pt 更新！）` : `（初回ベストとして自動保存！）`;
+        const diffStr = prevBest ? `（前回ベスト ${prevBest.score}pt から ＋${totalScore - prevBest.score}pt 更新）` : `（初回ベストとして自動保存）`;
         savePersonalBestData(activeProfileId, shot, {
           score: totalScore,
           maxSh, maxEl, minKn, maxSp,
@@ -9652,7 +9756,7 @@
         });
         recordBannerHtml = `<div style="background:rgba(16,185,129,0.18); border:1px solid #10b981; padding:6px 9px; border-radius:8px; margin-bottom:8px; font-weight:900; color:#34d399;">🎉 自己ベスト更新: ${totalScore} pt ${diffStr}</div>`;
       } else {
-        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:#fde047;">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>！（最高打点差: ${maxSh - prevBest.maxSh}°）</div>`;
+        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:#fde047;">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>（最高打点差: ${maxSh - prevBest.maxSh}°）</div>`;
       }
 
       updateComparisonTableUI();
@@ -9660,31 +9764,32 @@
       document.getElementById('aiSummaryContent').innerHTML = `
         ${recordBannerHtml}
         <div style="margin-bottom:6px; font-weight:900; font-size:0.86rem; color:var(--accent-highlight);">
-          📌 原因特定AI診断：${totalScore} pt ｜ 最優先課題「${rxPlan.title}」
+          📌 動作解析レポート：${totalScore} pt ｜ 最優先課題「${rxPlan.title}」
         </div>
-        <div style="margin-bottom:6px; font-size:0.78rem;">
-          <b>⭕ 最大の長所:</b> ${bestFactor.goodText}。<br>
-          <b>🔺 減点の主原因:</b> 5局面のうち<b>「${rxPlan.title}（評価 ${worstFactor.score}pt）」</b>が最もスコアを押し下げています。<br>
+        <div style="margin-bottom:6px; font-size:0.78rem; line-height:1.55;">
+          <b>⭕ 優れている点:</b> ${bestFactor.goodText}。<br>
+          <b>🔄 回内・回外＆リスト解析:</b> 連動指数 <b>${maxPro}pt</b> ｜ ${pronationLabel}<br>
+          <b>🔺 減点の主原因:</b> <b>「${rxPlan.title}（評価 ${worstFactor.score}pt）」</b>がスコアのボトルネックとなっています。<br>
           <b>📊 前半vs後半の持続性:</b> ${staminaComment}
         </div>
-        <div style="background:rgba(6,182,212,0.12); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.78rem;">
-          <b style="color:#38bdf8;">🗣️ ジュニア・選手向け感覚アドバイス:</b><br>
-          ${rxPlan.sense}
+        <div style="background:rgba(6,182,212,0.12); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.78rem; line-height:1.55;">
+          <b style="color:#38bdf8;">💡 テクニカル改善アドバイス:</b><br>
+          ${rxPlan.coaching}
         </div>
-        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); padding:9px 10px; border-radius:8px; font-size:0.76rem;">
-          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">📋 弱点克服・3段階トレーニング処方箋：『${rxPlan.drillName}』</div>
+        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); padding:9px 10px; border-radius:8px; font-size:0.76rem; line-height:1.5;">
+          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">📋 推奨3段階トレーニング処方：『${rxPlan.drillName}』</div>
           <div style="margin-bottom:3px;">・${rxPlan.step1}</div>
           <div style="margin-bottom:3px;">・${rxPlan.step2}</div>
           <div style="margin-bottom:8px;">・${rxPlan.step3}</div>
           <button class="btn btn-emerald" style="width:100%; padding:8px;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}', true)">
-            🏃 推奨フットワーク「${rxPlan.fwLabel}」をすぐセットする
+            🏃 対応フットワーク「${rxPlan.fwLabel}」をセットする
           </button>
         </div>
       `;
     };
 
     // =========================================================================
-    // 3. TAB 2（初速AIカメラ測定）の方向別バランス分析＆待機バウンド検知強化
+    // 3. TAB 2（初速AIカメラ測定）競技者向け方向別バランス分析 ＆ 待機安定度判定
     // =========================================================================
     let rxDetailTracker = {
       currentDir: null,
@@ -9700,7 +9805,6 @@
       _origStartReflexAISession();
     };
 
-    // 方向データ（右/左・前/奥）を保持するようにscheduleNextReflexRepを拡張
     scheduleNextReflexRep = function() {
       if (!rxState.active) return;
       if (rxState.currentRep >= rxState.targetReps) {
@@ -9720,8 +9824,8 @@
 
       svgHolder.innerHTML = buildCyberArrowSVG(0, 'unweight');
       mainTxt.style.color = "#38bdf8";
-      mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：構えて待機...`;
-      subTxt.textContent = "ラケットを上げ、ピョンピョン跳ねずに静かに矢印を待ってください";
+      mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：レディポジション待機...`;
+      subTxt.textContent = "リストを立てて静止し、合図の瞬間に抜重して一歩目を出してください";
 
       const randomWait = 1800 + Math.floor(Math.random() * 1400);
       rxState.timerId = setTimeout(() => {
@@ -9736,7 +9840,7 @@
         svgHolder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
         mainTxt.style.color = "#fbbf24";
         mainTxt.textContent = `${chosen.name}！`;
-        subTxt.textContent = "今すぐ抜重・ステップ！";
+        subTxt.textContent = "抜重・ステップ始動！";
 
         playBeep(1060, 110);
         if (cueMode === 'voice_dir') {
@@ -9781,7 +9885,6 @@
       _origRecordSingleReflexResult(ms, stepType, stancePt);
     };
 
-    // 左右バランス・待機構え崩れ・ジュニア向け感覚ワードを統合した初速AI総括レポート
     finishReflexAISession = function() {
       rxState.active = false;
       rxState.phase = 'idle';
@@ -9800,52 +9903,204 @@
       const avgRightMs = rightLogs.length ? Math.round(rightLogs.reduce((a, b) => a + b.ms, 0) / rightLogs.length) : avgMs;
       const avgLeftMs = leftLogs.length ? Math.round(leftLogs.reduce((a, b) => a + b.ms, 0) / leftLogs.length) : avgMs;
       const diffRL = Math.abs(avgRightMs - avgLeftMs);
-      const slowerSideName = avgLeftMs > avgRightMs ? "左（バック・ラウンド側）" : "右（フォア側）";
+      const slowerSideName = avgLeftMs > avgRightMs ? "左方向（バック・ラウンド側）" : "右方向（フォア側）";
 
       const bounceCount = logs.filter(l => l.isBouncing).length;
       const wristDropCount = logs.filter(l => !l.wristOk).length;
 
       let chosenPlan = AI_CAUSE_PRESCRIPTIONS.excess_bounce;
-      let juniorMsg = "";
+      let techAdvice = "";
 
       if (wristDropCount >= Math.ceil(logs.length / 2)) {
         chosenPlan = AI_CAUSE_PRESCRIPTIONS.racket_drop;
-        juniorMsg = `矢印を待っている間にラケット（手首）が下がる回数が ${wristDropCount}回 ありました！手首を立ててみぞおちの前で構えておくと、球際がもっと速くなります！`;
+        techAdvice = `待機局面においてラケットヘッドの低下またはリストスタンド不足が ${wristDropCount}回 検知されました。始動時に腕を引き上げる反動が初動の遅れにつながるため、みぞおちの前でリストを立てて待機してください。`;
       } else if (bounceCount >= 2) {
         chosenPlan = AI_CAUSE_PRESCRIPTIONS.excess_bounce;
-        juniorMsg = `矢印が出る前にピョンピョン跳ねてしまっている回が ${bounceCount}回 ありました！静かにピタッと待って、矢印が見えた瞬間にだけ「2cmスッと沈む（抜重）」とさらに30ms速くなります！`;
+        techAdvice = `方向指示前の待機中に不要な上下バウンドが ${bounceCount}回 検知されました。接地していない瞬間は床反力を得られません。静かに待機し、合図の瞬間に重心をスッと抜く「抜重」で始動するとさらに反応タイムが短縮されます。`;
       } else if (diffRL >= 25) {
         chosenPlan = AI_CAUSE_PRESCRIPTIONS.lunge_lean;
-        juniorMsg = `右方向（平均 ${avgRightMs}ms）と左方向（平均 ${avgLeftMs}ms）を比べると、<b>${slowerSideName}への一歩目が ${diffRL}ms 遅れています</b>！苦手な方向へ出る時に頭から倒れず、反対側の足で床を強く蹴り出そう！`;
+        techAdvice = `右方向（平均 ${avgRightMs}ms）と左方向（平均 ${avgLeftMs}ms）を比較すると、<b>${slowerSideName}への初動が ${diffRL}ms 遅れています</b>。遅れる方向へ出る際に上体から倒れず、進行方向と逆側の母趾球で床を強く蹴り出してください。`;
       } else {
-        juniorMsg = `左右の反応差も少なく（右 ${avgRightMs}ms / 左 ${avgLeftMs}ms）、待機中の構えもピタッと安定しています！この抜重の感覚のまま実戦フットワークに入りましょう！`;
+        techAdvice = `左右の反応速度差も小さく（右 ${avgRightMs}ms / 左 ${avgLeftMs}ms）、待機時のリストスタンド・姿勢安定度ともに高い水準です。この抜重感覚を維持したまま実戦フットワークへ移行してください。`;
       }
 
       document.getElementById('rxSummaryText').innerHTML = `
         <div style="font-weight:900; color:#34d399; margin-bottom:6px; font-size:0.86rem;">
           🏆 平均初速: ${avgMs} ms（最速 ${rxState.bestMs} ms）｜ 構え安定度: ${avgStance} pt ｜ 総合: ${combinedPt} pt
         </div>
-        <div style="font-size:0.78rem; margin-bottom:6px;">
-          ・<b>左右方向別バランス:</b> 右方向 平均 <b>${avgRightMs}ms</b> ／ 左方向 平均 <b>${avgLeftMs}ms</b>（差 ${diffRL}ms）<br>
-          ・<b>待機構えチェック:</b> ラケット下がり検知 ${wristDropCount}回 ／ 無駄な上下バウンド検知 ${bounceCount}回
+        <div style="font-size:0.78rem; margin-bottom:6px; line-height:1.5;">
+          ・<b>左右方向別バランス:</b> 右方向 平均 <b>${avgRightMs}ms</b> ／ 左方向 平均 <b>${avgLeftMs}ms</b>（左右差 ${diffRL}ms）<br>
+          ・<b>待機構えチェック:</b> リスト低下検知 ${wristDropCount}回 ／ 不要な上下バウンド検知 ${bounceCount}回
         </div>
-        <div style="background:rgba(6,182,212,0.12); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.78rem;">
-          <b style="color:#38bdf8;">🗣️ ジュニア・選手向け感覚アドバイス:</b><br>
-          ${juniorMsg}
+        <div style="background:rgba(6,182,212,0.12); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.78rem; line-height:1.5;">
+          <b style="color:#38bdf8;">💡 テクニカル改善アドバイス:</b><br>
+          ${techAdvice}
         </div>
         <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); padding:8px 10px; border-radius:8px; font-size:0.75rem;">
-          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">📋 初速アップ処方メニュー：『${chosenPlan.drillName}』</div>
+          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">📋 推奨初速強化メニュー：『${chosenPlan.drillName}』</div>
           <div style="margin-bottom:3px;">・${chosenPlan.step1}</div>
           <div style="margin-bottom:6px;">・${chosenPlan.step2}</div>
           <button class="btn btn-emerald" style="width:100%; padding:7px;" onclick="jumpToPrescribedFootwork('${chosenPlan.fwPreset}', true)">
-            🏃 抜重予告音付き「${chosenPlan.fwLabel}」をすぐセットする
+            🏃 抜重予告音付き「${chosenPlan.fwLabel}」をセットする
           </button>
         </div>
       `;
     };
 
-  </script>
+    // =========================================================================
+    // 4. TAB 5: 🧮 スコアボード「ゲーム取得数（セットカウント）＆各ゲーム履歴」拡張
+    // =========================================================================
+    matchState.gamesA = 0;
+    matchState.gamesB = 0;
+    matchState.gameLog = [];
 
-</body>
+    function initGameCountScoreboardUI() {
+      const scoreTabCard = document.querySelector('#tab-score .card');
+      const scoreTeamAEl = document.getElementById('scoreTeamA');
+      const scoreTeamBEl = document.getElementById('scoreTeamB');
+      if (!scoreTabCard || !scoreTeamAEl || !scoreTeamBEl) return;
+
+      // チームA・Bカード内に「取得ゲーム数」バッジと手動＋1ボタンを挿入
+      if (!document.getElementById('gameCountBadgeA')) {
+        const badgeWrapA = document.createElement('div');
+        badgeWrapA.style = "margin:4px 0 6px; display:flex; justify-content:center; align-items:center; gap:6px; flex-wrap:wrap;";
+        badgeWrapA.innerHTML = `
+          <span class="badge-version" id="gameCountBadgeA" style="background:#0284c7; color:#fff; font-size:0.76rem; padding:3px 10px;">🏆 取得ゲーム: 0</span>
+          <button class="btn" style="padding:2px 7px; font-size:0.68rem;" onclick="claimGameForTeam('A')" title="このゲームをAの取得として次ゲームへ">＋1ゲーム奪取</button>
+        `;
+        scoreTeamAEl.parentNode.insertBefore(badgeWrapA, scoreTeamAEl);
+      }
+
+      if (!document.getElementById('gameCountBadgeB')) {
+        const badgeWrapB = document.createElement('div');
+        badgeWrapB.style = "margin:4px 0 6px; display:flex; justify-content:center; align-items:center; gap:6px; flex-wrap:wrap;";
+        badgeWrapB.innerHTML = `
+          <span class="badge-version" id="gameCountBadgeB" style="background:#e11d48; color:#fff; font-size:0.76rem; padding:3px 10px;">🏆 取得ゲーム: 0</span>
+          <button class="btn" style="padding:2px 7px; font-size:0.68rem;" onclick="claimGameForTeam('B')" title="このゲームをBの取得として次ゲームへ">＋1ゲーム奪取</button>
+        `;
+        scoreTeamBEl.parentNode.insertBefore(badgeWrapB, scoreTeamBEl);
+      }
+
+      // コート図の上に「現在のゲーム数・各ゲームスコア履歴・次ゲーム進行バー」を挿入
+      if (!document.getElementById('matchGameStatusBanner')) {
+        const courtWrap = document.getElementById('matchCourtVisual');
+        const bannerDiv = document.createElement('div');
+        bannerDiv.id = 'matchGameStatusBanner';
+        bannerDiv.style = "max-width:600px; margin:0 auto 10px; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:0.78rem;";
+        courtWrap.parentNode.insertBefore(bannerDiv, courtWrap);
+      }
+
+      renderMatchCourt();
+    }
+
+    const _origSaveMatchHistorySnapshot = saveMatchHistorySnapshot;
+    saveMatchHistorySnapshot = function() {
+      matchState.history.push({
+        scoreA: matchState.scoreA,
+        scoreB: matchState.scoreB,
+        servingTeam: matchState.servingTeam,
+        gamesA: matchState.gamesA || 0,
+        gamesB: matchState.gamesB || 0,
+        courtFlipped: matchState.courtFlipped,
+        gameLog: (matchState.gameLog || []).slice()
+      });
+      if (matchState.history.length > 50) matchState.history.shift();
+      document.getElementById('btnUndoScore').disabled = false;
+    };
+
+    undoMatchPoint = function() {
+      if (!matchState.history.length) return;
+      const prev = matchState.history.pop();
+      matchState.scoreA = prev.scoreA;
+      matchState.scoreB = prev.scoreB;
+      matchState.servingTeam = prev.servingTeam;
+      if (typeof prev.gamesA === 'number') matchState.gamesA = prev.gamesA;
+      if (typeof prev.gamesB === 'number') matchState.gamesB = prev.gamesB;
+      if (typeof prev.courtFlipped === 'boolean') matchState.courtFlipped = prev.courtFlipped;
+      if (Array.isArray(prev.gameLog)) matchState.gameLog = prev.gameLog;
+      document.getElementById('btnUndoScore').disabled = (matchState.history.length === 0);
+      renderMatchCourt();
+    };
+
+    function claimGameForTeam(winnerTeam) {
+      saveMatchHistorySnapshot();
+      const sA = matchState.scoreA;
+      const sB = matchState.scoreB;
+      if (winnerTeam === 'A') matchState.gamesA = (matchState.gamesA || 0) + 1;
+      else matchState.gamesB = (matchState.gamesB || 0) + 1;
+
+      if (!matchState.gameLog) matchState.gameLog = [];
+      matchState.gameLog.push(`G${matchState.gameLog.length + 1}: ${sA}-${sB}`);
+
+      // 次ゲーム開始準備：スコアを0-0に戻し、前ゲーム勝者をサーバーにし、コートを自動反転
+      matchState.scoreA = 0;
+      matchState.scoreB = 0;
+      matchState.servingTeam = winnerTeam;
+      matchState.courtFlipped = !matchState.courtFlipped;
+      playBeep(1180, 220);
+      renderMatchCourt();
+    }
+
+    resetMatchScore = function() {
+      saveMatchHistorySnapshot();
+      matchState.scoreA = 0;
+      matchState.scoreB = 0;
+      matchState.gamesA = 0;
+      matchState.gamesB = 0;
+      matchState.gameLog = [];
+      matchState.servingTeam = 'A';
+      renderMatchCourt();
+    };
+
+    const _origRenderMatchCourt = renderMatchCourt;
+    renderMatchCourt = function() {
+      _origRenderMatchCourt();
+
+      const gA = matchState.gamesA || 0;
+      const gB = matchState.gamesB || 0;
+      const badgeA = document.getElementById('gameCountBadgeA');
+      const badgeB = document.getElementById('gameCountBadgeB');
+      if (badgeA) badgeA.textContent = `🏆 取得ゲーム: ${gA}`;
+      if (badgeB) badgeB.textContent = `🏆 取得ゲーム: ${gB}`;
+
+      const banner = document.getElementById('matchGameStatusBanner');
+      if (!banner) return;
+
+      const currentGameNum = gA + gB + 1;
+      const logStr = (matchState.gameLog && matchState.gameLog.length)
+        ? `（履歴: ${matchState.gameLog.join(' / ')}）`
+        : '（21点先取 / 2点差・最大30点）';
+
+      // 21点到達（2点差以上または30点）のゲームポイント達成判定
+      const sA = matchState.scoreA;
+      const sB = matchState.scoreB;
+      let gameWinner = null;
+      if ((sA >= 21 && sA - sB >= 2) || sA >= 30) gameWinner = 'A';
+      else if ((sB >= 21 && sB - sA >= 2) || sB >= 30) gameWinner = 'B';
+
+      let rightActionHtml = "";
+      if (gA >= 2 || gB >= 2) {
+        const matchWinName = gA >= 2 ? "🟦 自分チーム(A)" : "🟥 相手チーム(B)";
+        rightActionHtml = `<span style="color:#fbbf24; font-weight:900;">🏆 ${matchWinName} が ${gA}-${gB} でマッチ勝利！</span>`;
+      } else if (gameWinner) {
+        const winLabel = gameWinner === 'A' ? "🟦 自分チーム(A)" : "🟥 相手チーム(B)";
+        rightActionHtml = `
+          <button class="btn btn-amber" style="padding:4px 10px; font-size:0.74rem;" onclick="claimGameForTeam('${gameWinner}')">
+            🎉 ${winLabel} が第${currentGameNum}ゲーム先取！次ゲームへ（コート反転）
+          </button>
+        `;
+      } else {
+        rightActionHtml = `<span style="color:var(--text-secondary); font-size:0.72rem;">※各チームの「＋1ゲーム奪取」でいつでも次ゲームへ進めます</span>`;
+      }
+
+      banner.innerHTML = `
+        <div>
+          <b style="color:var(--accent-highlight);">🏸 第${currentGameNum}ゲーム進行中</b>
+          <span style="margin-left:6px; font-weight:800;">ゲームカウント: <span style="color:#38bdf8;">${gA}</span> - <span style="color:#fb7185;">${gB}</span></span>
+          <span style="font-size:0.72rem; color:var(--text-secondary); margin-left:4px;">${logStr}</span>
+        </div>
+        <div>${rightActionHtml}</div>
+      `;
+    };
 
 </html>
