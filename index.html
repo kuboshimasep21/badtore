@@ -9387,6 +9387,462 @@
       renderMatchCourt();
 
     });
+    /* =========================================================================
+       🚀 v9.0 AI頭脳アップグレードパッチ (AI改善 1〜3 完全統合)
+       - 既存UI・ネオン矢印・動画機能を1ミリも変えずにAI診断ロジックのみを強化
+    ========================================================================= */
+
+    // 1. 弱点原因別の「ジュニア感覚ワード」＆「3段階ドリル処方箋」データベース
+    const AI_CAUSE_PRESCRIPTIONS = {
+      racket_drop: {
+        title: "ラケット下がり・リストスタンド不足",
+        sense: "「動いている時や待っている時にラケットが腰の下まで落ちているよ！」球際でラケットを上げる時間がもったいないので、『手首をキュッと立てて（リストスタンド）、みぞおちの前で構えたまま』足を動かそう！",
+        drillName: "ラケット胸前固定ステップ ➔ 至近距離・手投げ連続レシーブ",
+        step1: "【Step1 分解・素振り】グリップをおへそ〜みぞおちの前に構え、手首を立ててラケットヘッドを目の高さに保ったまま左右へシャッセで動く（10往復）。",
+        step2: "【Step2 手投げノック】3〜4mの至近距離からテンポよく手投げでシャトルを出してもらい、大振りせず「立てた手首の指先の握り込みだけ」で前に弾き返す（15球×2）。",
+        step3: "【Step3 基礎打ち・パターン】ドライブ＆プッシュの基礎打ちに入り、1球ごとに打った直後のラケットが腰の下へ落ちないかチェックする。",
+        fwPreset: "front2",
+        fwLabel: "⬆️ 前衛2点ネットダッシュ（ラケット高位置キープ練習）"
+      },
+      excess_bounce: {
+        title: "待機中の小刻みな上下バウンド（抜重タイミングのズレ）",
+        sense: "「待つときにピョンピョン跳ねちゃっているよ！」空中に浮いている瞬間は一歩目が動かせません。『静かにピタッと待って、相手が打つ瞬間にだけフッと足の裏の力を抜いて2cm沈む（抜重）』を意識しよう！",
+        drillName: "無反動ストップ＆ゴー（抜重感覚づくり）",
+        step1: "【Step1 分解・素振り】リズム取りのジャンプを禁止し、膝を軽く曲げた静止状態から合図で「上に跳ねずに2cmスッと沈んで一歩目を踏み出す」練習（5回×2セット）。",
+        step2: "【Step2 手投げノック】静止した構えから、左右に手投げしてもらったシャトルへ無反動の一歩目で入ってラケット面を合わせる確認ノック。",
+        step3: "【Step3 基礎打ち・パターン】レシーブ＆ロブの基礎打ちで、相手がインパクトする瞬間に空中に浮いていないかタイミングを合わせる。",
+        fwPreset: "side2",
+        fwLabel: "↔️ 左右サイドレシーブ（無反動・抜重ステップ練習）"
+      },
+      lunge_lean: {
+        title: "踏み込み（ランジ）時の頭・上体の突っ込み＆膝の浅さ",
+        sense: "「止まる時にアタマが膝より前に突っ込んでいるよ！」頭が前に倒れるとブレーキが効かず、次の一歩が戻りません。『おへその下に重心を落として、胸を張ってカカトから着地してピタッと止まる』とバネのように戻れるよ！",
+        drillName: "ランジ2秒ピタ止め ➔ 手投げタッチ＆蹴り戻し",
+        step1: "【Step1 分解・素振り】右前・左前へ踏み込んだ瞬間、すぐ戻らずに「胸を起こし、カカトから着地して2秒間ピタッと静止」して頭が突っ込まない姿勢を体に覚えさせる。",
+        step2: "【Step2 手投げノック】ネット前から手投げでシャトルを出してもらい、上体を倒さず手首を立てたままシャトルを捉え、前足の蹴り戻し1発でセンターへ戻る。",
+        step3: "【Step3 基礎打ち・パターン】カット＆ネット（または対角線クロス）のパターン練習に移り、実戦スピードでも上体が前に崩れないか確認する。",
+        fwPreset: "diagonal_r",
+        fwLabel: "↗️ 対角線クロス交互（ランジ姿勢＆蹴り戻し強化）"
+      },
+      low_contact: {
+        title: "打点の低下・テイクバックでの肘下がり（押し出し打ち）",
+        sense: "「打つ時にヒジが肩より下がって、前に押し出す打ち方になっているよ！」パワーが逃げてネットにかかりやすい形です。『最初にヒジを耳の横まで高く上げて、胸を開いてからうちわを仰ぐように上へ振る』イメージで打ってみよう！",
+        drillName: "トップ固定の分解スイング ➔ 手投げハイキャッチ＆ストローク",
+        step1: "【Step1 分解・素振り】テイクバックを省略し、最初から「利き肘を肩より高く上げ、非利き手を前に伸ばしたトップの形」を作って2秒止まり、そこから一気に振る分解素振り（8回）。",
+        step2: "【Step2 手投げノック】斜め前から山なりに手投げしてもらったシャトルを、落ちてくるのを待たずに「一番高い打点（額の斜め前）でキャッチ／軽く打つ」ドリル。",
+        step3: "【Step3 基礎打ち・パターン】クリア・スマッシュの基礎打ちに入り、手投げで確認した一番高い打点でシャトルを捉え続ける。",
+        fwPreset: "back2",
+        fwLabel: "⬇️ 後衛2点スマッシュ移動（高打点トップ作り）"
+      },
+      slow_recovery: {
+        title: "蹴り戻しスピード不足 ＆ 後半のラケット下がり",
+        sense: "「一歩目は速いけれど、打ったあとにその場で居座っちゃっているか、後半に疲れて手が下がっているよ！」『打つ瞬間と前足で床を蹴り戻す瞬間をセットにする』意識で、最後まで胸の前にラケットを戻そう！",
+        drillName: "着地即キックバック ➔ 連続前後手投げノック",
+        step1: "【Step1 分解・素振り】踏み込みの足が床につく「タン・タン」のリズムで、2拍目で必ず元の構え位置へ跳ね返るステップ反復。",
+        step2: "【Step2 手投げノック】ネット前に手投げ ➔ センターへ戻る ➔ すぐ奥へ手投げの連続2球ノックで、戻りの一歩目を速くする。",
+        step3: "【Step3 基礎打ち・パターン】前後ストレート交互または6点順番送りコース（30秒連続）で、後半もラケットの高さを落とさず動き切る。",
+        fwPreset: "straight_r",
+        fwLabel: "↕️ 右ストレート前後交互（蹴り戻し＆持久力強化）"
+      }
+    };
+
+    // ワンタップで推奨フットワークコースへ移動＆自動セットする連携関数
+    function jumpToPrescribedFootwork(presetKey, useSplitBeep = false) {
+      switchTab('tab-footwork');
+      const presetSel = document.getElementById('fwCoursePreset');
+      if (presetSel) {
+        presetSel.value = presetKey;
+        applyFwCoursePreset();
+      }
+      if (useSplitBeep) {
+        const centerSel = document.getElementById('fwCenterCallMode');
+        if (centerSel) centerSel.value = 'split_beep';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // =========================================================================
+    // 2. TAB 3（骨格フォームAI）のフレーム詳細追跡＆5局面原因特定オーバーライド
+    // =========================================================================
+    let poseDetailTracker = {
+      frames: []
+    };
+
+    const _origResetMaxMetrics = resetMaxMetrics;
+    resetMaxMetrics = function() {
+      poseDetailTracker.frames = [];
+      _origResetMaxMetrics();
+    };
+
+    const _origRenderPoseBiomechanics = renderPoseBiomechanics;
+    renderPoseBiomechanics = function(results) {
+      _origRenderPoseBiomechanics(results);
+      if (poseSession.active && results && results.poseLandmarks && aiMetrics.confidencePct >= 48) {
+        poseDetailTracker.frames.push({
+          shoulderDeg: aiMetrics.shoulderDeg,
+          elbowDeg: aiMetrics.elbowDeg,
+          kneeDeg: aiMetrics.kneeDeg,
+          speedPt: aiMetrics.speedPt,
+          wristKeepPt: aiMetrics.wristKeepPt,
+          wristStandPt: aiMetrics.wristStandPt,
+          isWristStandOk: aiMetrics.isWristStandOk,
+          coreTiltDeg: aiMetrics.coreTiltDeg,
+          stabilityPt: aiMetrics.stabilityPt,
+          stanceRatio: aiMetrics.stanceRatio
+        });
+      }
+    };
+
+    // 5局面評価＋ジュニア感覚ワード＋3段階ドリル付きの診断完了処理
+    finishPoseRecording = function(fromVideoAuto = false) {
+      clearInterval(poseSession.timerId);
+      poseSession.active = false;
+      document.getElementById('btnStartPoseSession').disabled = false;
+      document.getElementById('sessionTimerLabel').textContent = fromVideoAuto ? `✅ 動画区間診断完了` : `✅ 10秒精密測定完了`;
+      playBeep(1200, 250);
+
+      if (fromVideoAuto && activeInputType === 'video') {
+        const upVideo = document.getElementById('uploadedVideo');
+        if (upVideo) upVideo.pause();
+        const btnPlayPause = document.getElementById('btnVideoPlayPause');
+        if (btnPlayPause) btnPlayPause.textContent = "▶️ 再生";
+      }
+
+      if (poseSession.validFrames < 3) {
+        document.getElementById('aiSummaryContent').innerHTML = `
+          <div style="color:#f43f5e; font-weight:800;">⚠️ 全身の関節が十分に映っていませんでした（有効フレーム不足）</div>
+          <div>頭から足首までが画面内に収まる区間またはカメラ位置で再度測定してみてください。</div>
+        `;
+        return;
+      }
+
+      const shot = document.getElementById('shotTypeSelect').value;
+      const model = SHOT_IDEAL_MODELS[shot] || SHOT_IDEAL_MODELS.smash;
+      const maxSh = aiMetrics.maxShoulderDeg;
+      const maxEl = aiMetrics.maxElbowDeg;
+      const minKn = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
+      const maxSp = aiMetrics.maxSpeedPt;
+
+      if (aiMetrics.bestSnapshotMeta) {
+        const bmCard = document.getElementById('bestMomentCard');
+        const bmMeta = document.getElementById('bestMomentMetaText');
+        bmCard.style.display = 'block';
+        bmMeta.innerHTML = `
+          <div><b>🎯 ベスト瞬間の関節データ:</b></div>
+          <div>・肩挙上角: <b style="color:#38bdf8;">${aiMetrics.bestSnapshotMeta.shoulderDeg}°</b> ｜ 肘伸展: <b style="color:#34d399;">${aiMetrics.bestSnapshotMeta.elbowDeg}°</b></div>
+          <div>・膝沈み込み角: <b style="color:#fbbf24;">${aiMetrics.bestSnapshotMeta.kneeDeg}°</b> ｜ 速度指数: <b>${aiMetrics.bestSnapshotMeta.speedPt}pt</b></div>
+          <div>・リストスタンド: <b>${aiMetrics.bestSnapshotMeta.wristStandOk ? '🟢 良好' : '⚠️ 手首寝すぎ'}</b></div>
+        `;
+      }
+
+      // フレーム履歴から前半vs後半のラケット維持率・上体突っ込み・居座りを解析
+      const fList = poseDetailTracker.frames;
+      const fCount = Math.max(1, fList.length);
+      const halfIdx = Math.max(1, Math.floor(fCount / 2));
+
+      let firstHalfWristSum = 0, secondHalfWristSum = 0;
+      let wristOkCount = 0, maxLungeTilt = 0, avgTilt = 0, deepKneeFrames = 0;
+
+      fList.forEach((f, i) => {
+        if (i < halfIdx) firstHalfWristSum += f.wristKeepPt;
+        else secondHalfWristSum += f.wristKeepPt;
+        if (f.isWristStandOk && f.wristKeepPt >= 80) wristOkCount++;
+        avgTilt += f.coreTiltDeg;
+        if (f.kneeDeg <= 138 && f.coreTiltDeg > maxLungeTilt) maxLungeTilt = f.coreTiltDeg;
+        if (f.kneeDeg <= 128) deepKneeFrames++;
+      });
+
+      const firstHalfWristAvg = fList.length ? Math.round(firstHalfWristSum / halfIdx) : aiMetrics.wristKeepPt;
+      const secondHalfWristAvg = fList.length > halfIdx ? Math.round(secondHalfWristSum / (fCount - halfIdx)) : aiMetrics.wristKeepPt;
+      const wristKeepRate = fList.length ? Math.round((wristOkCount / fCount) * 100) : aiMetrics.wristKeepPt;
+      avgTilt = fList.length ? Math.round(avgTilt / fCount) : aiMetrics.coreTiltDeg;
+      if (maxLungeTilt === 0) maxLungeTilt = aiMetrics.coreTiltDeg;
+      const deepStayRatio = Math.round((deepKneeFrames / fCount) * 100);
+
+      // 5局面の個別採点 (0〜100pt)
+      const isOverhead = (model.focus === 'overhead');
+      const isStance = (model.focus === 'stance');
+
+      // 局面①: 打点の高さ＆肘の伸展
+      const scoreContact = Math.min(100, Math.max(35, Math.round(
+        ((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)
+      )));
+
+      // 局面②: ラケット高さ維持＆リストスタンド
+      const scoreRacketKeep = Math.min(100, Math.max(35, Math.round(
+        firstHalfWristAvg * 0.35 + secondHalfWristAvg * 0.35 + (wristKeepRate * 0.30)
+      )));
+
+      // 局面③: 膝のタメ＆上体突っ込み抑止（体幹軸の安定）
+      const kneeTargetDiff = Math.abs(minKn - model.idealKnee);
+      const tiltPenalty = Math.max(0, maxLungeTilt - 11) * 2.2;
+      const scoreLungeAxis = Math.min(100, Math.max(35, Math.round(100 - kneeTargetDiff * 1.3 - tiltPenalty)));
+
+      // 局面④: 待機・始動時の無駄な上下バウンド抑止
+      const scoreUnweight = Math.min(100, Math.max(40, aiMetrics.stabilityPt));
+
+      // 局面⑤: スイング・蹴り戻し初速＆後半の姿勢維持
+      const lateDropPenalty = Math.max(0, firstHalfWristAvg - secondHalfWristAvg) * 0.6;
+      const stayPenalty = (!isStance && deepStayRatio > 50) ? (deepStayRatio - 50) * 0.7 : 0;
+      const scoreRecoverySpeed = Math.min(100, Math.max(35, Math.round(
+        (isStance ? aiMetrics.stabilityPt : maxSp) - lateDropPenalty - stayPenalty
+      )));
+
+      // 種目特性に応じた総合スコア算出
+      let totalScore = 80;
+      if (isStance) {
+        totalScore = Math.round(scoreRacketKeep * 0.40 + scoreLungeAxis * 0.35 + scoreUnweight * 0.25);
+      } else if (isOverhead) {
+        totalScore = Math.round(scoreContact * 0.40 + scoreLungeAxis * 0.30 + scoreRecoverySpeed * 0.30);
+      } else {
+        totalScore = Math.round(scoreRacketKeep * 0.30 + scoreLungeAxis * 0.35 + scoreRecoverySpeed * 0.35);
+      }
+      totalScore = Math.min(100, Math.max(35, totalScore));
+
+      document.getElementById('overallScoreBadge').textContent = `総合スコア: ${totalScore} / 100 pt`;
+
+      // 5局面をランキングして「最大の長所」と「最優先の改善原因」を特定
+      const factorCandidates = [
+        {
+          key: 'low_contact',
+          score: isOverhead ? scoreContact : scoreContact + 12,
+          goodText: `最高打点（肩挙上角 ${maxSh}°・肘伸展 ${maxEl}°）が目標基準（${model.idealShoulder}°）に対して高く、威力のあるトップが作れています`
+        },
+        {
+          key: 'racket_drop',
+          score: scoreRacketKeep,
+          goodText: `ラケット高位置キープ＆リストスタンド維持率（${wristKeepRate}%）が高く、球際に強い構えが作れています`
+        },
+        {
+          key: 'lunge_lean',
+          score: scoreLungeAxis,
+          goodText: `最深膝角 ${minKn}° のタメに対して体幹の傾きが ${maxLungeTilt}° 以内に収まり、頭が突っ込まない安定した軸です`
+        },
+        {
+          key: 'excess_bounce',
+          score: scoreUnweight,
+          goodText: `無駄な上下バウンドが少なく（静止安定度 ${scoreUnweight}pt）、いつでもスムーズに抜重できる状態です`
+        },
+        {
+          key: 'slow_recovery',
+          score: scoreRecoverySpeed,
+          goodText: `初動・スイング速度（最大 ${maxSp}pt）が鋭く、後半までラケット高さが落ちずに動き切れています`
+        }
+      ];
+
+      factorCandidates.sort((a, b) => b.score - a.score);
+      const bestFactor = factorCandidates[0];
+      const worstFactor = factorCandidates[factorCandidates.length - 1];
+      const rxPlan = AI_CAUSE_PRESCRIPTIONS[worstFactor.key] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
+
+      const staminaComment = (firstHalfWristAvg - secondHalfWristAvg >= 12)
+        ? `⚠️ 測定の前半（ラケット維持 ${firstHalfWristAvg}pt）に比べて後半（${secondHalfWristAvg}pt）に手が下がる傾向が出ています。`
+        : `🟢 測定の前半（${firstHalfWristAvg}pt）から後半（${secondHalfWristAvg}pt）まで集中してラケット高さを維持できています。`;
+
+      // 自己ベスト保存判定
+      const prevBest = getPersonalBestRecord(activeProfileId, shot);
+      let recordBannerHtml = "";
+      if (!prevBest || totalScore >= prevBest.score) {
+        const diffStr = prevBest ? `（前回ベスト ${prevBest.score}pt から ＋${totalScore - prevBest.score}pt 更新！）` : `（初回ベストとして自動保存！）`;
+        savePersonalBestData(activeProfileId, shot, {
+          score: totalScore,
+          maxSh, maxEl, minKn, maxSp,
+          date: new Date().toLocaleDateString('ja-JP'),
+          landmarks: aiMetrics.bestFrameLandmarks
+        });
+        recordBannerHtml = `<div style="background:rgba(16,185,129,0.18); border:1px solid #10b981; padding:6px 9px; border-radius:8px; margin-bottom:8px; font-weight:900; color:#34d399;">🎉 自己ベスト更新: ${totalScore} pt ${diffStr}</div>`;
+      } else {
+        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:#fde047;">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>！（最高打点差: ${maxSh - prevBest.maxSh}°）</div>`;
+      }
+
+      updateComparisonTableUI();
+
+      document.getElementById('aiSummaryContent').innerHTML = `
+        ${recordBannerHtml}
+        <div style="margin-bottom:6px; font-weight:900; font-size:0.86rem; color:var(--accent-highlight);">
+          📌 原因特定AI診断：${totalScore} pt ｜ 最優先課題「${rxPlan.title}」
+        </div>
+        <div style="margin-bottom:6px; font-size:0.78rem;">
+          <b>⭕ 最大の長所:</b> ${bestFactor.goodText}。<br>
+          <b>🔺 減点の主原因:</b> 5局面のうち<b>「${rxPlan.title}（評価 ${worstFactor.score}pt）」</b>が最もスコアを押し下げています。<br>
+          <b>📊 前半vs後半の持続性:</b> ${staminaComment}
+        </div>
+        <div style="background:rgba(6,182,212,0.12); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.78rem;">
+          <b style="color:#38bdf8;">🗣️ ジュニア・選手向け感覚アドバイス:</b><br>
+          ${rxPlan.sense}
+        </div>
+        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); padding:9px 10px; border-radius:8px; font-size:0.76rem;">
+          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">📋 弱点克服・3段階トレーニング処方箋：『${rxPlan.drillName}』</div>
+          <div style="margin-bottom:3px;">・${rxPlan.step1}</div>
+          <div style="margin-bottom:3px;">・${rxPlan.step2}</div>
+          <div style="margin-bottom:8px;">・${rxPlan.step3}</div>
+          <button class="btn btn-emerald" style="width:100%; padding:8px;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}', true)">
+            🏃 推奨フットワーク「${rxPlan.fwLabel}」をすぐセットする
+          </button>
+        </div>
+      `;
+    };
+
+    // =========================================================================
+    // 3. TAB 2（初速AIカメラ測定）の方向別バランス分析＆待機バウンド検知強化
+    // =========================================================================
+    let rxDetailTracker = {
+      currentDir: null,
+      waitHipYList: [],
+      lastWristOk: true,
+      dirLogs: []
+    };
+
+    const _origStartReflexAISession = startReflexAISession;
+    startReflexAISession = function() {
+      rxDetailTracker.dirLogs = [];
+      rxDetailTracker.waitHipYList = [];
+      _origStartReflexAISession();
+    };
+
+    // 方向データ（右/左・前/奥）を保持するようにscheduleNextReflexRepを拡張
+    scheduleNextReflexRep = function() {
+      if (!rxState.active) return;
+      if (rxState.currentRep >= rxState.targetReps) {
+        finishReflexAISession();
+        return;
+      }
+
+      const banner = document.getElementById('reflexBanner');
+      const svgHolder = document.getElementById('reflexBannerSvgHolder');
+      const mainTxt = document.getElementById('reflexBannerMain');
+      const subTxt = document.getElementById('reflexBannerSub');
+
+      banner.style.display = "flex";
+      rxState.phase = 'ready_wait';
+      rxState.baselineHip = null;
+      rxDetailTracker.waitHipYList = [];
+
+      svgHolder.innerHTML = buildCyberArrowSVG(0, 'unweight');
+      mainTxt.style.color = "#38bdf8";
+      mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：構えて待機...`;
+      subTxt.textContent = "ラケットを上げ、ピョンピョン跳ねずに静かに矢印を待ってください";
+
+      const randomWait = 1800 + Math.floor(Math.random() * 1400);
+      rxState.timerId = setTimeout(() => {
+        if (!rxState.active) return;
+        const chosen = FW_POSITIONS[Math.floor(Math.random() * FW_POSITIONS.length)];
+        rxDetailTracker.currentDir = chosen;
+        const cueMode = document.getElementById('rxCueMode').value;
+
+        rxState.phase = 'cue_active';
+        rxState.cueTime = performance.now();
+
+        svgHolder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
+        mainTxt.style.color = "#fbbf24";
+        mainTxt.textContent = `${chosen.name}！`;
+        subTxt.textContent = "今すぐ抜重・ステップ！";
+
+        playBeep(1060, 110);
+        if (cueMode === 'voice_dir') {
+          speakText(chosen.name, 1.35);
+        }
+      }, randomWait);
+    };
+
+    const _origRenderReflexAIPose = renderReflexAIPose;
+    renderReflexAIPose = function(results) {
+      if (rxState.active && rxState.phase === 'ready_wait' && results && results.poseLandmarks) {
+        const lm = results.poseLandmarks;
+        const hipY = (lm[23].y + lm[24].y) / 2;
+        const shY = (lm[11].y + lm[12].y) / 2;
+        const tLen = Math.max(0.12, Math.abs(hipY - shY));
+        rxDetailTracker.waitHipYList.push(hipY / tLen);
+        const stEval = evaluateReadyStanceQuality(lm);
+        rxDetailTracker.lastWristOk = stEval.isWristStandOk && stEval.wristScore >= 80;
+      }
+      _origRenderReflexAIPose(results);
+    };
+
+    const _origRecordSingleReflexResult = recordSingleReflexResult;
+    recordSingleReflexResult = function(ms, stepType, stancePt) {
+      let bounceDev = 0;
+      if (rxDetailTracker.waitHipYList.length >= 4) {
+        const arr = rxDetailTracker.waitHipYList;
+        const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+        bounceDev = Math.max(...arr.map(v => Math.abs(v - mean)));
+      }
+      const chosen = rxDetailTracker.currentDir || FW_POSITIONS[0];
+      rxDetailTracker.dirLogs.push({
+        ms,
+        stepType,
+        stancePt: stancePt || 85,
+        dirId: chosen.id,
+        dirName: chosen.name,
+        isRightSide: (chosen.id === 1 || chosen.id === 3 || chosen.id === 5),
+        wristOk: rxDetailTracker.lastWristOk,
+        isBouncing: bounceDev > 0.045
+      });
+      _origRecordSingleReflexResult(ms, stepType, stancePt);
+    };
+
+    // 左右バランス・待機構え崩れ・ジュニア向け感覚ワードを統合した初速AI総括レポート
+    finishReflexAISession = function() {
+      rxState.active = false;
+      rxState.phase = 'idle';
+      document.getElementById('reflexBanner').style.display = "none";
+      document.getElementById('rxSessionBadge').textContent = `✅ 全${rxState.targetReps}回 測定完了`;
+      playBeep(1200, 300);
+
+      const avgMs = Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length);
+      const avgStance = Math.round(rxState.stanceScores.reduce((a, b) => a + b, 0) / rxState.stanceScores.length);
+      const speedPt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
+      const combinedPt = Math.round(speedPt * 0.7 + avgStance * 0.3);
+
+      const logs = rxDetailTracker.dirLogs;
+      const rightLogs = logs.filter(l => l.isRightSide);
+      const leftLogs = logs.filter(l => !l.isRightSide);
+      const avgRightMs = rightLogs.length ? Math.round(rightLogs.reduce((a, b) => a + b.ms, 0) / rightLogs.length) : avgMs;
+      const avgLeftMs = leftLogs.length ? Math.round(leftLogs.reduce((a, b) => a + b.ms, 0) / leftLogs.length) : avgMs;
+      const diffRL = Math.abs(avgRightMs - avgLeftMs);
+      const slowerSideName = avgLeftMs > avgRightMs ? "左（バック・ラウンド側）" : "右（フォア側）";
+
+      const bounceCount = logs.filter(l => l.isBouncing).length;
+      const wristDropCount = logs.filter(l => !l.wristOk).length;
+
+      let chosenPlan = AI_CAUSE_PRESCRIPTIONS.excess_bounce;
+      let juniorMsg = "";
+
+      if (wristDropCount >= Math.ceil(logs.length / 2)) {
+        chosenPlan = AI_CAUSE_PRESCRIPTIONS.racket_drop;
+        juniorMsg = `矢印を待っている間にラケット（手首）が下がる回数が ${wristDropCount}回 ありました！手首を立ててみぞおちの前で構えておくと、球際がもっと速くなります！`;
+      } else if (bounceCount >= 2) {
+        chosenPlan = AI_CAUSE_PRESCRIPTIONS.excess_bounce;
+        juniorMsg = `矢印が出る前にピョンピョン跳ねてしまっている回が ${bounceCount}回 ありました！静かにピタッと待って、矢印が見えた瞬間にだけ「2cmスッと沈む（抜重）」とさらに30ms速くなります！`;
+      } else if (diffRL >= 25) {
+        chosenPlan = AI_CAUSE_PRESCRIPTIONS.lunge_lean;
+        juniorMsg = `右方向（平均 ${avgRightMs}ms）と左方向（平均 ${avgLeftMs}ms）を比べると、<b>${slowerSideName}への一歩目が ${diffRL}ms 遅れています</b>！苦手な方向へ出る時に頭から倒れず、反対側の足で床を強く蹴り出そう！`;
+      } else {
+        juniorMsg = `左右の反応差も少なく（右 ${avgRightMs}ms / 左 ${avgLeftMs}ms）、待機中の構えもピタッと安定しています！この抜重の感覚のまま実戦フットワークに入りましょう！`;
+      }
+
+      document.getElementById('rxSummaryText').innerHTML = `
+        <div style="font-weight:900; color:#34d399; margin-bottom:6px; font-size:0.86rem;">
+          🏆 平均初速: ${avgMs} ms（最速 ${rxState.bestMs} ms）｜ 構え安定度: ${avgStance} pt ｜ 総合: ${combinedPt} pt
+        </div>
+        <div style="font-size:0.78rem; margin-bottom:6px;">
+          ・<b>左右方向別バランス:</b> 右方向 平均 <b>${avgRightMs}ms</b> ／ 左方向 平均 <b>${avgLeftMs}ms</b>（差 ${diffRL}ms）<br>
+          ・<b>待機構えチェック:</b> ラケット下がり検知 ${wristDropCount}回 ／ 無駄な上下バウンド検知 ${bounceCount}回
+        </div>
+        <div style="background:rgba(6,182,212,0.12); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.78rem;">
+          <b style="color:#38bdf8;">🗣️ ジュニア・選手向け感覚アドバイス:</b><br>
+          ${juniorMsg}
+        </div>
+        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); padding:8px 10px; border-radius:8px; font-size:0.75rem;">
+          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">📋 初速アップ処方メニュー：『${chosenPlan.drillName}』</div>
+          <div style="margin-bottom:3px;">・${chosenPlan.step1}</div>
+          <div style="margin-bottom:6px;">・${chosenPlan.step2}</div>
+          <button class="btn btn-emerald" style="width:100%; padding:7px;" onclick="jumpToPrescribedFootwork('${chosenPlan.fwPreset}', true)">
+            🏃 抜重予告音付き「${chosenPlan.fwLabel}」をすぐセットする
+          </button>
+        </div>
+      `;
+    };
 
   </script>
 
