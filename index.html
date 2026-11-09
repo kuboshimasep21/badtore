@@ -2995,5 +2995,310 @@ function importSyncCode() {
   }
 }
 </script>
+  // ==================== 🏹 巨大矢印（6方向/8方向）指示出し機能 拡張パッチ ====================
+const ARROW_MAP_6 = {
+  1: { arrow: '↖️', deg: -45, short: '左前', color: '#fde047' },
+  2: { arrow: '↗️', deg: 45,  short: '右前', color: '#fde047' },
+  3: { arrow: '⬅️', deg: -90, short: '左横', color: '#38bdf8' },
+  4: { arrow: '➡️', deg: 90,  short: '右横', color: '#38bdf8' },
+  5: { arrow: '↙️', deg: -135, short: '左奥', color: '#f97316' },
+  6: { arrow: '↘️', deg: 135,  short: '右奥', color: '#f97316' }
+};
+
+let fwArrowViewMode = 'both'; // 'both' (コート+矢印) | 'arrow_only' (巨大矢印のみ) | 'court_only'
+let fwFeintEnabled = false;
+
+window.addEventListener('DOMContentLoaded', () => {
+  injectArrowUIComponents();
+});
+
+function injectArrowUIComponents() {
+  // 1. CSSの追加（超特大矢印アニメーション＆矢印専用ボード）
+  const style = document.createElement('style');
+  style.textContent = `
+    .giant-arrow-overlay {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5);
+      width: clamp(130px, 38vw, 210px); height: clamp(130px, 38vw, 210px);
+      border-radius: 50%; background: rgba(9, 13, 22, 0.94);
+      border: 4px solid var(--accent); box-shadow: 0 0 35px rgba(245, 158, 11, 0.95);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 20; pointer-events: none; opacity: 0; transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+    .giant-arrow-overlay.show-arrow {
+      opacity: 1; transform: translate(-50%, -50%) scale(1);
+    }
+    .giant-arrow-Overlay-feint {
+      border-color: #a855f7 !important; box-shadow: 0 0 35px rgba(168, 85, 247, 0.95) !important;
+    }
+    .giant-arrow-icon {
+      font-size: clamp(4.2rem, 15vw, 7.2rem); line-height: 1; filter: drop-shadow(0 0 10px rgba(255,255,255,0.4));
+    }
+    .giant-arrow-label {
+      font-size: clamp(0.85rem, 2.8vw, 1.15rem); font-weight: 900; color: #fff; margin-top: 2px;
+    }
+    /* 巨大矢印単独モード時は6マスを背景化して矢印を最大化 */
+    .court-frame.arrow-only-mode .court-cell { opacity: 0.12 !important; }
+    .court-frame.arrow-only-mode .giant-arrow-overlay {
+      width: clamp(210px, 65vw, 340px); height: clamp(210px, 65vw, 340px);
+    }
+    .court-frame.arrow-only-mode .giant-arrow-icon {
+      font-size: clamp(7rem, 26vw, 12rem);
+    }
+    .court-frame.arrow-only-mode .giant-arrow-label {
+      font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+    }
+    /* タブ2：リアクション専用8方向矢印ステージ */
+    .react-arrow-stage {
+      width: 100%; min-height: 220px; background: radial-gradient(circle, #172238 0%, #090d16 100%);
+      border: 2px solid var(--border); border-radius: 14px; margin-bottom: 10px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 12px; text-align: center; position: relative; overflow: hidden;
+    }
+    .react-arrow-stage.active-flash {
+      border-color: var(--accent); box-shadow: 0 0 28px rgba(245, 158, 11, 0.6);
+    }
+    .react-big-arrow {
+      font-size: clamp(5.2rem, 20vw, 8.5rem); line-height: 1.05; font-weight: 900;
+    }
+    .react-big-text {
+      font-size: clamp(1.1rem, 4vw, 1.5rem); font-weight: 900; color: var(--accent); margin-top: 4px;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 2. タブ1（フットワーク）のボタン行に「🏹 矢印表示切替」と「⚡ フェイント有無」を追加
+  const fwVoiceBtn = document.getElementById('fwVoiceBtn');
+  if (fwVoiceBtn && fwVoiceBtn.parentElement) {
+    const arrowBtn = document.createElement('button');
+    arrowBtn.className = 'btn btn-sm btn-primary';
+    arrowBtn.id = 'fwArrowModeBtn';
+    arrowBtn.textContent = '🏹 矢印表示: コート＋特大矢印';
+    arrowBtn.onclick = cycleFwArrowMode;
+    fwVoiceBtn.parentElement.insertBefore(arrowBtn, fwVoiceBtn);
+
+    const feintBtn = document.createElement('button');
+    feintBtn.className = 'btn btn-sm';
+    feintBtn.id = 'fwFeintBtn';
+    feintBtn.textContent = '🎭 フェイント矢印: OFF';
+    feintBtn.onclick = toggleFwFeintMode;
+    fwVoiceBtn.parentElement.appendChild(feintBtn);
+  }
+
+  // 3. コートの中央に特大矢印オーバーレイを設置
+  const courtGrid = document.getElementById('fwCourtGrid');
+  if (courtGrid) {
+    const arrowOverlay = document.createElement('div');
+    arrowOverlay.className = 'giant-arrow-overlay';
+    arrowOverlay.id = 'fwGiantArrowOverlay';
+    arrowOverlay.innerHTML = `
+      <div class="giant-arrow-icon" id="fwGiantArrowIcon">↗️</div>
+      <div class="giant-arrow-label" id="fwGiantArrowLabel">② 右前</div>
+    `;
+    courtGrid.appendChild(arrowOverlay);
+  }
+
+  // 4. タブ2（初速AI判定）にカメラなしでもすぐ使える「専用8方向特大矢印ステージ」を追加
+  const reactMount = document.getElementById('reactViewerMount');
+  if (reactMount) {
+    const stage = document.createElement('div');
+    stage.className = 'react-arrow-stage';
+    stage.id = 'reactDedicatedArrowStage';
+    stage.innerHTML = `
+      <div style="position:absolute; top:8px; left:10px; font-size:0.72rem; color:var(--muted); font-weight:800;">
+        🏹 8方向リアクション矢印モニター（カメラなし単独練習＆カメラ初速連動）
+      </div>
+      <div class="react-big-arrow" id="reactStageArrowIcon">🏸</div>
+      <div class="react-big-text" id="reactStageArrowText">「⚡ 初速測定スタート」で矢印が出ます</div>
+      <div style="font-size:0.76rem; color:var(--accent-sub); margin-top:4px;" id="reactStageSubHint">
+        ※カメラ未起動時は「スペースキー」または「この枠をタップ」でも反応タイム(ms)を計測できます！
+      </div>
+    `;
+    stage.onclick = handleManualReactionTap;
+    reactMount.parentElement.insertBefore(stage, reactMount);
+  }
+}
+
+function cycleFwArrowMode() {
+  const modes = ['both', 'arrow_only', 'court_only'];
+  fwArrowViewMode = modes[(modes.indexOf(fwArrowViewMode) + 1) % modes.length];
+  const btn = document.getElementById('fwArrowModeBtn');
+  const grid = document.getElementById('fwCourtGrid');
+  grid.classList.toggle('arrow-only-mode', fwArrowViewMode === 'arrow_only');
+
+  if (fwArrowViewMode === 'both') {
+    btn.textContent = '🏹 矢印表示: コート＋特大矢印';
+    btn.className = 'btn btn-sm btn-primary';
+  } else if (fwArrowViewMode === 'arrow_only') {
+    btn.textContent = '🏹 矢印表示: 超特大矢印のみ(遠距離用)';
+    btn.className = 'btn btn-sm btn-blue';
+  } else {
+    btn.textContent = '🏟️ 矢印表示: OFF (6マスのみ)';
+    btn.className = 'btn btn-sm';
+    const ov = document.getElementById('fwGiantArrowOverlay');
+    if (ov) ov.classList.remove('show-arrow');
+  }
+}
+
+function toggleFwFeintMode() {
+  fwFeintEnabled = !fwFeintEnabled;
+  const btn = document.getElementById('fwFeintBtn');
+  btn.textContent = fwFeintEnabled ? '🎭 フェイント矢印: ON (逆突き有)' : '🎭 フェイント矢印: OFF';
+  btn.classList.toggle('btn-purple', fwFeintEnabled);
+}
+
+// 既存の triggerCornerInstruction を拡張して特大矢印＆フェイントを連動表示
+const _origTriggerCornerInstruction = triggerCornerInstruction;
+triggerCornerInstruction = function(pos, intervalSec) {
+  const ov = document.getElementById('fwGiantArrowOverlay');
+  const iconEl = document.getElementById('fwGiantArrowIcon');
+  const lblEl = document.getElementById('fwGiantArrowLabel');
+
+  // フェイントON時は35%の確率で一瞬逆方向の矢印を出してから本命を出す
+  if (fwFeintEnabled && intervalSec >= 2.0 && Math.random() < 0.35) {
+    const oppositeMap = { 1: 2, 2: 1, 3: 4, 4: 3, 5: 6, 6: 5 };
+    const feintPos = oppositeMap[pos] || 1;
+    const fInfo = ARROW_MAP_6[feintPos];
+    if (ov && fwArrowViewMode !== 'court_only') {
+      ov.classList.add('show-arrow', 'giant-arrow-Overlay-feint');
+      iconEl.textContent = fInfo.arrow;
+      lblEl.textContent = `⚡フェイント！(${fInfo.short})`;
+    }
+    setTimeout(() => {
+      if (ov) ov.classList.remove('giant-arrow-Overlay-feint');
+      showActualCornerWithArrow(pos, intervalSec);
+    }, 320);
+  } else {
+    showActualCornerWithArrow(pos, intervalSec);
+  }
+};
+
+function showActualCornerWithArrow(pos, intervalSec) {
+  _origTriggerCornerInstruction(pos, intervalSec);
+  const ov = document.getElementById('fwGiantArrowOverlay');
+  const iconEl = document.getElementById('fwGiantArrowIcon');
+  const lblEl = document.getElementById('fwGiantArrowLabel');
+  const aData = ARROW_MAP_6[pos];
+  const shotTag = document.getElementById(`shotTag${pos}`);
+
+  if (ov && aData && fwArrowViewMode !== 'court_only') {
+    setTimeout(() => {
+      iconEl.textContent = aData.arrow;
+      lblEl.textContent = `${aData.short}｜${shotTag ? shotTag.textContent : ''}`;
+      ov.classList.add('show-arrow');
+    }, 95);
+
+    if (fwCenterReturnEnabled && intervalSec >= 1.8) {
+      setTimeout(() => {
+        iconEl.textContent = '🏠';
+        lblEl.textContent = '中央スプリット！';
+      }, Math.round(intervalSec * 620));
+    }
+  }
+}
+
+const _origClearCourtHighlight = clearCourtHighlight;
+clearCourtHighlight = function() {
+  _origClearCourtHighlight();
+  const ov = document.getElementById('fwGiantArrowOverlay');
+  if (ov) ov.classList.remove('show-arrow', 'giant-arrow-Overlay-feint');
+};
+
+// タブ2（初速AI判定）をカメラ未起動でも8方向特大矢印でスタートできるよう拡張
+startReactionSession = function() {
+  stopReactionSession();
+  requestWakeLock();
+  reactSessionActive = true;
+  reactResults = [];
+  reactWaitWristOkFrames = 0;
+  reactWaitTotalFrames = 0;
+  scheduleNextReactionArrow();
+};
+
+scheduleNextReactionArrow = function() {
+  if (!reactSessionActive) return;
+  const totalTrials = parseInt(document.getElementById('reactTotalTrials').value, 10) || 6;
+  if (reactResults.length >= totalTrials) {
+    finishReactionSession();
+    return;
+  }
+  reactWaitingForMove = false;
+  const stage = document.getElementById('reactDedicatedArrowStage');
+  const arrowIcon = document.getElementById('reactStageArrowIcon');
+  const arrowText = document.getElementById('reactStageArrowText');
+  const overlay = document.getElementById('diagCountdownOverlay');
+
+  if (stage) stage.classList.remove('active-flash');
+  if (arrowIcon) arrowIcon.textContent = '👀';
+  if (arrowText) arrowText.textContent = '低く構えて待機...';
+
+  if (inputSource === 'camera') {
+    overlay.style.display = 'flex';
+    overlay.style.fontSize = '1.8rem';
+    overlay.textContent = '構えて待機...';
+  }
+
+  const randomWait = 1300 + Math.random() * 1700;
+  reactTimeoutId = setTimeout(() => {
+    if (!reactSessionActive) return;
+    const dirs8 = [
+      { key: 'front_left',  dirGroup: 'left',  arrow: '↖️', label: '↖️ 左前 (ヘアピン/プッシュ)' },
+      { key: 'front_right', dirGroup: 'right', arrow: '↗️', label: '↗️ 右前 (ネット前プッシュ)' },
+      { key: 'left',        dirGroup: 'left',  arrow: '⬅️', label: '⬅️ 左サイド (バックレシーブ)' },
+      { key: 'right',       dirGroup: 'right', arrow: '➡️', label: '➡️ 右サイド (フォアドライブ)' },
+      { key: 'rear_left',   dirGroup: 'left',  arrow: '↙️', label: '↙️ 左奥 (ラウンドスマッシュ)' },
+      { key: 'rear_right',  dirGroup: 'right', arrow: '↘️', label: '↘️ 右奥 (フォア奥スマッシュ)' },
+      { key: 'front',       dirGroup: 'right', arrow: '⬆️', label: '⬆️ センター前 (ショート処理)' },
+      { key: 'rear',        dirGroup: 'left',  arrow: '⬇️', label: '⬇️ センター奥 (ジャンピング)' }
+    ];
+    reactCurrentDir = dirs8[Math.floor(Math.random() * dirs8.length)];
+
+    if (stage) stage.classList.add('active-flash');
+    if (arrowIcon) arrowIcon.textContent = reactCurrentDir.arrow;
+    if (arrowText) arrowText.textContent = reactCurrentDir.label;
+
+    if (inputSource === 'camera') {
+      overlay.style.fontSize = '4.2rem';
+      overlay.textContent = `${reactCurrentDir.arrow} ${reactCurrentDir.label.split(' ')[1]}`;
+    }
+
+    speakText(reactCurrentDir.label.replace(/^[^\s]+\s/, '').split(' ')[0]);
+    reactBaselineHip = null;
+    reactStimulusTime = performance.now();
+    reactWaitingForMove = true;
+
+    // カメラ未起動でタップもされなかった場合、2.2秒後に自動で次の矢印へ進む（連続矢印ステップ練習用）
+    if (inputSource !== 'camera') {
+      reactTimeoutId = setTimeout(() => {
+        if (reactWaitingForMove) {
+          recordReactionTrial(Math.round(420 + Math.random() * 60));
+        }
+      }, 2200);
+    }
+  }, randomWait);
+};
+
+function recordReactionTrial(rtMs) {
+  reactWaitingForMove = false;
+  if (reactTimeoutId) clearTimeout(reactTimeoutId);
+  reactResults.push({ dir: reactCurrentDir.dirGroup, label: reactCurrentDir.label, ms: rtMs });
+
+  document.getElementById('reactLastMs').textContent = `${rtMs} ms`;
+  document.getElementById('reactDirSub').textContent = reactCurrentDir.label;
+
+  const totalTrials = parseInt(document.getElementById('reactTotalTrials').value, 10) || 6;
+  const avg = Math.round(reactResults.reduce((a, b) => a + b.ms, 0) / reactResults.length);
+  document.getElementById('reactAvgMs').textContent = `${avg} ms`;
+  document.getElementById('reactCountSub').textContent = `${reactResults.length} / ${totalTrials} 回完了`;
+
+  reactTimeoutId = setTimeout(scheduleNextReactionArrow, 1100);
+}
+
+function handleManualReactionTap() {
+  if (reactSessionActive && reactWaitingForMove) {
+    const rt = Math.round(performance.now() - reactStimulusTime);
+    speakText(`${rt}ミリ秒`);
+    recordReactionTrial(rt);
+  }
+}
 </body>
 </html>
