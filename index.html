@@ -10090,6 +10090,475 @@
         <div>${rightActionHtml}</div>
       `;
     };
+  /* =========================================================================
+       🚀 v9.6 PRO 追加アップグレードパッチ (項目2 ＆ 項目3 完全統合)
+       - 🔊 音声速度・体育館用ビープ音・抜重タメ時間の微調整パネル (TAB 1 & TAB 2)
+       - 🎯 フットワーク「センター帰還リズム音（ピポン♪）＆抜重連動」 (TAB 1)
+       - 🔁 動画「A-B区間 エンドレスループ再生（スロー観察モード）」 (TAB 3)
+       - 🏸 ラケット診断への「回内・回外連動指数 ＆ 初速ms」実測連動 (TAB 4)
+    ========================================================================= */
+
+    let audioCustomSettings = {
+      voiceRate: 1.32,      // 1.2 (標準) | 1.5 (速め) | 1.75 (超速)
+      beepTone: 'high',     // 'high' (体育館クリア大音量) | 'normal' (標準) | 'low' (マイルド)
+      unweightLeadMs: 420   // 300 (高速実戦) | 420 (標準) | 600 (基礎習得)
+    };
+
+    let videoLoopObserveMode = false; // 動画A-B区間の無限ループ観察フラグ
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.title = "バドトレPRO v9.6 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
+      const verBadge = document.querySelector('header .badge-version');
+      if (verBadge) verBadge.textContent = "v9.6 PRO";
+
+      injectAudioFineTuneControls();
+      injectCenterReturnFwOptions();
+      injectVideoLoopToggleButton();
+      renderRacketRecommendations('ALL');
+    });
+
+    // =========================================================================
+    // 1. 🔊 音声読み上げ速度・ビープ音色＆音量・抜重タメ時間の微調整機能
+    // =========================================================================
+    function injectAudioFineTuneControls() {
+      const fwSettingsCard = document.querySelector('#tab-footwork .split-grid > .card');
+      if (fwSettingsCard && !document.getElementById('audioFineTuneBox')) {
+        const box = document.createElement('div');
+        box.id = 'audioFineTuneBox';
+        box.style = "margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);";
+        box.innerHTML = `
+          <div style="font-weight:900; color:var(--accent-highlight); margin-bottom:6px; font-size:0.8rem;">
+            🔊 音声スピード・ビープ音・抜重タメ時間の微調整（TAB 1・2 共通）
+          </div>
+          <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:6px;">
+            <div class="form-group">
+              <label>🗣️ 声のスピード</label>
+              <select id="cfgVoiceRate" onchange="updateAudioCustomConfig()" style="font-size:0.75rem; padding:6px;">
+                <option value="1.2">標準 (1.2x)</option>
+                <option value="1.45" selected>速め・実戦 (1.45x)</option>
+                <option value="1.75">超速・高速用 (1.75x)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>🔔 ビープ音色・音量</label>
+              <select id="cfgBeepTone" onchange="updateAudioCustomConfig()" style="font-size:0.75rem; padding:6px;">
+                <option value="high" selected>体育館クリア (高音・大)</option>
+                <option value="normal">標準トーン (中音)</option>
+                <option value="low">マイルド (低音)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>👟 抜重タメ間隔</label>
+              <select id="cfgUnweightMs" onchange="updateAudioCustomConfig()" style="font-size:0.75rem; padding:6px;">
+                <option value="300">0.30秒 (超高速)</option>
+                <option value="420" selected>0.42秒 (標準)</option>
+                <option value="600">0.60秒 (基礎確認)</option>
+              </select>
+            </div>
+          </div>
+        `;
+        fwSettingsCard.appendChild(box);
+      }
+      updateAudioCustomConfig();
+    }
+
+    function updateAudioCustomConfig() {
+      const rateEl = document.getElementById('cfgVoiceRate');
+      const toneEl = document.getElementById('cfgBeepTone');
+      const leadEl = document.getElementById('cfgUnweightMs');
+      if (rateEl) audioCustomSettings.voiceRate = Number(rateEl.value) || 1.45;
+      if (toneEl) audioCustomSettings.beepTone = toneEl.value || 'high';
+      if (leadEl) audioCustomSettings.unweightLeadMs = Number(leadEl.value) || 420;
+    }
+
+    // 体育館でも通りやすいようビープ音の出力と周波数をカスタマイズ
+    playBeep = function(freq = 880, durationMs = 100) {
+      try {
+        unlockAudioContext();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        let mult = 1.0;
+        let vol = 0.26;
+        if (audioCustomSettings.beepTone === 'high') {
+          mult = 1.18;
+          vol = 0.40;
+          osc.type = 'triangle';
+        } else if (audioCustomSettings.beepTone === 'low') {
+          mult = 0.82;
+          vol = 0.22;
+          osc.type = 'sine';
+        } else {
+          osc.type = 'sine';
+        }
+
+        osc.frequency.setValueAtTime(Math.round(freq * mult), audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + durationMs / 1000);
+      } catch (e) {}
+    };
+
+    // 設定された読み上げ速度を自動適用
+    speakText = function(text, rateOverride) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'ja-JP';
+        utter.rate = audioCustomSettings.voiceRate || rateOverride || 1.35;
+        utter.pitch = 1.05;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {}
+    };
+
+    // =========================================================================
+    // 2. 🎯 フットワーク「センター帰還リズム音（ピポン♪）＆抜重予告音」拡張 (TAB 1 & 2)
+    // =========================================================================
+    function injectCenterReturnFwOptions() {
+      const centerSel = document.getElementById('fwCenterCallMode');
+      if (!centerSel) return;
+      if (!centerSel.querySelector('option[value="center_and_split"]')) {
+        const opt1 = document.createElement('option');
+        opt1.value = "center_and_split";
+        opt1.textContent = "🎯 センター帰還合図(ピポン) ➔ 抜重予告音(ピッ)";
+        centerSel.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = "center_only";
+        opt2.textContent = "🎯 1球ごとに「センターへ戻る」リズム合図を入れる";
+        centerSel.appendChild(opt2);
+      }
+    }
+
+    let fwExtraCenterTimerId = null;
+    const _origStopVoiceFootwork = stopVoiceFootwork;
+    stopVoiceFootwork = function() {
+      clearTimeout(fwExtraCenterTimerId);
+      _origStopVoiceFootwork();
+    };
+
+    const _origPauseVoiceFootwork = pauseVoiceFootwork;
+    pauseVoiceFootwork = function() {
+      clearTimeout(fwExtraCenterTimerId);
+      _origPauseVoiceFootwork();
+    };
+
+    // 抜重タメ時間＆センター帰還合図に対応したフットワークコール
+    runNextFootworkCall = function() {
+      if (!fwState.running || fwState.paused) return;
+      clearFwHighlights();
+      clearTimeout(fwExtraCenterTimerId);
+
+      if (!fwState.isTimeMode && fwState.currentRep >= fwState.repsPerSet) {
+        handleFwSetComplete();
+        return;
+      }
+
+      const preset = document.getElementById('fwCoursePreset').value;
+      const centerMode = document.getElementById('fwCenterCallMode').value;
+      let chosenIdx = 0;
+
+      if (FW_SEQUENCES[preset]) {
+        const seq = FW_SEQUENCES[preset];
+        chosenIdx = seq[fwState.seqCursor % seq.length];
+        fwState.seqCursor++;
+      } else {
+        let activeIndices = fwEnabledNodes.map((v, i) => v ? i : -1).filter(i => i !== -1);
+        if (centerMode === 'no_repeat' && activeIndices.length > 1 && fwState.lastChosenIdx !== -1) {
+          activeIndices = activeIndices.filter(i => i !== fwState.lastChosenIdx);
+        }
+        chosenIdx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
+      }
+
+      const posObj = FW_POSITIONS[chosenIdx];
+      const isRepeat = (chosenIdx === fwState.lastChosenIdx);
+      fwState.lastChosenIdx = chosenIdx;
+
+      fwState.currentRep++;
+      updateFwHeaderUI();
+
+      const cellEl = document.getElementById('fw-node-' + chosenIdx);
+      const voiceMode = document.getElementById('fwVoiceMode').value;
+      const callLabel = document.getElementById('fwCurrentCallLabel');
+
+      const activateChosenCell = () => {
+        if (!fwState.running || fwState.paused) return;
+        if (cellEl) cellEl.classList.add('active-call');
+        callLabel.textContent = `👉 ${posObj.name}！`;
+
+        if (voiceMode === 'direction') {
+          playBeep(960, 85);
+          speakText(posObj.name);
+        } else if (voiceMode === 'number') {
+          playBeep(960, 85);
+          speakText(posObj.numName);
+        } else if (voiceMode === 'beep_only') {
+          playBeep(1040, 120);
+        }
+      };
+
+      if (isRepeat) setTimeout(activateChosenCell, 110);
+      else activateChosenCell();
+
+      const leadMs = Math.min(audioCustomSettings.unweightLeadMs || 420, Math.floor(fwState.intervalMs * 0.35));
+
+      // センター帰還合図（インターバルの約50%地点で「ピポン♪＋センター戻れ」を発火）
+      if (centerMode === 'center_and_split' || centerMode === 'center_only') {
+        const centerTimingMs = Math.max(260, Math.floor(fwState.intervalMs * 0.48));
+        fwExtraCenterTimerId = setTimeout(() => {
+          if (!fwState.running || fwState.paused) return;
+          clearFwHighlights();
+          callLabel.textContent = "🎯 センターへ戻れ！";
+          if (voiceMode !== 'mute') {
+            playBeep(740, 55);
+            setTimeout(() => { if (fwState.running && !fwState.paused) playBeep(980, 70); }, 70);
+          }
+        }, centerTimingMs);
+      }
+
+      // 次の指示直前の抜重予告音
+      if (centerMode === 'split_beep' || centerMode === 'center_and_split') {
+        fwState.subTimerId = setTimeout(() => {
+          if (!fwState.running || fwState.paused) return;
+          clearFwHighlights();
+          callLabel.textContent = "👟 抜重！";
+          if (voiceMode !== 'mute') playBeep(540, 65);
+        }, Math.max(300, fwState.intervalMs - leadMs));
+      } else if (centerMode !== 'center_only') {
+        fwState.subTimerId = setTimeout(() => {
+          if (!fwState.running || fwState.paused) return;
+          clearFwHighlights();
+        }, Math.max(200, fwState.intervalMs - 140));
+      }
+
+      fwState.timerId = setTimeout(runNextFootworkCall, fwState.intervalMs);
+    };
+
+    // TAB 2 ネオン矢印リアクション練習にも「抜重タメ間隔」設定を連動
+    runNextArrowReactionRep = function() {
+      if (!arrowDrillState.running) return;
+
+      const box = document.getElementById('giantArrowBox');
+      const holder = document.getElementById('giantArrowSvgHolder');
+      const txt = document.getElementById('giantArrowText');
+
+      if (arrowDrillState.currentRep >= arrowDrillState.totalReps) {
+        box.className = "giant-arrow-circle";
+        holder.innerHTML = buildCyberArrowSVG(0, 'done');
+        txt.textContent = "COMPLETE!";
+        document.getElementById('arrowDrillBadge').textContent = "✅ 完了";
+        playBeep(1200, 320);
+        speakText("リアクション練習完了！お疲れ様でした！");
+        arrowDrillState.running = false;
+        releaseAppWakeLock();
+        return;
+      }
+
+      const timingStyle = document.getElementById('arrowTimingStyle').value;
+      const voiceMode = document.getElementById('arrowVoiceMode').value;
+      const dirs = getFilteredArrowDirections();
+      const chosen = dirs[Math.floor(Math.random() * dirs.length)];
+
+      let preDelay = 700;
+      if (timingStyle === 'split_rhythm') {
+        box.className = "giant-arrow-circle unweight-cue";
+        holder.innerHTML = buildCyberArrowSVG(0, 'unweight');
+        txt.textContent = "抜重・ステップ！";
+        playBeep(520, 75);
+        preDelay = audioCustomSettings.unweightLeadMs || 420;
+      } else if (timingStyle === 'random_feint') {
+        box.className = "giant-arrow-circle";
+        holder.innerHTML = buildCyberArrowSVG(0, 'ready');
+        txt.textContent = "集中...";
+        preDelay = 1000 + Math.floor(Math.random() * 1600);
+      } else {
+        box.className = "giant-arrow-circle";
+        holder.innerHTML = buildCyberArrowSVG(0, 'ready');
+        txt.textContent = "READY";
+        preDelay = 550;
+      }
+
+      arrowDrillState.subTimerId = setTimeout(() => {
+        if (!arrowDrillState.running) return;
+        arrowDrillState.currentRep++;
+        document.getElementById('arrowDrillProgress').textContent =
+          `${arrowDrillState.currentRep} / ${arrowDrillState.totalReps} 回`;
+
+        box.className = "giant-arrow-circle cue-on";
+        holder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
+        txt.textContent = chosen.name + "！";
+
+        playBeep(1080, 110);
+        if (voiceMode === 'voice_and_beep') {
+          speakText(chosen.name);
+        }
+
+        arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1650);
+      }, preDelay);
+    };
+
+    // =========================================================================
+    // 3. 🔁 動画の「A-B区間 エンドレスループ再生（スロー観察モード）」 (TAB 3)
+    // =========================================================================
+    function injectVideoLoopToggleButton() {
+      const videoCtrl = document.getElementById('videoControlPanel');
+      if (!videoCtrl || document.getElementById('btnVideoLoopToggle')) return;
+      const topBtnGroup = videoCtrl.querySelector('.btn-group');
+      if (topBtnGroup) {
+        const loopBtn = document.createElement('button');
+        loopBtn.id = 'btnVideoLoopToggle';
+        loopBtn.className = 'btn btn-cyan-outline';
+        loopBtn.style = 'padding:4px 9px; font-size:0.72rem;';
+        loopBtn.textContent = '🔁 区間ループ: OFF';
+        loopBtn.onclick = toggleVideoLoopObserveMode;
+        topBtnGroup.appendChild(loopBtn);
+      }
+    }
+
+    function toggleVideoLoopObserveMode() {
+      videoLoopObserveMode = !videoLoopObserveMode;
+      const btn = document.getElementById('btnVideoLoopToggle');
+      if (btn) {
+        if (videoLoopObserveMode) {
+          btn.classList.add('active');
+          btn.textContent = '🔁 区間ループ: ON (連続再生)';
+        } else {
+          btn.classList.remove('active');
+          btn.textContent = '🔁 区間ループ: OFF';
+        }
+      }
+      // もし動画が一時停止中でループをONにしたらすぐ区間先頭から再生を再開
+      if (videoLoopObserveMode && activeInputType === 'video') {
+        const upVideo = document.getElementById('uploadedVideo');
+        if (upVideo && upVideo.paused) {
+          if (upVideo.currentTime >= videoTrimState.endSec || upVideo.currentTime < videoTrimState.startSec) {
+            upVideo.currentTime = videoTrimState.startSec || 0;
+          }
+          upVideo.play().catch(() => {});
+          const btnPlayPause = document.getElementById('btnVideoPlayPause');
+          if (btnPlayPause) btnPlayPause.textContent = "⏸️ 一時停止";
+        }
+      }
+    }
+
+    // 診断完了時や動画末尾到達時に「区間ループ: ON」なら止めずにA地点からループ再生を継続
+    const _v95FinishPoseRecording = finishPoseRecording;
+    finishPoseRecording = function(fromVideoAuto = false) {
+      _v95FinishPoseRecording(fromVideoAuto);
+
+      if (fromVideoAuto && activeInputType === 'video' && videoLoopObserveMode) {
+        const upVideo = document.getElementById('uploadedVideo');
+        if (upVideo) {
+          upVideo.currentTime = videoTrimState.startSec || 0;
+          upVideo.play().catch(() => {});
+          const btnPlayPause = document.getElementById('btnVideoPlayPause');
+          if (btnPlayPause) btnPlayPause.textContent = "⏸️ 一時停止";
+          document.getElementById('sessionTimerLabel').textContent = "✅ 診断完了（🔁 A-B区間ループ再生中）";
+        }
+      }
+    };
+
+    const _origHandleVideoUpload = handleVideoUpload;
+    handleVideoUpload = function(event) {
+      _origHandleVideoUpload(event);
+      setTimeout(() => {
+        const upVideo = document.getElementById('uploadedVideo');
+        if (upVideo) {
+          upVideo.onended = () => {
+            if (poseSession.active) {
+              finishPoseRecording(true);
+            } else if (videoLoopObserveMode) {
+              upVideo.currentTime = videoTrimState.startSec || 0;
+              upVideo.play().catch(() => {});
+            }
+          };
+        }
+      }, 300);
+    };
+
+    // =========================================================================
+    // 4. 🏸 ラケット診断（TAB 4）への「回内連動指数 ＆ 初速ms」実測連動
+    // =========================================================================
+    renderRacketRecommendations = function(brandFilter = 'ALL') {
+      const container = document.getElementById('racketListContainer');
+      const summaryBox = document.getElementById('racketDiagnosisSummary');
+      if (!container || !summaryBox) return;
+
+      const hasMeasuredSwing = aiMetrics.maxSpeedPt > 0;
+      const effectiveSpeed = hasMeasuredSwing
+        ? aiMetrics.maxSpeedPt
+        : (userProfile.power === 'high' ? 88 : userProfile.power === 'low' ? 68 : 78);
+
+      const measuredPronation = (typeof poseDetailTracker !== 'undefined' && poseDetailTracker.maxPronationPt > 0)
+        ? poseDetailTracker.maxPronationPt
+        : (userProfile.power === 'high' ? 85 : 76);
+
+      const hasMeasuredReflex = (typeof rxState !== 'undefined' && rxState.resultsMs && rxState.resultsMs.length > 0);
+      const avgReflexMs = hasMeasuredReflex
+        ? Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length)
+        : null;
+
+      // 身長・パワー・回内指数から最適ガットテンションを算出
+      let minLbs = 21, maxLbs = 24;
+      if (userProfile.category === 'junior_elem') {
+        minLbs = 18; maxLbs = 21;
+      } else if (userProfile.power === 'high' || measuredPronation >= 84) {
+        minLbs = 24; maxLbs = 27;
+      } else if (userProfile.power === 'mid') {
+        minLbs = 22; maxLbs = 25;
+      }
+
+      const pronationComment = measuredPronation >= 80
+        ? `前腕の回内スピード（${measuredPronation}pt）が高いため、弾きの良いシャフトやEXBOLT 65を少し高め（${minLbs}〜${maxLbs}lbs）に張っても強い打球が打てます。`
+        : `回内による面返し（${measuredPronation}pt）をサポートするため、球持ちが良く面安定性の高いイーブン〜ヘッドライト系ラケット（${minLbs}〜${maxLbs}lbs）が扱いやすくおすすめです。`;
+
+      summaryBox.innerHTML = `
+        <div style="font-weight:900; color:var(--accent-secondary); margin-bottom:5px; font-size:0.86rem;">
+          🤖 「${userProfile.name}」専用 AI実測連動ラケット＆ガット診断カルテ
+        </div>
+        <div style="font-size:0.78rem; color:#e2e8f0; line-height:1.55;">
+          ・<b>基本データ:</b> 身長 <b>${userProfile.height}cm</b> ｜ パワー設定: <b>${userProfile.power}</b> ｜ スタイル: <b>${userProfile.style}</b><br>
+          ・<b>AI実測データ連動:</b> スイング速度指数 <b style="color:#34d399;">${effectiveSpeed}pt</b> ${hasMeasuredSwing ? '(実測)' : '(推定)'} ／ 回内・回外連動 <b style="color:#a3e635;">${measuredPronation}pt</b> ／ 初速タイム <b style="color:#38bdf8;">${avgReflexMs ? avgReflexMs + 'ms (実測)' : '未測定'}</b><br>
+          ・<b>ギア診断アドバイス:</b> ${pronationComment}
+        </div>
+      `;
+
+      const scoredList = RACKET_DB.filter(r => brandFilter === 'ALL' || r.brand === brandFilter).map(r => {
+        let matchPt = 76;
+        if (r.type === userProfile.style) matchPt += 11;
+        if (r.powerReq === userProfile.power) matchPt += 7;
+
+        // 実測された回内スピード・初速タイムに応じたボーナス加算
+        if (measuredPronation >= 80 && (r.type === 'speed' || r.type === 'power')) matchPt += 4;
+        if (measuredPronation < 72 && r.type === 'control') matchPt += 5;
+        if (avgReflexMs && avgReflexMs <= 270 && r.type === 'speed') matchPt += 4;
+
+        return { ...r, matchPt: Math.min(99, matchPt), recTension: `${minLbs}〜${maxLbs} lbs` };
+      }).sort((a, b) => b.matchPt - a.matchPt);
+
+      const brandColors = { YONEX: "#10b981", MIZUNO: "#3b82f6", GOSEN: "#f59e0b", LINING: "#ef4444" };
+
+      container.innerHTML = scoredList.map(r => `
+        <div class="racket-card">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span class="badge-version" style="background:${brandColors[r.brand]}; color:#090d16;">${r.brand}</span>
+              <span style="font-weight:900; color:#34d399; font-size:0.82rem;">AIマッチ度: ${r.matchPt}%</span>
+            </div>
+            <div style="font-size:0.95rem; font-weight:800; margin-bottom:4px;">${r.name}</div>
+            <p style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:8px;">${r.desc}</p>
+          </div>
+          <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.73rem; color:#cbd5e1; line-height:1.45;">
+            <div>⚖️ 規格: <b>${r.weight}</b>（${r.balance}）</div>
+            <div>🧵 推奨ガット: <b>${r.stringRec}</b></div>
+            <div style="color:var(--accent-highlight);">🎯 あなたの推奨テンション: <b>${r.recTension}</b></div>
+          </div>
+        </div>
+      `).join('');
+    };
   </script>
 </body>
 </html>
