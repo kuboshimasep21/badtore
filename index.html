@@ -9387,30 +9387,32 @@
       renderMatchCourt();
 
     });
-   /* =========================================================================
-       🚀 バドトレPRO v10.0 PRO 完全統合エンジン
-       1. 全8タブUI最適化 ＆ TAB 1・2・3・5 の操作性・ボタン配置整理
-       2. 🔊 iOS/iPadOS 矢印＆初速AIの音声コール完全対応 ＋ 音声・タメ時間微調整
-       3. 🏸 前腕「回内・回外」連動解析 ＆ わかりやすい実戦コーチング ＆ 3ステップ処方箋常設
-       4. 🔁 動画 A-B区間エンドレスループ再生 ＆ 🏸 ラケット診断の実測連動強化
-       5. 🧮 スコアボード「取得ゲーム数（セットカウント）＆ゲーム履歴」統合
-       6. 📋 TAB 8「AI練習メニュー自動編成（人数×時間×重点テーマ）・マイメニュー登録・練習記録」
+  /* =========================================================================
+       🚀 バドトレPRO v10.1 PRO 完全統合エンジン
+       1. 🎮 TAB 2(初速AI) ＆ TAB 3(骨格AI) 全画面内スタート/停止/カメラ操作バー統合
+       2. 📱 縦・横画面フルフィット比率補正 ＆ 全画面リアルタイム数値HUDオーバーレイ
+       3. 👁️ 初速AI：特大色分け矢印 ＋ 6マスミニコート表示 ＋ 反応後2.2秒キープ表示
+       4. 🗣️ 聞き取りやすい音声スピード(1.05x標準) ＆ iOS音声ロック解除 ＆ 5秒移動カウント
+       5. 🏸 回内・回外解析 ＆ 3ステップ処方箋常設 ＆ 動画A-Bループ ＆ ゲーム数スコア
+       6. 📋 TAB 8：AI練習メニュー自動編成（少人数・自宅対応）・マイメニュー登録・練習記録
     ========================================================================= */
 
     // =========================================================================
-    // 0. グローバル拡張状態 ＆ 起動時UI構築
+    // 0. グローバル設定 ＆ 音声合成エンジン初期化
     // =========================================================================
     let audioCustomSettings = {
-      voiceRate: 1.40,      // 1.2 (標準) | 1.4 (速め・実戦) | 1.7 (超速)
-      beepTone: 'high',     // 'high' (体育館クリア大音量) | 'normal' (標準) | 'low' (マイルド)
-      unweightLeadMs: 420   // 300 (超高速) | 420 (標準) | 600 (基礎確認)
+      voiceRate: 1.05,      // 1.05 (くっきり標準) | 1.25 (やや速め) | 1.45 (高速)
+      beepTone: 'high',     // 'high' (体育館クリア大音量) | 'normal' (標準) | 'low' (自宅マイルド)
+      unweightLeadMs: 420,  // 300 (超高速) | 420 (標準) | 600 (基礎確認)
+      rxKeepMs: 2200,       // 初速AIの反応後矢印キープ時間 (ms)
+      startCountdownSec: 5  // カメラ測定開始前の移動カウントダウン秒数
     };
 
     let videoLoopObserveMode = false;
     let selectedJapaneseVoice = null;
     let fwExtraCenterTimerId = null;
+    let poseCountdownTimerId = null;
 
-    // 練習メニュー＆ログ用データベース
     let currentMenuPlan = {
       title: "今日の練習メニュー",
       targetMin: 150,
@@ -9420,7 +9422,6 @@
     let savedMenusDB = [];
     let practiceLogsDB = [];
 
-    // 音声合成の日本語ボイス取得（iOS/iPadOS/Android/PC対応）
     function initSpeechVoices() {
       if (!('speechSynthesis' in window)) return;
       const pickVoice = () => {
@@ -9434,7 +9435,93 @@
       window.speechSynthesis.onvoiceschanged = pickVoice;
     }
 
-    // 課題別の「わかりやすい実戦コーチング」＆「3段階ドリル処方箋」
+    // 方向別カラー＆6マスミニコート付き特大サイバー矢印ジェネレーター
+    function buildEnhancedArrowAndMiniCourtHTML(posObj, stateMode = 'active') {
+      if (stateMode === 'unweight') {
+        return `
+          <div style="display:flex; align-items:center; justify-content:center; gap:18px;">
+            <div style="width:clamp(140px, 32vmin, 240px); height:clamp(140px, 32vmin, 240px);">
+              ${buildCyberArrowSVG(0, 'unweight')}
+            </div>
+          </div>
+        `;
+      }
+
+      const id = posObj ? posObj.id : 0;
+      const deg = posObj ? posObj.angle : 0;
+
+      // 前衛(0,1)=シアン、サイド(2,3)=ライムグリーン、後衛(4,5)=オレンジレッド
+      let mainColor = "#fde047";
+      let subColor = "#f97316";
+      let glowColor = "rgba(251, 191, 36, 0.9)";
+      if (id === 0 || id === 1) {
+        mainColor = "#67e8f9"; subColor = "#06b6d4"; glowColor = "rgba(6, 182, 212, 0.95)";
+      } else if (id === 2 || id === 3) {
+        mainColor = "#bef264"; subColor = "#10b981"; glowColor = "rgba(16, 185, 129, 0.95)";
+      } else {
+        mainColor = "#fda4af"; subColor = "#f43f5e"; glowColor = "rgba(244, 63, 94, 0.95)";
+      }
+
+      const gradId = "arrowGrad_" + id;
+      const arrowSvg = `
+        <svg viewBox="0 0 120 120" style="width:100%; height:100%; transform: rotate(${deg}deg); filter: drop-shadow(0 0 18px ${glowColor});">
+          <defs>
+            <linearGradient id="${gradId}" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff" />
+              <stop offset="35%" stop-color="${mainColor}" />
+              <stop offset="100%" stop-color="${subColor}" />
+            </linearGradient>
+          </defs>
+          <polygon points="60,4 110,58 82,58 82,112 38,112 38,58 10,58" fill="url(#${gradId})" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" />
+          <polygon points="60,22 84,50 68,50 68,98 52,98 52,50 36,50" fill="rgba(4, 8, 18, 0.45)" />
+        </svg>
+      `;
+
+      // 6マスミニコート（どこが光っているか瞬時にわかるガイド）
+      const labels = ["①左前", "②右前", "③左横", "④右横", "⑤左奥", "⑥右奥"];
+      const miniCells = labels.map((lb, idx) => {
+        const isHit = (idx === id);
+        return `
+          <div style="
+            background:${isHit ? mainColor : 'rgba(15,23,42,0.85)'};
+            color:${isHit ? '#020617' : '#64748b'};
+            border:2px solid ${isHit ? '#ffffff' : 'rgba(255,255,255,0.2)'};
+            border-radius:6px;
+            font-weight:900;
+            font-size:clamp(0.68rem, 1.8vmin, 0.9rem);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:${isHit ? '0 0 16px ' + glowColor : 'none'};
+            transform:${isHit ? 'scale(1.06)' : 'none'};
+          ">${lb}</div>
+        `;
+      }).join('');
+
+      return `
+        <div style="display:flex; align-items:center; justify-content:center; gap:clamp(12px, 3vmin, 28px); flex-wrap:wrap;">
+          <div style="width:clamp(155px, 36vmin, 270px); height:clamp(155px, 36vmin, 270px); display:flex; align-items:center; justify-content:center;">
+            ${arrowSvg}
+          </div>
+          <div style="
+            display:grid;
+            grid-template-columns:repeat(2, 1fr);
+            grid-template-rows:repeat(3, 1fr);
+            gap:5px;
+            width:clamp(115px, 24vmin, 175px);
+            height:clamp(145px, 30vmin, 220px);
+            background:rgba(6, 78, 59, 0.85);
+            border:2.5px solid rgba(255,255,255,0.85);
+            border-radius:10px;
+            padding:6px;
+          ">
+            ${miniCells}
+          </div>
+        </div>
+      `;
+    }
+
+    // 課題別の実戦コーチング＆3段階ドリル処方箋
     const AI_CAUSE_PRESCRIPTIONS = {
       racket_drop: {
         title: "ラケット下がり ＆ 手首の寝すぎ（リストスタンド不足）",
@@ -9505,9 +9592,9 @@
     };
 
     // =========================================================================
-    // 1. 🔊 音声コール＆ビープ音の完全対策（iPhone/iPad Safari ブロック解除対応）
+    // 1. 🔊 音声コール＆ビープ音（ビープ音と声の重なり防止・くっきり発声）
     // =========================================================================
-    playBeep = function(freq = 880, durationMs = 100) {
+    playBeep = function(freq = 880, durationMs = 90) {
       try {
         unlockAudioContext();
         const osc = audioCtx.createOscillator();
@@ -9516,12 +9603,12 @@
         let mult = 1.0;
         let vol = 0.28;
         if (audioCustomSettings.beepTone === 'high') {
-          mult = 1.18;
-          vol = 0.42;
+          mult = 1.15;
+          vol = 0.40;
           osc.type = 'triangle';
         } else if (audioCustomSettings.beepTone === 'low') {
           mult = 0.82;
-          vol = 0.22;
+          vol = 0.20;
           osc.type = 'sine';
         } else {
           osc.type = 'sine';
@@ -9539,7 +9626,6 @@
     speakText = function(text, rateOverride) {
       if (!('speechSynthesis' in window) || !text) return;
       try {
-        // iOS Safariでキューが詰まるのを防ぐため再生中のみクリアして即時発火
         window.speechSynthesis.cancel();
         if (window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
@@ -9547,14 +9633,22 @@
         const utter = new SpeechSynthesisUtterance(String(text));
         utter.lang = 'ja-JP';
         if (selectedJapaneseVoice) utter.voice = selectedJapaneseVoice;
-        utter.rate = rateOverride || audioCustomSettings.voiceRate || 1.40;
-        utter.pitch = 1.05;
+        // 短い方向指示が早口で聞き取れない現象を防ぐため標準を1.05倍に設定
+        utter.rate = rateOverride || audioCustomSettings.voiceRate || 1.05;
+        utter.pitch = 1.02;
         utter.volume = 1.0;
         window.speechSynthesis.speak(utter);
       } catch (e) {}
     };
 
-    // ユーザーのボタンタップ直後に音声合成エンジンをアンロックする関数
+    // ビープ音の直後（65ms後）に声を出すことで、音が重なって聞き取りづらくなるのを防ぐ関数
+    function playBeepThenSpeak(beepFreq, beepMs, word, rateOverride) {
+      playBeep(beepFreq, beepMs);
+      setTimeout(() => {
+        speakText(word, rateOverride);
+      }, 65);
+    }
+
     function unlockSpeechEngine(initialWord = "") {
       unlockAudioContext();
       if (!('speechSynthesis' in window)) return;
@@ -9565,7 +9659,7 @@
         utter.lang = 'ja-JP';
         if (selectedJapaneseVoice) utter.voice = selectedJapaneseVoice;
         utter.volume = initialWord ? 1.0 : 0.01;
-        utter.rate = audioCustomSettings.voiceRate || 1.40;
+        utter.rate = audioCustomSettings.voiceRate || 1.05;
         window.speechSynthesis.speak(utter);
       } catch (e) {}
     }
@@ -9575,11 +9669,10 @@
       const toneEl = document.getElementById(sourcePrefix + 'BeepTone');
       const leadEl = document.getElementById(sourcePrefix + 'UnweightMs');
 
-      if (rateEl) audioCustomSettings.voiceRate = Number(rateEl.value) || 1.40;
+      if (rateEl) audioCustomSettings.voiceRate = Number(rateEl.value) || 1.05;
       if (toneEl) audioCustomSettings.beepTone = toneEl.value || 'high';
       if (leadEl) audioCustomSettings.unweightLeadMs = Number(leadEl.value) || 420;
 
-      // TAB 1 と TAB 2 の両方のセレクトボックスを同期
       ['fwCfg', 'arCfg'].forEach(prefix => {
         const r = document.getElementById(prefix + 'VoiceRate');
         const t = document.getElementById(prefix + 'BeepTone');
@@ -9603,9 +9696,10 @@
             <div class="form-group">
               <label>🗣️ 声の速さ</label>
               <select id="${prefix}VoiceRate" onchange="syncAudioSettingsUI('${prefix}')" style="font-size:0.74rem; padding:6px;">
-                <option value="1.2">標準 (1.2x)</option>
-                <option value="1.4" selected>速め・実戦 (1.4x)</option>
-                <option value="1.7">超速・高速用 (1.7x)</option>
+                <option value="0.95">ゆっくり (0.95x)</option>
+                <option value="1.05" selected>くっきり標準 (1.05x)</option>
+                <option value="1.25">やや速め (1.25x)</option>
+                <option value="1.45">高速用 (1.45x)</option>
               </select>
             </div>
             <div class="form-group">
@@ -9630,10 +9724,132 @@
     }
 
     // =========================================================================
-    // 2. TAB 1（フットワーク）＆ TAB 2（初速・矢印）の操作性＆音声完全修正
+    // 2. 📱 全画面比率の完全レスポンシブ化 ＆ TAB 2・TAB 3 全画面操作バー統合
     // =========================================================================
-    function upgradeTab1AndTab2UI() {
-      // TAB 1: センター帰還オプション追加 ＆ 音声設定パネル挿入
+    function injectFullscreenAndHudStyles() {
+      const styleEl = document.createElement('style');
+      styleEl.textContent = `
+        @media (min-width: 820px) {
+          .nav-scroller { grid-template-columns: repeat(8, minmax(0, 1fr)) !important; }
+        }
+        /* 全画面時の縦・横ワイド比率フルフィット補正 */
+        #reflexViewport:fullscreen, #reflexViewport:-webkit-full-screen, #reflexViewport.pseudo-fullscreen,
+        #poseViewport:fullscreen, #poseViewport:-webkit-full-screen, #poseViewport.pseudo-fullscreen {
+          padding: calc(6px + env(safe-area-inset-top, 0px))
+                   calc(8px + env(safe-area-inset-right, 0px))
+                   calc(8px + env(safe-area-inset-bottom, 0px))
+                   calc(8px + env(safe-area-inset-left, 0px)) !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: flex-start !important;
+          align-items: stretch !important;
+          background: #02050b !important;
+        }
+        #reflexViewport:fullscreen .viewport-header-bar, #reflexViewport.pseudo-fullscreen .viewport-header-bar,
+        #poseViewport:fullscreen .viewport-header-bar, #poseViewport.pseudo-fullscreen .viewport-header-bar {
+          flex-shrink: 0 !important;
+          padding: 6px 10px !important;
+          background: rgba(12, 21, 40, 0.96) !important;
+          border-bottom: 1px solid var(--border-subtle) !important;
+          z-index: 60 !important;
+        }
+        #reflexViewport:fullscreen .viewport-stage, #reflexViewport.pseudo-fullscreen .viewport-stage,
+        #poseViewport:fullscreen .viewport-stage, #poseViewport.pseudo-fullscreen .viewport-stage {
+          flex: 1 1 auto !important;
+          width: 100% !important;
+          height: 100% !important;
+          max-height: none !important;
+          min-height: 0 !important;
+          position: relative !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          overflow: hidden !important;
+        }
+        #reflexViewport:fullscreen .viewport-canvas, #reflexViewport.pseudo-fullscreen .viewport-canvas,
+        #poseViewport:fullscreen .viewport-canvas, #poseViewport.pseudo-fullscreen .viewport-canvas {
+          width: 100% !important;
+          height: 100% !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
+          object-fit: contain !important;
+        }
+        /* カメラ画面上のリアルタイム数値フローティングHUD */
+        .live-floating-hud {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          z-index: 35;
+          background: rgba(4, 8, 18, 0.78);
+          border: 1px solid rgba(56, 189, 248, 0.4);
+          border-radius: 10px;
+          padding: 6px 11px;
+          font-size: clamp(0.74rem, 2vmin, 0.92rem);
+          font-weight: 900;
+          color: #f8fafc;
+          pointer-events: none;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          align-items: center;
+          backdrop-filter: blur(4px);
+        }
+        /* 初速AIのオーバーレイ背景を半透明にして自分の姿勢も見えるように改善 */
+        #reflexBanner {
+          background: rgba(4, 7, 15, 0.52) !important;
+          padding: 10px !important;
+        }
+        #reflexBanner .banner-svg-arrow {
+          width: auto !important;
+          height: auto !important;
+          margin-bottom: 8px !important;
+        }
+        #reflexBannerMain {
+          font-size: clamp(1.8rem, 6vmin, 3.3rem) !important;
+          text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95);
+        }
+        #reflexBannerSub {
+          font-size: clamp(0.95rem, 2.8vmin, 1.35rem) !important;
+          background: rgba(2, 6, 23, 0.85);
+          padding: 4px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.2);
+        }
+        .menu-item-row {
+          background: var(--bg-surface);
+          border: 1px solid var(--border-subtle);
+          border-radius: 10px;
+          padding: 9px 10px;
+          margin-bottom: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .menu-item-row.completed-row {
+          opacity: 0.68;
+          border-color: var(--accent-primary);
+          background: rgba(16, 185, 129, 0.08);
+        }
+        .theme-check-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: var(--bg-base);
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          padding: 6px 9px;
+          font-size: 0.75rem;
+          font-weight: 800;
+          cursor: pointer;
+          user-select: none;
+        }
+        .theme-check-pill input { accent-color: var(--accent-primary); width: 15px; height: 15px; }
+      `;
+      document.head.appendChild(styleEl);
+    }
+
+    function upgradeAllViewportsAndControlsUI() {
+      // 1. TAB 1: センター帰還合図 ＆ 音声設定
       const centerSel = document.getElementById('fwCenterCallMode');
       if (centerSel && !centerSel.querySelector('option[value="center_and_split"]')) {
         const opt1 = document.createElement('option');
@@ -9654,7 +9870,7 @@
         fwSettingsCard.appendChild(div);
       }
 
-      // TAB 2: 矢印練習に「一時停止」「音声確認」ボタンと音声微調整パネルを追加
+      // 2. TAB 2 (モード① 矢印): 一時停止ボタン ＆ 音声設定
       const arrowBtnGroup = document.querySelector('#arrowFullscreenStage .fw-top-bar .btn-group');
       if (arrowBtnGroup && !document.getElementById('btnArrowPause')) {
         const pauseBtn = document.createElement('button');
@@ -9673,9 +9889,142 @@
         div.innerHTML = buildAudioConfigHTML('arCfg');
         arrowSettingsCard.appendChild(div);
       }
+
+      // 3. TAB 2 (モード② 初速AIカメラ): 全画面ヘッダーバー内に全操作ボタンを格納 ＆ リアルタイムHUD設置
+      const rxHeaderBar = document.querySelector('#reflexViewport .viewport-header-bar');
+      if (rxHeaderBar) {
+        rxHeaderBar.innerHTML = `
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span class="viewport-status-text" id="reflexHudStatus">⚪ カメラ待機中</span>
+            <span class="badge-version" id="reflexStanceLiveBadge" style="background:#334155; color:#fff;">🛡️ 構え: 待機中</span>
+          </div>
+          <div class="btn-group">
+            <button id="btnReflexCamToggleInFs" class="btn btn-emerald" style="padding:4px 9px; font-size:0.74rem;" onclick="toggleLiveCamera('reflex')">📷 カメラ起動</button>
+            <button class="btn" style="padding:4px 8px; font-size:0.72rem;" onclick="switchCameraFacing()">🔄 内/外</button>
+            <button id="btnReflexStartInFs" class="btn btn-amber" style="padding:4px 10px; font-size:0.74rem;" onclick="startReflexAISession()">▶️ 測定スタート</button>
+            <button class="btn btn-rose" style="padding:4px 9px; font-size:0.74rem;" onclick="stopReflexAISession()">⏹️ 停止</button>
+            <button class="btn btn-cyan-outline" style="padding:4px 9px; font-size:0.74rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面 ON/OFF</button>
+          </div>
+        `;
+      }
+
+      const rxStage = document.querySelector('#reflexViewport .viewport-stage');
+      if (rxStage && !document.getElementById('rxLiveFloatingHud')) {
+        const hud = document.createElement('div');
+        hud.id = 'rxLiveFloatingHud';
+        hud.className = 'live-floating-hud';
+        hud.innerHTML = `
+          <span id="rxHudRep">進捗: 0/5</span>
+          <span style="color:#38bdf8;" id="rxHudLast">直前: -- ms</span>
+          <span style="color:#fbbf24;" id="rxHudAvg">平均: -- ms</span>
+          <span style="color:#34d399;" id="rxHudBest">最速: -- ms</span>
+        `;
+        rxStage.appendChild(hud);
+      }
+
+      // 初速AIの設定カードに「矢印キープ時間」と「開始前カウント秒数」を追加
+      const rxSettingsCard = document.querySelector('#subPanelCameraReflex .split-grid > div:last-child > .card');
+      if (rxSettingsCard && !document.getElementById('rxKeepTimeSelect')) {
+        const extraRow = document.createElement('div');
+        extraRow.className = 'form-grid';
+        extraRow.style = 'margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);';
+        extraRow.innerHTML = `
+          <div class="form-group">
+            <label>⑤ 反応後の矢印キープ表示</label>
+            <select id="rxKeepTimeSelect" onchange="audioCustomSettings.rxKeepMs = Number(this.value)">
+              <option value="1600">1.6秒（テンポ重視）</option>
+              <option value="2200" selected>2.2秒（標準・方向とmsをしっかり確認）</option>
+              <option value="3200">3.2秒（ゆっくりフォーム確認）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>⑥ スタート後の移動カウント</label>
+            <select id="rxStartCdSelect" onchange="audioCustomSettings.startCountdownSec = Number(this.value)">
+              <option value="3">3秒（すぐ開始）</option>
+              <option value="5" selected>5秒（全画面タップ後に移動可）</option>
+              <option value="8">8秒（余裕をもって構える）</option>
+            </select>
+          </div>
+        `;
+        rxSettingsCard.appendChild(extraRow);
+      }
+
+      // 4. TAB 3 (骨格AIカメラ＆動画): 全画面ヘッダーバー内にスタート・停止・カメラ切替ボタンを格納 ＆ リアルタイムHUD設置
+      const poseHeaderBar = document.querySelector('#poseViewport .viewport-header-bar');
+      if (poseHeaderBar) {
+        poseHeaderBar.innerHTML = `
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span>
+            <span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span>
+          </div>
+          <div class="btn-group">
+            <button id="btnPoseCamToggleInFs" class="btn btn-emerald" style="padding:4px 9px; font-size:0.74rem;" onclick="toggleLiveCamera('pose')">📷 カメラ起動</button>
+            <button class="btn" style="padding:4px 8px; font-size:0.72rem;" onclick="switchCameraFacing()">🔄 内/外</button>
+            <button id="btnPoseStartInFs" class="btn btn-amber" style="padding:4px 10px; font-size:0.74rem;" onclick="startTimedPoseSession()">▶️ 10秒測定スタート</button>
+            <button class="btn" style="padding:4px 8px; font-size:0.72rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button>
+            <button class="btn btn-rose" style="padding:4px 9px; font-size:0.74rem;" onclick="stopTimedPoseSession()">⏹️ 測定停止</button>
+            <button class="btn btn-cyan-outline" style="padding:4px 9px; font-size:0.74rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面 ON/OFF</button>
+          </div>
+        `;
+      }
+
+      const poseStage = document.querySelector('#poseViewport .viewport-stage');
+      if (poseStage && !document.getElementById('poseLiveFloatingHud')) {
+        const hud = document.createElement('div');
+        hud.id = 'poseLiveFloatingHud';
+        hud.className = 'live-floating-hud';
+        hud.innerHTML = `
+          <span style="color:#60a5fa;" id="poseHudSh">肩(打点): --°</span>
+          <span style="color:#34d399;" id="poseHudEl">肘: --°</span>
+          <span style="color:#fbbf24;" id="poseHudKn">膝: --°</span>
+          <span style="color:#a3e635;" id="poseHudPro">回内: --pt</span>
+          <span style="color:#f43f5e;" id="poseHudStatusTimer">待機中</span>
+        `;
+        poseStage.appendChild(hud);
+      }
     }
 
-    // TAB 1 フットワーク停止・一時停止時にセンター帰還タイマーも確実にクリア
+    // カメラ起動・停止時に全画面バー内のボタン表記も連動更新
+    const _baseUpdateMediaControlsUI = updateMediaControlsUI;
+    updateMediaControlsUI = function() {
+      _baseUpdateMediaControlsUI();
+
+      const btnRxFs = document.getElementById('btnReflexCamToggleInFs');
+      const btnPoseCamFs = document.getElementById('btnPoseCamToggleInFs');
+      const btnPoseStartFs = document.getElementById('btnPoseStartInFs');
+
+      if (btnRxFs) {
+        if (activeCameraMode === 'reflex' && activeInputType === 'camera') {
+          btnRxFs.textContent = "⏹️ カメラOFF";
+          btnRxFs.className = "btn btn-rose";
+        } else {
+          btnRxFs.textContent = "📷 カメラ起動";
+          btnRxFs.className = "btn btn-emerald";
+        }
+      }
+
+      if (btnPoseCamFs && btnPoseStartFs) {
+        if (activeCameraMode === 'pose') {
+          if (activeInputType === 'video') {
+            btnPoseCamFs.textContent = "📷 カメラへ切替";
+            btnPoseCamFs.className = "btn btn-emerald";
+            btnPoseStartFs.textContent = "🔄 区間を再診断";
+          } else {
+            btnPoseCamFs.textContent = "⏹️ カメラOFF";
+            btnPoseCamFs.className = "btn btn-rose";
+            btnPoseStartFs.textContent = "▶️ 10秒測定スタート";
+          }
+        } else {
+          btnPoseCamFs.textContent = "📷 カメラ起動";
+          btnPoseCamFs.className = "btn btn-emerald";
+          btnPoseStartFs.textContent = "▶️ 10秒測定スタート";
+        }
+      }
+    };
+
+    // =========================================================================
+    // 3. TAB 1（フットワーク）＆ TAB 2（矢印練習・初速AI）の動作エンジン
+    // =========================================================================
     const _baseStopVoiceFootwork = stopVoiceFootwork;
     stopVoiceFootwork = function() {
       clearTimeout(fwExtraCenterTimerId);
@@ -9731,11 +10080,9 @@
         callLabel.textContent = `👉 ${posObj.name}！`;
 
         if (voiceMode === 'direction') {
-          playBeep(960, 80);
-          speakText(posObj.name);
+          playBeepThenSpeak(960, 75, posObj.name);
         } else if (voiceMode === 'number') {
-          playBeep(960, 80);
-          speakText(posObj.numName);
+          playBeepThenSpeak(960, 75, posObj.numName);
         } else if (voiceMode === 'beep_only') {
           playBeep(1040, 120);
         }
@@ -9776,13 +10123,12 @@
       fwState.timerId = setTimeout(runNextFootworkCall, fwState.intervalMs);
     };
 
-    // TAB 2: 矢印リアクション練習（iOS音声ロック解除＋一時停止対応）
+    // TAB 2 (モード①): ネオン矢印リアクション練習
     arrowDrillState.paused = false;
 
     startArrowReactionDrill = function(goFullscreen = false) {
       const voiceMode = document.getElementById('arrowVoiceMode').value;
 
-      // 一時停止からの再開処理
       if (arrowDrillState.running && arrowDrillState.paused) {
         arrowDrillState.paused = false;
         const pBtn = document.getElementById('btnArrowPause');
@@ -9793,7 +10139,6 @@
         return;
       }
 
-      // 既存タイマーを止めてから、ユーザー操作の同期タイミング内で音声ロックを確実に解除する
       arrowDrillState.running = false;
       arrowDrillState.paused = false;
       clearTimeout(arrowDrillState.timerId);
@@ -9834,7 +10179,7 @@
       holder.innerHTML = buildCyberArrowSVG(0, 'ready');
       txt.textContent = "構えて...";
 
-      arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1250);
+      arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1300);
     };
 
     function pauseArrowReactionDrill() {
@@ -9880,8 +10225,7 @@
         document.getElementById('arrowDrillBadge').textContent = "✅ 完了";
         const pBtn = document.getElementById('btnArrowPause');
         if (pBtn) pBtn.disabled = true;
-        playBeep(1200, 320);
-        speakText("リアクション練習完了！お疲れ様でした！");
+        playBeepThenSpeak(1200, 250, "リアクション練習完了！お疲れ様でした！");
         arrowDrillState.running = false;
         releaseAppWakeLock();
         return;
@@ -9921,32 +10265,101 @@
         holder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
         txt.textContent = chosen.name + "！";
 
-        playBeep(1080, 95);
         if (voiceMode === 'voice_and_beep') {
-          speakText(chosen.name);
+          playBeepThenSpeak(1080, 80, chosen.name);
+        } else {
+          playBeep(1080, 110);
         }
 
-        arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1650);
+        arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1950);
       }, preDelay);
     };
 
-    // TAB 2 (モード②): 初速AIカメラ測定（音声アンロック＆左右バランス解析）
+    // =========================================================================
+    // 4. TAB 2 (モード②): 📷 初速AIカメラ測定（5秒カウント・特大矢印＆ミニコート・2.2秒キープ）
+    // =========================================================================
     let rxDetailTracker = {
       currentDir: null,
       waitHipYList: [],
       lastWristOk: true,
-      dirLogs: []
+      dirLogs: [],
+      cdIntervalId: null
     };
 
-    const _baseStartReflexAISession = startReflexAISession;
     startReflexAISession = function() {
+      unlockAudioContext();
+      if (activeCameraMode !== 'reflex' || activeInputType !== 'camera') {
+        alert("先に「📷 カメラ起動」を押して映像を表示してください！（全画面内のボタンからも起動できます）");
+        return;
+      }
+
+      stopReflexAISession();
+      requestAppWakeLock();
+
+      rxState.targetReps = Number(document.getElementById('rxTargetReps').value) || 5;
+      rxState.currentRep = 0;
+      rxState.resultsMs = [];
+      rxState.stepTypes = [];
+      rxState.stanceScores = [];
+      rxState.bestMs = 9999;
+      rxState.active = true;
+      rxState.phase = 'countdown';
+
       rxDetailTracker.dirLogs = [];
       rxDetailTracker.waitHipYList = [];
-      const cueMode = document.getElementById('rxCueMode').value;
-      if (cueMode === 'voice_dir') {
-        unlockSpeechEngine("測定スタート");
-      }
-      _baseStartReflexAISession();
+
+      document.getElementById('rxValProgress').textContent = `0 / ${rxState.targetReps} 回`;
+      document.getElementById('rxValLastMs').textContent = `-- ms`;
+      document.getElementById('rxValAvgMs').textContent = `-- ms`;
+      document.getElementById('rxValScorePt').textContent = `-- pt`;
+      document.getElementById('rxSessionBadge').textContent = `🔴 測定中 (全${rxState.targetReps}回)`;
+
+      const hudRep = document.getElementById('rxHudRep');
+      const hudLast = document.getElementById('rxHudLast');
+      const hudAvg = document.getElementById('rxHudAvg');
+      const hudBest = document.getElementById('rxHudBest');
+      if (hudRep) hudRep.textContent = `進捗: 0/${rxState.targetReps}`;
+      if (hudLast) hudLast.textContent = `直前: -- ms`;
+      if (hudAvg) hudAvg.textContent = `平均: -- ms`;
+      if (hudBest) hudBest.textContent = `最速: -- ms`;
+
+      // 全画面でボタンを押してから立ち位置へ戻れるようカウントダウンを開始
+      let cd = Number(audioCustomSettings.startCountdownSec) || 5;
+      const banner = document.getElementById('reflexBanner');
+      const svgHolder = document.getElementById('reflexBannerSvgHolder');
+      const mainTxt = document.getElementById('reflexBannerMain');
+      const subTxt = document.getElementById('reflexBannerSub');
+
+      banner.style.display = "flex";
+      svgHolder.innerHTML = "";
+      mainTxt.style.color = "#fbbf24";
+      mainTxt.textContent = `開始まで ${cd} 秒`;
+      subTxt.textContent = "カメラの正面（2.5〜3.5m）へ移動して構えてください";
+
+      playBeepThenSpeak(660, 80, String(cd));
+
+      rxDetailTracker.cdIntervalId = setInterval(() => {
+        if (!rxState.active) {
+          clearInterval(rxDetailTracker.cdIntervalId);
+          return;
+        }
+        cd--;
+        if (cd > 0) {
+          mainTxt.textContent = `開始まで ${cd} 秒`;
+          playBeepThenSpeak(660, 80, String(cd));
+        } else {
+          clearInterval(rxDetailTracker.cdIntervalId);
+          playBeep(1120, 160);
+          scheduleNextReflexRep();
+        }
+      }, 1000);
+    };
+
+    const _baseStopReflexAISession = stopReflexAISession;
+    stopReflexAISession = function() {
+      clearInterval(rxDetailTracker.cdIntervalId);
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      _baseStopReflexAISession();
     };
 
     scheduleNextReflexRep = function() {
@@ -9966,12 +10379,12 @@
       rxState.baselineHip = null;
       rxDetailTracker.waitHipYList = [];
 
-      svgHolder.innerHTML = buildCyberArrowSVG(0, 'unweight');
+      svgHolder.innerHTML = buildEnhancedArrowAndMiniCourtHTML(null, 'unweight');
       mainTxt.style.color = "#38bdf8";
       mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：構えて待機...`;
       subTxt.textContent = "手首を立てて静かに待ち、矢印が出た瞬間にスッと一歩目を出してください";
 
-      const randomWait = 1800 + Math.floor(Math.random() * 1400);
+      const randomWait = 1700 + Math.floor(Math.random() * 1300);
       rxState.timerId = setTimeout(() => {
         if (!rxState.active) return;
         const chosen = FW_POSITIONS[Math.floor(Math.random() * FW_POSITIONS.length)];
@@ -9981,33 +10394,95 @@
         rxState.phase = 'cue_active';
         rxState.cueTime = performance.now();
 
-        svgHolder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
+        // 特大色分け矢印 ＋ 6マスミニコートを同時表示
+        svgHolder.innerHTML = buildEnhancedArrowAndMiniCourtHTML(chosen, 'active');
         mainTxt.style.color = "#fbbf24";
-        mainTxt.textContent = `${chosen.name}！`;
-        subTxt.textContent = "抜重してスタート！";
+        mainTxt.textContent = `👉 ${chosen.name}！`;
+        subTxt.textContent = "今すぐ抜重・ステップ始動！";
 
-        playBeep(1060, 95);
         if (cueMode === 'voice_dir') {
-          speakText(chosen.name);
+          playBeepThenSpeak(1060, 75, chosen.name);
+        } else {
+          playBeep(1060, 110);
         }
       }, randomWait);
     };
 
-    const _baseRenderReflexAIPose = renderReflexAIPose;
+    // 待機中の微細な揺れで誤発火しないよう140ms未満のフライング揺れをガード
     renderReflexAIPose = function(results) {
-      if (rxState.active && rxState.phase === 'ready_wait' && results && results.poseLandmarks) {
+      const canvas = document.getElementById('reflexCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+      if (results.poseLandmarks) {
         const lm = results.poseLandmarks;
+        const stanceEval = evaluateReadyStanceQuality(lm);
+
+        const liveBadge = document.getElementById('reflexStanceLiveBadge');
+        if (liveBadge) {
+          if (stanceEval.isGood) {
+            liveBadge.style.background = '#10b981';
+            liveBadge.style.color = '#020617';
+            liveBadge.textContent = `🟢 ${stanceEval.mainIssue}`;
+          } else {
+            liveBadge.style.background = '#f59e0b';
+            liveBadge.style.color = '#020617';
+            liveBadge.textContent = `⚠️ ${stanceEval.mainIssue}`;
+          }
+        }
+
+        drawConnectors(ctx, lm, POSE_CONNECTIONS, { color: stanceEval.isGood ? '#10b981' : '#fbbf24', lineWidth: 3 });
+        drawLandmarks(ctx, lm, { color: '#38bdf8', lineWidth: 2, radius: 4 });
+
+        const hipX = (lm[23].x + lm[24].x) / 2;
         const hipY = (lm[23].y + lm[24].y) / 2;
-        const shY = (lm[11].y + lm[12].y) / 2;
-        const tLen = Math.max(0.12, Math.abs(hipY - shY));
-        rxDetailTracker.waitHipYList.push(hipY / tLen);
-        const stEval = evaluateReadyStanceQuality(lm);
-        rxDetailTracker.lastWristOk = stEval.isWristStandOk && stEval.wristScore >= 80;
+        const midShY = (lm[11].y + lm[12].y) / 2;
+        const torsoLen = Math.max(0.12, Math.abs(hipY - midShY));
+        const kneeDeg = stanceEval.kneeDeg;
+
+        if (rxState.phase === 'ready_wait') {
+          rxState.baselineHip = { x: hipX, y: hipY, stancePt: stanceEval.totalReadyPt };
+          rxState.baselineKneeDeg = kneeDeg;
+          rxDetailTracker.waitHipYList.push(hipY / torsoLen);
+          rxDetailTracker.lastWristOk = stanceEval.isWristStandOk && stanceEval.wristScore >= 80;
+        }
+
+        if (rxState.phase === 'cue_active' && rxState.baselineHip) {
+          const elapsedMs = performance.now() - rxState.cueTime;
+          // 140ms未満は人間の反応限界未満（揺れ）のためスキップして基準姿勢を更新
+          if (elapsedMs < 140) {
+            rxState.baselineHip = { x: hipX, y: hipY, stancePt: stanceEval.totalReadyPt };
+            rxState.baselineKneeDeg = kneeDeg;
+          } else {
+            const sens = document.getElementById('rxSensitivity').value;
+            const thresh = sens === 'high' ? 0.08 : (sens === 'low' ? 0.145 : 0.105);
+
+            const dx = Math.abs(hipX - rxState.baselineHip.x) / torsoLen;
+            const dy = (hipY - rxState.baselineHip.y) / torsoLen;
+            const totalMove = Math.hypot(dx, dy);
+            const kneeChange = Math.abs(rxState.baselineKneeDeg - kneeDeg);
+
+            if (totalMove > thresh || kneeChange >= 10) {
+              const reactionMs = Math.round(elapsedMs);
+              rxState.phase = 'result_hold';
+
+              const modeSetting = document.getElementById('rxStepPattern').value;
+              let detectedType = "抜重ステップ";
+              if (modeSetting === 'jump' || (modeSetting === 'auto' && dy < -0.035)) {
+                detectedType = "飛び込みステップ";
+              }
+
+              recordSingleReflexResult(reactionMs, detectedType, rxState.baselineHip.stancePt);
+            }
+          }
+        }
       }
-      _baseRenderReflexAIPose(results);
+      ctx.restore();
     };
 
-    const _baseRecordSingleReflexResult = recordSingleReflexResult;
+    // 反応検知後も「特大矢印と6マスミニコート」を消さずに2.2秒間キープ表示する
     recordSingleReflexResult = function(ms, stepType, stancePt) {
       let bounceDev = 0;
       if (rxDetailTracker.waitHipYList.length >= 4) {
@@ -10026,7 +10501,46 @@
         wristOk: rxDetailTracker.lastWristOk,
         isBouncing: bounceDev > 0.045
       });
-      _baseRecordSingleReflexResult(ms, stepType, stancePt);
+
+      rxState.currentRep++;
+      rxState.resultsMs.push(ms);
+      rxState.stepTypes.push(stepType);
+      rxState.stanceScores.push(stancePt || 85);
+      if (ms < rxState.bestMs) rxState.bestMs = ms;
+
+      const avgMs = Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length);
+      const avgStance = Math.round(rxState.stanceScores.reduce((a, b) => a + b, 0) / rxState.stanceScores.length);
+      const speedPt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
+      const combinedPt = Math.round(speedPt * 0.7 + avgStance * 0.3);
+
+      document.getElementById('rxValProgress').textContent = `${rxState.currentRep} / ${rxState.targetReps} 回`;
+      document.getElementById('rxSubLastType').textContent = `直前: ${stepType}`;
+      document.getElementById('rxValLastMs').textContent = `${ms} ms`;
+      document.getElementById('rxValBestMs').textContent = `最速: ${rxState.bestMs} ms`;
+      document.getElementById('rxValAvgMs').textContent = `${avgMs} ms`;
+      document.getElementById('rxValScorePt').textContent = `${combinedPt} pt`;
+      document.getElementById('rxMaxScorePt').textContent = `構え安定: ${avgStance}%`;
+
+      // 全画面用フローティングHUDも即時更新
+      const hudRep = document.getElementById('rxHudRep');
+      const hudLast = document.getElementById('rxHudLast');
+      const hudAvg = document.getElementById('rxHudAvg');
+      const hudBest = document.getElementById('rxHudBest');
+      if (hudRep) hudRep.textContent = `進捗: ${rxState.currentRep}/${rxState.targetReps}`;
+      if (hudLast) hudLast.textContent = `直前: ${ms}ms (${chosen.name})`;
+      if (hudAvg) hudAvg.textContent = `平均: ${avgMs}ms`;
+      if (hudBest) hudBest.textContent = `最速: ${rxState.bestMs}ms`;
+
+      // 矢印とミニコートは消さずにそのまま残し、テキストだけタイム表示に更新！
+      const mainTxt = document.getElementById('reflexBannerMain');
+      const subTxt = document.getElementById('reflexBannerSub');
+      mainTxt.style.color = "#34d399";
+      mainTxt.textContent = `⚡ ${chosen.name}：${ms} ms！`;
+      subTxt.textContent = `判定: ${stepType}（構え ${stancePt}pt）｜ センターへ戻って構えてください`;
+      playBeep(1320, 85);
+
+      const keepMs = Number(audioCustomSettings.rxKeepMs) || 2200;
+      rxState.timerId = setTimeout(scheduleNextReflexRep, keepMs);
     };
 
     finishReflexAISession = function() {
@@ -10034,12 +10548,13 @@
       rxState.phase = 'idle';
       document.getElementById('reflexBanner').style.display = "none";
       document.getElementById('rxSessionBadge').textContent = `✅ 全${rxState.targetReps}回 測定完了`;
-      playBeep(1200, 300);
 
       const avgMs = Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length);
       const avgStance = Math.round(rxState.stanceScores.reduce((a, b) => a + b, 0) / rxState.stanceScores.length);
       const speedPt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
       const combinedPt = Math.round(speedPt * 0.7 + avgStance * 0.3);
+
+      playBeepThenSpeak(1200, 220, `測定完了。平均${avgMs}ミリ秒です`);
 
       const logs = rxDetailTracker.dirLogs;
       const rightLogs = logs.filter(l => l.isRightSide);
@@ -10099,7 +10614,7 @@
     };
 
     // =========================================================================
-    // 3. TAB 3: 前腕「回内・回外」解析 ＆ 3ステップ処方箋常設カード ＆ 動画区間ループ
+    // 5. TAB 3: 骨格AI（全画面5秒カウント＆停止対応・回内解析・3ステップ常設・ループ）
     // =========================================================================
     let poseDetailTracker = {
       frames: [],
@@ -10119,6 +10634,74 @@
       poseDetailTracker.supinationReady = false;
       _baseResetMaxMetrics();
     };
+
+    // TAB 3: 5秒音声カウントダウン付き測定スタート ＆ いつでも止められる測定停止関数
+    startTimedPoseSession = function() {
+      unlockAudioContext();
+      if (activeCameraMode !== 'pose' || activeInputType === 'idle') {
+        alert("先に「📷 カメラ起動」または「📁 動画読込」を選択してください！（全画面バーのボタンからも起動できます）");
+        return;
+      }
+
+      if (activeInputType === 'video') {
+        startAutoVideoDiagnosis();
+        return;
+      }
+
+      stopTimedPoseSession();
+
+      const dur = 10;
+      const overlay = document.getElementById('poseCountdownOverlay');
+      const numEl = document.getElementById('poseCountdownNum');
+      const btn = document.getElementById('btnStartPoseSession');
+      const btnFs = document.getElementById('btnPoseStartInFs');
+      if (btn) btn.disabled = true;
+      if (btnFs) btnFs.disabled = true;
+
+      let count = 5;
+      overlay.style.display = "flex";
+      numEl.textContent = count;
+      const hudTimer = document.getElementById('poseHudStatusTimer');
+      if (hudTimer) hudTimer.textContent = `開始まで ${count}秒`;
+
+      playBeepThenSpeak(660, 80, String(count));
+
+      poseCountdownTimerId = setInterval(() => {
+        count--;
+        if (count > 0) {
+          numEl.textContent = count;
+          if (hudTimer) hudTimer.textContent = `開始まで ${count}秒`;
+          playBeepThenSpeak(660, 80, String(count));
+        } else {
+          clearInterval(poseCountdownTimerId);
+          poseCountdownTimerId = null;
+          overlay.style.display = "none";
+          playBeepThenSpeak(1100, 150, "測定スタート");
+          beginPoseRecording(dur);
+        }
+      }, 1000);
+    };
+
+    function stopTimedPoseSession() {
+      if (poseCountdownTimerId) {
+        clearInterval(poseCountdownTimerId);
+        poseCountdownTimerId = null;
+      }
+      if (poseSession.timerId) {
+        clearInterval(poseSession.timerId);
+        poseSession.timerId = null;
+      }
+      poseSession.active = false;
+      const overlay = document.getElementById('poseCountdownOverlay');
+      if (overlay) overlay.style.display = "none";
+      const btn = document.getElementById('btnStartPoseSession');
+      const btnFs = document.getElementById('btnPoseStartInFs');
+      if (btn) btn.disabled = false;
+      if (btnFs) btnFs.disabled = false;
+      document.getElementById('sessionTimerLabel').textContent = "⏹️ 待機中";
+      const hudTimer = document.getElementById('poseHudStatusTimer');
+      if (hudTimer) hudTimer.textContent = "待機中";
+    }
 
     function evaluateForearmPronation(lm, dtSec) {
       const isLeft = userProfile.hand === 'left';
@@ -10185,6 +10768,20 @@
           aiMetrics.bestSnapshotMeta.supinationReady = poseDetailTracker.supinationReady;
         }
 
+        // 全画面用フローティングHUDを更新
+        const hudSh = document.getElementById('poseHudSh');
+        const hudEl = document.getElementById('poseHudEl');
+        const hudKn = document.getElementById('poseHudKn');
+        const hudPro = document.getElementById('poseHudPro');
+        const hudTimer = document.getElementById('poseHudStatusTimer');
+        if (hudSh) hudSh.textContent = `肩(打点): ${aiMetrics.shoulderDeg}° (MAX ${aiMetrics.maxShoulderDeg}°)`;
+        if (hudEl) hudEl.textContent = `肘: ${aiMetrics.elbowDeg}°`;
+        if (hudKn) hudKn.textContent = `膝: ${aiMetrics.kneeDeg}°`;
+        if (hudPro) hudPro.textContent = `回内: ${proEval.pronationPt}pt`;
+        if (hudTimer) {
+          hudTimer.textContent = poseSession.active ? `🔴 残り ${poseSession.remainingSec}秒` : `🟢 解析中`;
+        }
+
         if (poseSession.active) {
           poseDetailTracker.frames.push({
             shoulderDeg: aiMetrics.shoulderDeg,
@@ -10203,7 +10800,6 @@
       }
     };
 
-    // TAB 3 に「いつでも閲覧・追加できる課題別3ステップ練習メニューカード」を常設
     function injectAlwaysVisiblePrescriptionViewer() {
       const aiSummaryBox = document.getElementById('aiSummaryContent') ? document.getElementById('aiSummaryContent').parentNode : null;
       if (!aiSummaryBox || document.getElementById('permanentDrillCatalogCard')) return;
@@ -10275,7 +10871,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 動画A-B区間 エンドレスループ再生ボタン追加
     function injectVideoLoopToggleButton() {
       const videoCtrl = document.getElementById('videoControlPanel');
       if (!videoCtrl || document.getElementById('btnVideoLoopToggle')) return;
@@ -10319,9 +10914,11 @@
     finishPoseRecording = function(fromVideoAuto = false) {
       clearInterval(poseSession.timerId);
       poseSession.active = false;
-      document.getElementById('btnStartPoseSession').disabled = false;
+      const btn = document.getElementById('btnStartPoseSession');
+      const btnFs = document.getElementById('btnPoseStartInFs');
+      if (btn) btn.disabled = false;
+      if (btnFs) btnFs.disabled = false;
       document.getElementById('sessionTimerLabel').textContent = fromVideoAuto ? `✅ 動画区間診断完了` : `✅ 10秒精密測定完了`;
-      playBeep(1200, 250);
 
       if (fromVideoAuto && activeInputType === 'video') {
         const upVideo = document.getElementById('uploadedVideo');
@@ -10339,6 +10936,7 @@
       }
 
       if (poseSession.validFrames < 3) {
+        playBeep(600, 200);
         document.getElementById('aiSummaryContent').innerHTML = `
           <div style="color:#f43f5e; font-weight:800;">⚠️ 全身の関節が十分に映っていませんでした（有効フレーム不足）</div>
           <div>頭から足首までが画面内に収まる区間またはカメラ位置で再度測定してください。</div>
@@ -10421,6 +11019,14 @@
       totalScore = Math.min(100, Math.max(35, totalScore));
 
       document.getElementById('overallScoreBadge').textContent = `総合スコア: ${totalScore} / 100 pt`;
+      const hudTimer = document.getElementById('poseHudStatusTimer');
+      if (hudTimer) hudTimer.textContent = `✅ 総合 ${totalScore}pt`;
+
+      if (!fromVideoAuto) {
+        playBeepThenSpeak(1200, 220, `測定完了。総合スコア${totalScore}点です`);
+      } else {
+        playBeep(1200, 220);
+      }
 
       const factorCandidates = [
         { key: 'low_contact', score: isOverhead ? scoreContact : scoreContact + 15, goodText: `打点の高さ（肩 ${maxSh}°・肘 ${maxEl}°）が目標基準に達しており、高い位置でシャトルを捉えられています` },
@@ -10437,7 +11043,6 @@
       poseDetailTracker.lastWorstCauseKey = worstFactor.key;
       const rxPlan = AI_CAUSE_PRESCRIPTIONS[worstFactor.key] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
 
-      // 常設ドリルブラウザも自動的に今回の最優先課題へ同期
       renderManualDrillBrowser(worstFactor.key);
 
       const staminaComment = (firstHalfWristAvg - secondHalfWristAvg >= 12)
@@ -10493,7 +11098,7 @@
     };
 
     // =========================================================================
-    // 4. TAB 4: 🏸 ラケット診断（回内連動指数 ＆ 初速ms 実測連動）
+    // 6. TAB 4（ラケット診断）＆ TAB 5（ゲーム取得数スコアボード）
     // =========================================================================
     renderRacketRecommendations = function(brandFilter = 'ALL') {
       const container = document.getElementById('racketListContainer');
@@ -10569,9 +11174,6 @@
       `).join('');
     };
 
-    // =========================================================================
-    // 5. TAB 5: 🧮 スコアボード「ゲーム取得数（セットカウント）＆各ゲーム履歴」
-    // =========================================================================
     matchState.gamesA = 0;
     matchState.gamesB = 0;
     matchState.gameLog = [];
@@ -10720,48 +11322,9 @@
     };
 
     // =========================================================================
-    // 6. 📋 TAB 8: 「AI練習メニュー自動編成・マイメニュー登録・練習記録ログ」
+    // 7. 📋 TAB 8: 「AI練習メニュー自動編成・マイメニュー登録・練習記録ログ」
     // =========================================================================
     function injectMenuPlannerTabAndUI() {
-      // 8タブがスマホで4列×2段、PCで8列×1段に綺麗に並ぶようCSSを追加
-      const styleEl = document.createElement('style');
-      styleEl.textContent = `
-        @media (min-width: 820px) {
-          .nav-scroller { grid-template-columns: repeat(8, minmax(0, 1fr)) !important; }
-        }
-        .menu-item-row {
-          background: var(--bg-surface);
-          border: 1px solid var(--border-subtle);
-          border-radius: 10px;
-          padding: 9px 10px;
-          margin-bottom: 8px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        .menu-item-row.completed-row {
-          opacity: 0.68;
-          border-color: var(--accent-primary);
-          background: rgba(16, 185, 129, 0.08);
-        }
-        .theme-check-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          background: var(--bg-base);
-          border: 1px solid var(--border-subtle);
-          border-radius: 8px;
-          padding: 6px 9px;
-          font-size: 0.75rem;
-          font-weight: 800;
-          cursor: pointer;
-          user-select: none;
-        }
-        .theme-check-pill input { accent-color: var(--accent-primary); width: 15px; height: 15px; }
-      `;
-      document.head.appendChild(styleEl);
-
-      // ナビゲーションバーに8つ目のタブボタンを追加
       const nav = document.querySelector('.nav-scroller');
       if (nav && !document.getElementById('btn-tab-menu')) {
         const tabBtn = document.createElement('button');
@@ -10772,7 +11335,6 @@
         nav.appendChild(tabBtn);
       }
 
-      // メインコンテナに TAB 8 セクションを追加
       const mainContainer = document.querySelector('.main-container');
       if (mainContainer && !document.getElementById('tab-menu')) {
         const sec = document.createElement('section');
@@ -10791,7 +11353,6 @@
               </div>
             </div>
 
-            <!-- 🤖 AI自動編成の条件設定パネル -->
             <div class="card" style="background:var(--bg-panel); margin-bottom:12px;">
               <div style="font-weight:900; color:var(--accent-highlight); margin-bottom:8px; font-size:0.86rem;">
                 🤖 Step 1：今日の「練習人数・持ち時間・重点テーマ」を選ぶ（ゲーム練習なしの少人数に完全対応）
@@ -10827,7 +11388,7 @@
 
                 <div class="form-group">
                   <label>📂 登録済みマイメニューから呼び出す</label>
-                  <div style="display:grid; grid-template-columns: 1fr auto auto; gap:4px;">
+                  <div style="display:grid; grid-template-columns: 1fr auto; gap:4px;">
                     <select id="savedMenusSelect" onchange="loadSelectedMyMenu(this.value)">
                       <option value="">-- 保存メニューを選択 --</option>
                     </select>
@@ -10852,7 +11413,6 @@
               </button>
             </div>
 
-            <!-- 📊 現在のメニュー構成 ＆ 残り時間ゲージ -->
             <div class="split-grid">
               <div>
                 <div class="breakdown-box" style="margin-top:0; margin-bottom:10px;">
@@ -10868,10 +11428,8 @@
                   </div>
                 </div>
 
-                <!-- メニュー項目リスト描画エリア -->
                 <div id="menuItemsListContainer"></div>
 
-                <!-- ➕ 手動で項目を追加するフォーム -->
                 <div class="card" style="background:var(--bg-surface); margin-top:10px; margin-bottom:0; padding:10px;">
                   <div style="font-weight:900; font-size:0.78rem; color:var(--accent-secondary); margin-bottom:6px;">➕ 練習メニュー項目を自由に追加</div>
                   <div class="form-grid" style="grid-template-columns: 1.6fr 0.7fr 1fr; gap:6px; margin-bottom:6px;">
@@ -10892,7 +11450,6 @@
                 </div>
               </div>
 
-              <!-- 📝 右カラム：マイメニュー保存 ＆ 実施した練習記録（ログ） -->
               <div style="display:flex; flex-direction:column; gap:10px;">
                 <div class="card" style="background:var(--bg-panel); margin:0;">
                   <div style="font-weight:900; color:#34d399; margin-bottom:6px; font-size:0.86rem;">
@@ -10934,19 +11491,16 @@
       renderPracticeLogsHistoryUI();
     }
 
-    // 時間配分を目標分数ぴったり（100%）に丸めるヘルパー
     function allocateExactMinutes(totalMin, rawWeights) {
       const weightSum = rawWeights.reduce((a, b) => a + b, 0) || 1;
       let allocated = rawWeights.map(w => Math.max(2, Math.round((w / weightSum) * totalMin)));
       let diff = totalMin - allocated.reduce((a, b) => a + b, 0);
-      // 端数を一番比重の大きいメイン練習項目で調整して合計を1分単位で完全一致させる
       let maxIdx = 0;
       allocated.forEach((v, i) => { if (v > allocated[maxIdx]) maxIdx = i; });
       allocated[maxIdx] = Math.max(2, allocated[maxIdx] + diff);
       return allocated;
     }
 
-    // 🤖 条件（人数×持ち時間×重点テーマ）に応じたAIメニュー自動編成エンジン
     function generateAIMenuByConditions(showFeedback = true) {
       const pMode = document.getElementById('aiMenuPlayersMode') ? document.getElementById('aiMenuPlayersMode').value : 'gym_2';
       const targetMin = Math.max(5, Number(document.getElementById('aiMenuTargetMin') ? document.getElementById('aiMenuTargetMin').value : 150) || 150);
@@ -11069,11 +11623,9 @@
         weights.push(12);
 
       } else {
-        // 2人 / 3人 / 4人以上（体育館）
         const pLabel = pMode === 'gym_2' ? '2人マンツーマン' : (pMode === 'gym_3' ? '3人ローテ' : '4人以上');
         modeTitle = `🏟️ 体育館 ${targetMin}分（${pLabel}・黄金順序メニュー）`;
 
-        // ① ウォームアップ＆抜重
         templates.push({
           cat: "① アップ＆抜重",
           name: "ウォームアップ ＆ 静止待機からの抜重リアクション",
@@ -11083,7 +11635,6 @@
         });
         weights.push(10);
 
-        // ② 重点フットワーク矯正（基礎打ち前）
         if (useFootwork || useUnweight) {
           templates.push({
             cat: "② フットワーク矯正",
@@ -11095,7 +11646,6 @@
           weights.push(18);
         }
 
-        // ③ 手投げノック・分解フォームチェック（基礎打ち前に打点と回内を固める）
         if (useFeeding || useAIWeak) {
           templates.push({
             cat: "③ 手投げ分解ノック",
@@ -11107,7 +11657,6 @@
           weights.push(22);
         }
 
-        // ④ テーマ意識の基礎打ち
         templates.push({
           cat: "④ 基礎打ち（実戦意識）",
           name: "基礎打ち（ドライブ ➔ ドロップ＆ロブ ➔ クリア ➔ スマッシュ＆レシーブ）",
@@ -11117,7 +11666,6 @@
         });
         weights.push(16);
 
-        // ⑤ 人数に応じた応用・パターンノック
         if (pMode === 'gym_2') {
           templates.push({
             cat: "⑤ 半面・対角パターン",
@@ -11147,7 +11695,6 @@
           weights.push(26);
         }
 
-        // ⑥ ジャンプ・フィジカル（選択時）または 仕上げAI動画チェック＆ダウン
         if (useJump) {
           templates.push({
             cat: "⑥ ジャンプ＆反転軸",
@@ -11197,7 +11744,6 @@
       }
     }
 
-    // TAB 2 や TAB 3 の処方箋からワンタップで今日の練習メニューへ追加
     function addPrescriptionToMenuPlan(causeKey) {
       const plan = AI_CAUSE_PRESCRIPTIONS[causeKey] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
       currentMenuPlan.items.push({
@@ -11370,7 +11916,6 @@
       }
     }
 
-    // 💾 マイメニュー保存・呼出・削除
     function saveCurrentMenuToMyMenus() {
       const titleInput = document.getElementById('currentMenuTitleInput');
       const menuName = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : `マイメニュー (${currentMenuPlan.targetMin}分)`;
@@ -11419,14 +11964,12 @@
         return;
       }
       const idx = Number(sel.value);
-      const target = savedMenusDB[idx];
-      if (!target) return;
+      if (!savedMenusDB[idx]) return;
       savedMenusDB.splice(idx, 1);
       localStorage.setItem('badtore_saved_menus_v100', JSON.stringify(savedMenusDB));
       renderSavedMenusSelectUI();
     }
 
-    // 📝 実施した練習記録（ログ）の保存・一覧表示
     function recordCurrentMenuToLog() {
       if (!currentMenuPlan.items.length) return;
       const memoEl = document.getElementById('practiceLogMemoInput');
@@ -11510,7 +12053,7 @@
       } catch (e) { practiceLogsDB = []; }
     }
 
-    // 📲 TAB 6: iPhone ⇄ iPad データ引き継ぎに「マイメニュー」と「練習記録ログ」も完全統合
+    // 📲 TAB 6: iPhone ⇄ iPad データ引き継ぎ
     exportAllAppData = function() {
       const payload = {
         profilesList,
@@ -11576,18 +12119,20 @@
       }
     };
 
-    // 🚀 起動時にv10.0 PROのすべての拡張UIを初期化
+    // 🚀 起動時にv10.1 PROのすべての拡張UIを初期化
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.0 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
+      document.title = "バドトレPRO v10.1 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
       const verBadge = document.querySelector('header .badge-version');
-      if (verBadge) verBadge.textContent = "v10.0 PRO";
+      if (verBadge) verBadge.textContent = "v10.1 PRO";
 
       initSpeechVoices();
-      upgradeTab1AndTab2UI();
+      injectFullscreenAndHudStyles();
+      upgradeAllViewportsAndControlsUI();
       injectAlwaysVisiblePrescriptionViewer();
       injectVideoLoopToggleButton();
       initGameCountScoreboardUI();
       injectMenuPlannerTabAndUI();
+      updateMediaControlsUI();
       renderRacketRecommendations('ALL');
     });
   </script>
