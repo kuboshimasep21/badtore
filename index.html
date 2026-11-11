@@ -9388,22 +9388,53 @@
 
     });
    /* =========================================================================
-       🚀 v9.5 PRO アップグレードパッチ（わかりやすい実戦コーチング文言版）
-       1. バージョン表記 v9.5 PRO 自動反映
-       2. 直感的でわかりやすい実戦コーチング表現 ＆ 3段階処方箋ドリル
-       3. 前腕「回内・回外」連動解析エンジン
-       4. スコアボード「ゲーム取得数（セットカウント）＆ゲーム履歴」拡張
+       🚀 バドトレPRO v10.0 PRO 完全統合エンジン
+       1. 全8タブUI最適化 ＆ TAB 1・2・3・5 の操作性・ボタン配置整理
+       2. 🔊 iOS/iPadOS 矢印＆初速AIの音声コール完全対応 ＋ 音声・タメ時間微調整
+       3. 🏸 前腕「回内・回外」連動解析 ＆ わかりやすい実戦コーチング ＆ 3ステップ処方箋常設
+       4. 🔁 動画 A-B区間エンドレスループ再生 ＆ 🏸 ラケット診断の実測連動強化
+       5. 🧮 スコアボード「取得ゲーム数（セットカウント）＆ゲーム履歴」統合
+       6. 📋 TAB 8「AI練習メニュー自動編成（人数×時間×重点テーマ）・マイメニュー登録・練習記録」
     ========================================================================= */
 
-    // 0. 起動時にバージョン表記とスコアボード拡張UIを自動適用
-    window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v9.5 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
-      const verBadge = document.querySelector('header .badge-version');
-      if (verBadge) verBadge.textContent = "v9.5 PRO";
-      initGameCountScoreboardUI();
-    });
+    // =========================================================================
+    // 0. グローバル拡張状態 ＆ 起動時UI構築
+    // =========================================================================
+    let audioCustomSettings = {
+      voiceRate: 1.40,      // 1.2 (標準) | 1.4 (速め・実戦) | 1.7 (超速)
+      beepTone: 'high',     // 'high' (体育館クリア大音量) | 'normal' (標準) | 'low' (マイルド)
+      unweightLeadMs: 420   // 300 (超高速) | 420 (標準) | 600 (基礎確認)
+    };
 
-    // 1. 原因特定別の「わかりやすい実戦コーチング解説」＆「3段階ドリル処方箋」
+    let videoLoopObserveMode = false;
+    let selectedJapaneseVoice = null;
+    let fwExtraCenterTimerId = null;
+
+    // 練習メニュー＆ログ用データベース
+    let currentMenuPlan = {
+      title: "今日の練習メニュー",
+      targetMin: 150,
+      playersMode: "gym_2",
+      items: []
+    };
+    let savedMenusDB = [];
+    let practiceLogsDB = [];
+
+    // 音声合成の日本語ボイス取得（iOS/iPadOS/Android/PC対応）
+    function initSpeechVoices() {
+      if (!('speechSynthesis' in window)) return;
+      const pickVoice = () => {
+        const voices = window.speechSynthesis.getVoices() || [];
+        selectedJapaneseVoice =
+          voices.find(v => v.lang === 'ja-JP' && (v.name.includes('Kyoko') || v.name.includes('Otoya') || v.name.includes('Google'))) ||
+          voices.find(v => v.lang && v.lang.startsWith('ja')) ||
+          null;
+      };
+      pickVoice();
+      window.speechSynthesis.onvoiceschanged = pickVoice;
+    }
+
+    // 課題別の「わかりやすい実戦コーチング」＆「3段階ドリル処方箋」
     const AI_CAUSE_PRESCRIPTIONS = {
       racket_drop: {
         title: "ラケット下がり ＆ 手首の寝すぎ（リストスタンド不足）",
@@ -9413,7 +9444,8 @@
         step2: "【Step2 手投げ・ノック】3〜4mの近い距離からテンポよくシャトルを出してもらい、大きく引かずに「立てた手首と指先の握り込みだけ」でコンパクトに弾き返します（20球×2セット）。",
         step3: "【Step3 基礎打ち・パターン】ドライブやプッシュの打ち合いの中で、打った直後にラケットが腰の下へ落ちないよう毎回胸の前へ戻す意識で続けます。",
         fwPreset: "front2",
-        fwLabel: "⬆️ 前衛2点ネットダッシュ（ラケット高位置キープ強化）"
+        fwLabel: "⬆️ 前衛2点ネットダッシュ（ラケット高位置キープ強化）",
+        menuMin: 15
       },
       pronation_lack: {
         title: "前腕のひねり（回外➔回内）不足・押し出しスイング",
@@ -9423,7 +9455,8 @@
         step2: "【Step2 手投げ・ノック】斜め前から山なりに投げてもらったシャトルを、落ちてくるのを待たずに一番高い位置で捉え、前腕のひねりと指先の握り込みだけで鋭く打ちます。",
         step3: "【Step3 基礎打ち・パターン】クリアやスマッシュの基礎打ちで、打ち終わったあとにラケット面が自然とその場の下〜外側を向く（正しく回内できている）か確認します。",
         fwPreset: "back2",
-        fwLabel: "⬇️ 後衛2点スマッシュ移動（トップ作り＆回内スイング強化）"
+        fwLabel: "⬇️ 後衛2点スマッシュ移動（トップ作り＆回内スイング強化）",
+        menuMin: 20
       },
       excess_bounce: {
         title: "待機中の不要なバウンド（抜重のタイミングずれ）",
@@ -9433,7 +9466,8 @@
         step2: "【Step2 手投げ・ノック】静かに構えた状態から、相手の手からシャトルが離れた瞬間に膝の力を抜いて左右へ一歩目を踏み出すノックを行います。",
         step3: "【Step3 基礎打ち・パターン】レシーブやロブの基礎打ちで、相手が打つ瞬間に自分が空中に浮いていないか、タイミングを合わせて足を動かします。",
         fwPreset: "side2",
-        fwLabel: "↔️ 左右サイドレシーブ（無反動・抜重ステップ強化）"
+        fwLabel: "↔️ 左右サイドレシーブ（無反動・抜重ステップ強化）",
+        menuMin: 15
       },
       lunge_lean: {
         title: "踏み込み（ランジ）での上体の突っ込み ＆ 腰の高さ",
@@ -9443,7 +9477,8 @@
         step2: "【Step2 手投げ・ノック】ネット前に出してもらったシャトルに対し、上体を倒さず腰を落として手首を立てたまま捉え、前足1回の蹴り戻しでセンターへ戻ります。",
         step3: "【Step3 基礎打ち・パターン】対角線クロスやカット＆ネットの練習で、ギリギリの球を拾う時でも頭の位置が前に突っ込まないように意識します。",
         fwPreset: "diagonal_r",
-        fwLabel: "↗️ 対角線クロス交互（踏み込み姿勢＆蹴り戻し強化）"
+        fwLabel: "↗️ 対角線クロス交互（踏み込み姿勢＆蹴り戻し強化）",
+        menuMin: 15
       },
       low_contact: {
         title: "打点の低さ ＆ テイクバックでの肘下がり",
@@ -9453,7 +9488,8 @@
         step2: "【Step2 手投げ・ノック】高めに投げてもらったシャトルが落ちてくるのを待たず、おでこの斜め前の一番高いところで捉える連続ノックを行います。",
         step3: "【Step3 基礎打ち・パターン】クリアやスマッシュの基礎打ちで、画面に出る水色の理想打点ライン（145°前後）の高さで毎回打てているかチェックします。",
         fwPreset: "back2",
-        fwLabel: "⬇️ 後衛2点スマッシュ移動（最高打点キープ練習）"
+        fwLabel: "⬇️ 後衛2点スマッシュ移動（最高打点キープ練習）",
+        menuMin: 20
       },
       slow_recovery: {
         title: "打った後の戻り（蹴り戻し）の遅れ ＆ 後半のラケット下がり",
@@ -9463,43 +9499,625 @@
         step2: "【Step2 手投げ・ノック】ネット前 ➔ センターへ戻る ➔ すぐ奥への連続配球で、打った直後の戻りの一歩目を速くするノックを行います。",
         step3: "【Step3 基礎打ち・パターン】前後ストレート交互や30秒間の連続フットワークで、後半も最初と同じラケットの高さをキープして動き切ります。",
         fwPreset: "straight_r",
-        fwLabel: "↕️ 右ストレート前後交互（蹴り戻し速度＆持久力強化）"
+        fwLabel: "↕️ 右ストレート前後交互（蹴り戻し速度＆持久力強化）",
+        menuMin: 15
       }
     };
 
-    function jumpToPrescribedFootwork(presetKey, useSplitBeep = false) {
-      switchTab('tab-footwork');
-      const presetSel = document.getElementById('fwCoursePreset');
-      if (presetSel) {
-        presetSel.value = presetKey;
-        applyFwCoursePreset();
-      }
-      if (useSplitBeep) {
-        const centerSel = document.getElementById('fwCenterCallMode');
-        if (centerSel) centerSel.value = 'split_beep';
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    // =========================================================================
+    // 1. 🔊 音声コール＆ビープ音の完全対策（iPhone/iPad Safari ブロック解除対応）
+    // =========================================================================
+    playBeep = function(freq = 880, durationMs = 100) {
+      try {
+        unlockAudioContext();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        let mult = 1.0;
+        let vol = 0.28;
+        if (audioCustomSettings.beepTone === 'high') {
+          mult = 1.18;
+          vol = 0.42;
+          osc.type = 'triangle';
+        } else if (audioCustomSettings.beepTone === 'low') {
+          mult = 0.82;
+          vol = 0.22;
+          osc.type = 'sine';
+        } else {
+          osc.type = 'sine';
+        }
+
+        osc.frequency.setValueAtTime(Math.round(freq * mult), audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + durationMs / 1000);
+      } catch (e) {}
+    };
+
+    speakText = function(text, rateOverride) {
+      if (!('speechSynthesis' in window) || !text) return;
+      try {
+        // iOS Safariでキューが詰まるのを防ぐため再生中のみクリアして即時発火
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+        const utter = new SpeechSynthesisUtterance(String(text));
+        utter.lang = 'ja-JP';
+        if (selectedJapaneseVoice) utter.voice = selectedJapaneseVoice;
+        utter.rate = rateOverride || audioCustomSettings.voiceRate || 1.40;
+        utter.pitch = 1.05;
+        utter.volume = 1.0;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {}
+    };
+
+    // ユーザーのボタンタップ直後に音声合成エンジンをアンロックする関数
+    function unlockSpeechEngine(initialWord = "") {
+      unlockAudioContext();
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+        const utter = new SpeechSynthesisUtterance(initialWord || " ");
+        utter.lang = 'ja-JP';
+        if (selectedJapaneseVoice) utter.voice = selectedJapaneseVoice;
+        utter.volume = initialWord ? 1.0 : 0.01;
+        utter.rate = audioCustomSettings.voiceRate || 1.40;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {}
+    }
+
+    function syncAudioSettingsUI(sourcePrefix) {
+      const rateEl = document.getElementById(sourcePrefix + 'VoiceRate');
+      const toneEl = document.getElementById(sourcePrefix + 'BeepTone');
+      const leadEl = document.getElementById(sourcePrefix + 'UnweightMs');
+
+      if (rateEl) audioCustomSettings.voiceRate = Number(rateEl.value) || 1.40;
+      if (toneEl) audioCustomSettings.beepTone = toneEl.value || 'high';
+      if (leadEl) audioCustomSettings.unweightLeadMs = Number(leadEl.value) || 420;
+
+      // TAB 1 と TAB 2 の両方のセレクトボックスを同期
+      ['fwCfg', 'arCfg'].forEach(prefix => {
+        const r = document.getElementById(prefix + 'VoiceRate');
+        const t = document.getElementById(prefix + 'BeepTone');
+        const l = document.getElementById(prefix + 'UnweightMs');
+        if (r) r.value = String(audioCustomSettings.voiceRate);
+        if (t) t.value = audioCustomSettings.beepTone;
+        if (l) l.value = String(audioCustomSettings.unweightLeadMs);
+      });
+    }
+
+    function buildAudioConfigHTML(prefix) {
+      return `
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.12);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+            <span style="font-weight:900; color:var(--accent-highlight); font-size:0.78rem;">
+              🔊 声のスピード・音量・抜重タメ間隔の微調整
+            </span>
+            <button class="btn" style="padding:3px 8px; font-size:0.7rem;" onclick="testVoiceAudio()">🔊 音声テスト</button>
+          </div>
+          <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:6px;">
+            <div class="form-group">
+              <label>🗣️ 声の速さ</label>
+              <select id="${prefix}VoiceRate" onchange="syncAudioSettingsUI('${prefix}')" style="font-size:0.74rem; padding:6px;">
+                <option value="1.2">標準 (1.2x)</option>
+                <option value="1.4" selected>速め・実戦 (1.4x)</option>
+                <option value="1.7">超速・高速用 (1.7x)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>🔔 ビープ音色</label>
+              <select id="${prefix}BeepTone" onchange="syncAudioSettingsUI('${prefix}')" style="font-size:0.74rem; padding:6px;">
+                <option value="high" selected>体育館クリア(大)</option>
+                <option value="normal">標準トーン</option>
+                <option value="low">自宅マイルド</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>👟 抜重タメ時間</label>
+              <select id="${prefix}UnweightMs" onchange="syncAudioSettingsUI('${prefix}')" style="font-size:0.74rem; padding:6px;">
+                <option value="300">0.30秒 (超高速)</option>
+                <option value="420" selected>0.42秒 (標準)</option>
+                <option value="600">0.60秒 (基礎)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     // =========================================================================
-    // 2. 前腕「回内・回外」連動解析 ＆ 5局面診断エンジン
+    // 2. TAB 1（フットワーク）＆ TAB 2（初速・矢印）の操作性＆音声完全修正
+    // =========================================================================
+    function upgradeTab1AndTab2UI() {
+      // TAB 1: センター帰還オプション追加 ＆ 音声設定パネル挿入
+      const centerSel = document.getElementById('fwCenterCallMode');
+      if (centerSel && !centerSel.querySelector('option[value="center_and_split"]')) {
+        const opt1 = document.createElement('option');
+        opt1.value = "center_and_split";
+        opt1.textContent = "🎯 センター帰還合図(ピポン) ➔ 抜重予告音(ピッ)";
+        centerSel.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = "center_only";
+        opt2.textContent = "🎯 1球ごとに「センターへ戻る」リズム合図を入れる";
+        centerSel.appendChild(opt2);
+      }
+
+      const fwSettingsCard = document.querySelector('#tab-footwork .split-grid > .card');
+      if (fwSettingsCard && !document.getElementById('fwCfgVoiceRate')) {
+        const div = document.createElement('div');
+        div.innerHTML = buildAudioConfigHTML('fwCfg');
+        fwSettingsCard.appendChild(div);
+      }
+
+      // TAB 2: 矢印練習に「一時停止」「音声確認」ボタンと音声微調整パネルを追加
+      const arrowBtnGroup = document.querySelector('#arrowFullscreenStage .fw-top-bar .btn-group');
+      if (arrowBtnGroup && !document.getElementById('btnArrowPause')) {
+        const pauseBtn = document.createElement('button');
+        pauseBtn.id = 'btnArrowPause';
+        pauseBtn.className = 'btn';
+        pauseBtn.style = 'padding:5px 9px;';
+        pauseBtn.disabled = true;
+        pauseBtn.textContent = '⏸️ 一時停止';
+        pauseBtn.onclick = pauseArrowReactionDrill;
+        arrowBtnGroup.insertBefore(pauseBtn, arrowBtnGroup.children[2]);
+      }
+
+      const arrowSettingsCard = document.querySelector('#subPanelArrowDrill .split-grid > .card');
+      if (arrowSettingsCard && !document.getElementById('arCfgVoiceRate')) {
+        const div = document.createElement('div');
+        div.innerHTML = buildAudioConfigHTML('arCfg');
+        arrowSettingsCard.appendChild(div);
+      }
+    }
+
+    // TAB 1 フットワーク停止・一時停止時にセンター帰還タイマーも確実にクリア
+    const _baseStopVoiceFootwork = stopVoiceFootwork;
+    stopVoiceFootwork = function() {
+      clearTimeout(fwExtraCenterTimerId);
+      _baseStopVoiceFootwork();
+    };
+
+    const _basePauseVoiceFootwork = pauseVoiceFootwork;
+    pauseVoiceFootwork = function() {
+      clearTimeout(fwExtraCenterTimerId);
+      _basePauseVoiceFootwork();
+    };
+
+    runNextFootworkCall = function() {
+      if (!fwState.running || fwState.paused) return;
+      clearFwHighlights();
+      clearTimeout(fwExtraCenterTimerId);
+
+      if (!fwState.isTimeMode && fwState.currentRep >= fwState.repsPerSet) {
+        handleFwSetComplete();
+        return;
+      }
+
+      const preset = document.getElementById('fwCoursePreset').value;
+      const centerMode = document.getElementById('fwCenterCallMode').value;
+      let chosenIdx = 0;
+
+      if (FW_SEQUENCES[preset]) {
+        const seq = FW_SEQUENCES[preset];
+        chosenIdx = seq[fwState.seqCursor % seq.length];
+        fwState.seqCursor++;
+      } else {
+        let activeIndices = fwEnabledNodes.map((v, i) => v ? i : -1).filter(i => i !== -1);
+        if (centerMode === 'no_repeat' && activeIndices.length > 1 && fwState.lastChosenIdx !== -1) {
+          activeIndices = activeIndices.filter(i => i !== fwState.lastChosenIdx);
+        }
+        chosenIdx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
+      }
+
+      const posObj = FW_POSITIONS[chosenIdx];
+      const isRepeat = (chosenIdx === fwState.lastChosenIdx);
+      fwState.lastChosenIdx = chosenIdx;
+
+      fwState.currentRep++;
+      updateFwHeaderUI();
+
+      const cellEl = document.getElementById('fw-node-' + chosenIdx);
+      const voiceMode = document.getElementById('fwVoiceMode').value;
+      const callLabel = document.getElementById('fwCurrentCallLabel');
+
+      const activateChosenCell = () => {
+        if (!fwState.running || fwState.paused) return;
+        if (cellEl) cellEl.classList.add('active-call');
+        callLabel.textContent = `👉 ${posObj.name}！`;
+
+        if (voiceMode === 'direction') {
+          playBeep(960, 80);
+          speakText(posObj.name);
+        } else if (voiceMode === 'number') {
+          playBeep(960, 80);
+          speakText(posObj.numName);
+        } else if (voiceMode === 'beep_only') {
+          playBeep(1040, 120);
+        }
+      };
+
+      if (isRepeat) setTimeout(activateChosenCell, 110);
+      else activateChosenCell();
+
+      const leadMs = Math.min(audioCustomSettings.unweightLeadMs || 420, Math.floor(fwState.intervalMs * 0.35));
+
+      if (centerMode === 'center_and_split' || centerMode === 'center_only') {
+        const centerTimingMs = Math.max(260, Math.floor(fwState.intervalMs * 0.48));
+        fwExtraCenterTimerId = setTimeout(() => {
+          if (!fwState.running || fwState.paused) return;
+          clearFwHighlights();
+          callLabel.textContent = "🎯 センターへ戻れ！";
+          if (voiceMode !== 'mute') {
+            playBeep(740, 55);
+            setTimeout(() => { if (fwState.running && !fwState.paused) playBeep(980, 70); }, 70);
+          }
+        }, centerTimingMs);
+      }
+
+      if (centerMode === 'split_beep' || centerMode === 'center_and_split') {
+        fwState.subTimerId = setTimeout(() => {
+          if (!fwState.running || fwState.paused) return;
+          clearFwHighlights();
+          callLabel.textContent = "👟 抜重！";
+          if (voiceMode !== 'mute') playBeep(540, 65);
+        }, Math.max(300, fwState.intervalMs - leadMs));
+      } else if (centerMode !== 'center_only') {
+        fwState.subTimerId = setTimeout(() => {
+          if (!fwState.running || fwState.paused) return;
+          clearFwHighlights();
+        }, Math.max(200, fwState.intervalMs - 140));
+      }
+
+      fwState.timerId = setTimeout(runNextFootworkCall, fwState.intervalMs);
+    };
+
+    // TAB 2: 矢印リアクション練習（iOS音声ロック解除＋一時停止対応）
+    arrowDrillState.paused = false;
+
+    startArrowReactionDrill = function(goFullscreen = false) {
+      const voiceMode = document.getElementById('arrowVoiceMode').value;
+
+      // 一時停止からの再開処理
+      if (arrowDrillState.running && arrowDrillState.paused) {
+        arrowDrillState.paused = false;
+        const pBtn = document.getElementById('btnArrowPause');
+        if (pBtn) pBtn.textContent = "⏸️ 一時停止";
+        document.getElementById('arrowDrillBadge').textContent = "🟢 稼働中";
+        if (voiceMode === 'voice_and_beep') unlockSpeechEngine("再開");
+        runNextArrowReactionRep();
+        return;
+      }
+
+      // 既存タイマーを止めてから、ユーザー操作の同期タイミング内で音声ロックを確実に解除する
+      arrowDrillState.running = false;
+      arrowDrillState.paused = false;
+      clearTimeout(arrowDrillState.timerId);
+      clearTimeout(arrowDrillState.subTimerId);
+
+      unlockAudioContext();
+      if (voiceMode === 'voice_and_beep') {
+        unlockSpeechEngine("スタート");
+      } else {
+        playBeep(660, 100);
+      }
+      requestAppWakeLock();
+
+      if (goFullscreen) {
+        const stage = document.getElementById('arrowFullscreenStage');
+        if (stage && !stage.classList.contains('pseudo-fullscreen')) {
+          toggleSmartFullscreen('arrowFullscreenStage');
+        }
+      }
+
+      arrowDrillState.totalReps = Number(document.getElementById('arrowTotalReps').value) || 10;
+      arrowDrillState.currentRep = 0;
+      arrowDrillState.running = true;
+
+      const pBtn = document.getElementById('btnArrowPause');
+      if (pBtn) {
+        pBtn.disabled = false;
+        pBtn.textContent = "⏸️ 一時停止";
+      }
+
+      document.getElementById('arrowDrillBadge').textContent = "🟢 稼働中";
+      document.getElementById('arrowDrillProgress').textContent = `0 / ${arrowDrillState.totalReps} 回`;
+
+      const box = document.getElementById('giantArrowBox');
+      const holder = document.getElementById('giantArrowSvgHolder');
+      const txt = document.getElementById('giantArrowText');
+      if (box) box.className = "giant-arrow-circle";
+      holder.innerHTML = buildCyberArrowSVG(0, 'ready');
+      txt.textContent = "構えて...";
+
+      arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1250);
+    };
+
+    function pauseArrowReactionDrill() {
+      if (!arrowDrillState.running) return;
+      arrowDrillState.paused = !arrowDrillState.paused;
+      clearTimeout(arrowDrillState.timerId);
+      clearTimeout(arrowDrillState.subTimerId);
+
+      const pBtn = document.getElementById('btnArrowPause');
+      if (arrowDrillState.paused) {
+        if (pBtn) pBtn.textContent = "▶️ 再開";
+        document.getElementById('arrowDrillBadge').textContent = "⏸️ 一時停止";
+        document.getElementById('giantArrowText').textContent = "PAUSED";
+      } else {
+        if (pBtn) pBtn.textContent = "⏸️ 一時停止";
+        document.getElementById('arrowDrillBadge').textContent = "🟢 稼働中";
+        runNextArrowReactionRep();
+      }
+    }
+
+    const _baseStopArrowReactionDrill = stopArrowReactionDrill;
+    stopArrowReactionDrill = function() {
+      arrowDrillState.paused = false;
+      const pBtn = document.getElementById('btnArrowPause');
+      if (pBtn) {
+        pBtn.disabled = true;
+        pBtn.textContent = "⏸️ 一時停止";
+      }
+      _baseStopArrowReactionDrill();
+    };
+
+    runNextArrowReactionRep = function() {
+      if (!arrowDrillState.running || arrowDrillState.paused) return;
+
+      const box = document.getElementById('giantArrowBox');
+      const holder = document.getElementById('giantArrowSvgHolder');
+      const txt = document.getElementById('giantArrowText');
+
+      if (arrowDrillState.currentRep >= arrowDrillState.totalReps) {
+        box.className = "giant-arrow-circle";
+        holder.innerHTML = buildCyberArrowSVG(0, 'done');
+        txt.textContent = "COMPLETE!";
+        document.getElementById('arrowDrillBadge').textContent = "✅ 完了";
+        const pBtn = document.getElementById('btnArrowPause');
+        if (pBtn) pBtn.disabled = true;
+        playBeep(1200, 320);
+        speakText("リアクション練習完了！お疲れ様でした！");
+        arrowDrillState.running = false;
+        releaseAppWakeLock();
+        return;
+      }
+
+      const timingStyle = document.getElementById('arrowTimingStyle').value;
+      const voiceMode = document.getElementById('arrowVoiceMode').value;
+      const dirs = getFilteredArrowDirections();
+      const chosen = dirs[Math.floor(Math.random() * dirs.length)];
+
+      let preDelay = 700;
+      if (timingStyle === 'split_rhythm') {
+        box.className = "giant-arrow-circle unweight-cue";
+        holder.innerHTML = buildCyberArrowSVG(0, 'unweight');
+        txt.textContent = "抜重・ステップ！";
+        playBeep(520, 70);
+        preDelay = audioCustomSettings.unweightLeadMs || 420;
+      } else if (timingStyle === 'random_feint') {
+        box.className = "giant-arrow-circle";
+        holder.innerHTML = buildCyberArrowSVG(0, 'ready');
+        txt.textContent = "集中...";
+        preDelay = 1000 + Math.floor(Math.random() * 1500);
+      } else {
+        box.className = "giant-arrow-circle";
+        holder.innerHTML = buildCyberArrowSVG(0, 'ready');
+        txt.textContent = "READY";
+        preDelay = 550;
+      }
+
+      arrowDrillState.subTimerId = setTimeout(() => {
+        if (!arrowDrillState.running || arrowDrillState.paused) return;
+        arrowDrillState.currentRep++;
+        document.getElementById('arrowDrillProgress').textContent =
+          `${arrowDrillState.currentRep} / ${arrowDrillState.totalReps} 回`;
+
+        box.className = "giant-arrow-circle cue-on";
+        holder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
+        txt.textContent = chosen.name + "！";
+
+        playBeep(1080, 95);
+        if (voiceMode === 'voice_and_beep') {
+          speakText(chosen.name);
+        }
+
+        arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1650);
+      }, preDelay);
+    };
+
+    // TAB 2 (モード②): 初速AIカメラ測定（音声アンロック＆左右バランス解析）
+    let rxDetailTracker = {
+      currentDir: null,
+      waitHipYList: [],
+      lastWristOk: true,
+      dirLogs: []
+    };
+
+    const _baseStartReflexAISession = startReflexAISession;
+    startReflexAISession = function() {
+      rxDetailTracker.dirLogs = [];
+      rxDetailTracker.waitHipYList = [];
+      const cueMode = document.getElementById('rxCueMode').value;
+      if (cueMode === 'voice_dir') {
+        unlockSpeechEngine("測定スタート");
+      }
+      _baseStartReflexAISession();
+    };
+
+    scheduleNextReflexRep = function() {
+      if (!rxState.active) return;
+      if (rxState.currentRep >= rxState.targetReps) {
+        finishReflexAISession();
+        return;
+      }
+
+      const banner = document.getElementById('reflexBanner');
+      const svgHolder = document.getElementById('reflexBannerSvgHolder');
+      const mainTxt = document.getElementById('reflexBannerMain');
+      const subTxt = document.getElementById('reflexBannerSub');
+
+      banner.style.display = "flex";
+      rxState.phase = 'ready_wait';
+      rxState.baselineHip = null;
+      rxDetailTracker.waitHipYList = [];
+
+      svgHolder.innerHTML = buildCyberArrowSVG(0, 'unweight');
+      mainTxt.style.color = "#38bdf8";
+      mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：構えて待機...`;
+      subTxt.textContent = "手首を立てて静かに待ち、矢印が出た瞬間にスッと一歩目を出してください";
+
+      const randomWait = 1800 + Math.floor(Math.random() * 1400);
+      rxState.timerId = setTimeout(() => {
+        if (!rxState.active) return;
+        const chosen = FW_POSITIONS[Math.floor(Math.random() * FW_POSITIONS.length)];
+        rxDetailTracker.currentDir = chosen;
+        const cueMode = document.getElementById('rxCueMode').value;
+
+        rxState.phase = 'cue_active';
+        rxState.cueTime = performance.now();
+
+        svgHolder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
+        mainTxt.style.color = "#fbbf24";
+        mainTxt.textContent = `${chosen.name}！`;
+        subTxt.textContent = "抜重してスタート！";
+
+        playBeep(1060, 95);
+        if (cueMode === 'voice_dir') {
+          speakText(chosen.name);
+        }
+      }, randomWait);
+    };
+
+    const _baseRenderReflexAIPose = renderReflexAIPose;
+    renderReflexAIPose = function(results) {
+      if (rxState.active && rxState.phase === 'ready_wait' && results && results.poseLandmarks) {
+        const lm = results.poseLandmarks;
+        const hipY = (lm[23].y + lm[24].y) / 2;
+        const shY = (lm[11].y + lm[12].y) / 2;
+        const tLen = Math.max(0.12, Math.abs(hipY - shY));
+        rxDetailTracker.waitHipYList.push(hipY / tLen);
+        const stEval = evaluateReadyStanceQuality(lm);
+        rxDetailTracker.lastWristOk = stEval.isWristStandOk && stEval.wristScore >= 80;
+      }
+      _baseRenderReflexAIPose(results);
+    };
+
+    const _baseRecordSingleReflexResult = recordSingleReflexResult;
+    recordSingleReflexResult = function(ms, stepType, stancePt) {
+      let bounceDev = 0;
+      if (rxDetailTracker.waitHipYList.length >= 4) {
+        const arr = rxDetailTracker.waitHipYList;
+        const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+        bounceDev = Math.max(...arr.map(v => Math.abs(v - mean)));
+      }
+      const chosen = rxDetailTracker.currentDir || FW_POSITIONS[0];
+      rxDetailTracker.dirLogs.push({
+        ms,
+        stepType,
+        stancePt: stancePt || 85,
+        dirId: chosen.id,
+        dirName: chosen.name,
+        isRightSide: (chosen.id === 1 || chosen.id === 3 || chosen.id === 5),
+        wristOk: rxDetailTracker.lastWristOk,
+        isBouncing: bounceDev > 0.045
+      });
+      _baseRecordSingleReflexResult(ms, stepType, stancePt);
+    };
+
+    finishReflexAISession = function() {
+      rxState.active = false;
+      rxState.phase = 'idle';
+      document.getElementById('reflexBanner').style.display = "none";
+      document.getElementById('rxSessionBadge').textContent = `✅ 全${rxState.targetReps}回 測定完了`;
+      playBeep(1200, 300);
+
+      const avgMs = Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length);
+      const avgStance = Math.round(rxState.stanceScores.reduce((a, b) => a + b, 0) / rxState.stanceScores.length);
+      const speedPt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
+      const combinedPt = Math.round(speedPt * 0.7 + avgStance * 0.3);
+
+      const logs = rxDetailTracker.dirLogs;
+      const rightLogs = logs.filter(l => l.isRightSide);
+      const leftLogs = logs.filter(l => !l.isRightSide);
+      const avgRightMs = rightLogs.length ? Math.round(rightLogs.reduce((a, b) => a + b.ms, 0) / rightLogs.length) : avgMs;
+      const avgLeftMs = leftLogs.length ? Math.round(leftLogs.reduce((a, b) => a + b.ms, 0) / leftLogs.length) : avgMs;
+      const diffRL = Math.abs(avgRightMs - avgLeftMs);
+      const slowerSideName = avgLeftMs > avgRightMs ? "左方向（バック側）" : "右方向（フォア側）";
+
+      const bounceCount = logs.filter(l => l.isBouncing).length;
+      const wristDropCount = logs.filter(l => !l.wristOk).length;
+
+      let chosenKey = 'excess_bounce';
+      let techAdvice = "";
+
+      if (wristDropCount >= Math.ceil(logs.length / 2)) {
+        chosenKey = 'racket_drop';
+        techAdvice = `矢印を待っている間にラケットが下がる、または手首が寝てしまう場面が ${wristDropCount}回 ありました。動き出す時に腕を上げるロスをなくすため、みぞおちの前で手首を立てて待ちましょう。`;
+      } else if (bounceCount >= 2) {
+        chosenKey = 'excess_bounce';
+        techAdvice = `矢印が出る前の待機中に体が上下に跳ねている回が ${bounceCount}回 ありました。浮いている瞬間は床を蹴れないため、待つときは静かに構え、矢印が出た瞬間にだけフッと膝の力を抜いて沈む（抜重）とさらに速くなります。`;
+      } else if (diffRL >= 25) {
+        chosenKey = 'lunge_lean';
+        techAdvice = `右方向（平均 ${avgRightMs}ms）と左方向（平均 ${avgLeftMs}ms）を比べると、<b>${slowerSideName}への一歩目が ${diffRL}ms 遅れています</b>。遅れる方向へ出る時に頭から倒れず、反対側の足の親指の付け根で床を強く蹴り出しましょう。`;
+      } else {
+        techAdvice = `左右の反応スピードの差も少なく（右 ${avgRightMs}ms / 左 ${avgLeftMs}ms）、待っている間の手首の高さ・姿勢もよく安定しています。この感覚のままフットワーク練習に入りましょう。`;
+      }
+
+      const chosenPlan = AI_CAUSE_PRESCRIPTIONS[chosenKey];
+
+      document.getElementById('rxSummaryText').innerHTML = `
+        <div style="font-weight:900; color:#34d399; margin-bottom:6px; font-size:0.86rem;">
+          🏆 平均反応タイム: ${avgMs} ms（最速 ${rxState.bestMs} ms）｜ 構え安定度: ${avgStance} pt ｜ 総合: ${combinedPt} pt
+        </div>
+        <div style="font-size:0.78rem; margin-bottom:6px; line-height:1.5;">
+          ・<b>左右の反応バランス:</b> 右方向 平均 <b>${avgRightMs}ms</b> ／ 左方向 平均 <b>${avgLeftMs}ms</b>（左右差 ${diffRL}ms）<br>
+          ・<b>待機中の構えチェック:</b> 手首下がり検知 ${wristDropCount}回 ／ 上下バウンド検知 ${bounceCount}回
+        </div>
+        <div style="background:rgba(6,182,212,0.12); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.78rem; line-height:1.5;">
+          <b style="color:#38bdf8;">💡 初速アップのアドバイス:</b><br>
+          ${techAdvice}
+        </div>
+        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); padding:8px 10px; border-radius:8px; font-size:0.75rem;">
+          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">📋 おすすめ初速強化メニュー：『${chosenPlan.drillName}』</div>
+          <div style="margin-bottom:3px;">・${chosenPlan.step1}</div>
+          <div style="margin-bottom:6px;">・${chosenPlan.step2}</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <button class="btn btn-emerald" style="padding:7px;" onclick="jumpToPrescribedFootwork('${chosenPlan.fwPreset}', true)">
+              🏃 フットワークへセット
+            </button>
+            <button class="btn btn-amber" style="padding:7px;" onclick="addPrescriptionToMenuPlan('${chosenKey}')">
+              ➕ 練習メニューに追加
+            </button>
+          </div>
+        </div>
+      `;
+    };
+
+    // =========================================================================
+    // 3. TAB 3: 前腕「回内・回外」解析 ＆ 3ステップ処方箋常設カード ＆ 動画区間ループ
     // =========================================================================
     let poseDetailTracker = {
       frames: [],
       prevHandRelRad: null,
       prevTimeMs: 0,
       maxPronationPt: 0,
-      supinationReady: false
+      supinationReady: false,
+      lastWorstCauseKey: 'racket_drop'
     };
 
-    const _origResetMaxMetrics = resetMaxMetrics;
+    const _baseResetMaxMetrics = resetMaxMetrics;
     resetMaxMetrics = function() {
       poseDetailTracker.frames = [];
       poseDetailTracker.prevHandRelRad = null;
       poseDetailTracker.prevTimeMs = 0;
       poseDetailTracker.maxPronationPt = 0;
       poseDetailTracker.supinationReady = false;
-      _origResetMaxMetrics();
+      _baseResetMaxMetrics();
     };
 
     function evaluateForearmPronation(lm, dtSec) {
@@ -9507,11 +10125,10 @@
       const shoulder = isLeft ? lm[11] : lm[12];
       const elbow    = isLeft ? lm[13] : lm[14];
       const wrist    = isLeft ? lm[15] : lm[16];
-      const pinky    = isLeft ? lm[17] : lm[18];
       const indexTip = isLeft ? lm[19] : lm[20];
 
       if (!elbow || !wrist || !indexTip) {
-        return { pronationPt: 75, statusText: "標準", isSupinated: false };
+        return { pronationPt: 75, isSupinated: false };
       }
 
       const forearmRad = Math.atan2(wrist.y - elbow.y, wrist.x - elbow.x);
@@ -9519,11 +10136,6 @@
       let relRad = handRad - forearmRad;
       while (relRad > Math.PI) relRad -= Math.PI * 2;
       while (relRad < -Math.PI) relRad += Math.PI * 2;
-
-      let palmSpread = 0;
-      if (pinky && (pinky.visibility || 0) > 0.4) {
-        palmSpread = (indexTip.x - pinky.x) * (isLeft ? -1 : 1);
-      }
 
       const wristCockDeg = calcAngle(elbow, wrist, indexTip);
       const isTakebackSupinated = (aiMetrics.elbowDeg <= 125 && wristCockDeg <= 165 && wrist.y <= shoulder.y + 0.15);
@@ -9551,22 +10163,17 @@
         poseDetailTracker.maxPronationPt = pronationPt;
       }
 
-      return {
-        pronationPt,
-        rotVelDegPerSec: Math.round(rotVelDegPerSec),
-        palmSpread,
-        isSupinated: poseDetailTracker.supinationReady
-      };
+      return { pronationPt, isSupinated: poseDetailTracker.supinationReady };
     }
 
-    const _origRenderPoseBiomechanics = renderPoseBiomechanics;
+    const _baseRenderPoseBiomechanics = renderPoseBiomechanics;
     renderPoseBiomechanics = function(results) {
       const nowMs = performance.now();
       const videoRate = activeInputType === 'video' ? (Number(document.getElementById('videoSpeedSelect').value) || 1.0) : 1.0;
       const dtSec = poseDetailTracker.prevTimeMs > 0 ? ((nowMs - poseDetailTracker.prevTimeMs) / 1000) * videoRate : 0.033;
       poseDetailTracker.prevTimeMs = nowMs;
 
-      _origRenderPoseBiomechanics(results);
+      _baseRenderPoseBiomechanics(results);
 
       if (results && results.poseLandmarks && aiMetrics.confidencePct >= 48) {
         const proEval = evaluateForearmPronation(results.poseLandmarks, dtSec);
@@ -9596,6 +10203,119 @@
       }
     };
 
+    // TAB 3 に「いつでも閲覧・追加できる課題別3ステップ練習メニューカード」を常設
+    function injectAlwaysVisiblePrescriptionViewer() {
+      const aiSummaryBox = document.getElementById('aiSummaryContent') ? document.getElementById('aiSummaryContent').parentNode : null;
+      if (!aiSummaryBox || document.getElementById('permanentDrillCatalogCard')) return;
+
+      const card = document.createElement('div');
+      card.id = 'permanentDrillCatalogCard';
+      card.className = 'summary-box';
+      card.style = 'margin-top:0; border-color:rgba(16,185,129,0.45);';
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+          <span style="font-weight:900; font-size:0.82rem; color:#34d399;">📋 課題別 3ステップ練習メニュー＆自宅ドリル（常時確認・メニュー追加可）</span>
+        </div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <select id="manualDrillBrowserSelect" onchange="renderManualDrillBrowser(this.value)" style="font-size:0.78rem; padding:7px;">
+            <option value="racket_drop">① ラケット下がり＆手首の寝すぎ矯正（リストスタンド維持）</option>
+            <option value="pronation_lack">② 前腕のひねり（回外➔回内）＆面返し強化</option>
+            <option value="excess_bounce">③ 待機中の不要なバウンド癖矯正（無反動の抜重スタート）</option>
+            <option value="lunge_lean">④ 踏み込み（ランジ）の上体突っ込み防止＆蹴り戻し強化</option>
+            <option value="low_contact">⑤ 打点の低さ＆テイクバックの肘引き上げ矯正</option>
+            <option value="slow_recovery">⑥ 打球後の蹴り戻しスピード＆後半のラケット維持強化</option>
+          </select>
+        </div>
+        <div id="manualDrillBrowserBody"></div>
+      `;
+      aiSummaryBox.parentNode.appendChild(card);
+      renderManualDrillBrowser('racket_drop');
+    }
+
+    function renderManualDrillBrowser(causeKey) {
+      const plan = AI_CAUSE_PRESCRIPTIONS[causeKey] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
+      const sel = document.getElementById('manualDrillBrowserSelect');
+      if (sel && sel.value !== causeKey) sel.value = causeKey;
+
+      const holder = document.getElementById('manualDrillBrowserBody');
+      if (!holder) return;
+
+      holder.innerHTML = `
+        <div style="background:rgba(6,182,212,0.1); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.76rem; line-height:1.5;">
+          <b style="color:#38bdf8;">💡 指導・意識ポイント:</b><br>${plan.coaching}
+        </div>
+        <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.35); padding:9px 10px; border-radius:8px; font-size:0.75rem; line-height:1.5;">
+          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">🏸 3ステップ実践ドリル：『${plan.drillName}』</div>
+          <div style="margin-bottom:3px;">・${plan.step1}</div>
+          <div style="margin-bottom:3px;">・${plan.step2}</div>
+          <div style="margin-bottom:8px;">・${plan.step3}</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <button class="btn btn-emerald" style="padding:7px; font-size:0.74rem;" onclick="jumpToPrescribedFootwork('${plan.fwPreset}', true)">
+              🏃「${plan.fwLabel}」で練習
+            </button>
+            <button class="btn btn-amber" style="padding:7px; font-size:0.74rem;" onclick="addPrescriptionToMenuPlan('${causeKey}')">
+              ➕ 今日の練習メニューに追加
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function jumpToPrescribedFootwork(presetKey, useSplitBeep = false) {
+      switchTab('tab-footwork');
+      const presetSel = document.getElementById('fwCoursePreset');
+      if (presetSel) {
+        presetSel.value = presetKey;
+        applyFwCoursePreset();
+      }
+      if (useSplitBeep) {
+        const centerSel = document.getElementById('fwCenterCallMode');
+        if (centerSel) centerSel.value = 'center_and_split';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 動画A-B区間 エンドレスループ再生ボタン追加
+    function injectVideoLoopToggleButton() {
+      const videoCtrl = document.getElementById('videoControlPanel');
+      if (!videoCtrl || document.getElementById('btnVideoLoopToggle')) return;
+      const topBtnGroup = videoCtrl.querySelector('.btn-group');
+      if (topBtnGroup) {
+        const loopBtn = document.createElement('button');
+        loopBtn.id = 'btnVideoLoopToggle';
+        loopBtn.className = 'btn btn-cyan-outline';
+        loopBtn.style = 'padding:4px 9px; font-size:0.72rem;';
+        loopBtn.textContent = '🔁 区間ループ: OFF';
+        loopBtn.onclick = toggleVideoLoopObserveMode;
+        topBtnGroup.appendChild(loopBtn);
+      }
+    }
+
+    function toggleVideoLoopObserveMode() {
+      videoLoopObserveMode = !videoLoopObserveMode;
+      const btn = document.getElementById('btnVideoLoopToggle');
+      if (btn) {
+        if (videoLoopObserveMode) {
+          btn.classList.add('active');
+          btn.textContent = '🔁 区間ループ: ON (連続再生)';
+        } else {
+          btn.classList.remove('active');
+          btn.textContent = '🔁 区間ループ: OFF';
+        }
+      }
+      if (videoLoopObserveMode && activeInputType === 'video') {
+        const upVideo = document.getElementById('uploadedVideo');
+        if (upVideo && upVideo.paused) {
+          if (upVideo.currentTime >= videoTrimState.endSec || upVideo.currentTime < videoTrimState.startSec) {
+            upVideo.currentTime = videoTrimState.startSec || 0;
+          }
+          upVideo.play().catch(() => {});
+          const btnPlayPause = document.getElementById('btnVideoPlayPause');
+          if (btnPlayPause) btnPlayPause.textContent = "⏸️ 一時停止";
+        }
+      }
+    }
+
     finishPoseRecording = function(fromVideoAuto = false) {
       clearInterval(poseSession.timerId);
       poseSession.active = false;
@@ -9605,9 +10325,17 @@
 
       if (fromVideoAuto && activeInputType === 'video') {
         const upVideo = document.getElementById('uploadedVideo');
-        if (upVideo) upVideo.pause();
-        const btnPlayPause = document.getElementById('btnVideoPlayPause');
-        if (btnPlayPause) btnPlayPause.textContent = "▶️ 再生";
+        if (videoLoopObserveMode && upVideo) {
+          upVideo.currentTime = videoTrimState.startSec || 0;
+          upVideo.play().catch(() => {});
+          const btnPlayPause = document.getElementById('btnVideoPlayPause');
+          if (btnPlayPause) btnPlayPause.textContent = "⏸️ 一時停止";
+          document.getElementById('sessionTimerLabel').textContent = "✅ 診断完了（🔁 A-B区間ループ再生中）";
+        } else if (upVideo) {
+          upVideo.pause();
+          const btnPlayPause = document.getElementById('btnVideoPlayPause');
+          if (btnPlayPause) btnPlayPause.textContent = "▶️ 再生";
+        }
       }
 
       if (poseSession.validFrames < 3) {
@@ -9695,42 +10423,22 @@
       document.getElementById('overallScoreBadge').textContent = `総合スコア: ${totalScore} / 100 pt`;
 
       const factorCandidates = [
-        {
-          key: 'low_contact',
-          score: isOverhead ? scoreContact : scoreContact + 15,
-          goodText: `打点の高さ（肩 ${maxSh}°・肘 ${maxEl}°）が目標基準に達しており、高い位置でシャトルを捉えられています`
-        },
-        {
-          key: 'pronation_lack',
-          score: isStance ? scorePronation + 15 : scorePronation,
-          goodText: `腕を引いた時の溜め（回外）からインパクトで面を返す動き（回内：${maxPro}pt）がスムーズに連動しています`
-        },
-        {
-          key: 'racket_drop',
-          score: scoreRacketKeep,
-          goodText: `ラケットを高い位置でキープし手首を立てる構え（維持率 ${wristKeepRate}%）ができており、次の球への準備が速いです`
-        },
-        {
-          key: 'lunge_lean',
-          score: scoreLungeAxis,
-          goodText: `深く踏み込んだ時（膝 ${minKn}°）も上体の傾きが ${maxLungeTilt}° 以内に収まっており、頭が突っ込まない安定した姿勢です`
-        },
-        {
-          key: 'excess_bounce',
-          score: scoreUnweight,
-          goodText: `待っている間の無駄な上下バウンドが少なく（安定度 ${scoreUnweight}pt）、いつでもスムーズに動き出せる構えです`
-        },
-        {
-          key: 'slow_recovery',
-          score: scoreRecoverySpeed,
-          goodText: `スイングや動き出しのスピード（最大 ${maxSp}pt）が速く、後半までフォームが崩れずに動けています`
-        }
+        { key: 'low_contact', score: isOverhead ? scoreContact : scoreContact + 15, goodText: `打点の高さ（肩 ${maxSh}°・肘 ${maxEl}°）が目標基準に達しており、高い位置でシャトルを捉えられています` },
+        { key: 'pronation_lack', score: isStance ? scorePronation + 15 : scorePronation, goodText: `腕を引いた時の溜め（回外）からインパクトで面を返す動き（回内：${maxPro}pt）がスムーズに連動しています` },
+        { key: 'racket_drop', score: scoreRacketKeep, goodText: `ラケットを高い位置でキープし手首を立てる構え（維持率 ${wristKeepRate}%）ができており、次の球への準備が速いです` },
+        { key: 'lunge_lean', score: scoreLungeAxis, goodText: `深く踏み込んだ時（膝 ${minKn}°）も上体の傾きが ${maxLungeTilt}° 以内に収まっており、頭が突っ込まない安定した姿勢です` },
+        { key: 'excess_bounce', score: scoreUnweight, goodText: `待っている間の無駄な上下バウンドが少なく（安定度 ${scoreUnweight}pt）、いつでもスムーズに動き出せる構えです` },
+        { key: 'slow_recovery', score: scoreRecoverySpeed, goodText: `スイングや動き出しのスピード（最大 ${maxSp}pt）が速く、後半までフォームが崩れずに動けています` }
       ];
 
       factorCandidates.sort((a, b) => b.score - a.score);
       const bestFactor = factorCandidates[0];
       const worstFactor = factorCandidates[factorCandidates.length - 1];
+      poseDetailTracker.lastWorstCauseKey = worstFactor.key;
       const rxPlan = AI_CAUSE_PRESCRIPTIONS[worstFactor.key] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
+
+      // 常設ドリルブラウザも自動的に今回の最優先課題へ同期
+      renderManualDrillBrowser(worstFactor.key);
 
       const staminaComment = (firstHalfWristAvg - secondHalfWristAvg >= 12)
         ? `⚠️ 前半（${firstHalfWristAvg}pt）に比べて、後半（${secondHalfWristAvg}pt）に少し手が下がりやすくなっています。`
@@ -9741,14 +10449,13 @@
       if (!prevBest || totalScore >= prevBest.score) {
         const diffStr = prevBest ? `（前回ベスト ${prevBest.score}pt から ＋${totalScore - prevBest.score}pt 更新！）` : `（初回ベストとして自動保存）`;
         savePersonalBestData(activeProfileId, shot, {
-          score: totalScore,
-          maxSh, maxEl, minKn, maxSp,
+          score: totalScore, maxSh, maxEl, minKn, maxSp,
           date: new Date().toLocaleDateString('ja-JP'),
           landmarks: aiMetrics.bestFrameLandmarks
         });
         recordBannerHtml = `<div style="background:rgba(16,185,129,0.18); border:1px solid #10b981; padding:6px 9px; border-radius:8px; margin-bottom:8px; font-weight:900; color:#34d399;">🎉 自己ベスト更新: ${totalScore} pt ${diffStr}</div>`;
       } else {
-        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:#fde047;">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>（最高打点差: ${maxSh - prevBest.maxSh}°）</div>`;
+        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:#fde047;">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b></div>`;
       }
 
       updateComparisonTableUI();
@@ -9773,191 +10480,113 @@
           <div style="margin-bottom:3px;">・${rxPlan.step1}</div>
           <div style="margin-bottom:3px;">・${rxPlan.step2}</div>
           <div style="margin-bottom:8px;">・${rxPlan.step3}</div>
-          <button class="btn btn-emerald" style="width:100%; padding:8px;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}', true)">
-            🏃 この課題に効く「${rxPlan.fwLabel}」をセットする
-          </button>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <button class="btn btn-emerald" style="padding:8px;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}', true)">
+              🏃 フットワークにセット
+            </button>
+            <button class="btn btn-amber" style="padding:8px;" onclick="addPrescriptionToMenuPlan('${worstFactor.key}')">
+              ➕ 今日の練習メニューに追加
+            </button>
+          </div>
         </div>
       `;
     };
 
     // =========================================================================
-    // 3. TAB 2（初速AIカメラ測定）わかりやすい左右バランス分析 ＆ 待機構え判定
+    // 4. TAB 4: 🏸 ラケット診断（回内連動指数 ＆ 初速ms 実測連動）
     // =========================================================================
-    let rxDetailTracker = {
-      currentDir: null,
-      waitHipYList: [],
-      lastWristOk: true,
-      dirLogs: []
-    };
+    renderRacketRecommendations = function(brandFilter = 'ALL') {
+      const container = document.getElementById('racketListContainer');
+      const summaryBox = document.getElementById('racketDiagnosisSummary');
+      if (!container || !summaryBox) return;
 
-    const _origStartReflexAISession = startReflexAISession;
-    startReflexAISession = function() {
-      rxDetailTracker.dirLogs = [];
-      rxDetailTracker.waitHipYList = [];
-      _origStartReflexAISession();
-    };
+      const hasMeasuredSwing = aiMetrics.maxSpeedPt > 0;
+      const effectiveSpeed = hasMeasuredSwing
+        ? aiMetrics.maxSpeedPt
+        : (userProfile.power === 'high' ? 88 : userProfile.power === 'low' ? 68 : 78);
 
-    scheduleNextReflexRep = function() {
-      if (!rxState.active) return;
-      if (rxState.currentRep >= rxState.targetReps) {
-        finishReflexAISession();
-        return;
+      const measuredPronation = (poseDetailTracker && poseDetailTracker.maxPronationPt > 0)
+        ? poseDetailTracker.maxPronationPt
+        : (userProfile.power === 'high' ? 85 : 76);
+
+      const hasMeasuredReflex = (rxState && rxState.resultsMs && rxState.resultsMs.length > 0);
+      const avgReflexMs = hasMeasuredReflex
+        ? Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length)
+        : null;
+
+      let minLbs = 21, maxLbs = 24;
+      if (userProfile.category === 'junior_elem') {
+        minLbs = 18; maxLbs = 21;
+      } else if (userProfile.power === 'high' || measuredPronation >= 84) {
+        minLbs = 24; maxLbs = 27;
+      } else if (userProfile.power === 'mid') {
+        minLbs = 22; maxLbs = 25;
       }
 
-      const banner = document.getElementById('reflexBanner');
-      const svgHolder = document.getElementById('reflexBannerSvgHolder');
-      const mainTxt = document.getElementById('reflexBannerMain');
-      const subTxt = document.getElementById('reflexBannerSub');
+      const pronationComment = measuredPronation >= 80
+        ? `前腕の回内スピード（${measuredPronation}pt）が高いため、弾きの良いシャフトやEXBOLT 65を少し高め（${minLbs}〜${maxLbs}lbs）に張っても強い打球が打てます。`
+        : `回内による面返し（${measuredPronation}pt）をサポートするため、球持ちが良く面安定性の高いイーブン〜ヘッドライト系ラケット（${minLbs}〜${maxLbs}lbs）が扱いやすくおすすめです。`;
 
-      banner.style.display = "flex";
-      rxState.phase = 'ready_wait';
-      rxState.baselineHip = null;
-      rxDetailTracker.waitHipYList = [];
-
-      svgHolder.innerHTML = buildCyberArrowSVG(0, 'unweight');
-      mainTxt.style.color = "#38bdf8";
-      mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：構えて待機...`;
-      subTxt.textContent = "手首を立てて静かに待ち、矢印が出た瞬間にスッと一歩目を出してください";
-
-      const randomWait = 1800 + Math.floor(Math.random() * 1400);
-      rxState.timerId = setTimeout(() => {
-        if (!rxState.active) return;
-        const chosen = FW_POSITIONS[Math.floor(Math.random() * FW_POSITIONS.length)];
-        rxDetailTracker.currentDir = chosen;
-        const cueMode = document.getElementById('rxCueMode').value;
-
-        rxState.phase = 'cue_active';
-        rxState.cueTime = performance.now();
-
-        svgHolder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
-        mainTxt.style.color = "#fbbf24";
-        mainTxt.textContent = `${chosen.name}！`;
-        subTxt.textContent = "抜重してスタート！";
-
-        playBeep(1060, 110);
-        if (cueMode === 'voice_dir') {
-          speakText(chosen.name, 1.35);
-        }
-      }, randomWait);
-    };
-
-    const _origRenderReflexAIPose = renderReflexAIPose;
-    renderReflexAIPose = function(results) {
-      if (rxState.active && rxState.phase === 'ready_wait' && results && results.poseLandmarks) {
-        const lm = results.poseLandmarks;
-        const hipY = (lm[23].y + lm[24].y) / 2;
-        const shY = (lm[11].y + lm[12].y) / 2;
-        const tLen = Math.max(0.12, Math.abs(hipY - shY));
-        rxDetailTracker.waitHipYList.push(hipY / tLen);
-        const stEval = evaluateReadyStanceQuality(lm);
-        rxDetailTracker.lastWristOk = stEval.isWristStandOk && stEval.wristScore >= 80;
-      }
-      _origRenderReflexAIPose(results);
-    };
-
-    const _origRecordSingleReflexResult = recordSingleReflexResult;
-    recordSingleReflexResult = function(ms, stepType, stancePt) {
-      let bounceDev = 0;
-      if (rxDetailTracker.waitHipYList.length >= 4) {
-        const arr = rxDetailTracker.waitHipYList;
-        const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-        bounceDev = Math.max(...arr.map(v => Math.abs(v - mean)));
-      }
-      const chosen = rxDetailTracker.currentDir || FW_POSITIONS[0];
-      rxDetailTracker.dirLogs.push({
-        ms,
-        stepType,
-        stancePt: stancePt || 85,
-        dirId: chosen.id,
-        dirName: chosen.name,
-        isRightSide: (chosen.id === 1 || chosen.id === 3 || chosen.id === 5),
-        wristOk: rxDetailTracker.lastWristOk,
-        isBouncing: bounceDev > 0.045
-      });
-      _origRecordSingleReflexResult(ms, stepType, stancePt);
-    };
-
-    finishReflexAISession = function() {
-      rxState.active = false;
-      rxState.phase = 'idle';
-      document.getElementById('reflexBanner').style.display = "none";
-      document.getElementById('rxSessionBadge').textContent = `✅ 全${rxState.targetReps}回 測定完了`;
-      playBeep(1200, 300);
-
-      const avgMs = Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length);
-      const avgStance = Math.round(rxState.stanceScores.reduce((a, b) => a + b, 0) / rxState.stanceScores.length);
-      const speedPt = Math.min(100, Math.max(35, Math.round(118 - avgMs / 11.5)));
-      const combinedPt = Math.round(speedPt * 0.7 + avgStance * 0.3);
-
-      const logs = rxDetailTracker.dirLogs;
-      const rightLogs = logs.filter(l => l.isRightSide);
-      const leftLogs = logs.filter(l => !l.isRightSide);
-      const avgRightMs = rightLogs.length ? Math.round(rightLogs.reduce((a, b) => a + b.ms, 0) / rightLogs.length) : avgMs;
-      const avgLeftMs = leftLogs.length ? Math.round(leftLogs.reduce((a, b) => a + b.ms, 0) / leftLogs.length) : avgMs;
-      const diffRL = Math.abs(avgRightMs - avgLeftMs);
-      const slowerSideName = avgLeftMs > avgRightMs ? "左方向（バック側）" : "右方向（フォア側）";
-
-      const bounceCount = logs.filter(l => l.isBouncing).length;
-      const wristDropCount = logs.filter(l => !l.wristOk).length;
-
-      let chosenPlan = AI_CAUSE_PRESCRIPTIONS.excess_bounce;
-      let techAdvice = "";
-
-      if (wristDropCount >= Math.ceil(logs.length / 2)) {
-        chosenPlan = AI_CAUSE_PRESCRIPTIONS.racket_drop;
-        techAdvice = `矢印を待っている間にラケットが下がる、または手首が寝てしまう場面が ${wristDropCount}回 ありました。動き出す時に腕を上げるロスをなくすため、みぞおちの前で手首を立てて待ちましょう。`;
-      } else if (bounceCount >= 2) {
-        chosenPlan = AI_CAUSE_PRESCRIPTIONS.excess_bounce;
-        techAdvice = `矢印が出る前の待機中に体が上下に跳ねている回が ${bounceCount}回 ありました。浮いている瞬間は床を蹴れないため、待つときは静かに構え、矢印が出た瞬間にだけフッと膝の力を抜いて沈む（抜重）とさらに速くなります。`;
-      } else if (diffRL >= 25) {
-        chosenPlan = AI_CAUSE_PRESCRIPTIONS.lunge_lean;
-        techAdvice = `右方向（平均 ${avgRightMs}ms）と左方向（平均 ${avgLeftMs}ms）を比べると、<b>${slowerSideName}への一歩目が ${diffRL}ms 遅れています</b>。遅れる方向へ出る時に頭から倒れず、反対側の足の親指の付け根で床を強く蹴り出しましょう。`;
-      } else {
-        techAdvice = `左右の反応スピードの差も少なく（右 ${avgRightMs}ms / 左 ${avgLeftMs}ms）、待っている間の手首の高さ・姿勢もよく安定しています。この感覚のままフットワーク練習に入りましょう。`;
-      }
-
-      document.getElementById('rxSummaryText').innerHTML = `
-        <div style="font-weight:900; color:#34d399; margin-bottom:6px; font-size:0.86rem;">
-          🏆 平均反応タイム: ${avgMs} ms（最速 ${rxState.bestMs} ms）｜ 構え安定度: ${avgStance} pt ｜ 総合: ${combinedPt} pt
+      summaryBox.innerHTML = `
+        <div style="font-weight:900; color:var(--accent-secondary); margin-bottom:5px; font-size:0.86rem;">
+          🤖 「${userProfile.name}」専用 AI実測連動ラケット＆ガット診断カルテ
         </div>
-        <div style="font-size:0.78rem; margin-bottom:6px; line-height:1.5;">
-          ・<b>左右の反応バランス:</b> 右方向 平均 <b>${avgRightMs}ms</b> ／ 左方向 平均 <b>${avgLeftMs}ms</b>（左右差 ${diffRL}ms）<br>
-          ・<b>待機中の構えチェック:</b> 手首下がり検知 ${wristDropCount}回 ／ 上下バウンド検知 ${bounceCount}回
-        </div>
-        <div style="background:rgba(6,182,212,0.12); border-left:4px solid #06b6d4; padding:8px 10px; border-radius:6px; margin-bottom:8px; font-size:0.78rem; line-height:1.5;">
-          <b style="color:#38bdf8;">💡 初速アップのアドバイス:</b><br>
-          ${techAdvice}
-        </div>
-        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.4); padding:8px 10px; border-radius:8px; font-size:0.75rem;">
-          <div style="font-weight:900; color:#34d399; margin-bottom:4px;">📋 おすすめ初速強化メニュー：『${chosenPlan.drillName}』</div>
-          <div style="margin-bottom:3px;">・${chosenPlan.step1}</div>
-          <div style="margin-bottom:6px;">・${chosenPlan.step2}</div>
-          <button class="btn btn-emerald" style="width:100%; padding:7px;" onclick="jumpToPrescribedFootwork('${chosenPlan.fwPreset}', true)">
-            🏃 抜重予告音付き「${chosenPlan.fwLabel}」をセットする
-          </button>
+        <div style="font-size:0.78rem; color:#e2e8f0; line-height:1.55;">
+          ・<b>基本データ:</b> 身長 <b>${userProfile.height}cm</b> ｜ パワー設定: <b>${userProfile.power}</b> ｜ スタイル: <b>${userProfile.style}</b><br>
+          ・<b>AI実測データ連動:</b> スイング速度 <b style="color:#34d399;">${effectiveSpeed}pt</b> ${hasMeasuredSwing ? '(実測)' : '(推定)'} ／ 回内・回外連動 <b style="color:#a3e635;">${measuredPronation}pt</b> ／ 初速タイム <b style="color:#38bdf8;">${avgReflexMs ? avgReflexMs + 'ms (実測)' : '未測定'}</b><br>
+          ・<b>ギア診断アドバイス:</b> ${pronationComment}
         </div>
       `;
+
+      const scoredList = RACKET_DB.filter(r => brandFilter === 'ALL' || r.brand === brandFilter).map(r => {
+        let matchPt = 76;
+        if (r.type === userProfile.style) matchPt += 11;
+        if (r.powerReq === userProfile.power) matchPt += 7;
+        if (measuredPronation >= 80 && (r.type === 'speed' || r.type === 'power')) matchPt += 4;
+        if (measuredPronation < 72 && r.type === 'control') matchPt += 5;
+        if (avgReflexMs && avgReflexMs <= 270 && r.type === 'speed') matchPt += 4;
+        return { ...r, matchPt: Math.min(99, matchPt), recTension: `${minLbs}〜${maxLbs} lbs` };
+      }).sort((a, b) => b.matchPt - a.matchPt);
+
+      const brandColors = { YONEX: "#10b981", MIZUNO: "#3b82f6", GOSEN: "#f59e0b", LINING: "#ef4444" };
+
+      container.innerHTML = scoredList.map(r => `
+        <div class="racket-card">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span class="badge-version" style="background:${brandColors[r.brand]}; color:#090d16;">${r.brand}</span>
+              <span style="font-weight:900; color:#34d399; font-size:0.82rem;">AIマッチ度: ${r.matchPt}%</span>
+            </div>
+            <div style="font-size:0.95rem; font-weight:800; margin-bottom:4px;">${r.name}</div>
+            <p style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:8px;">${r.desc}</p>
+          </div>
+          <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.73rem; color:#cbd5e1; line-height:1.45;">
+            <div>⚖️ 規格: <b>${r.weight}</b>（${r.balance}）</div>
+            <div>🧵 推奨ガット: <b>${r.stringRec}</b></div>
+            <div style="color:var(--accent-highlight);">🎯 あなたの推奨テンション: <b>${r.recTension}</b></div>
+          </div>
+        </div>
+      `).join('');
     };
 
     // =========================================================================
-    // 4. TAB 5: 🧮 スコアボード「ゲーム取得数（セットカウント）＆各ゲーム履歴」拡張
+    // 5. TAB 5: 🧮 スコアボード「ゲーム取得数（セットカウント）＆各ゲーム履歴」
     // =========================================================================
     matchState.gamesA = 0;
     matchState.gamesB = 0;
     matchState.gameLog = [];
 
     function initGameCountScoreboardUI() {
-      const scoreTabCard = document.querySelector('#tab-score .card');
       const scoreTeamAEl = document.getElementById('scoreTeamA');
       const scoreTeamBEl = document.getElementById('scoreTeamB');
-      if (!scoreTabCard || !scoreTeamAEl || !scoreTeamBEl) return;
+      if (!scoreTeamAEl || !scoreTeamBEl) return;
 
       if (!document.getElementById('gameCountBadgeA')) {
         const badgeWrapA = document.createElement('div');
         badgeWrapA.style = "margin:4px 0 6px; display:flex; justify-content:center; align-items:center; gap:6px; flex-wrap:wrap;";
         badgeWrapA.innerHTML = `
           <span class="badge-version" id="gameCountBadgeA" style="background:#0284c7; color:#fff; font-size:0.76rem; padding:3px 10px;">🏆 取得ゲーム: 0</span>
-          <button class="btn" style="padding:2px 7px; font-size:0.68rem;" onclick="claimGameForTeam('A')" title="このゲームをAの取得として次ゲームへ">＋1ゲーム奪取</button>
+          <button class="btn" style="padding:2px 7px; font-size:0.68rem;" onclick="claimGameForTeam('A')">＋1ゲーム奪取</button>
         `;
         scoreTeamAEl.parentNode.insertBefore(badgeWrapA, scoreTeamAEl);
       }
@@ -9967,7 +10596,7 @@
         badgeWrapB.style = "margin:4px 0 6px; display:flex; justify-content:center; align-items:center; gap:6px; flex-wrap:wrap;";
         badgeWrapB.innerHTML = `
           <span class="badge-version" id="gameCountBadgeB" style="background:#e11d48; color:#fff; font-size:0.76rem; padding:3px 10px;">🏆 取得ゲーム: 0</span>
-          <button class="btn" style="padding:2px 7px; font-size:0.68rem;" onclick="claimGameForTeam('B')" title="このゲームをBの取得として次ゲームへ">＋1ゲーム奪取</button>
+          <button class="btn" style="padding:2px 7px; font-size:0.68rem;" onclick="claimGameForTeam('B')">＋1ゲーム奪取</button>
         `;
         scoreTeamBEl.parentNode.insertBefore(badgeWrapB, scoreTeamBEl);
       }
@@ -9983,7 +10612,6 @@
       renderMatchCourt();
     }
 
-    const _origSaveMatchHistorySnapshot = saveMatchHistorySnapshot;
     saveMatchHistorySnapshot = function() {
       matchState.history.push({
         scoreA: matchState.scoreA,
@@ -10041,9 +10669,9 @@
       renderMatchCourt();
     };
 
-    const _origRenderMatchCourt = renderMatchCourt;
+    const _baseRenderMatchCourt = renderMatchCourt;
     renderMatchCourt = function() {
-      _origRenderMatchCourt();
+      _baseRenderMatchCourt();
 
       const gA = matchState.gamesA || 0;
       const gB = matchState.gamesB || 0;
@@ -10090,475 +10718,878 @@
         <div>${rightActionHtml}</div>
       `;
     };
-  /* =========================================================================
-       🚀 v9.6 PRO 追加アップグレードパッチ (項目2 ＆ 項目3 完全統合)
-       - 🔊 音声速度・体育館用ビープ音・抜重タメ時間の微調整パネル (TAB 1 & TAB 2)
-       - 🎯 フットワーク「センター帰還リズム音（ピポン♪）＆抜重連動」 (TAB 1)
-       - 🔁 動画「A-B区間 エンドレスループ再生（スロー観察モード）」 (TAB 3)
-       - 🏸 ラケット診断への「回内・回外連動指数 ＆ 初速ms」実測連動 (TAB 4)
-    ========================================================================= */
-
-    let audioCustomSettings = {
-      voiceRate: 1.32,      // 1.2 (標準) | 1.5 (速め) | 1.75 (超速)
-      beepTone: 'high',     // 'high' (体育館クリア大音量) | 'normal' (標準) | 'low' (マイルド)
-      unweightLeadMs: 420   // 300 (高速実戦) | 420 (標準) | 600 (基礎習得)
-    };
-
-    let videoLoopObserveMode = false; // 動画A-B区間の無限ループ観察フラグ
-
-    window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v9.6 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
-      const verBadge = document.querySelector('header .badge-version');
-      if (verBadge) verBadge.textContent = "v9.6 PRO";
-
-      injectAudioFineTuneControls();
-      injectCenterReturnFwOptions();
-      injectVideoLoopToggleButton();
-      renderRacketRecommendations('ALL');
-    });
 
     // =========================================================================
-    // 1. 🔊 音声読み上げ速度・ビープ音色＆音量・抜重タメ時間の微調整機能
+    // 6. 📋 TAB 8: 「AI練習メニュー自動編成・マイメニュー登録・練習記録ログ」
     // =========================================================================
-    function injectAudioFineTuneControls() {
-      const fwSettingsCard = document.querySelector('#tab-footwork .split-grid > .card');
-      if (fwSettingsCard && !document.getElementById('audioFineTuneBox')) {
-        const box = document.createElement('div');
-        box.id = 'audioFineTuneBox';
-        box.style = "margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);";
-        box.innerHTML = `
-          <div style="font-weight:900; color:var(--accent-highlight); margin-bottom:6px; font-size:0.8rem;">
-            🔊 音声スピード・ビープ音・抜重タメ時間の微調整（TAB 1・2 共通）
-          </div>
-          <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:6px;">
-            <div class="form-group">
-              <label>🗣️ 声のスピード</label>
-              <select id="cfgVoiceRate" onchange="updateAudioCustomConfig()" style="font-size:0.75rem; padding:6px;">
-                <option value="1.2">標準 (1.2x)</option>
-                <option value="1.45" selected>速め・実戦 (1.45x)</option>
-                <option value="1.75">超速・高速用 (1.75x)</option>
-              </select>
+    function injectMenuPlannerTabAndUI() {
+      // 8タブがスマホで4列×2段、PCで8列×1段に綺麗に並ぶようCSSを追加
+      const styleEl = document.createElement('style');
+      styleEl.textContent = `
+        @media (min-width: 820px) {
+          .nav-scroller { grid-template-columns: repeat(8, minmax(0, 1fr)) !important; }
+        }
+        .menu-item-row {
+          background: var(--bg-surface);
+          border: 1px solid var(--border-subtle);
+          border-radius: 10px;
+          padding: 9px 10px;
+          margin-bottom: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .menu-item-row.completed-row {
+          opacity: 0.68;
+          border-color: var(--accent-primary);
+          background: rgba(16, 185, 129, 0.08);
+        }
+        .theme-check-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: var(--bg-base);
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          padding: 6px 9px;
+          font-size: 0.75rem;
+          font-weight: 800;
+          cursor: pointer;
+          user-select: none;
+        }
+        .theme-check-pill input { accent-color: var(--accent-primary); width: 15px; height: 15px; }
+      `;
+      document.head.appendChild(styleEl);
+
+      // ナビゲーションバーに8つ目のタブボタンを追加
+      const nav = document.querySelector('.nav-scroller');
+      if (nav && !document.getElementById('btn-tab-menu')) {
+        const tabBtn = document.createElement('button');
+        tabBtn.className = 'nav-tab';
+        tabBtn.id = 'btn-tab-menu';
+        tabBtn.textContent = '📋 8.メニュー作成';
+        tabBtn.onclick = () => switchTab('tab-menu');
+        nav.appendChild(tabBtn);
+      }
+
+      // メインコンテナに TAB 8 セクションを追加
+      const mainContainer = document.querySelector('.main-container');
+      if (mainContainer && !document.getElementById('tab-menu')) {
+        const sec = document.createElement('section');
+        sec.id = 'tab-menu';
+        sec.className = 'tab-panel';
+        sec.innerHTML = `
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <span class="badge-version">少人数＆自宅対応</span>
+                <span>📋 AI練習メニュー自動編成 ＆ マイメニュー登録・練習記録</span>
+              </div>
+              <div class="btn-group">
+                <button class="btn btn-emerald" onclick="generateAIMenuByConditions()">✨ 条件からAI自動編成</button>
+                <button class="btn btn-cyan-outline" onclick="saveCurrentMenuToMyMenus()">💾 マイメニュー登録</button>
+              </div>
             </div>
-            <div class="form-group">
-              <label>🔔 ビープ音色・音量</label>
-              <select id="cfgBeepTone" onchange="updateAudioCustomConfig()" style="font-size:0.75rem; padding:6px;">
-                <option value="high" selected>体育館クリア (高音・大)</option>
-                <option value="normal">標準トーン (中音)</option>
-                <option value="low">マイルド (低音)</option>
-              </select>
+
+            <!-- 🤖 AI自動編成の条件設定パネル -->
+            <div class="card" style="background:var(--bg-panel); margin-bottom:12px;">
+              <div style="font-weight:900; color:var(--accent-highlight); margin-bottom:8px; font-size:0.86rem;">
+                🤖 Step 1：今日の「練習人数・持ち時間・重点テーマ」を選ぶ（ゲーム練習なしの少人数に完全対応）
+              </div>
+
+              <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:8px; margin-bottom:10px;">
+                <div class="form-group">
+                  <label>① 練習人数・場所</label>
+                  <select id="aiMenuPlayersMode">
+                    <option value="home_1">🏠 1人（自宅・省スペース / シャトルなし）</option>
+                    <option value="gym_1">🏸 1人（体育館コート / フットワーク・素振り）</option>
+                    <option value="gym_2" selected>👥 2人（体育館マンツーマン / 手投げ＆基礎・半面）</option>
+                    <option value="gym_3">👥 3人（体育館3人回し / ノック＆2対1パターン）</option>
+                    <option value="gym_4">👥 4人以上（体育館 / パターン＋ゲーム練習あり）</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>② 全体の持ち時間（分）</label>
+                  <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:5px;">
+                    <select id="aiMenuDurationPreset" onchange="document.getElementById('aiMenuTargetMin').value = this.value; updateMenuTimeGaugeUI();">
+                      <option value="15">15分（自宅・短時間）</option>
+                      <option value="30">30分（集中トレ）</option>
+                      <option value="60">60分（1時間）</option>
+                      <option value="90">90分（1.5時間）</option>
+                      <option value="120">120分（2時間）</option>
+                      <option value="150" selected>150分（2時間半）</option>
+                      <option value="180">180分（3時間）</option>
+                    </select>
+                    <input type="number" id="aiMenuTargetMin" value="150" min="5" max="360" oninput="updateMenuTimeGaugeUI()" title="自由分数入力" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>📂 登録済みマイメニューから呼び出す</label>
+                  <div style="display:grid; grid-template-columns: 1fr auto auto; gap:4px;">
+                    <select id="savedMenusSelect" onchange="loadSelectedMyMenu(this.value)">
+                      <option value="">-- 保存メニューを選択 --</option>
+                    </select>
+                    <button class="btn btn-rose" style="padding:6px 8px; font-size:0.72rem;" onclick="deleteSelectedMyMenu()" title="選択中のマイメニューを削除">🗑️</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:10px;">
+                <label>③ 今日とくに重点を置きたいテーマ（複数チェック可）</label>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                  <label class="theme-check-pill"><input type="checkbox" id="chkThemeAIWeak" checked /> 🎯 直近のAI測定の弱点を自動反映</label>
+                  <label class="theme-check-pill"><input type="checkbox" id="chkThemeUnweight" checked /> 👟 抜重・一歩目の初速＆バウンド癖矯正</label>
+                  <label class="theme-check-pill"><input type="checkbox" id="chkThemeFootwork" checked /> 🦶 フットワーク＆ランジ体幹軸・蹴り戻し</label>
+                  <label class="theme-check-pill"><input type="checkbox" id="chkThemeFeeding" checked /> 🔄 手投げノック・分解チェック（高打点・回内）</label>
+                  <label class="theme-check-pill"><input type="checkbox" id="chkThemeJump" /> 🦵 ジャンプ＆下半身強化（空中反転・軸作り）</label>
+                </div>
+              </div>
+
+              <button class="btn btn-emerald" style="width:100%; padding:10px; font-size:0.86rem;" onclick="generateAIMenuByConditions()">
+                ✨ この条件（人数×時間×重点テーマ）で最適メニューをAI自動編成する
+              </button>
             </div>
-            <div class="form-group">
-              <label>👟 抜重タメ間隔</label>
-              <select id="cfgUnweightMs" onchange="updateAudioCustomConfig()" style="font-size:0.75rem; padding:6px;">
-                <option value="300">0.30秒 (超高速)</option>
-                <option value="420" selected>0.42秒 (標準)</option>
-                <option value="600">0.60秒 (基礎確認)</option>
-              </select>
+
+            <!-- 📊 現在のメニュー構成 ＆ 残り時間ゲージ -->
+            <div class="split-grid">
+              <div>
+                <div class="breakdown-box" style="margin-top:0; margin-bottom:10px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                    <input type="text" id="currentMenuTitleInput" value="体育館 2.5時間（2人・フットワーク＆ノック重点）" style="font-weight:900; font-size:0.88rem; max-width:340px; padding:5px 8px;" oninput="currentMenuPlan.title = this.value" />
+                    <span id="menuTimeRemainBadge" class="badge-version" style="font-size:0.76rem; padding:3px 10px;">合計 150分 / 目標 150分</span>
+                  </div>
+                  <div class="bar-track" style="height:9px;">
+                    <div class="bar-fill" id="menuTimeGaugeBar" style="width:100%;"></div>
+                  </div>
+                  <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:5px;">
+                    💡 基礎打ちの前に「抜重・フットワーク矯正」と「手投げノック（分解チェック）」を入れることで、良いフォームのまま基礎打ち・パターンへ入れます。
+                  </div>
+                </div>
+
+                <!-- メニュー項目リスト描画エリア -->
+                <div id="menuItemsListContainer"></div>
+
+                <!-- ➕ 手動で項目を追加するフォーム -->
+                <div class="card" style="background:var(--bg-surface); margin-top:10px; margin-bottom:0; padding:10px;">
+                  <div style="font-weight:900; font-size:0.78rem; color:var(--accent-secondary); margin-bottom:6px;">➕ 練習メニュー項目を自由に追加</div>
+                  <div class="form-grid" style="grid-template-columns: 1.6fr 0.7fr 1fr; gap:6px; margin-bottom:6px;">
+                    <input type="text" id="addMenuName" placeholder="項目名（例：バック奥ハイクリア手投げノック）" style="font-size:0.78rem; padding:6px 8px;" />
+                    <input type="number" id="addMenuMin" value="15" min="1" max="120" style="font-size:0.78rem; padding:6px 8px;" title="時間(分)" />
+                    <select id="addMenuLinkTab" style="font-size:0.75rem; padding:6px;">
+                      <option value="tab-footwork">🏃 フットワーク連動</option>
+                      <option value="tab-reflex">⚡ 初速＆矢印連動</option>
+                      <option value="tab-pose">🎥 骨格AI測定連動</option>
+                      <option value="tab-score">🧮 スコアボード連動</option>
+                      <option value="">連動なし（実技のみ）</option>
+                    </select>
+                  </div>
+                  <div style="display:grid; grid-template-columns: 1fr auto; gap:6px;">
+                    <input type="text" id="addMenuNote" placeholder="意識するポイント（例：肘を耳の横まで上げて回内で振る）" style="font-size:0.76rem; padding:6px 8px;" />
+                    <button class="btn btn-amber" onclick="addCustomMenuItem()">➕ 追加</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 📝 右カラム：マイメニュー保存 ＆ 実施した練習記録（ログ） -->
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div class="card" style="background:var(--bg-panel); margin:0;">
+                  <div style="font-weight:900; color:#34d399; margin-bottom:6px; font-size:0.86rem;">
+                    📝 今日の練習を履歴ログに記録する
+                  </div>
+                  <p style="font-size:0.74rem; color:var(--text-secondary); margin-bottom:8px;">
+                    実施したメニューに「✅」を入れ、気づいた点や次回の課題メモを書いて保存すると、下の練習履歴に記録が残ります。
+                  </p>
+                  <div class="form-group" style="margin-bottom:8px;">
+                    <label>今日の振り返り・気づきメモ</label>
+                    <textarea id="practiceLogMemoInput" rows="2" placeholder="例：抜重を意識したら左前への一歩目が速くなった。後半に手首が寝ないよう次回も注意。" style="font-size:0.78rem;"></textarea>
+                  </div>
+                  <button class="btn btn-emerald" style="width:100%; padding:9px;" onclick="recordCurrentMenuToLog()">
+                    ✅ 今日の練習記録として保存する
+                  </button>
+                </div>
+
+                <div class="summary-box" style="margin-top:0;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-weight:900; font-size:0.84rem; color:var(--accent-highlight);">📚 過去の練習記録ログ</span>
+                    <span id="practiceLogCountBadge" class="badge-version">0 件</span>
+                  </div>
+                  <div id="practiceLogsHistoryContainer" style="max-height:420px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
+              </div>
             </div>
           </div>
         `;
-        fwSettingsCard.appendChild(box);
-      }
-      updateAudioCustomConfig();
-    }
-
-    function updateAudioCustomConfig() {
-      const rateEl = document.getElementById('cfgVoiceRate');
-      const toneEl = document.getElementById('cfgBeepTone');
-      const leadEl = document.getElementById('cfgUnweightMs');
-      if (rateEl) audioCustomSettings.voiceRate = Number(rateEl.value) || 1.45;
-      if (toneEl) audioCustomSettings.beepTone = toneEl.value || 'high';
-      if (leadEl) audioCustomSettings.unweightLeadMs = Number(leadEl.value) || 420;
-    }
-
-    // 体育館でも通りやすいようビープ音の出力と周波数をカスタマイズ
-    playBeep = function(freq = 880, durationMs = 100) {
-      try {
-        unlockAudioContext();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        let mult = 1.0;
-        let vol = 0.26;
-        if (audioCustomSettings.beepTone === 'high') {
-          mult = 1.18;
-          vol = 0.40;
-          osc.type = 'triangle';
-        } else if (audioCustomSettings.beepTone === 'low') {
-          mult = 0.82;
-          vol = 0.22;
-          osc.type = 'sine';
-        } else {
-          osc.type = 'sine';
-        }
-
-        osc.frequency.setValueAtTime(Math.round(freq * mult), audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + durationMs / 1000);
-      } catch (e) {}
-    };
-
-    // 設定された読み上げ速度を自動適用
-    speakText = function(text, rateOverride) {
-      if (!('speechSynthesis' in window)) return;
-      try {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'ja-JP';
-        utter.rate = audioCustomSettings.voiceRate || rateOverride || 1.35;
-        utter.pitch = 1.05;
-        window.speechSynthesis.speak(utter);
-      } catch (e) {}
-    };
-
-    // =========================================================================
-    // 2. 🎯 フットワーク「センター帰還リズム音（ピポン♪）＆抜重予告音」拡張 (TAB 1 & 2)
-    // =========================================================================
-    function injectCenterReturnFwOptions() {
-      const centerSel = document.getElementById('fwCenterCallMode');
-      if (!centerSel) return;
-      if (!centerSel.querySelector('option[value="center_and_split"]')) {
-        const opt1 = document.createElement('option');
-        opt1.value = "center_and_split";
-        opt1.textContent = "🎯 センター帰還合図(ピポン) ➔ 抜重予告音(ピッ)";
-        centerSel.appendChild(opt1);
-
-        const opt2 = document.createElement('option');
-        opt2.value = "center_only";
-        opt2.textContent = "🎯 1球ごとに「センターへ戻る」リズム合図を入れる";
-        centerSel.appendChild(opt2);
-      }
-    }
-
-    let fwExtraCenterTimerId = null;
-    const _origStopVoiceFootwork = stopVoiceFootwork;
-    stopVoiceFootwork = function() {
-      clearTimeout(fwExtraCenterTimerId);
-      _origStopVoiceFootwork();
-    };
-
-    const _origPauseVoiceFootwork = pauseVoiceFootwork;
-    pauseVoiceFootwork = function() {
-      clearTimeout(fwExtraCenterTimerId);
-      _origPauseVoiceFootwork();
-    };
-
-    // 抜重タメ時間＆センター帰還合図に対応したフットワークコール
-    runNextFootworkCall = function() {
-      if (!fwState.running || fwState.paused) return;
-      clearFwHighlights();
-      clearTimeout(fwExtraCenterTimerId);
-
-      if (!fwState.isTimeMode && fwState.currentRep >= fwState.repsPerSet) {
-        handleFwSetComplete();
-        return;
+        mainContainer.appendChild(sec);
       }
 
-      const preset = document.getElementById('fwCoursePreset').value;
-      const centerMode = document.getElementById('fwCenterCallMode').value;
-      let chosenIdx = 0;
-
-      if (FW_SEQUENCES[preset]) {
-        const seq = FW_SEQUENCES[preset];
-        chosenIdx = seq[fwState.seqCursor % seq.length];
-        fwState.seqCursor++;
+      loadMenusAndLogsFromStorage();
+      if (!currentMenuPlan.items || !currentMenuPlan.items.length) {
+        generateAIMenuByConditions(false);
       } else {
-        let activeIndices = fwEnabledNodes.map((v, i) => v ? i : -1).filter(i => i !== -1);
-        if (centerMode === 'no_repeat' && activeIndices.length > 1 && fwState.lastChosenIdx !== -1) {
-          activeIndices = activeIndices.filter(i => i !== fwState.lastChosenIdx);
+        renderCurrentMenuEditorUI();
+      }
+      renderSavedMenusSelectUI();
+      renderPracticeLogsHistoryUI();
+    }
+
+    // 時間配分を目標分数ぴったり（100%）に丸めるヘルパー
+    function allocateExactMinutes(totalMin, rawWeights) {
+      const weightSum = rawWeights.reduce((a, b) => a + b, 0) || 1;
+      let allocated = rawWeights.map(w => Math.max(2, Math.round((w / weightSum) * totalMin)));
+      let diff = totalMin - allocated.reduce((a, b) => a + b, 0);
+      // 端数を一番比重の大きいメイン練習項目で調整して合計を1分単位で完全一致させる
+      let maxIdx = 0;
+      allocated.forEach((v, i) => { if (v > allocated[maxIdx]) maxIdx = i; });
+      allocated[maxIdx] = Math.max(2, allocated[maxIdx] + diff);
+      return allocated;
+    }
+
+    // 🤖 条件（人数×持ち時間×重点テーマ）に応じたAIメニュー自動編成エンジン
+    function generateAIMenuByConditions(showFeedback = true) {
+      const pMode = document.getElementById('aiMenuPlayersMode') ? document.getElementById('aiMenuPlayersMode').value : 'gym_2';
+      const targetMin = Math.max(5, Number(document.getElementById('aiMenuTargetMin') ? document.getElementById('aiMenuTargetMin').value : 150) || 150);
+
+      const useAIWeak   = document.getElementById('chkThemeAIWeak') ? document.getElementById('chkThemeAIWeak').checked : true;
+      const useUnweight = document.getElementById('chkThemeUnweight') ? document.getElementById('chkThemeUnweight').checked : true;
+      const useFootwork = document.getElementById('chkThemeFootwork') ? document.getElementById('chkThemeFootwork').checked : true;
+      const useFeeding  = document.getElementById('chkThemeFeeding') ? document.getElementById('chkThemeFeeding').checked : true;
+      const useJump     = document.getElementById('chkThemeJump') ? document.getElementById('chkThemeJump').checked : false;
+
+      const weakKey = (poseDetailTracker && poseDetailTracker.lastWorstCauseKey) ? poseDetailTracker.lastWorstCauseKey : 'racket_drop';
+      const weakRx = AI_CAUSE_PRESCRIPTIONS[weakKey] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
+
+      let templates = [];
+      let weights = [];
+      let modeTitle = "";
+
+      if (pMode === 'home_1') {
+        modeTitle = `🏠 自宅 ${targetMin}分（抜重＆フォーム・下半身強化）`;
+        templates.push({
+          cat: "構え＆抜重",
+          name: "基本の構え固定 ＆ 2cm無反動の抜重ステップ確認",
+          note: "みぞおちの前で手首を立てて静止し、上に跳ねずに膝の力をフッと抜いて真下に2〜3cm沈む感覚を固める（3秒ディレイ再生で確認）。",
+          linkTab: "tab-pose",
+          fwPreset: ""
+        });
+        weights.push(18);
+
+        if (useUnweight) {
+          templates.push({
+            cat: "初速＆矢印",
+            name: "AI初速測定（左右差チェック）＆ ネオン矢印1歩目リアクション",
+            note: "予備音「ピッ」で抜重し、矢印が出た瞬間に進行方向と逆足の母趾球（親指の付け根）で床を蹴って半歩〜1歩踏み出す。",
+            linkTab: "tab-reflex",
+            fwPreset: ""
+          });
+          weights.push(25);
         }
-        chosenIdx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
+
+        if (useFootwork) {
+          templates.push({
+            cat: "1歩ランジ軸",
+            name: "1歩ランジ着地2秒ホールド ➔ センター帰還合図30秒ラリー",
+            note: "カカト着地でお尻・太ももに体重を乗せ、頭が膝より前に突っ込まない姿勢を確認。「ピポン♪」の合図で滞留ゼロで中央へ戻る。",
+            linkTab: "tab-footwork",
+            fwPreset: "front2"
+          });
+          weights.push(30);
+        }
+
+        if (useJump) {
+          templates.push({
+            cat: "ジャンプ＆空中反転",
+            name: "下半身バネ強化 ＆ 空中180度反転ターン（上半身リード＆軸作り）",
+            note: "①カーフレイズ ➔ ②その場ジャンプで跳ぶ瞬間に肩と腕を先に回し、おへそに力を入れて空中でコンパクトに反転し両足クッション着地。",
+            linkTab: "tab-pose",
+            fwPreset: ""
+          });
+          weights.push(22);
+        }
+
+        templates.push({
+          cat: "仕上げAI測定",
+          name: `仕上げ10秒精密測定（テーマ：${weakRx.title}）`,
+          note: "疲れた後半でもラケットヘッドが胸より下に落ちないか、10秒測定で前半・後半キープ力を採点する。",
+          linkTab: "tab-pose",
+          fwPreset: ""
+        });
+        weights.push(15);
+
+      } else if (pMode === 'gym_1') {
+        modeTitle = `🏸 体育館1人 ${targetMin}分（フットワーク＆ストローク分解集中）`;
+        templates.push({
+          cat: "アップ＆抜重",
+          name: "動的ストレッチ ＆ 構え・無反動抜重チェック",
+          note: "待機中の不要なバウンドを消し、合図の瞬間に重心をスッと沈めて一歩目を出す準備。",
+          linkTab: "tab-reflex",
+          fwPreset: ""
+        });
+        weights.push(12);
+
+        templates.push({
+          cat: "初速＆6点FW",
+          name: "声指示6点フットワーク（センター帰還合図＋抜重予告音）",
+          note: "30秒連続×3セット。打った直後に前足1回で床を蹴り戻し、センターへ戻る時もリストスタンドを維持する。",
+          linkTab: "tab-footwork",
+          fwPreset: "all6"
+        });
+        weights.push(30);
+
+        if (useFeeding || useAIWeak) {
+          templates.push({
+            cat: "分解素振り＆壁打ち",
+            name: `課題別3ステップ分解ドリル：『${weakRx.drillName}』`,
+            note: `${weakRx.step1} 続いてシャトルを使ったセルフ手投げ打ち・壁打ちで回内と打点を確認。`,
+            linkTab: "tab-pose",
+            fwPreset: weakRx.fwPreset
+          });
+          weights.push(28);
+        }
+
+        if (useJump) {
+          templates.push({
+            cat: "ジャンプ＆反転",
+            name: "リアコート追い込まれからの空中反転ジャンプ＆着地ステップ",
+            note: "跳ぶ瞬間に肩・腕を先行させて空中でコンパクトに反転し、着地と同時にセンターへ一歩目を出す。",
+            linkTab: "tab-footwork",
+            fwPreset: "back2"
+          });
+          weights.push(18);
+        }
+
+        templates.push({
+          cat: "AI撮影＆確認",
+          name: "動画撮影またはカメラ10秒測定でフォーム数値チェック",
+          note: "理想打点レーザー（145°前後）と回内連動スコアを確認し、自己ベストを更新する。",
+          linkTab: "tab-pose",
+          fwPreset: ""
+        });
+        weights.push(12);
+
+      } else {
+        // 2人 / 3人 / 4人以上（体育館）
+        const pLabel = pMode === 'gym_2' ? '2人マンツーマン' : (pMode === 'gym_3' ? '3人ローテ' : '4人以上');
+        modeTitle = `🏟️ 体育館 ${targetMin}分（${pLabel}・黄金順序メニュー）`;
+
+        // ① ウォームアップ＆抜重
+        templates.push({
+          cat: "① アップ＆抜重",
+          name: "ウォームアップ ＆ 静止待機からの抜重リアクション",
+          note: "基礎打ちに入る前に、小刻みに跳ねる癖をリセットし、相手のインパクトに合わせてスッと沈む抜重のタイミングを合わせる。",
+          linkTab: "tab-reflex",
+          fwPreset: ""
+        });
+        weights.push(10);
+
+        // ② 重点フットワーク矯正（基礎打ち前）
+        if (useFootwork || useUnweight) {
+          templates.push({
+            cat: "② フットワーク矯正",
+            name: "コートフットワーク（リストスタンド維持 ＆ ランジ体幹軸・蹴り戻し）",
+            note: "手首を立ててラケットを胸の前に保ち、踏み込みはカカト着地で上体を突っ込ませない。着地即キックバックでセンターへ戻る。",
+            linkTab: "tab-footwork",
+            fwPreset: useAIWeak ? weakRx.fwPreset : "all6"
+          });
+          weights.push(18);
+        }
+
+        // ③ 手投げノック・分解フォームチェック（基礎打ち前に打点と回内を固める）
+        if (useFeeding || useAIWeak) {
+          templates.push({
+            cat: "③ 手投げ分解ノック",
+            name: `基礎打ち前の手投げ・ラケット出しノック：『${weakRx.drillName}』`,
+            note: `いきなり基礎打ちをせず、近〜中距離からの配球で「${weakRx.title}」を修正。肘を高く保ち、前腕の回外➔回内で鋭く面を返す（交代制）。`,
+            linkTab: "tab-pose",
+            fwPreset: weakRx.fwPreset
+          });
+          weights.push(22);
+        }
+
+        // ④ テーマ意識の基礎打ち
+        templates.push({
+          cat: "④ 基礎打ち（実戦意識）",
+          name: "基礎打ち（ドライブ ➔ ドロップ＆ロブ ➔ クリア ➔ スマッシュ＆レシーブ）",
+          note: "直前の手投げノックで作った「最高打点・回内スイング・相手のインパクトに合わせる抜重」を基礎打ちのラリー内で再現する。",
+          linkTab: "tab-pose",
+          fwPreset: ""
+        });
+        weights.push(16);
+
+        // ⑤ 人数に応じた応用・パターンノック
+        if (pMode === 'gym_2') {
+          templates.push({
+            cat: "⑤ 半面・対角パターン",
+            name: "マンツーマン半面・対角パターン練習（前後交互 ＆ カットネット ➔ ロブ）",
+            note: "1球ごとにセンターへ蹴り戻し、球際でも頭が前に倒れないランジ姿勢と後半のラケット高位置キープを徹底する（交代制）。",
+            linkTab: "tab-footwork",
+            fwPreset: "straight_r"
+          });
+          weights.push(24);
+        } else if (pMode === 'gym_3') {
+          templates.push({
+            cat: "⑤ 3人回し＆2対1",
+            name: "3人ローテーション全面ノック ＆ 2対1オールロング・アタック練習",
+            note: "1人が動く側・2人が配球側（または2対1）で3〜5分交代。追い込まれた奥からの反転ステップと戻りの一歩目を鍛える。",
+            linkTab: "tab-footwork",
+            fwPreset: "corners4"
+          });
+          weights.push(26);
+        } else {
+          templates.push({
+            cat: "⑤ パターン＆ゲーム",
+            name: "ローテーションパターン練習 ➔ ゲーム形式（スコア＆立ち位置ナビ連動）",
+            note: "練習した抜重・リストスタンド・高打点回内をゲーム内で実践。TAB 5のスコアボードでセットカウントを記録。",
+            linkTab: "tab-score",
+            fwPreset: ""
+          });
+          weights.push(26);
+        }
+
+        // ⑥ ジャンプ・フィジカル（選択時）または 仕上げAI動画チェック＆ダウン
+        if (useJump) {
+          templates.push({
+            cat: "⑥ ジャンプ＆反転軸",
+            name: "空中反転ステップ＆下半身バネ強化ドリル",
+            note: "跳ぶ瞬間に肩と腕を先に引き、空中でコンパクトに軸を作って反転・着地クッションから次の一歩へ繋げる。",
+            linkTab: "tab-pose",
+            fwPreset: ""
+          });
+          weights.push(10);
+        } else {
+          templates.push({
+            cat: "⑥ AI確認＆ダウン",
+            name: "仕上げフォーム動画撮影（AI区間診断）＆ クールダウン",
+            note: "練習終盤のスイングやフットワークを撮影してAI診断にかけ、前半・後半のキープ力とスコアを記録する。",
+            linkTab: "tab-pose",
+            fwPreset: ""
+          });
+          weights.push(10);
+        }
       }
 
-      const posObj = FW_POSITIONS[chosenIdx];
-      const isRepeat = (chosenIdx === fwState.lastChosenIdx);
-      fwState.lastChosenIdx = chosenIdx;
+      const exactMins = allocateExactMinutes(targetMin, weights);
 
-      fwState.currentRep++;
-      updateFwHeaderUI();
-
-      const cellEl = document.getElementById('fw-node-' + chosenIdx);
-      const voiceMode = document.getElementById('fwVoiceMode').value;
-      const callLabel = document.getElementById('fwCurrentCallLabel');
-
-      const activateChosenCell = () => {
-        if (!fwState.running || fwState.paused) return;
-        if (cellEl) cellEl.classList.add('active-call');
-        callLabel.textContent = `👉 ${posObj.name}！`;
-
-        if (voiceMode === 'direction') {
-          playBeep(960, 85);
-          speakText(posObj.name);
-        } else if (voiceMode === 'number') {
-          playBeep(960, 85);
-          speakText(posObj.numName);
-        } else if (voiceMode === 'beep_only') {
-          playBeep(1040, 120);
-        }
+      currentMenuPlan = {
+        title: modeTitle,
+        targetMin: targetMin,
+        playersMode: pMode,
+        items: templates.map((tpl, idx) => ({
+          id: "m_" + Date.now() + "_" + idx,
+          cat: tpl.cat,
+          name: tpl.name,
+          minutes: exactMins[idx],
+          note: tpl.note,
+          linkTab: tpl.linkTab,
+          fwPreset: tpl.fwPreset || "",
+          done: false
+        }))
       };
 
-      if (isRepeat) setTimeout(activateChosenCell, 110);
-      else activateChosenCell();
+      const titleInput = document.getElementById('currentMenuTitleInput');
+      if (titleInput) titleInput.value = currentMenuPlan.title;
 
-      const leadMs = Math.min(audioCustomSettings.unweightLeadMs || 420, Math.floor(fwState.intervalMs * 0.35));
-
-      // センター帰還合図（インターバルの約50%地点で「ピポン♪＋センター戻れ」を発火）
-      if (centerMode === 'center_and_split' || centerMode === 'center_only') {
-        const centerTimingMs = Math.max(260, Math.floor(fwState.intervalMs * 0.48));
-        fwExtraCenterTimerId = setTimeout(() => {
-          if (!fwState.running || fwState.paused) return;
-          clearFwHighlights();
-          callLabel.textContent = "🎯 センターへ戻れ！";
-          if (voiceMode !== 'mute') {
-            playBeep(740, 55);
-            setTimeout(() => { if (fwState.running && !fwState.paused) playBeep(980, 70); }, 70);
-          }
-        }, centerTimingMs);
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+      if (showFeedback) {
+        playBeep(1040, 110);
       }
+    }
 
-      // 次の指示直前の抜重予告音
-      if (centerMode === 'split_beep' || centerMode === 'center_and_split') {
-        fwState.subTimerId = setTimeout(() => {
-          if (!fwState.running || fwState.paused) return;
-          clearFwHighlights();
-          callLabel.textContent = "👟 抜重！";
-          if (voiceMode !== 'mute') playBeep(540, 65);
-        }, Math.max(300, fwState.intervalMs - leadMs));
-      } else if (centerMode !== 'center_only') {
-        fwState.subTimerId = setTimeout(() => {
-          if (!fwState.running || fwState.paused) return;
-          clearFwHighlights();
-        }, Math.max(200, fwState.intervalMs - 140));
-      }
+    // TAB 2 や TAB 3 の処方箋からワンタップで今日の練習メニューへ追加
+    function addPrescriptionToMenuPlan(causeKey) {
+      const plan = AI_CAUSE_PRESCRIPTIONS[causeKey] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
+      currentMenuPlan.items.push({
+        id: "m_" + Date.now(),
+        cat: "AI処方ドリル",
+        name: `3ステップ矯正：『${plan.drillName}』`,
+        minutes: plan.menuMin || 15,
+        note: `${plan.step1} / ${plan.step2}`,
+        linkTab: "tab-footwork",
+        fwPreset: plan.fwPreset,
+        done: false
+      });
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+      switchTab('tab-menu');
+      playBeep(1120, 120);
+    }
 
-      fwState.timerId = setTimeout(runNextFootworkCall, fwState.intervalMs);
-    };
+    function renderCurrentMenuEditorUI() {
+      const container = document.getElementById('menuItemsListContainer');
+      if (!container) return;
 
-    // TAB 2 ネオン矢印リアクション練習にも「抜重タメ間隔」設定を連動
-    runNextArrowReactionRep = function() {
-      if (!arrowDrillState.running) return;
-
-      const box = document.getElementById('giantArrowBox');
-      const holder = document.getElementById('giantArrowSvgHolder');
-      const txt = document.getElementById('giantArrowText');
-
-      if (arrowDrillState.currentRep >= arrowDrillState.totalReps) {
-        box.className = "giant-arrow-circle";
-        holder.innerHTML = buildCyberArrowSVG(0, 'done');
-        txt.textContent = "COMPLETE!";
-        document.getElementById('arrowDrillBadge').textContent = "✅ 完了";
-        playBeep(1200, 320);
-        speakText("リアクション練習完了！お疲れ様でした！");
-        arrowDrillState.running = false;
-        releaseAppWakeLock();
+      if (!currentMenuPlan.items.length) {
+        container.innerHTML = `<div style="padding:16px; text-align:center; color:var(--text-secondary); font-size:0.8rem;">メニュー項目がありません。「✨ 条件からAI自動編成」を押すか、下から追加してください。</div>`;
+        updateMenuTimeGaugeUI();
         return;
       }
 
-      const timingStyle = document.getElementById('arrowTimingStyle').value;
-      const voiceMode = document.getElementById('arrowVoiceMode').value;
-      const dirs = getFilteredArrowDirections();
-      const chosen = dirs[Math.floor(Math.random() * dirs.length)];
+      const tabLabelMap = {
+        'tab-footwork': '🏃 フットワークを起動',
+        'tab-reflex':   '⚡ 初速＆矢印を起動',
+        'tab-pose':     '🎥 骨格AI測定へ',
+        'tab-score':    '🧮 スコアボードへ'
+      };
 
-      let preDelay = 700;
-      if (timingStyle === 'split_rhythm') {
-        box.className = "giant-arrow-circle unweight-cue";
-        holder.innerHTML = buildCyberArrowSVG(0, 'unweight');
-        txt.textContent = "抜重・ステップ！";
-        playBeep(520, 75);
-        preDelay = audioCustomSettings.unweightLeadMs || 420;
-      } else if (timingStyle === 'random_feint') {
-        box.className = "giant-arrow-circle";
-        holder.innerHTML = buildCyberArrowSVG(0, 'ready');
-        txt.textContent = "集中...";
-        preDelay = 1000 + Math.floor(Math.random() * 1600);
-      } else {
-        box.className = "giant-arrow-circle";
-        holder.innerHTML = buildCyberArrowSVG(0, 'ready');
-        txt.textContent = "READY";
-        preDelay = 550;
-      }
+      container.innerHTML = currentMenuPlan.items.map((item, idx) => {
+        const linkBtnHtml = item.linkTab ? `
+          <button class="btn btn-cyan-outline" style="padding:4px 8px; font-size:0.7rem;" onclick="launchMenuLinkedTool(${idx})">
+            ${tabLabelMap[item.linkTab] || '🔗 機能を開く'}
+          </button>
+        ` : '';
 
-      arrowDrillState.subTimerId = setTimeout(() => {
-        if (!arrowDrillState.running) return;
-        arrowDrillState.currentRep++;
-        document.getElementById('arrowDrillProgress').textContent =
-          `${arrowDrillState.currentRep} / ${arrowDrillState.totalReps} 回`;
-
-        box.className = "giant-arrow-circle cue-on";
-        holder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
-        txt.textContent = chosen.name + "！";
-
-        playBeep(1080, 110);
-        if (voiceMode === 'voice_and_beep') {
-          speakText(chosen.name);
-        }
-
-        arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1650);
-      }, preDelay);
-    };
-
-    // =========================================================================
-    // 3. 🔁 動画の「A-B区間 エンドレスループ再生（スロー観察モード）」 (TAB 3)
-    // =========================================================================
-    function injectVideoLoopToggleButton() {
-      const videoCtrl = document.getElementById('videoControlPanel');
-      if (!videoCtrl || document.getElementById('btnVideoLoopToggle')) return;
-      const topBtnGroup = videoCtrl.querySelector('.btn-group');
-      if (topBtnGroup) {
-        const loopBtn = document.createElement('button');
-        loopBtn.id = 'btnVideoLoopToggle';
-        loopBtn.className = 'btn btn-cyan-outline';
-        loopBtn.style = 'padding:4px 9px; font-size:0.72rem;';
-        loopBtn.textContent = '🔁 区間ループ: OFF';
-        loopBtn.onclick = toggleVideoLoopObserveMode;
-        topBtnGroup.appendChild(loopBtn);
-      }
-    }
-
-    function toggleVideoLoopObserveMode() {
-      videoLoopObserveMode = !videoLoopObserveMode;
-      const btn = document.getElementById('btnVideoLoopToggle');
-      if (btn) {
-        if (videoLoopObserveMode) {
-          btn.classList.add('active');
-          btn.textContent = '🔁 区間ループ: ON (連続再生)';
-        } else {
-          btn.classList.remove('active');
-          btn.textContent = '🔁 区間ループ: OFF';
-        }
-      }
-      // もし動画が一時停止中でループをONにしたらすぐ区間先頭から再生を再開
-      if (videoLoopObserveMode && activeInputType === 'video') {
-        const upVideo = document.getElementById('uploadedVideo');
-        if (upVideo && upVideo.paused) {
-          if (upVideo.currentTime >= videoTrimState.endSec || upVideo.currentTime < videoTrimState.startSec) {
-            upVideo.currentTime = videoTrimState.startSec || 0;
-          }
-          upVideo.play().catch(() => {});
-          const btnPlayPause = document.getElementById('btnVideoPlayPause');
-          if (btnPlayPause) btnPlayPause.textContent = "⏸️ 一時停止";
-        }
-      }
-    }
-
-    // 診断完了時や動画末尾到達時に「区間ループ: ON」なら止めずにA地点からループ再生を継続
-    const _v95FinishPoseRecording = finishPoseRecording;
-    finishPoseRecording = function(fromVideoAuto = false) {
-      _v95FinishPoseRecording(fromVideoAuto);
-
-      if (fromVideoAuto && activeInputType === 'video' && videoLoopObserveMode) {
-        const upVideo = document.getElementById('uploadedVideo');
-        if (upVideo) {
-          upVideo.currentTime = videoTrimState.startSec || 0;
-          upVideo.play().catch(() => {});
-          const btnPlayPause = document.getElementById('btnVideoPlayPause');
-          if (btnPlayPause) btnPlayPause.textContent = "⏸️ 一時停止";
-          document.getElementById('sessionTimerLabel').textContent = "✅ 診断完了（🔁 A-B区間ループ再生中）";
-        }
-      }
-    };
-
-    const _origHandleVideoUpload = handleVideoUpload;
-    handleVideoUpload = function(event) {
-      _origHandleVideoUpload(event);
-      setTimeout(() => {
-        const upVideo = document.getElementById('uploadedVideo');
-        if (upVideo) {
-          upVideo.onended = () => {
-            if (poseSession.active) {
-              finishPoseRecording(true);
-            } else if (videoLoopObserveMode) {
-              upVideo.currentTime = videoTrimState.startSec || 0;
-              upVideo.play().catch(() => {});
-            }
-          };
-        }
-      }, 300);
-    };
-
-    // =========================================================================
-    // 4. 🏸 ラケット診断（TAB 4）への「回内連動指数 ＆ 初速ms」実測連動
-    // =========================================================================
-    renderRacketRecommendations = function(brandFilter = 'ALL') {
-      const container = document.getElementById('racketListContainer');
-      const summaryBox = document.getElementById('racketDiagnosisSummary');
-      if (!container || !summaryBox) return;
-
-      const hasMeasuredSwing = aiMetrics.maxSpeedPt > 0;
-      const effectiveSpeed = hasMeasuredSwing
-        ? aiMetrics.maxSpeedPt
-        : (userProfile.power === 'high' ? 88 : userProfile.power === 'low' ? 68 : 78);
-
-      const measuredPronation = (typeof poseDetailTracker !== 'undefined' && poseDetailTracker.maxPronationPt > 0)
-        ? poseDetailTracker.maxPronationPt
-        : (userProfile.power === 'high' ? 85 : 76);
-
-      const hasMeasuredReflex = (typeof rxState !== 'undefined' && rxState.resultsMs && rxState.resultsMs.length > 0);
-      const avgReflexMs = hasMeasuredReflex
-        ? Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length)
-        : null;
-
-      // 身長・パワー・回内指数から最適ガットテンションを算出
-      let minLbs = 21, maxLbs = 24;
-      if (userProfile.category === 'junior_elem') {
-        minLbs = 18; maxLbs = 21;
-      } else if (userProfile.power === 'high' || measuredPronation >= 84) {
-        minLbs = 24; maxLbs = 27;
-      } else if (userProfile.power === 'mid') {
-        minLbs = 22; maxLbs = 25;
-      }
-
-      const pronationComment = measuredPronation >= 80
-        ? `前腕の回内スピード（${measuredPronation}pt）が高いため、弾きの良いシャフトやEXBOLT 65を少し高め（${minLbs}〜${maxLbs}lbs）に張っても強い打球が打てます。`
-        : `回内による面返し（${measuredPronation}pt）をサポートするため、球持ちが良く面安定性の高いイーブン〜ヘッドライト系ラケット（${minLbs}〜${maxLbs}lbs）が扱いやすくおすすめです。`;
-
-      summaryBox.innerHTML = `
-        <div style="font-weight:900; color:var(--accent-secondary); margin-bottom:5px; font-size:0.86rem;">
-          🤖 「${userProfile.name}」専用 AI実測連動ラケット＆ガット診断カルテ
-        </div>
-        <div style="font-size:0.78rem; color:#e2e8f0; line-height:1.55;">
-          ・<b>基本データ:</b> 身長 <b>${userProfile.height}cm</b> ｜ パワー設定: <b>${userProfile.power}</b> ｜ スタイル: <b>${userProfile.style}</b><br>
-          ・<b>AI実測データ連動:</b> スイング速度指数 <b style="color:#34d399;">${effectiveSpeed}pt</b> ${hasMeasuredSwing ? '(実測)' : '(推定)'} ／ 回内・回外連動 <b style="color:#a3e635;">${measuredPronation}pt</b> ／ 初速タイム <b style="color:#38bdf8;">${avgReflexMs ? avgReflexMs + 'ms (実測)' : '未測定'}</b><br>
-          ・<b>ギア診断アドバイス:</b> ${pronationComment}
-        </div>
-      `;
-
-      const scoredList = RACKET_DB.filter(r => brandFilter === 'ALL' || r.brand === brandFilter).map(r => {
-        let matchPt = 76;
-        if (r.type === userProfile.style) matchPt += 11;
-        if (r.powerReq === userProfile.power) matchPt += 7;
-
-        // 実測された回内スピード・初速タイムに応じたボーナス加算
-        if (measuredPronation >= 80 && (r.type === 'speed' || r.type === 'power')) matchPt += 4;
-        if (measuredPronation < 72 && r.type === 'control') matchPt += 5;
-        if (avgReflexMs && avgReflexMs <= 270 && r.type === 'speed') matchPt += 4;
-
-        return { ...r, matchPt: Math.min(99, matchPt), recTension: `${minLbs}〜${maxLbs} lbs` };
-      }).sort((a, b) => b.matchPt - a.matchPt);
-
-      const brandColors = { YONEX: "#10b981", MIZUNO: "#3b82f6", GOSEN: "#f59e0b", LINING: "#ef4444" };
-
-      container.innerHTML = scoredList.map(r => `
-        <div class="racket-card">
-          <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span class="badge-version" style="background:${brandColors[r.brand]}; color:#090d16;">${r.brand}</span>
-              <span style="font-weight:900; color:#34d399; font-size:0.82rem;">AIマッチ度: ${r.matchPt}%</span>
+        return `
+          <div class="menu-item-row ${item.done ? 'completed-row' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+              <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
+                <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleMenuItemDone(${idx})" style="width:17px; height:17px; accent-color:var(--accent-primary); cursor:pointer;" title="実施完了チェック" />
+                <span class="badge-version" style="background:var(--bg-panel); color:var(--accent-secondary); border:1px solid var(--border-subtle);">${idx + 1}. ${item.cat}</span>
+                <span style="font-weight:900; font-size:0.84rem; color:var(--text-primary);">${item.name}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                <button class="btn" style="padding:2px 6px; font-size:0.68rem;" onclick="adjustMenuItemMin(${idx}, -5)">-5分</button>
+                <span style="font-weight:900; color:var(--accent-highlight); font-size:0.84rem; min-width:46px; text-align:center;">${item.minutes}分</span>
+                <button class="btn" style="padding:2px 6px; font-size:0.68rem;" onclick="adjustMenuItemMin(${idx}, 5)">+5分</button>
+                <button class="btn" style="padding:2px 6px; font-size:0.68rem;" onclick="moveMenuItemOrder(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                <button class="btn" style="padding:2px 6px; font-size:0.68rem;" onclick="moveMenuItemOrder(${idx}, 1)" ${idx === currentMenuPlan.items.length - 1 ? 'disabled' : ''}>▼</button>
+                <button class="btn btn-rose" style="padding:2px 6px; font-size:0.68rem;" onclick="removeMenuItemAt(${idx})">✕</button>
+              </div>
             </div>
-            <div style="font-size:0.95rem; font-weight:800; margin-bottom:4px;">${r.name}</div>
-            <p style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:8px;">${r.desc}</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:0.75rem; color:var(--text-secondary); padding-left:24px;">
+              <span style="flex:1;">🎯 ${item.note || 'フォームと抜重のタイミングを意識'}</span>
+              ${linkBtnHtml}
+            </div>
           </div>
-          <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.73rem; color:#cbd5e1; line-height:1.45;">
-            <div>⚖️ 規格: <b>${r.weight}</b>（${r.balance}）</div>
-            <div>🧵 推奨ガット: <b>${r.stringRec}</b></div>
-            <div style="color:var(--accent-highlight);">🎯 あなたの推奨テンション: <b>${r.recTension}</b></div>
+        `;
+      }).join('');
+
+      updateMenuTimeGaugeUI();
+    }
+
+    function updateMenuTimeGaugeUI() {
+      const targetInput = document.getElementById('aiMenuTargetMin');
+      const targetMin = Math.max(5, Number(targetInput ? targetInput.value : currentMenuPlan.targetMin) || 150);
+      currentMenuPlan.targetMin = targetMin;
+
+      const totalPlanned = currentMenuPlan.items.reduce((sum, it) => sum + (Number(it.minutes) || 0), 0);
+      const diff = targetMin - totalPlanned;
+
+      const badge = document.getElementById('menuTimeRemainBadge');
+      const bar = document.getElementById('menuTimeGaugeBar');
+      if (!badge || !bar) return;
+
+      const pct = Math.min(100, Math.round((totalPlanned / targetMin) * 100));
+      bar.style.width = `${pct}%`;
+
+      if (diff === 0) {
+        badge.style.background = 'var(--accent-primary)';
+        badge.style.color = '#020617';
+        badge.textContent = `合計 ${totalPlanned}分 / 目標 ${targetMin}分（ピッタリ！）`;
+        bar.style.background = 'var(--accent-primary)';
+      } else if (diff > 0) {
+        badge.style.background = '#0284c7';
+        badge.style.color = '#fff';
+        badge.textContent = `合計 ${totalPlanned}分 / 目標 ${targetMin}分（残り ${diff}分）`;
+        bar.style.background = '#38bdf8';
+      } else {
+        badge.style.background = 'var(--accent-danger)';
+        badge.style.color = '#fff';
+        badge.textContent = `合計 ${totalPlanned}分 / 目標 ${targetMin}分（${Math.abs(diff)}分 超過）`;
+        bar.style.background = 'var(--accent-danger)';
+      }
+    }
+
+    function toggleMenuItemDone(idx) {
+      if (!currentMenuPlan.items[idx]) return;
+      currentMenuPlan.items[idx].done = !currentMenuPlan.items[idx].done;
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+    }
+
+    function adjustMenuItemMin(idx, delta) {
+      if (!currentMenuPlan.items[idx]) return;
+      currentMenuPlan.items[idx].minutes = Math.max(1, (Number(currentMenuPlan.items[idx].minutes) || 10) + delta);
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+    }
+
+    function moveMenuItemOrder(idx, dir) {
+      const targetIdx = idx + dir;
+      if (targetIdx < 0 || targetIdx >= currentMenuPlan.items.length) return;
+      const temp = currentMenuPlan.items[idx];
+      currentMenuPlan.items[idx] = currentMenuPlan.items[targetIdx];
+      currentMenuPlan.items[targetIdx] = temp;
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+    }
+
+    function removeMenuItemAt(idx) {
+      currentMenuPlan.items.splice(idx, 1);
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+    }
+
+    function addCustomMenuItem() {
+      const nameEl = document.getElementById('addMenuName');
+      const minEl = document.getElementById('addMenuMin');
+      const linkEl = document.getElementById('addMenuLinkTab');
+      const noteEl = document.getElementById('addMenuNote');
+
+      const name = (nameEl.value || "").trim() || "カスタム練習項目";
+      const mins = Math.max(1, Number(minEl.value) || 15);
+      const linkTab = linkEl.value || "";
+      const note = (noteEl.value || "").trim() || "フォームと足運びのリズムを意識";
+
+      currentMenuPlan.items.push({
+        id: "m_" + Date.now(),
+        cat: "追加メニュー",
+        name: name,
+        minutes: mins,
+        note: note,
+        linkTab: linkTab,
+        fwPreset: "all6",
+        done: false
+      });
+
+      nameEl.value = "";
+      noteEl.value = "";
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+    }
+
+    function launchMenuLinkedTool(idx) {
+      const item = currentMenuPlan.items[idx];
+      if (!item || !item.linkTab) return;
+      if (item.linkTab === 'tab-footwork' && item.fwPreset) {
+        jumpToPrescribedFootwork(item.fwPreset, true);
+      } else {
+        switchTab(item.linkTab);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    // 💾 マイメニュー保存・呼出・削除
+    function saveCurrentMenuToMyMenus() {
+      const titleInput = document.getElementById('currentMenuTitleInput');
+      const menuName = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : `マイメニュー (${currentMenuPlan.targetMin}分)`;
+      currentMenuPlan.title = menuName;
+
+      const existingIdx = savedMenusDB.findIndex(m => m.title === menuName);
+      const snapshot = JSON.parse(JSON.stringify(currentMenuPlan));
+      snapshot.savedAt = new Date().toLocaleDateString('ja-JP');
+
+      if (existingIdx >= 0) {
+        savedMenusDB[existingIdx] = snapshot;
+      } else {
+        savedMenusDB.unshift(snapshot);
+      }
+
+      localStorage.setItem('badtore_saved_menus_v100', JSON.stringify(savedMenusDB));
+      renderSavedMenusSelectUI();
+      playBeep(1160, 130);
+      alert(`「${menuName}」をマイメニューに登録しました！いつでもプルダウンから呼び出せます。`);
+    }
+
+    function renderSavedMenusSelectUI() {
+      const sel = document.getElementById('savedMenusSelect');
+      if (!sel) return;
+      sel.innerHTML = `<option value="">-- 保存済みマイメニュー (${savedMenusDB.length}件) --</option>` +
+        savedMenusDB.map((m, i) => `<option value="${i}">📋 ${m.title} (${m.targetMin}分)</option>`).join('');
+    }
+
+    function loadSelectedMyMenu(idxStr) {
+      if (idxStr === "") return;
+      const idx = Number(idxStr);
+      if (!savedMenusDB[idx]) return;
+      currentMenuPlan = JSON.parse(JSON.stringify(savedMenusDB[idx]));
+      const titleInput = document.getElementById('currentMenuTitleInput');
+      const targetInput = document.getElementById('aiMenuTargetMin');
+      if (titleInput) titleInput.value = currentMenuPlan.title;
+      if (targetInput) targetInput.value = currentMenuPlan.targetMin;
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+    }
+
+    function deleteSelectedMyMenu() {
+      const sel = document.getElementById('savedMenusSelect');
+      if (!sel || sel.value === "") {
+        alert("削除するマイメニューをプルダウンから選択してください。");
+        return;
+      }
+      const idx = Number(sel.value);
+      const target = savedMenusDB[idx];
+      if (!target) return;
+      savedMenusDB.splice(idx, 1);
+      localStorage.setItem('badtore_saved_menus_v100', JSON.stringify(savedMenusDB));
+      renderSavedMenusSelectUI();
+    }
+
+    // 📝 実施した練習記録（ログ）の保存・一覧表示
+    function recordCurrentMenuToLog() {
+      if (!currentMenuPlan.items.length) return;
+      const memoEl = document.getElementById('practiceLogMemoInput');
+      const memo = memoEl ? memoEl.value.trim() : "";
+      const totalMin = currentMenuPlan.items.reduce((s, it) => s + (Number(it.minutes) || 0), 0);
+      const doneItems = currentMenuPlan.items.filter(it => it.done);
+      const summaryItems = (doneItems.length ? doneItems : currentMenuPlan.items).map(it => `${it.name}(${it.minutes}分)`).join(' ／ ');
+
+      const newLog = {
+        id: "log_" + Date.now(),
+        date: new Date().toLocaleDateString('ja-JP') + " " + new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+        memberName: userProfile.name,
+        title: currentMenuPlan.title,
+        totalMin: totalMin,
+        doneCount: doneItems.length,
+        totalCount: currentMenuPlan.items.length,
+        summaryItems: summaryItems,
+        memo: memo || "メニュー消化完了"
+      };
+
+      practiceLogsDB.unshift(newLog);
+      if (practiceLogsDB.length > 50) practiceLogsDB.pop();
+      localStorage.setItem('badtore_practice_logs_v100', JSON.stringify(practiceLogsDB));
+
+      if (memoEl) memoEl.value = "";
+      renderPracticeLogsHistoryUI();
+      playBeep(1240, 200);
+      alert("今日の練習記録を履歴ログに保存しました！");
+    }
+
+    function renderPracticeLogsHistoryUI() {
+      const container = document.getElementById('practiceLogsHistoryContainer');
+      const badge = document.getElementById('practiceLogCountBadge');
+      if (!container || !badge) return;
+
+      badge.textContent = `${practiceLogsDB.length} 件`;
+
+      if (!practiceLogsDB.length) {
+        container.innerHTML = `<div style="font-size:0.75rem; color:var(--text-secondary); padding:10px; text-align:center;">まだ練習記録がありません。練習後に「✅ 今日の練習記録として保存する」を押すとここに蓄積されます。</div>`;
+        return;
+      }
+
+      container.innerHTML = practiceLogsDB.map((log, idx) => `
+        <div style="background:var(--bg-panel); border:1px solid var(--border-subtle); border-radius:9px; padding:8px 10px; font-size:0.75rem; line-height:1.45;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
+            <span style="font-weight:900; color:var(--accent-highlight);">📅 ${log.date} ｜ 👤 ${log.memberName}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="badge-version" style="font-size:0.66rem;">⏱️ ${log.totalMin}分</span>
+              <button class="btn btn-rose" style="padding:1px 6px; font-size:0.65rem;" onclick="deletePracticeLogAt(${idx})">削除</button>
+            </div>
           </div>
+          <div style="font-weight:800; color:#38bdf8; margin-bottom:3px;">📋 ${log.title}</div>
+          <div style="color:var(--text-secondary); font-size:0.72rem; margin-bottom:4px;">・内容: ${log.summaryItems}</div>
+          <div style="background:var(--bg-base); padding:5px 8px; border-radius:6px; color:#e2e8f0;">💬 ${log.memo}</div>
         </div>
       `).join('');
+    }
+
+    function deletePracticeLogAt(idx) {
+      practiceLogsDB.splice(idx, 1);
+      localStorage.setItem('badtore_practice_logs_v100', JSON.stringify(practiceLogsDB));
+      renderPracticeLogsHistoryUI();
+    }
+
+    function saveCurrentWorkingMenuToStorage() {
+      localStorage.setItem('badtore_working_menu_v100', JSON.stringify(currentMenuPlan));
+    }
+
+    function loadMenusAndLogsFromStorage() {
+      try {
+        const rawWorking = localStorage.getItem('badtore_working_menu_v100');
+        if (rawWorking) currentMenuPlan = JSON.parse(rawWorking);
+      } catch (e) {}
+      try {
+        const rawSaved = localStorage.getItem('badtore_saved_menus_v100');
+        if (rawSaved) savedMenusDB = JSON.parse(rawSaved) || [];
+      } catch (e) { savedMenusDB = []; }
+      try {
+        const rawLogs = localStorage.getItem('badtore_practice_logs_v100');
+        if (rawLogs) practiceLogsDB = JSON.parse(rawLogs) || [];
+      } catch (e) { practiceLogsDB = []; }
+    }
+
+    // 📲 TAB 6: iPhone ⇄ iPad データ引き継ぎに「マイメニュー」と「練習記録ログ」も完全統合
+    exportAllAppData = function() {
+      const payload = {
+        profilesList,
+        activeProfileId,
+        personalBestsDB,
+        savedMenusDB,
+        practiceLogsDB,
+        currentMenuPlan
+      };
+      const encoded = JSON.stringify(payload);
+      const area = document.getElementById('dataSyncTextarea');
+      if (area) {
+        area.value = encoded;
+        area.select();
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(encoded).then(() => {
+          alert("メンバー・過去ベスト・マイメニュー・練習記録ログをすべて含む引き継ぎコードをコピーしました！");
+        }).catch(() => {
+          alert("下の枠に表示された引き継ぎコードをコピーしてください。");
+        });
+      }
     };
+
+    importAllAppData = function() {
+      const area = document.getElementById('dataSyncTextarea');
+      const raw = area ? area.value.trim() : "";
+      if (!raw) {
+        alert("引き継ぎコードを枠内に貼り付けてから押してください。");
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed.profilesList && Array.isArray(parsed.profilesList)) {
+          profilesList = parsed.profilesList;
+          activeProfileId = parsed.activeProfileId || profilesList[0].id;
+          personalBestsDB = parsed.personalBestsDB || {};
+          if (Array.isArray(parsed.savedMenusDB)) {
+            savedMenusDB = parsed.savedMenusDB;
+            localStorage.setItem('badtore_saved_menus_v100', JSON.stringify(savedMenusDB));
+          }
+          if (Array.isArray(parsed.practiceLogsDB)) {
+            practiceLogsDB = parsed.practiceLogsDB;
+            localStorage.setItem('badtore_practice_logs_v100', JSON.stringify(practiceLogsDB));
+          }
+          if (parsed.currentMenuPlan) {
+            currentMenuPlan = parsed.currentMenuPlan;
+            saveCurrentWorkingMenuToStorage();
+          }
+          localStorage.setItem('badtore_profiles_list_v90', JSON.stringify(profilesList));
+          localStorage.setItem('badtore_active_profile_id_v90', activeProfileId);
+          localStorage.setItem('badtore_personal_bests_v90', JSON.stringify(personalBestsDB));
+          syncActiveProfileToState();
+          renderSavedMenusSelectUI();
+          renderCurrentMenuEditorUI();
+          renderPracticeLogsHistoryUI();
+          alert("メンバー情報・過去ベスト・マイメニュー・練習記録のすべてを同期しました！");
+        } else {
+          alert("引き継ぎコードの形式が正しくありません。");
+        }
+      } catch (e) {
+        alert("コードの読み込みに失敗しました。");
+      }
+    };
+
+    // 🚀 起動時にv10.0 PROのすべての拡張UIを初期化
+    window.addEventListener('DOMContentLoaded', () => {
+      document.title = "バドトレPRO v10.0 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
+      const verBadge = document.querySelector('header .badge-version');
+      if (verBadge) verBadge.textContent = "v10.0 PRO";
+
+      initSpeechVoices();
+      upgradeTab1AndTab2UI();
+      injectAlwaysVisiblePrescriptionViewer();
+      injectVideoLoopToggleButton();
+      initGameCountScoreboardUI();
+      injectMenuPlannerTabAndUI();
+      renderRacketRecommendations('ALL');
+    });
   </script>
 </body>
 </html>
