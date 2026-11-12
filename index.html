@@ -9387,18 +9387,18 @@
       renderMatchCourt();
 
     });
-  /* =========================================================================
-       🚀 バドトレPRO v10.2 PRO 完全統合エンジン
-       1. 🎨 6色UIカラーテーマ着せ替え（水色/ピンク/緑/紫/オレンジ/ライト）＆メンバー別記憶
+ /* =========================================================================
+       🚀 バドトレPRO v10.2.1 PRO 完全統合エンジン（HTMLセレクタ・ID完全一致版）
+       1. 🎨 6色UIカラーテーマ着せ替え（元の3色メニューを6色パレットへ直接拡張・--bg-card完全連動）
        2. 🧭 直感UX：全タブ共通「直す点ピン留めバー(3枠)」・1秒クイック起動・S〜Cランク信号機判定
        3. 🚀 動画コマ送り(-1/+1コマ) ＆ 2タップ式スマッシュ/ドライブ球速(km/h)計測メーター
        4. 📅 ゲーミフィケーション：ヘッダーLv/XPバッジ ＆ 28日間ミニドットカレンダー
        5. 🧠 ハイブリッドAI：前後半×関節相関の複合推論アコーディオン ＆ プロコーチ連携出力
-       6. 🎮 v10.1全機能（全画面操作バー・特大矢印＆6マスコート・音声1.05x・AIメニュー編成）完全網羅
+       6. 🎮 全画面操作バー・特大矢印＆6マスコート・音声1.05x・AIメニュー編成 完全網羅
     ========================================================================= */
 
     // =========================================================================
-    // 0. グローバル設定・カラーテーマ定義・データストア
+    // 0. グローバル設定・6色カラーテーマ定義・データストア
     // =========================================================================
     let audioCustomSettings = {
       voiceRate: 1.05,      // 1.05 (くっきり標準) | 1.25 (やや速め) | 1.45 (高速)
@@ -9410,60 +9410,77 @@
 
     const UI_COLOR_THEMES = {
       cyan: {
-        label: "🩵 アイス・シアン",
-        bgBase: "#040d1a", bgPanel: "#09192e", bgSurface: "#102644",
+        label: "🩵 アイス・シアン (水色)",
+        bgBase: "#040d1a", bgSurface: "#09192e", bgCard: "#0f233f", bgPanel: "#163054",
         textPrimary: "#f0f9ff", textSecondary: "#93c5fd",
-        accentPrimary: "#06b6d4", accentSecondary: "#38bdf8", accentHighlight: "#fde047",
-        borderSubtle: "rgba(56, 189, 248, 0.28)", isLight: false
+        accentPrimary: "#06b6d4", accentGlow: "rgba(6, 182, 212, 0.42)",
+        accentSecondary: "#38bdf8", accentHighlight: "#fde047",
+        borderSubtle: "rgba(56, 189, 248, 0.32)",
+        courtSurface: "linear-gradient(160deg, #0c4a6e 0%, #082f49 100%)",
+        isLight: false
       },
       pink: {
-        label: "🩷 ネオン・サクラ",
-        bgBase: "#160714", bgPanel: "#260e23", bgSurface: "#381634",
+        label: "🩷 ネオン・サクラ (ピンク)",
+        bgBase: "#160714", bgSurface: "#240c21", bgCard: "#30112c", bgPanel: "#42183d",
         textPrimary: "#fdf2f8", textSecondary: "#f9a8d4",
-        accentPrimary: "#ec4899", accentSecondary: "#f472b6", accentHighlight: "#fde047",
-        borderSubtle: "rgba(244, 114, 182, 0.3)", isLight: false
+        accentPrimary: "#ec4899", accentGlow: "rgba(236, 72, 153, 0.42)",
+        accentSecondary: "#f472b6", accentHighlight: "#fde047",
+        borderSubtle: "rgba(244, 114, 182, 0.34)",
+        courtSurface: "linear-gradient(160deg, #701a75 0%, #4a044e 100%)",
+        isLight: false
       },
       emerald: {
-        label: "🟢 エメラルド・プロ",
-        bgBase: "#060b16", bgPanel: "#0d1627", bgSurface: "#152238",
+        label: "🟢 エメラルド・プロ (標準)",
+        bgBase: "#060b16", bgSurface: "#0c1528", bgCard: "#111d36", bgPanel: "#172645",
         textPrimary: "#f8fafc", textSecondary: "#94a3b8",
-        accentPrimary: "#10b981", accentSecondary: "#06b6d4", accentHighlight: "#fbbf24",
-        borderSubtle: "rgba(148, 163, 184, 0.22)", isLight: false
+        accentPrimary: "#10b981", accentGlow: "rgba(16, 185, 129, 0.42)",
+        accentSecondary: "#06b6d4", accentHighlight: "#fbbf24",
+        borderSubtle: "rgba(56, 189, 248, 0.24)",
+        courtSurface: "linear-gradient(160deg, #065f46 0%, #044e3a 100%)",
+        isLight: false
       },
       violet: {
-        label: "💜 バイオレット・パルス",
-        bgBase: "#0b0719", bgPanel: "#160f30", bgSurface: "#231947",
+        label: "💜 バイオレット・パルス (紫)",
+        bgBase: "#0b0719", bgSurface: "#140d2b", bgCard: "#1d143d", bgPanel: "#291d54",
         textPrimary: "#f5f3ff", textSecondary: "#c4b5fd",
-        accentPrimary: "#8b5cf6", accentSecondary: "#a78bfa", accentHighlight: "#38bdf8",
-        borderSubtle: "rgba(167, 139, 250, 0.28)", isLight: false
+        accentPrimary: "#8b5cf6", accentGlow: "rgba(139, 92, 246, 0.42)",
+        accentSecondary: "#a78bfa", accentHighlight: "#38bdf8",
+        borderSubtle: "rgba(167, 139, 250, 0.32)",
+        courtSurface: "linear-gradient(160deg, #3b0764 0%, #1e1b4b 100%)",
+        isLight: false
       },
       orange: {
-        label: "🧡 サンセット・フレア",
-        bgBase: "#140904", bgPanel: "#261209", bgSurface: "#381c0f",
+        label: "🧡 サンセット・フレア (橙)",
+        bgBase: "#140904", bgSurface: "#211008", bgCard: "#2e160b", bgPanel: "#3f2011",
         textPrimary: "#fff7ed", textSecondary: "#fdba74",
-        accentPrimary: "#f97316", accentSecondary: "#fb923c", accentHighlight: "#fde047",
-        borderSubtle: "rgba(251, 146, 60, 0.28)", isLight: false
+        accentPrimary: "#f97316", accentGlow: "rgba(249, 115, 22, 0.42)",
+        accentSecondary: "#fb923c", accentHighlight: "#fde047",
+        borderSubtle: "rgba(251, 146, 60, 0.32)",
+        courtSurface: "linear-gradient(160deg, #7c2d12 0%, #431407 100%)",
+        isLight: false
       },
       light: {
-        label: "🤍 クリスタル・ライト",
-        bgBase: "#f0f7ff", bgPanel: "#ffffff", bgSurface: "#e0f2fe",
+        label: "🤍 クリスタル・ライト (白/水色)",
+        bgBase: "#f0f7ff", bgSurface: "#e0f2fe", bgCard: "#ffffff", bgPanel: "#f1f5f9",
         textPrimary: "#0f172a", textSecondary: "#475569",
-        accentPrimary: "#0284c7", accentSecondary: "#0ea5e9", accentHighlight: "#d97706",
-        borderSubtle: "rgba(2, 132, 199, 0.25)", isLight: true
+        accentPrimary: "#0284c7", accentGlow: "rgba(2, 132, 199, 0.28)",
+        accentSecondary: "#0ea5e9", accentHighlight: "#d97706",
+        borderSubtle: "rgba(2, 132, 199, 0.28)",
+        courtSurface: "linear-gradient(160deg, #0284c7 0%, #0369a1 100%)",
+        isLight: true
       }
     };
 
     let currentThemeKey = 'cyan';
-    let profileThemesMap = {}; // { [profileId]: themeKey }
-    let pinnedFocusDB = {};    // { [profileId]: [ { key, title, shortText, done } ] }
-    let playerXpDB = {};       // { [profileId]: { xp: 120, days: ['2026-11-12'] } }
+    let profileThemesMap = {};
+    let pinnedFocusDB = {};
+    let playerXpDB = {};
 
     let videoLoopObserveMode = false;
     let selectedJapaneseVoice = null;
     let fwExtraCenterTimerId = null;
     let poseCountdownTimerId = null;
 
-    // 球速計測ステート
     let shuttleSpeedState = {
       panelOpen: false,
       t1Sec: null,
@@ -9495,7 +9512,6 @@
       window.speechSynthesis.onvoiceschanged = pickVoice;
     }
 
-    // 課題別の実戦コーチング＆3段階ドリル処方箋（ピン留め用短縮名付き）
     const AI_CAUSE_PRESCRIPTIONS = {
       racket_drop: {
         shortPin: "🛡️ 手首を立ててラケットを胸前にキープ",
@@ -9572,22 +9588,28 @@
     };
 
     // =========================================================================
-    // 1. 🎨 6色カラーテーマ着せ替え ＆ ゲーミフィケーション（Lv/XP/ピン留め）
+    // 1. 🎨 6色カラーテーマ着せ替え（元の #uiThemeSelect をそのまま6色に拡張）
     // =========================================================================
     function applyColorTheme(themeKey, saveForProfile = true) {
-      const theme = UI_COLOR_THEMES[themeKey] || UI_COLOR_THEMES.cyan;
-      currentThemeKey = UI_COLOR_THEMES[themeKey] ? themeKey : 'cyan';
+      // 旧テーマ名('cyber','matte','street')が渡された場合の変換マップ
+      const legacyMap = { cyber: 'cyan', matte: 'orange', street: 'emerald' };
+      const normalizedKey = legacyMap[themeKey] || (UI_COLOR_THEMES[themeKey] ? themeKey : 'cyan');
+      const theme = UI_COLOR_THEMES[normalizedKey];
+      currentThemeKey = normalizedKey;
 
       const root = document.documentElement;
       root.style.setProperty('--bg-base', theme.bgBase);
-      root.style.setProperty('--bg-panel', theme.bgPanel);
       root.style.setProperty('--bg-surface', theme.bgSurface);
+      root.style.setProperty('--bg-card', theme.bgCard);
+      root.style.setProperty('--bg-panel', theme.bgPanel);
       root.style.setProperty('--text-primary', theme.textPrimary);
       root.style.setProperty('--text-secondary', theme.textSecondary);
       root.style.setProperty('--accent-primary', theme.accentPrimary);
+      root.style.setProperty('--accent-primary-glow', theme.accentGlow);
       root.style.setProperty('--accent-secondary', theme.accentSecondary);
       root.style.setProperty('--accent-highlight', theme.accentHighlight);
       root.style.setProperty('--border-subtle', theme.borderSubtle);
+      root.style.setProperty('--court-surface', theme.courtSurface);
 
       if (theme.isLight) {
         document.body.setAttribute('data-theme-mode', 'light');
@@ -9595,7 +9617,7 @@
         document.body.setAttribute('data-theme-mode', 'dark');
       }
 
-      const sel = document.getElementById('headerThemeSelect');
+      const sel = document.getElementById('uiThemeSelect');
       if (sel && sel.value !== currentThemeKey) sel.value = currentThemeKey;
 
       if (saveForProfile && activeProfileId) {
@@ -9605,8 +9627,12 @@
       localStorage.setItem('badtore_last_theme_v102', currentThemeKey);
     }
 
-    // 経験値(XP)と練習日スタンプの加算
-    function awardPlayerXP(amount = 20, reasonLabel = "") {
+    // 元の changeUITheme 関数も 6色エンジンへ直結
+    changeUITheme = function(themeName) {
+      applyColorTheme(themeName, true);
+    };
+
+    function awardPlayerXP(amount = 20) {
       if (!activeProfileId) return;
       if (!playerXpDB[activeProfileId]) {
         playerXpDB[activeProfileId] = { xp: 100, days: [] };
@@ -9638,7 +9664,6 @@
       return { lv, xp, remXp, title, days: rec.days || [] };
     }
 
-    // 📌 直す点ピン留め（最大3枠）の追加・達成切替・削除
     function getActivePinnedList() {
       if (!pinnedFocusDB[activeProfileId]) {
         pinnedFocusDB[activeProfileId] = [
@@ -9668,7 +9693,6 @@
       }
 
       if (list.length >= 3) {
-        // すでに達成済みのものを優先して入れ替え、なければ一番古いものを入れ替え
         const doneIdx = list.findIndex(it => it.done);
         if (doneIdx >= 0) list.splice(doneIdx, 1);
         else list.shift();
@@ -9699,21 +9723,19 @@
     }
 
     function renderHeaderLevelAndFocusBarUI() {
-      // 1. ヘッダーのレベルバッジ更新
       const lvInfo = getPlayerLevelInfo(activeProfileId);
       const lvHolder = document.getElementById('headerPlayerLvBadge');
       if (lvHolder) {
         lvHolder.innerHTML = `
           <span style="font-weight:900; color:var(--accent-highlight);">Lv.${lvInfo.lv}</span>
           <span style="font-size:0.7rem; color:var(--text-primary);">${lvInfo.title}</span>
-          <span style="display:inline-block; width:38px; height:6px; background:rgba(255,255,255,0.18); border-radius:99px; overflow:hidden; vertical-align:middle;">
+          <span style="display:inline-block; width:36px; height:6px; background:rgba(148,163,184,0.25); border-radius:99px; overflow:hidden; vertical-align:middle;">
             <span style="display:block; width:${lvInfo.remXp}%; height:100%; background:var(--accent-primary);"></span>
           </span>
           <span style="font-size:0.68rem; color:var(--accent-secondary);">🔥${lvInfo.days.length}日</span>
         `;
       }
 
-      // 2. 全タブ共通「今日のフォーカス（直す点3枠）」バーの描画
       const bar = document.getElementById('globalFocusPinBar');
       if (!bar) return;
       const list = getActivePinnedList();
@@ -9737,7 +9759,6 @@
       `;
     }
 
-    // メンバー切替時にテーマ色とピン留めバーも自動同期
     const _v102BaseSyncActiveProfileToState = syncActiveProfileToState;
     syncActiveProfileToState = function() {
       _v102BaseSyncActiveProfileToState();
@@ -9747,7 +9768,6 @@
       renderMiniDotCalendarUI();
     };
 
-    // スコア数値から直感的な「S / A / B / C ランク」と色を返すヘルパー
     function getScoreRankMeta(score) {
       if (score >= 88) return { rank: 'S', label: 'Sランク (プロ級)', color: '#fde047', bg: 'rgba(250, 204, 21, 0.18)' };
       if (score >= 78) return { rank: 'A', label: 'Aランク (優秀)', color: '#34d399', bg: 'rgba(16, 185, 129, 0.18)' };
@@ -9965,7 +9985,7 @@
     function injectV102StylesAndGlobalHeader() {
       const styleEl = document.createElement('style');
       styleEl.textContent = `
-        @media (min-width: 820px) {
+        @media (min-width: 768px) {
           .nav-scroller { grid-template-columns: repeat(8, minmax(0, 1fr)) !important; }
         }
         /* ライトモード時の文字コントラスト自動補正 */
@@ -9985,16 +10005,17 @@
         }
         /* 全タブ共通のフォーカス（直す点）ピン留めスリムバー */
         #globalFocusPinBar {
-          max-width: 1280px;
-          margin: 6px auto 0;
-          padding: 6px 12px;
+          width: 100%;
+          margin: 0 0 10px 0;
+          padding: 7px 12px;
           background: var(--bg-panel);
           border: 1px solid var(--border-subtle);
           border-left: 4px solid var(--accent-primary);
-          border-radius: 10px;
+          border-radius: 11px;
           display: flex;
           align-items: center;
           justify-content: space-between;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         .focus-pin-pill {
           display: inline-flex;
@@ -10172,54 +10193,52 @@
       `;
       document.head.appendChild(styleEl);
 
-      // ヘッダーに「Lv・XPバッジ」と「🎨 6色カラーテーマ選択」を追加
-      const headerRight = document.querySelector('.header-inner > div:last-child');
-      if (headerRight && !document.getElementById('headerThemeSelect')) {
+      // ✅ 修正1: 元のHTMLの .header-controls と #uiThemeSelect を正確に取得してLvバッジと6色テーマを統合
+      const headerControls = document.querySelector('.header-controls');
+      if (headerControls && !document.getElementById('headerPlayerLvBadge')) {
         const lvBadge = document.createElement('div');
         lvBadge.id = 'headerPlayerLvBadge';
-        lvBadge.style = 'background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:999px; padding:4px 10px; font-size:0.74rem; display:inline-flex; align-items:center; gap:6px;';
-        headerRight.insertBefore(lvBadge, headerRight.firstChild);
-
-        const themeSel = document.createElement('select');
-        themeSel.id = 'headerThemeSelect';
-        themeSel.style = 'width:auto; padding:5px 9px; font-size:0.74rem; font-weight:900; border-radius:8px; border:1px solid var(--accent-primary);';
-        themeSel.innerHTML = Object.keys(UI_COLOR_THEMES).map(k =>
-          `<option value="${k}">${UI_COLOR_THEMES[k].label}</option>`
-        ).join('');
-        themeSel.onchange = (e) => applyColorTheme(e.target.value, true);
-        headerRight.appendChild(themeSel);
+        lvBadge.style = 'background:var(--bg-panel); border:1px solid var(--border-subtle); border-radius:999px; padding:4px 9px; font-size:0.72rem; display:inline-flex; align-items:center; gap:5px;';
+        headerControls.insertBefore(lvBadge, headerControls.firstChild);
       }
 
-      // ナビゲーションのすぐ下に全タブ共通「🎯 今日の意識ポイント（ピン留め3枠）」バーを設置
-      const headerEl = document.querySelector('header.app-header');
-      if (headerEl && !document.getElementById('globalFocusPinBar')) {
-        const focusWrap = document.createElement('div');
-        focusWrap.style = 'padding: 0 12px;';
-        focusWrap.innerHTML = `<div id="globalFocusPinBar"></div>`;
-        headerEl.parentNode.insertBefore(focusWrap, headerEl.nextSibling);
+      const existingThemeSelect = document.getElementById('uiThemeSelect');
+      if (existingThemeSelect) {
+        existingThemeSelect.innerHTML = Object.keys(UI_COLOR_THEMES).map(k =>
+          `<option value="${k}">${UI_COLOR_THEMES[k].label}</option>`
+        ).join('');
+        existingThemeSelect.onchange = (e) => applyColorTheme(e.target.value, true);
+      }
+
+      // ✅ 修正2: .main-container の最上部に全タブ共通「🎯 今日の意識ポイント（ピン留め3枠）」バーを設置
+      const mainContainer = document.querySelector('.main-container');
+      if (mainContainer && !document.getElementById('globalFocusPinBar')) {
+        const focusBar = document.createElement('div');
+        focusBar.id = 'globalFocusPinBar';
+        mainContainer.insertBefore(focusBar, mainContainer.firstChild);
       }
     }
 
-    // ⚡ 各タブの「1秒クイック起動ボタン」の設置＆発動処理
+    // ✅ 修正3: 元のHTMLのセレクトボックスID（fwIntervalSec / fwRepsPerSet / arrowDirSet / cross_hairpin）に完全一致
     function applyQuickPresetFootwork(mode) {
       const courseEl = document.getElementById('fwCoursePreset');
-      const intEl = document.getElementById('fwIntervalSelect');
-      const repEl = document.getElementById('fwRepsSelect');
+      const intEl = document.getElementById('fwIntervalSec');
+      const repEl = document.getElementById('fwRepsPerSet');
       const centerEl = document.getElementById('fwCenterCallMode');
 
       if (mode === 'home_lunge') {
         if (courseEl) courseEl.value = 'front2';
-        if (intEl) intEl.value = '2500';
+        if (intEl) intEl.value = '2.5';
         if (repEl) repEl.value = 'time_30';
         if (centerEl) centerEl.value = 'center_and_split';
       } else if (mode === 'court_all6') {
         if (courseEl) courseEl.value = 'all6';
-        if (intEl) intEl.value = '2000';
+        if (intEl) intEl.value = '2.0';
         if (repEl) repEl.value = 'time_30';
         if (centerEl) centerEl.value = 'center_and_split';
       } else if (mode === 'unweight_side') {
         if (courseEl) courseEl.value = 'side2';
-        if (intEl) intEl.value = '2000';
+        if (intEl) intEl.value = '2.0';
         if (repEl) repEl.value = '10';
         if (centerEl) centerEl.value = 'split_beep';
       }
@@ -10230,16 +10249,16 @@
     function applyQuickPresetReflex(mode) {
       if (mode === 'arrow_unweight') {
         switchReflexSubMode('arrow');
-        const dirEl = document.getElementById('arrowDirPattern');
+        const dirEl = document.getElementById('arrowDirSet');
         const styleEl = document.getElementById('arrowTimingStyle');
         if (dirEl) dirEl.value = 'all6';
         if (styleEl) styleEl.value = 'split_rhythm';
         startArrowReactionDrill(false);
       } else if (mode === 'arrow_side2') {
         switchReflexSubMode('arrow');
-        const dirEl = document.getElementById('arrowDirPattern');
+        const dirEl = document.getElementById('arrowDirSet');
         const styleEl = document.getElementById('arrowTimingStyle');
-        if (dirEl) dirEl.value = 'side2';
+        if (dirEl) dirEl.value = 'leftright2';
         if (styleEl) styleEl.value = 'split_rhythm';
         startArrowReactionDrill(false);
       } else if (mode === 'cam_rx5') {
@@ -10413,10 +10432,10 @@
         rxSettingsCard.appendChild(extraRow);
       }
 
-      // TAB 3 クイック起動ストリップ追加
+      // ✅ 修正4: TAB 3 クイック起動ストリップを #tab-pose .split-grid の直前に正確に挿入
       const tabPoseCard = document.querySelector('#tab-pose > .card');
-      const poseTopForm = document.querySelector('#tab-pose > .card > .form-grid');
-      if (tabPoseCard && poseTopForm && !document.getElementById('poseQuickStrip')) {
+      const poseSplitGrid = document.querySelector('#tab-pose .split-grid');
+      if (tabPoseCard && poseSplitGrid && !document.getElementById('poseQuickStrip')) {
         const strip = document.createElement('div');
         strip.id = 'poseQuickStrip';
         strip.className = 'quick-preset-strip';
@@ -10429,12 +10448,12 @@
             <span class="qp-title">⚡ 💥 スマッシュ・高打点＆回内診断</span>
             <span class="qp-sub">最高打点レーザーと前腕の回外➔回内スイングを採点</span>
           </button>
-          <button class="quick-preset-btn" onclick="applyQuickPresetPose('hairpin')">
+          <button class="quick-preset-btn" onclick="applyQuickPresetPose('cross_hairpin')">
             <span class="qp-title">⚡ 🕸️ ネット前ランジ＆体幹軸診断</span>
             <span class="qp-sub">踏み込み時の上体の突っ込み防止と深い膝角度を採点</span>
           </button>
         `;
-        tabPoseCard.insertBefore(strip, poseTopForm);
+        tabPoseCard.insertBefore(strip, poseSplitGrid);
       }
 
       // TAB 3 全画面バー＆HUD
@@ -10518,7 +10537,6 @@
 
       const topBtnGroup = videoCtrl.querySelector('.btn-group');
       if (topBtnGroup) {
-        // コマ送りボタン (-1コマ / +1コマ)
         const stepBackBtn = document.createElement('button');
         stepBackBtn.className = 'btn';
         stepBackBtn.style = 'padding:4px 8px; font-size:0.72rem;';
@@ -10531,7 +10549,6 @@
         stepFwdBtn.textContent = '⏩ +1コマ';
         stepFwdBtn.onclick = () => stepVideoFrame(1);
 
-        // 区間ループボタン
         const loopBtn = document.createElement('button');
         loopBtn.id = 'btnVideoLoopToggle';
         loopBtn.className = 'btn btn-cyan-outline';
@@ -10539,7 +10556,6 @@
         loopBtn.textContent = '🔁 区間ループ: OFF';
         loopBtn.onclick = toggleVideoLoopObserveMode;
 
-        // ⚡ 球速測定ドロワー開閉ボタン
         const speedBtn = document.createElement('button');
         speedBtn.id = 'btnToggleSpeedDrawer';
         speedBtn.className = 'btn btn-amber';
@@ -10553,7 +10569,6 @@
         topBtnGroup.appendChild(speedBtn);
       }
 
-      // 球速計測ドロワーパネルを videoControlPanel の下部に格納
       const drawer = document.createElement('div');
       drawer.id = 'shuttleSpeedDrawer';
       drawer.style = 'display:none; margin-top:8px; padding:10px; background:var(--bg-base); border:1px solid var(--accent-highlight); border-radius:10px;';
@@ -10593,13 +10608,10 @@
       upVideo.pause();
       const btnPlayPause = document.getElementById('btnVideoPlayPause');
       if (btnPlayPause) btnPlayPause.textContent = "▶️ 再生";
-      // 1フレーム（約1/30秒 = 0.033秒）ずつ正確に移動
       const nextTime = Math.max(0, Math.min(upVideo.duration || 999, upVideo.currentTime + (dir * 0.033)));
       upVideo.currentTime = nextTime;
-      const seekSlider = document.getElementById('videoSeekSlider');
-      const timeText = document.getElementById('videoTimeText');
-      if (seekSlider) seekSlider.value = nextTime;
-      if (timeText) timeText.textContent = `${nextTime.toFixed(2)}s / ${(upVideo.duration || 0).toFixed(2)}s`;
+      updateVideoSeekUI(upVideo);
+      setTimeout(() => sendSingleFrameToPose(upVideo), 40);
     }
 
     function toggleShuttleSpeedDrawer() {
@@ -10636,7 +10648,6 @@
       const dt = t2 - t1;
       const dist = shuttleSpeedState.distMeters || 6.8;
       const avgKmh = Math.round((dist / dt) * 3.6);
-      // シャトルは空気抵抗で急減速するため、ネット通過・着弾までの平均速度から打출直後の初速(V0)を物理補正推定
       const dragFactor = dist <= 6.0 ? 1.48 : (dist <= 7.5 ? 1.62 : 1.85);
       const estV0Kmh = Math.min(420, Math.round(avgKmh * dragFactor));
 
@@ -10782,7 +10793,6 @@
       fwState.timerId = setTimeout(runNextFootworkCall, fwState.intervalMs);
     };
 
-    // TAB 2 (モード①): 矢印練習
     arrowDrillState.paused = false;
 
     startArrowReactionDrill = function(goFullscreen = false) {
@@ -11238,7 +11248,6 @@
 
       const chosenPlan = AI_CAUSE_PRESCRIPTIONS[chosenKey];
 
-      // 信号機ステータスバッジ
       const sigSpeed = avgMs <= 280 ? '🟢 初速: 優秀' : (avgMs <= 340 ? '🟡 初速: 標準' : '🔴 初速: 要改善');
       const sigBounce = bounceCount === 0 ? '🟢 静止待機: OK' : (bounceCount === 1 ? '🟡 バウンド: 1回' : `🔴 バウンド癖: ${bounceCount}回`);
       const sigWrist = wristDropCount === 0 ? '🟢 手首立て: OK' : `🔴 手首下がり: ${wristDropCount}回`;
@@ -11533,7 +11542,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 外部プロコーチAI（Gemini等）へ渡せる詳細テレメトリプロンプトをワンタップコピー
     function copyHybridPromptForExternalAI() {
       const text = poseDetailTracker.lastHybridSummaryText;
       if (!text) return;
@@ -11674,13 +11682,11 @@
 
       renderManualDrillBrowser(worstFactor.key);
 
-      // 信号機3色インジケーター（離れた場所からでも直感的にわかる表示）
       const sigContact = scoreContact >= 80 ? '🟢 打点: 高' : (scoreContact >= 68 ? '🟡 打点: 中' : '🔴 打点: 低め');
       const sigWrist   = wristKeepRate >= 78 ? '🟢 手首立て: OK' : (wristKeepRate >= 60 ? '🟡 手首: やや低下' : '🔴 手首: 寝すぎ');
       const sigAxis    = maxLungeTilt <= 12 ? '🟢 体幹軸: 安定' : (maxLungeTilt <= 17 ? '🟡 体幹: やや前傾' : '🔴 体幹: 突っ込み');
       const sigPro     = maxPro >= 78 ? '🟢 回内: 鋭い' : (maxPro >= 65 ? '🟡 回内: 標準' : '🔴 回内: 押し出し');
 
-      // 🧠 ハイブリッドAI 複合相関推論（複数データの因果関係を導き出す）
       let hybridCorrelationInsight = "";
       if (firstHalfWristAvg - secondHalfWristAvg >= 12 && maxLungeTilt >= 13) {
         hybridCorrelationInsight = `前半は手首の高さ（${firstHalfWristAvg}pt）を保てていますが、後半に ${secondHalfWristAvg}pt まで落ちると同時に上体の傾き（${maxLungeTilt}°）が増えています。腕の疲れではなく、<b>「踏み込んだ足からの蹴り戻しが遅れて体勢が崩れたまま次の球を待っていること」</b>がラケット下がりの根本原因です。`;
@@ -11720,7 +11726,6 @@
 
       document.getElementById('aiSummaryContent').innerHTML = `
         ${recordBannerHtml}
-        <!-- 🏆 離れた場所から1秒でわかる特大ランク＆信号機ステータス -->
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; background:${rk.bg}; border:1px solid ${rk.color}; padding:9px 12px; border-radius:10px; margin-bottom:8px;">
           <div style="font-weight:900; font-size:1.08rem; color:${rk.color};">
             🏆 判定：${rk.label}（${totalScore} pt）
@@ -11740,7 +11745,6 @@
           ${rxPlan.coaching}
         </div>
 
-        <!-- 🧠 ハイブリッドAI 複合相関分析（折りたたみ式でゴチャつかない） -->
         <details style="background:var(--bg-panel); border:1px solid var(--border-subtle); border-radius:8px; padding:7px 10px; margin-bottom:9px; font-size:0.76rem;">
           <summary style="font-weight:900; color:var(--accent-highlight); cursor:pointer;">
             🧠 ハイブリッドAI「前後半キープ力 × 関節の複合相関分析」を開く ▼
@@ -11754,7 +11758,6 @@
           </div>
         </details>
 
-        <!-- 🧭 直感NEXTアクションボタン群 -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap:6px;">
           <button class="btn btn-cyan-outline" style="padding:8px; font-size:0.75rem;" onclick="pinWeaknessToFocusBar('${worstFactor.key}')">
             📌 この課題を上のフォーカスバーにピン留め
@@ -11770,7 +11773,7 @@
     };
 
     // =========================================================================
-    // 7. TAB 4（ラケット診断：実測球速km/h・回内・初速ms連動）＆ TAB 5（ゲーム数スコア）
+    // 7. TAB 4（ラケット診断）＆ TAB 5（ゲーム数スコア）
     // =========================================================================
     renderRacketRecommendations = function(brandFilter = 'ALL') {
       const container = document.getElementById('racketListContainer');
@@ -12126,7 +12129,6 @@
               </div>
 
               <div style="display:flex; flex-direction:column; gap:10px;">
-                <!-- 📅 28日間ミニドット・練習カレンダー -->
                 <div class="card" style="background:var(--bg-panel); margin:0; padding:10px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <span style="font-weight:900; color:var(--accent-secondary); font-size:0.82rem;">📅 直近28日間の練習スタンプ＆継続レベル</span>
@@ -12173,7 +12175,6 @@
       renderMiniDotCalendarUI();
     }
 
-    // 📅 直近28日間のミニドットカレンダー描画
     function renderMiniDotCalendarUI() {
       const grid = document.getElementById('miniDotCalendarGrid');
       const badge = document.getElementById('calendarStreakBadge');
@@ -12181,7 +12182,6 @@
 
       const lvInfo = getPlayerLevelInfo(activeProfileId);
       const activeDays = new Set(lvInfo.days || []);
-      // 練習ログの日付も統合
       practiceLogsDB.forEach(l => {
         if (l.isoDate) activeDays.add(l.isoDate);
       });
@@ -12230,7 +12230,6 @@
       const useFeeding  = document.getElementById('chkThemeFeeding') ? document.getElementById('chkThemeFeeding').checked : true;
       const useJump     = document.getElementById('chkThemeJump') ? document.getElementById('chkThemeJump').checked : false;
 
-      // ピン留めされている未達成課題があれば最優先でメニューに反映
       const pinnedList = getActivePinnedList().filter(p => !p.done);
       const primaryKey = (pinnedList.length && AI_CAUSE_PRESCRIPTIONS[pinnedList[0].key])
         ? pinnedList[0].key
@@ -12793,7 +12792,6 @@
       } catch (e) { playerXpDB = {}; }
     }
 
-    // 📲 TAB 6: iPhone ⇄ iPad データ引き継ぎ（ピン留め・XP・テーマ設定もすべて完全同期）
     exportAllAppData = function() {
       const payload = {
         profilesList,
@@ -12875,11 +12873,11 @@
       }
     };
 
-    // 🚀 起動時にv10.2 PROのすべての拡張UIを初期化
+    // 🚀 起動時にv10.2.1 PROのすべての拡張UIを初期化
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.2 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
+      document.title = "バドトレPRO v10.2.1 PRO - バドミントン専用 AI動作解析＆実践トレーニング";
       const verBadge = document.querySelector('header .badge-version');
-      if (verBadge) verBadge.textContent = "v10.2 PRO";
+      if (verBadge) verBadge.textContent = "v10.2.1 PRO";
 
       initSpeechVoices();
       loadMenusAndLogsFromStorage();
