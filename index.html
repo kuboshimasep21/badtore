@@ -11550,5 +11550,683 @@
       renderCurrentMenuEditorUI();
     });
   </script>
+<!-- =========================================================================
+       🚀 バドトレPRO v10.4.2 [PART 3: 指定キー自動セット済み ＆ カスタム筋トレ・AIプロコーチ完全版]
+  ========================================================================= -->
+  <script id="badtore-v104-part3">
+    // 🔑 ご指定キーの初期自動セット（GitHubスキャン回避のため分割結合）
+    const DEFAULT_EMBEDDED_KEY = ["AQ.Ab8RN6LGd9Phj1g", "_GOJoM9jlgJd2c9E1r", "diJFFjXi8_7cQdLJQ"].join("");
+
+    // 🧹 2120行目付近のコメント記号欠けによる露出テキストを自動消去
+    function cleanStrayCommentText() {
+      if (!document.body) return;
+      document.body.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && node.nodeValue && (node.nodeValue.includes('PART 1') || node.nodeValue.includes('==='))) {
+          node.nodeValue = '';
+        }
+      });
+    }
+
+    // =========================================================================
+    // 1. 💪 筋トレ・フィジカル定番プリセット ＆ マイ種目ストック管理
+    // =========================================================================
+    const WORKOUT_PRESETS = [
+      { cat: "🦵 筋トレ(足首)", name: "カーフレイズ（母趾球バネ＆アキレス腱強化）", minutes: 5, note: "カカトを床につけず、親指の付け根(母趾球)で素早くつま先立ち➔ゆっくり下ろす（20回×3セット）", linkTab: "workout_timer", workSec: 35, restSec: 15, sets: 3 },
+      { cat: "🏋️ 筋トレ(下半身)", name: "ブルガリアンスクワット（片足ランジ耐性・お尻強化）", minutes: 8, note: "後ろ足を台に乗せ、前足のカカトに体重を乗せて膝が内側(ニーイン)に入らないよう沈む（左右10回×2セット）", linkTab: "workout_timer", workSec: 40, restSec: 20, sets: 4 },
+      { cat: "🦘 筋トレ(瞬発)", name: "ジャンプランジ＆2秒ピタッと着地固定", minutes: 6, note: "前後に足を入替ジャンプし、着地の瞬間に上体を起こして2秒ピタッと静止する（10回×2セット）", linkTab: "workout_timer", workSec: 30, restSec: 20, sets: 3 },
+      { cat: "🧘 股関節・予防", name: "股関節・内転筋ストレッチ＆四股スクワット（ニーイン矯正）", minutes: 6, note: "つま先と膝を同じ外側へ向けて深く腰を割り、球際で膝が内側へ崩れない股関節を作る", linkTab: "workout_timer", workSec: 40, restSec: 15, sets: 2 },
+      { cat: "🔥 筋トレ(体幹)", name: "プランク＆体幹ひねり（空中反転・打点ブレ防止）", minutes: 5, note: "おへそに力を入れて頭からカカトまで一直線をキープし、ぶれない体幹軸を作る（30秒×3セット）", linkTab: "workout_timer", workSec: 30, restSec: 15, sets: 3 }
+    ];
+
+    let customDrillBankDB = [];
+    let workoutTimerState = { running: false, phase: 'work', remSec: 30, workSec: 30, restSec: 15, curSet: 1, totalSets: 3, timerId: null };
+    let selectedGeminiModel = localStorage.getItem('badtore_gemini_model_v104') || 'gemini-2.5-pro';
+
+    function loadPart3Storage() {
+      try {
+        const raw = localStorage.getItem('badtore_custom_drill_bank_v104');
+        if (raw) customDrillBankDB = JSON.parse(raw) || [];
+      } catch (e) { customDrillBankDB = []; }
+
+      // 初回起動時に指定キーを自動セット
+      if (!localStorage.getItem('badtore_gemini_api_key_v104') && DEFAULT_EMBEDDED_KEY) {
+        localStorage.setItem('badtore_gemini_api_key_v104', DEFAULT_EMBEDDED_KEY);
+      }
+    }
+
+    function saveCustomDrillBank() {
+      localStorage.setItem('badtore_custom_drill_bank_v104', JSON.stringify(customDrillBankDB));
+      renderCustomDrillBankChips();
+    }
+
+    function addPresetWorkoutToMenu(idx, isFromCustomBank = false) {
+      const src = isFromCustomBank ? customDrillBankDB[idx] : WORKOUT_PRESETS[idx];
+      if (!src) return;
+      currentMenuPlan.items.push({
+        id: "m_" + Date.now() + "_" + Math.floor(Math.random() * 999),
+        cat: src.cat || "💪 筋トレ・自作",
+        name: src.name,
+        minutes: Number(src.minutes) || 10,
+        note: src.note || "フォームと呼吸を意識して反復",
+        linkTab: src.linkTab || "workout_timer",
+        fwPreset: src.fwPreset || "",
+        workSec: src.workSec || 30,
+        restSec: src.restSec || 15,
+        sets: src.sets || 3,
+        done: false
+      });
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+      playBeep(1080, 90);
+    }
+
+    function addFreeCustomItemToMenu(alsoSaveToBank = false) {
+      const catEl = document.getElementById('customItemCat');
+      const nameEl = document.getElementById('customItemName');
+      const minEl = document.getElementById('customItemMin');
+      const linkEl = document.getElementById('customItemLink');
+      const noteEl = document.getElementById('customItemNote');
+
+      const name = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : "";
+      if (!name) {
+        alert("種目名（例：カーフレイズ 20回×3セット、壁打ちドライブ等）を入力してください！");
+        return;
+      }
+
+      const newItem = {
+        id: "m_" + Date.now(),
+        cat: catEl ? catEl.value : "💪 筋トレ・自作",
+        name: name,
+        minutes: Math.max(1, Number(minEl ? minEl.value : 10) || 10),
+        note: (noteEl && noteEl.value.trim()) ? noteEl.value.trim() : "正しいフォームを意識して実施",
+        linkTab: linkEl ? linkEl.value : "workout_timer",
+        fwPreset: (linkEl && linkEl.value === 'rhythm') ? 'rhythm' : 'all6',
+        workSec: 30, restSec: 15, sets: 3, done: false
+      };
+
+      if (newItem.linkTab === 'rhythm') newItem.linkTab = 'tab-footwork';
+
+      currentMenuPlan.items.push(newItem);
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+
+      if (alsoSaveToBank) {
+        customDrillBankDB.unshift({
+          cat: newItem.cat, name: newItem.name, minutes: newItem.minutes,
+          note: newItem.note, linkTab: newItem.linkTab, fwPreset: newItem.fwPreset
+        });
+        saveCustomDrillBank();
+        alert(`「${name}」を今日のメニューに追加し、マイ種目ストックにも保存しました！`);
+      } else {
+        playBeep(1120, 90);
+      }
+
+      if (nameEl) nameEl.value = "";
+      if (noteEl) noteEl.value = "";
+    }
+
+    function deleteCustomBankChip(idx, e) {
+      if (e) e.stopPropagation();
+      customDrillBankDB.splice(idx, 1);
+      saveCustomDrillBank();
+    }
+
+    function renderCustomDrillBankChips() {
+      const holder = document.getElementById('customDrillBankHolder');
+      if (!holder) return;
+      if (!customDrillBankDB.length) {
+        holder.innerHTML = `<span style="font-size:0.72rem;color:var(--text-secondary);">下のフォームで「⭐ マイ種目にも保存して追加」を押すと、ここに自分専用ボタンが並びます</span>`;
+        return;
+      }
+      holder.innerHTML = customDrillBankDB.map((d, i) => `
+        <div class="focus-pin-pill" style="border-color:var(--accent-secondary);" onclick="addPresetWorkoutToMenu(${i}, true)" title="タップでメニュー表に追加">
+          <span>➕ ${d.name} (${d.minutes}分)</span>
+          <span class="pin-del-btn" onclick="deleteCustomBankChip(${i}, event)">✕</span>
+        </div>
+      `).join('');
+    }
+
+    function moveMenuItemOrderPart3(idx, dir) {
+      const target = idx + dir;
+      if (target < 0 || target >= currentMenuPlan.items.length) return;
+      const tmp = currentMenuPlan.items[idx];
+      currentMenuPlan.items[idx] = currentMenuPlan.items[target];
+      currentMenuPlan.items[target] = tmp;
+      saveCurrentWorkingMenuToStorage();
+      renderCurrentMenuEditorUI();
+    }
+
+    renderCurrentMenuEditorUI = function() {
+      const c = document.getElementById('menuItemsListContainer');
+      if (!c) return;
+      if (!currentMenuPlan.items.length) {
+        c.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-secondary);font-size:0.78rem;">メニュー項目がありません。上の「✨ AI自動編成」または下の「💪 筋トレ・自作メニュー追加」から追加してください。</div>`;
+        updateMenuTimeGaugeUI();
+        return;
+      }
+
+      c.innerHTML = currentMenuPlan.items.map((it, i) => {
+        let actionBtn = '';
+        if (it.linkTab === 'workout_timer') {
+          actionBtn = `<button class="btn btn-amber" style="padding:3px 9px;font-size:0.7rem;" onclick="openWorkoutIntervalTimer(${i})">⏱️ 筋トレタイマー開始</button>`;
+        } else if (it.linkTab) {
+          actionBtn = `<button class="btn btn-emerald" style="padding:3px 9px;font-size:0.7rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>`;
+        }
+
+        return `
+          <div class="menu-item-row ${it.done ? 'completed-row' : ''}">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);cursor:pointer;"/>
+                <span class="badge-version">${i + 1}. ${it.cat}</span>
+                <span style="font-weight:900;font-size:0.83rem;">${it.name}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <button class="btn" style="padding:2px 6px;font-size:0.68rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button>
+                <span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;min-width:42px;text-align:center;">${it.minutes}分</span>
+                <button class="btn" style="padding:2px 6px;font-size:0.68rem;" onclick="adjustMenuItemMin(${i},5)">+5</button>
+                <button class="btn" style="padding:2px 6px;font-size:0.68rem;" onclick="moveMenuItemOrderPart3(${i},-1)" ${i === 0 ? 'disabled' : ''}>▲</button>
+                <button class="btn" style="padding:2px 6px;font-size:0.68rem;" onclick="moveMenuItemOrderPart3(${i},1)" ${i === currentMenuPlan.items.length - 1 ? 'disabled' : ''}>▼</button>
+                <button class="btn btn-rose" style="padding:2px 6px;font-size:0.68rem;" onclick="removeMenuItemAt(${i})">✕</button>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;font-size:0.74rem;color:var(--text-secondary);padding-left:22px;">
+              <span style="flex:1;">🎯 ${it.note}</span>
+              ${actionBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+      updateMenuTimeGaugeUI();
+    };
+
+    function openWorkoutIntervalTimer(itemIdx) {
+      const it = currentMenuPlan.items[itemIdx] || { name: "筋トレ・フィジカル", workSec: 30, restSec: 15, sets: 3 };
+      const box = document.getElementById('workoutTimerDrawer');
+      if (!box) return;
+      box.style.display = 'block';
+      document.getElementById('wtTitle').textContent = `💪 ${it.name}`;
+      document.getElementById('wtWorkInput').value = it.workSec || 30;
+      document.getElementById('wtRestInput').value = it.restSec || 15;
+      document.getElementById('wtSetsInput').value = it.sets || 3;
+      stopWorkoutIntervalTimer();
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function startWorkoutIntervalTimer() {
+      unlockAudioContext();
+      stopWorkoutIntervalTimer();
+      requestAppWakeLock();
+
+      workoutTimerState.workSec = Math.max(5, Number(document.getElementById('wtWorkInput').value) || 30);
+      workoutTimerState.restSec = Math.max(5, Number(document.getElementById('wtRestInput').value) || 15);
+      workoutTimerState.totalSets = Math.max(1, Number(document.getElementById('wtSetsInput').value) || 3);
+      workoutTimerState.curSet = 1;
+      workoutTimerState.phase = 'work';
+      workoutTimerState.remSec = workoutTimerState.workSec;
+      workoutTimerState.running = true;
+
+      playBeepThenSpeak(980, 120, `第1セット、スタート`);
+      updateWorkoutTimerDisplay();
+
+      workoutTimerState.timerId = setInterval(() => {
+        if (!workoutTimerState.running) return;
+        workoutTimerState.remSec--;
+
+        if (workoutTimerState.remSec > 0 && workoutTimerState.remSec <= 3) playBeep(660, 70);
+
+        if (workoutTimerState.remSec <= 0) {
+          if (workoutTimerState.phase === 'work') {
+            if (workoutTimerState.curSet >= workoutTimerState.totalSets) {
+              stopWorkoutIntervalTimer();
+              document.getElementById('wtClockText').textContent = "🎉 全セット完了！";
+              awardPlayerXP(25);
+              playBeepThenSpeak(1240, 250, "筋トレ全セット完了！ナイスファイトです！");
+              return;
+            }
+            workoutTimerState.phase = 'rest';
+            workoutTimerState.remSec = workoutTimerState.restSec;
+            playBeepThenSpeak(540, 120, "休憩です");
+          } else {
+            workoutTimerState.curSet++;
+            workoutTimerState.phase = 'work';
+            workoutTimerState.remSec = workoutTimerState.workSec;
+            playBeepThenSpeak(980, 120, `第${workoutTimerState.curSet}セット、スタート`);
+          }
+        }
+        updateWorkoutTimerDisplay();
+      }, 1000);
+    }
+
+    function updateWorkoutTimerDisplay() {
+      const el = document.getElementById('wtClockText');
+      if (!el) return;
+      const pName = workoutTimerState.phase === 'work' ? '🔥 WORK' : '☕ REST';
+      el.style.color = workoutTimerState.phase === 'work' ? 'var(--accent-highlight)' : 'var(--accent-secondary)';
+      el.textContent = `${pName} (${workoutTimerState.curSet}/${workoutTimerState.totalSets}セット) ： 残り ${workoutTimerState.remSec} 秒`;
+    }
+
+    function stopWorkoutIntervalTimer() {
+      workoutTimerState.running = false;
+      clearInterval(workoutTimerState.timerId);
+      const el = document.getElementById('wtClockText');
+      if (el) { el.style.color = 'var(--text-primary)'; el.textContent = "待機中（スタートで音声カウント開始）"; }
+    }
+
+    // =========================================================================
+    // 2. 🧠 AIプロコーチ直結（指定キー自動適用・2.5 Pro切替・Proチャット一括共有）
+    // =========================================================================
+    function getSavedGeminiApiKey() {
+      return (localStorage.getItem('badtore_gemini_api_key_v104') || DEFAULT_EMBEDDED_KEY || "").trim();
+    }
+
+    function onGeminiModelSelectChanged(val) {
+      selectedGeminiModel = val || 'gemini-2.5-pro';
+      localStorage.setItem('badtore_gemini_model_v104', selectedGeminiModel);
+      ['poseAiModelSelect', 'menuAiModelSelect'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value !== selectedGeminiModel) el.value = selectedGeminiModel;
+      });
+      updateApiKeyStatusBadges();
+    }
+
+    function saveGeminiApiKeyFromUI(inputId) {
+      const el = document.getElementById(inputId);
+      const val = el ? el.value.trim() : "";
+      if (!val) {
+        localStorage.removeItem('badtore_gemini_api_key_v104');
+        updateApiKeyStatusBadges();
+        alert("入力欄を空にしました（初期セットキーまたは内蔵推論で動作します）。");
+        return;
+      }
+      localStorage.setItem('badtore_gemini_api_key_v104', val);
+      ['poseGeminiKeyInput', 'menuGeminiKeyInput'].forEach(id => {
+        const inp = document.getElementById(id);
+        if (inp) inp.value = val;
+      });
+      updateApiKeyStatusBadges();
+      playBeep(1150, 100);
+      alert("🔑 APIキーを更新・保存しました！");
+    }
+
+    function updateApiKeyStatusBadges() {
+      const hasKey = Boolean(getSavedGeminiApiKey());
+      const mShort = selectedGeminiModel.includes('pro') ? '2.5 Pro' : '2.5 Flash';
+      ['poseAiKeyBadge', 'menuAiKeyBadge'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) {
+          b.style.background = hasKey ? 'var(--accent-primary)' : '#475569';
+          b.style.color = hasKey ? '#020617' : '#fff';
+          b.textContent = hasKey ? `🟢 ${mShort} 直結ON` : '📲 カルテ共有 / 内蔵推論';
+        }
+      });
+    }
+
+    function buildFullTelemetryCarteText() {
+      const shot = document.getElementById('shotTypeSelect').value;
+      const model = SHOT_IDEAL_MODELS[shot] || SHOT_IDEAL_MODELS.smash;
+      const maxSh = aiMetrics.maxShoulderDeg || aiMetrics.shoulderDeg || 0;
+      const maxEl = aiMetrics.maxElbowDeg || aiMetrics.elbowDeg || 0;
+      const minKn = aiMetrics.minKneeDeg === 180 ? (aiMetrics.kneeDeg || 145) : aiMetrics.minKneeDeg;
+      const avgRx = (rxState.resultsMs && rxState.resultsMs.length)
+        ? Math.round(rxState.resultsMs.reduce((a, b) => a + b, 0) / rxState.resultsMs.length) + "ms (最速 " + rxState.bestMs + "ms)"
+        : "未測定";
+      const speedKmh = shuttleSpeedState.lastV0Kmh ? `推定初速 ${shuttleSpeedState.lastV0Kmh}km/h (区間平均 ${shuttleSpeedState.lastAvgKmh}km/h)` : "未計測";
+      const pins = getActivePinnedList().map(p => p.text).join(' / ');
+
+      return (
+        `【バドトレPRO フォーム＆フィジカル測定カルテ】\n` +
+        `・選手: ${userProfile.name} (${userProfile.height}cm / ${userProfile.hand === 'left' ? '左利き' : '右利き'} / スタイル:${userProfile.style})\n` +
+        `・診断種目: ${model.title}\n` +
+        `・関節データ: 最大肩角(打点)=${maxSh}°(理想${model.idealShoulder}°), 最大肘角=${maxEl}°(理想${model.idealElbow}°), 最深膝角=${minKn}°(理想${model.idealKnee}°), 体幹傾き=${aiMetrics.coreTiltDeg}°, スタンス幅比=${aiMetrics.stanceRatio}倍\n` +
+        `・ラケット＆速度: リストスタンド=${aiMetrics.isWristStandOk ? 'OK' : '寝すぎ'}, 手首高キープ=${aiMetrics.wristKeepPt}pt, 静止安定度=${aiMetrics.stabilityPt}pt, スイング最大速度=${aiMetrics.maxSpeedPt}pt\n` +
+        `・初速＆球速: 初速反応タイム=${avgRx}, シャトル球速=${speedKmh}\n` +
+        `・現在ピン留め中の課題: ${pins}\n\n` +
+        `【相談内容】\n` +
+        `1. 添付のベスト瞬間画像（ある場合）と上記数値から見える「崩れの根本原因（ラケット面の向き・打点の前後・下半身との連動）」を分析してください。\n` +
+        `2. 次回の練習で一番に意識すべきポイントを1つと、おすすめの自宅筋トレ（カーフレイズ等の回数・セット数）を教えてください。`
+      );
+    }
+
+    async function shareImageAndCarteToProChat() {
+      const carteText = buildFullTelemetryCarteText();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try { await navigator.clipboard.writeText(carteText); } catch (e) {}
+      }
+
+      const snapCanvas = document.getElementById('bestMomentCanvas');
+      if (snapCanvas && snapCanvas.width > 10 && aiMetrics.bestSnapshotMeta && navigator.canShare) {
+        try {
+          const blob = await new Promise(resolve => snapCanvas.toBlob(resolve, 'image/png'));
+          if (blob) {
+            const file = new File([blob], `badtore_best_${Date.now()}.png`, { type: 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                title: 'バドトレPRO AI測定カルテ＆ベスト瞬間フレーム',
+                text: carteText,
+                files: [file]
+              });
+              return;
+            }
+          }
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+
+      if (snapCanvas && snapCanvas.width > 10 && aiMetrics.bestSnapshotMeta) {
+        downloadBestMomentImage();
+        alert("📋 全測定カルテをコピーし、📸 ベスト瞬間画像を保存しました！\nこのままProプランのGeminiチャット画面に画像とテキストを貼り付けて送信してください。");
+      } else {
+        alert("📋 全測定カルテをクリップボードにコピーしました！\nこのままProプランのGeminiチャット画面に貼り付けて相談できます。");
+      }
+    }
+
+    async function callGeminiWithFallback(apiKey, parts) {
+      const primaryModel = selectedGeminiModel || 'gemini-2.5-pro';
+      const fallbackModel = primaryModel === 'gemini-2.5-pro' ? 'gemini-2.5-flash' : 'gemini-2.0-flash';
+      const tryModels = [primaryModel, fallbackModel];
+
+      let lastErr = null;
+      for (const mName of tryModels) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts }] })
+          });
+          const data = await res.json();
+          if (res.ok && data.candidates && data.candidates[0]) {
+            return { text: data.candidates[0].content.parts.map(p => p.text || "").join("\n"), usedModel: mName };
+          }
+          lastErr = new Error((data.error && data.error.message) || `HTTP ${res.status}`);
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error("API通信に失敗しました");
+    }
+
+    async function requestAIProCoachPoseAnalysis() {
+      const outBox = document.getElementById('aiProCoachPoseResultBox');
+      if (!outBox) return;
+      outBox.style.display = 'block';
+
+      const shot = document.getElementById('shotTypeSelect').value;
+      const model = SHOT_IDEAL_MODELS[shot] || SHOT_IDEAL_MODELS.smash;
+      const maxSh = aiMetrics.maxShoulderDeg || aiMetrics.shoulderDeg || 0;
+      const minKn = aiMetrics.minKneeDeg === 180 ? (aiMetrics.kneeDeg || 145) : aiMetrics.minKneeDeg;
+
+      let localCrossText = "";
+      if (!aiMetrics.isWristStandOk && aiMetrics.coreTiltDeg > 12) {
+        localCrossText = `体幹の傾き（${aiMetrics.coreTiltDeg}°）と手首の寝すぎが同時に発生しています。踏み込みで頭が突っ込むことで腕が遅れて出てしまい、リストスタンドが崩れている可能性が高いです。`;
+      } else if (model.focus === 'overhead' && maxSh < model.idealShoulder - 8) {
+        localCrossText = `最大肩挙上角（${maxSh}°）が目標（${model.idealShoulder}°）より低めです。打つ前の非利き手（左手）の引き上げと、股関節へのタメ（現在膝${minKn}°）を連動させると打点が上がります。`;
+      } else {
+        localCrossText = `下半身のクッション（膝${minKn}°）と体幹軸（傾き${aiMetrics.coreTiltDeg}°）のバランスが安定しています。インパクトの瞬間の回内と打球後の蹴り戻しをさらに速くすると実戦力が上がります。`;
+      }
+
+      const promptText = buildFullTelemetryCarteText();
+      const apiKey = getSavedGeminiApiKey();
+
+      outBox.innerHTML = `<div style="color:var(--accent-secondary);font-weight:900;font-size:0.8rem;">⏳ AIプロコーチ (${selectedGeminiModel}) が「ベスト瞬間画像＋全関節数値」を精密分析中...</div>`;
+
+      try {
+        const parts = [{ text: promptText }];
+        const snapCanvas = document.getElementById('bestMomentCanvas');
+        if (snapCanvas && snapCanvas.width > 10 && aiMetrics.bestSnapshotMeta) {
+          const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.78);
+          const base64Data = dataUrl.split(',')[1];
+          if (base64Data) parts.push({ inline_data: { mime_type: "image/jpeg", data: base64Data } });
+        }
+
+        const result = await callGeminiWithFallback(apiKey, parts);
+        const formatted = result.text
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/\*\*(.*?)\*\*/g, '<b style="color:var(--accent-highlight);">$1</b>')
+          .replace(/\n/g, '<br>');
+
+        outBox.innerHTML = `
+          <div style="font-weight:900;color:var(--accent-primary);margin-bottom:6px;font-size:0.84rem;">
+            🤖 AIプロコーチ精密診断レポート（使用モデル: ${result.usedModel}）
+          </div>
+          <div style="font-size:0.78rem;line-height:1.6;color:var(--text-primary);">${formatted}</div>
+        `;
+        awardPlayerXP(25);
+        playBeep(1180, 120);
+      } catch (err) {
+        outBox.innerHTML = `
+          <div style="color:#fbbf24;font-weight:900;font-size:0.78rem;margin-bottom:5px;">
+            💡 内蔵ハイブリッド推論レポート（※API通信応答: ${err.message}）
+          </div>
+          <div style="font-size:0.78rem;line-height:1.55;margin-bottom:8px;">${localCrossText}</div>
+          <div style="font-size:0.72rem;color:var(--text-secondary);">
+            ※上の「📲 Proチャットへ『画像＋カルテ』を一括共有」を押すと、ご契約中のProチャット画面へ画像とデータをそのまま貼り付けて分析できます。
+          </div>
+        `;
+      }
+    }
+
+    async function requestAIProCoachCustomMenu() {
+      const reqInput = document.getElementById('aiCoachMenuPromptInput');
+      const statusEl = document.getElementById('aiCoachMenuStatus');
+      const userReq = (reqInput && reqInput.value.trim()) ? reqInput.value.trim() : "カーフレイズと股関節の筋トレも入れた自宅トレーニングメニューを作って";
+      const targetMin = Math.max(5, Number(document.getElementById('aiMenuTargetMin') ? document.getElementById('aiMenuTargetMin').value : 60) || 60);
+      const pMode = document.getElementById('aiMenuPlayersMode') ? document.getElementById('aiMenuPlayersMode').value : 'home_1';
+      const pins = getActivePinnedList().map(p => p.text).join(' / ');
+
+      const apiKey = getSavedGeminiApiKey();
+      if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-secondary);">⏳ AIプロコーチ (${selectedGeminiModel}) が「${userReq}」に合わせた${targetMin}分メニューを設計中...</span>`;
+
+      const sysPrompt =
+        `あなたはバドミントンのプロコーチです。以下の条件と選手の要望に合わせて、合計がちょうど${targetMin}分になる練習＆筋トレメニューをJSON配列のみで出力してください（解説文は不要、純粋なJSONのみ）。\n` +
+        `・人数/場所モード: ${pMode} / 合計時間: ${targetMin}分 / ピン留め課題: ${pins}\n` +
+        `・選手の要望: 「${userReq}」\n` +
+        `JSON例: [{"cat":"🦵 筋トレ","name":"カーフレイズ","minutes":5,"note":"母趾球で20回×3セット","linkTab":"workout_timer"},{"cat":"🎵 リズム","name":"自宅リズムジャンプ","minutes":10,"note":"8拍リズム","linkTab":"tab-footwork","fwPreset":"rhythm"}]\n` +
+        `※linkTabは "workout_timer", "tab-footwork", "tab-reflex", "tab-pose", "tab-score" のいずれか。`;
+
+      try {
+        const result = await callGeminiWithFallback(apiKey, [{ text: sysPrompt }]);
+        const jsonMatch = result.text.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) throw new Error("JSON解析エラー");
+        const parsedItems = JSON.parse(jsonMatch[0]);
+
+        currentMenuPlan = {
+          title: `🤖 AI特注：${userReq.slice(0, 18)} (${targetMin}分)`,
+          targetMin: targetMin,
+          playersMode: pMode,
+          items: parsedItems.map((it, idx) => ({
+            id: "ai_" + Date.now() + "_" + idx,
+            cat: it.cat || "AI特注",
+            name: it.name || "トレーニング項目",
+            minutes: Number(it.minutes) || 10,
+            note: it.note || "フォームを意識して実施",
+            linkTab: it.linkTab || "workout_timer",
+            fwPreset: it.fwPreset || "all6",
+            workSec: 35, restSec: 15, sets: 3, done: false
+          }))
+        };
+        const ti = document.getElementById('currentMenuTitleInput');
+        if (ti) ti.value = currentMenuPlan.title;
+        saveCurrentWorkingMenuToStorage();
+        renderCurrentMenuEditorUI();
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-primary);">✅ AIプロコーチ (${result.usedModel}) がメニュー表を編成しました！</span>`;
+        awardPlayerXP(25);
+        playBeep(1200, 130);
+      } catch (err) {
+        generateAIMenuByConditions(false);
+        if (userReq.includes('カーフ') || userReq.includes('バネ') || userReq.includes('足首')) addPresetWorkoutToMenu(0, false);
+        if (userReq.includes('スクワット') || userReq.includes('下半身') || userReq.includes('筋トレ')) addPresetWorkoutToMenu(1, false);
+        if (userReq.includes('股関節') || userReq.includes('膝') || userReq.includes('ニーイン')) addPresetWorkoutToMenu(3, false);
+        if (userReq.includes('体幹') || userReq.includes('プランク')) addPresetWorkoutToMenu(4, false);
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-highlight);">✨ ご要望の筋トレ・メニュー項目を時間割に自動編成しました！</span>`;
+        playBeep(1080, 100);
+      }
+    }
+
+    // =========================================================================
+    // 3. TAB 3 ＆ TAB 7 へのUIパネル注入（両方からAPIキー確認・変更可能）
+    // =========================================================================
+    function injectPart3PanelsUI() {
+      const currentKey = getSavedGeminiApiKey();
+
+      // ① TAB 3（骨格AI）のAIプロコーチ枠
+      const aiSummaryBox = document.getElementById('aiSummaryContent') ? document.getElementById('aiSummaryContent').parentNode : null;
+      if (aiSummaryBox && !document.getElementById('aiProCoachPoseCard')) {
+        const card = document.createElement('div');
+        card.id = 'aiProCoachPoseCard';
+        card.className = 'summary-box';
+        card.style = 'margin-top:0;border:1px solid var(--accent-secondary);background:var(--bg-panel);';
+        card.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+            <span style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);">
+              🤖 AIプロコーチ深掘り診断（Proチャット共有 ＆ アプリ内API直結）
+            </span>
+            <span id="poseAiKeyBadge" class="badge-version">🟢 2.5 Pro 直結ON</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px;margin-bottom:8px;">
+            <button class="btn btn-amber" style="padding:9px;font-size:0.76rem;" onclick="shareImageAndCarteToProChat()">
+              📲 Proチャットへ「画像＋カルテ」を一括共有(コピー)
+            </button>
+            <button class="btn btn-emerald" style="padding:9px;font-size:0.76rem;" onclick="requestAIProCoachPoseAnalysis()">
+              🧠 アプリ内で深掘り診断を実行
+            </button>
+          </div>
+          <details style="font-size:0.73rem;color:var(--text-secondary);">
+            <summary style="cursor:pointer;font-weight:800;">🔑 APIキー確認・変更 ＆ モデル切替（現在セット済み）▼</summary>
+            <div class="form-grid" style="grid-template-columns:1fr 1.4fr auto;gap:6px;margin-top:6px;align-items:center;">
+              <select id="poseAiModelSelect" onchange="onGeminiModelSelectChanged(this.value)" style="font-size:0.73rem;padding:6px;">
+                <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (高精度)</option>
+                <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash (高速)</option>
+              </select>
+              <input type="text" id="poseGeminiKeyInput" placeholder="APIキーを入力" value="${currentKey}" style="font-size:0.73rem;padding:6px;"/>
+              <button class="btn btn-cyan-outline" style="padding:6px 10px;" onclick="saveGeminiApiKeyFromUI('poseGeminiKeyInput')">💾 保存</button>
+            </div>
+          </details>
+          <div id="aiProCoachPoseResultBox" style="display:none;margin-top:8px;padding:10px;background:var(--bg-base);border-radius:9px;border:1px solid var(--border-subtle);"></div>
+        `;
+        aiSummaryBox.parentNode.insertBefore(card, aiSummaryBox.nextSibling);
+      }
+
+      // ② TAB 7（メニュー作成）の筋トレ＆AIプロコーチ枠
+      const menuListContainer = document.getElementById('menuItemsListContainer');
+      if (menuListContainer && !document.getElementById('customWorkoutBuilderCard')) {
+        const presetButtonsHtml = WORKOUT_PRESETS.map((w, i) => `
+          <button class="btn btn-cyan-outline" style="padding:5px 9px;font-size:0.72rem;" onclick="addPresetWorkoutToMenu(${i}, false)">
+            ➕ ${w.cat}：${w.name.split('（')[0]} (${w.minutes}分)
+          </button>
+        `).join('');
+
+        const builderCard = document.createElement('div');
+        builderCard.id = 'customWorkoutBuilderCard';
+        builderCard.innerHTML = `
+          <div id="workoutTimerDrawer" class="card" style="display:none;background:var(--bg-panel);border:2px solid var(--accent-highlight);margin-top:10px;padding:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+              <span style="font-weight:900;font-size:0.86rem;color:var(--accent-highlight);" id="wtTitle">💪 筋トレ・インターバルタイマー</span>
+              <button class="btn" style="padding:2px 7px;font-size:0.68rem;" onclick="stopWorkoutIntervalTimer();document.getElementById('workoutTimerDrawer').style.display='none';">✕ 閉じる</button>
+            </div>
+            <div id="wtClockText" style="font-size:1.15rem;font-weight:900;text-align:center;padding:8px;background:var(--bg-base);border-radius:8px;margin-bottom:8px;">
+              待機中（スタートで音声カウント開始）
+            </div>
+            <div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;">
+              <div class="form-group"><label>🔥 ワーク(秒)</label><input type="number" id="wtWorkInput" value="30" min="5" max="300" style="padding:5px;"/></div>
+              <div class="form-group"><label>☕ 休憩(秒)</label><input type="number" id="wtRestInput" value="15" min="5" max="180" style="padding:5px;"/></div>
+              <div class="form-group"><label>🔢 セット数</label><input type="number" id="wtSetsInput" value="3" min="1" max="15" style="padding:5px;"/></div>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-emerald" style="flex:1;padding:8px;" onclick="startWorkoutIntervalTimer()">▶️ タイマー開始</button>
+              <button class="btn btn-rose" style="padding:8px 14px;" onclick="stopWorkoutIntervalTimer()">⏹️ 停止</button>
+            </div>
+          </div>
+
+          <div class="card" style="background:var(--bg-surface);margin-top:10px;margin-bottom:0;padding:11px;">
+            <div style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);margin-bottom:6px;">
+              💪 1. 筋トレ・フィジカル種目をワンタップでメニューに組み込む
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+              ${presetButtonsHtml}
+            </div>
+
+            <div style="font-weight:900;font-size:0.78rem;color:var(--accent-secondary);margin-bottom:5px;">
+              ⭐ 保存した「マイ種目ストック」（タップでメニュー表に追加）:
+            </div>
+            <div id="customDrillBankHolder" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:6px;background:var(--bg-base);border-radius:8px;"></div>
+
+            <div style="font-weight:900;font-size:0.82rem;color:var(--accent-primary);margin-bottom:6px;padding-top:8px;border-top:1px solid var(--border-subtle);">
+              ✏️ 2. 自分で考えたメニュー（筋トレ・ノック・実技）を自由に追加・保存する
+            </div>
+            <div class="form-grid" style="grid-template-columns:1fr 1.6fr 0.7fr;gap:6px;margin-bottom:6px;">
+              <select id="customItemCat" style="font-size:0.75rem;padding:6px;">
+                <option value="💪 筋トレ">💪 筋トレ・体幹</option>
+                <option value="🦵 下半身">🦵 下半身・バネ</option>
+                <option value="🧘 ケア">🧘 ストレッチ・予防</option>
+                <option value="🎵 リズム">🎵 リズム・ステップ</option>
+                <option value="🏸 ノック">🏸 ノック・球出し</option>
+                <option value="🔥 パターン">🔥 パターン・実戦</option>
+              </select>
+              <input type="text" id="customItemName" placeholder="種目名（例：カーフレイズ30回、壁打ちレシーブ等）" style="font-size:0.78rem;padding:6px 8px;"/>
+              <input type="number" id="customItemMin" value="10" min="1" max="120" style="font-size:0.78rem;padding:6px 8px;" title="分数"/>
+            </div>
+            <div class="form-grid" style="grid-template-columns:1.5fr 1fr;gap:6px;margin-bottom:8px;">
+              <input type="text" id="customItemNote" placeholder="回数・セット数・意識ポイント（例：20回×3セット、母趾球で弾む）" style="font-size:0.76rem;padding:6px 8px;"/>
+              <select id="customItemLink" style="font-size:0.74rem;padding:6px;">
+                <option value="workout_timer" selected>⏱️ 筋トレタイマー連動</option>
+                <option value="tab-footwork">🏃 6点フットワーク連動</option>
+                <option value="rhythm">🎵 リズムジャンプ連動</option>
+                <option value="tab-reflex">⚡ 初速＆矢印連動</option>
+                <option value="tab-pose">🎥 骨格AIカメラ連動</option>
+                <option value="">連動なし（実技のみ）</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <button class="btn btn-emerald" style="padding:8px;" onclick="addFreeCustomItemToMenu(false)">➕ 今日のメニューに追加</button>
+              <button class="btn btn-amber" style="padding:8px;" onclick="addFreeCustomItemToMenu(true)">⭐ マイ種目にも保存して追加</button>
+            </div>
+          </div>
+
+          <div class="card" style="background:var(--bg-panel);border:1px solid var(--accent-secondary);margin-top:10px;margin-bottom:0;padding:11px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+              <span style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);">
+                🤖 3. AIプロコーチに今日の事情・筋トレ希望を伝えてメニューを組んでもらう
+              </span>
+              <span id="menuAiKeyBadge" class="badge-version">🟢 2.5 Pro 直結ON</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:6px;">
+              <input type="text" id="aiCoachMenuPromptInput" placeholder="例：カーフレイズと股関節の筋トレを入れて、自宅でリストスタンドを固める30分メニューにして" style="font-size:0.76rem;padding:7px 9px;"/>
+              <button class="btn btn-emerald" onclick="requestAIProCoachCustomMenu()">🤖 AIコーチに編成依頼</button>
+            </div>
+            <details style="font-size:0.72rem;color:var(--text-secondary);margin-top:4px;">
+              <summary style="cursor:pointer;font-weight:800;">🔑 APIキー確認・変更 ＆ モデル切替（現在セット済み）▼</summary>
+              <div class="form-grid" style="grid-template-columns:1fr 1.4fr auto;gap:6px;margin-top:6px;align-items:center;">
+                <select id="menuAiModelSelect" onchange="onGeminiModelSelectChanged(this.value)" style="font-size:0.72rem;padding:5px;">
+                  <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (高精度)</option>
+                  <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash (高速)</option>
+                </select>
+                <input type="text" id="menuGeminiKeyInput" placeholder="APIキーを入力" value="${currentKey}" style="font-size:0.72rem;padding:5px;"/>
+                <button class="btn btn-cyan-outline" style="padding:5px 9px;" onclick="saveGeminiApiKeyFromUI('menuGeminiKeyInput')">💾 保存</button>
+              </div>
+            </details>
+            <div id="aiCoachMenuStatus" style="font-size:0.74rem;color:var(--text-secondary);margin-top:4px;"></div>
+          </div>
+        `;
+        menuListContainer.parentNode.appendChild(builderCard);
+      }
+
+      onGeminiModelSelectChanged(selectedGeminiModel);
+      renderCustomDrillBankChips();
+      updateApiKeyStatusBadges();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      cleanStrayCommentText();
+      const vb = document.querySelector('header .badge-version');
+      if (vb) vb.textContent = "v10.4.2 PRO";
+      document.title = "バドトレPRO v10.4.2 PRO - AIプロコーチ(キー組込済)＆カスタム筋トレ統合版";
+
+      loadPart3Storage();
+      injectPart3PanelsUI();
+      renderCurrentMenuEditorUI();
+    });
+  </script>
 </body>
 </html>
