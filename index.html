@@ -20,7 +20,7 @@
 
   <meta name="theme-color" content="#060b16" />
 
-  <title>バドトレPRO v9.0 - バドミントン専用 AI動作解析＆実践トレーニング</title>
+  <title>バドトレPRO v10.4.3 - バドミントン専用 AI動作解析＆実践トレーニング</title>
 
   <!-- MediaPipe Pose & Drawing Utils -->
 
@@ -2086,7 +2086,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v9.0 完全版</span>
+      <span class="badge-version">v10.4.3 PRO</span>
 
     </div>
 
@@ -3399,6 +3399,10 @@
                 <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、カメラボタンを押さなくても動画がすぐに画面に表示されて自動解析が始まります。長い動画はシークバーで診断したい区間（開始A〜終了B）を切り出せます。
 
               </div>
+              <div class="btn-group" style="margin-top:8px;">
+                <button class="btn btn-emerald" style="padding:6px 10px; font-size:0.74rem;" onclick="sharePoseResultImage()">📸 診断結果を画像でシェア</button>
+              </div>
+
 
             </div>
 
@@ -8377,6 +8381,17 @@
         </div>
 
       `;
+      // 📸 シェア画像用に最新の診断結果を保持（ブラッシュアップ 2026-11-18）
+      window.__badtoreLastDiagnosis = {
+        score: totalScore,
+        goodPoints: goodPoints.slice(),
+        improvePoints: improvePoints.slice(),
+        shot: shot,
+        maxSh: maxSh, maxEl: maxEl, minKn: minKn, maxSp: maxSp,
+        profileName: (typeof userProfile !== 'undefined' && userProfile && userProfile.name) ? userProfile.name : '',
+        dateText: new Date().toLocaleDateString('ja-JP')
+      };
+
 
     }
 
@@ -10140,8 +10155,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.3 PRO";
-      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.3 PRO";
+      document.title = "バドトレPRO v10.4.3 PRO";
+      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.4.3 PRO";
       initSpeechVoices(); loadMenusAndLogsFromStorage();
       injectV103CoreStylesAndUI(); injectVideoAndDrillExtensions(); injectMenuPlannerTab();
       applyColorTheme(profileThemesMap[activeProfileId] || localStorage.getItem('badtore_last_theme_v102') || 'cyan', false);
@@ -11251,5 +11266,190 @@
       if (vb) vb.textContent = "v10.4.3 PRO";
     });
   </script>
+<script id="badtore-brushup-share-20261118">
+// =========================================================================
+// 📸 ブラッシュアップ(2026-11-18): AIフォーム診断結果のシェア画像出力
+// 診断結果は window.__badtoreLastDiagnosis（診断描画時に保存）から読み取る
+// =========================================================================
+function badtoreWrapTextLines(ctx, text, maxWidth) {
+  const lines = [];
+  let line = '';
+  for (const ch of String(text)) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = ch; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  return lines.length ? lines : [''];
+}
+
+function sharePoseResultImage() {
+  const d = window.__badtoreLastDiagnosis;
+  if (!d) { alert('まだ診断結果がありません。動画またはカメラでフォームを測定してからシェアしてください！'); return; }
+  try {
+    const W = 1080, PAD = 64, CW = W - PAD * 2;
+    const FONT = '"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif';
+    const cv = document.createElement('canvas');
+    const ctx = cv.getContext('2d');
+    ctx.font = '34px ' + FONT;
+    const goodLines = [];
+    (d.goodPoints.length ? d.goodPoints : ['全身の連動がスムーズです。']).slice(0, 2).forEach(p => { badtoreWrapTextLines(ctx, '・' + p, CW).forEach(l => goodLines.push(l)); });
+    const impLines = [];
+    (d.improvePoints.length ? d.improvePoints : ['理想的なフォームバランスです！']).slice(0, 2).forEach(p => { badtoreWrapTextLines(ctx, '・' + p, CW).forEach(l => impLines.push(l)); });
+    // 描画と同じ増分で高さを計算
+    let H = PAD + 10 + 84 + 56 + 44 + 66 + 190 + 120 + 40 + 56 + goodLines.length * 50 + 26 + 56 + impLines.length * 50 + 110;
+    cv.width = W; cv.height = H;
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0b1220'); g.addColorStop(1, '#132238');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 6; ctx.strokeRect(18, 18, W - 36, H - 36);
+    let y = PAD + 10;
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#f8fafc'; ctx.font = '900 64px ' + FONT;
+    ctx.fillText('🏸 バドトレPRO', PAD, y); y += 84;
+    ctx.fillStyle = '#22d3ee'; ctx.font = '700 38px ' + FONT;
+    ctx.fillText('AIフォーム診断結果', PAD, y); y += 56;
+    ctx.fillStyle = '#94a3b8'; ctx.font = '30px ' + FONT;
+    const sel = document.getElementById('shotTypeSelect');
+    const shotLabel = sel ? sel.options[sel.selectedIndex].textContent : d.shot;
+    ctx.fillText(d.dateText + (d.profileName ? ' ｜ ' + d.profileName : ''), PAD, y); y += 44;
+    ctx.fillText(shotLabel, PAD, y); y += 66;
+    ctx.fillStyle = '#f8fafc'; ctx.font = '900 150px ' + FONT;
+    ctx.fillText(String(d.score), PAD, y);
+    const scoreW = ctx.measureText(String(d.score)).width;
+    ctx.fillStyle = '#94a3b8'; ctx.font = '700 44px ' + FONT;
+    ctx.fillText('/ 100 pt', PAD + scoreW + 24, y + 92);
+    if (typeof getScoreRankMeta === 'function') {
+      const rk = getScoreRankMeta(d.score);
+      const unitW = ctx.measureText('/ 100 pt').width;
+      ctx.fillStyle = '#fbbf24'; ctx.font = '900 52px ' + FONT;
+      ctx.fillText('🏆 ' + rk.rank + 'ランク', PAD + scoreW + 24 + unitW + 40, y + 26);
+    }
+    y += 190;
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(PAD, y, CW, 120);
+    ctx.fillStyle = '#e2e8f0'; ctx.font = '700 32px ' + FONT;
+    ctx.fillText('最大肩挙上角: ' + d.maxSh + '°　肘伸展: ' + d.maxEl + '°', PAD + 24, y + 18);
+    ctx.fillText('最深膝角: ' + d.minKn + '°　速度指数: ' + d.maxSp + 'pt', PAD + 24, y + 66);
+    y += 120 + 40;
+    ctx.fillStyle = '#34d399'; ctx.font = '900 38px ' + FONT;
+    ctx.fillText('⭕ 良かった点', PAD, y); y += 56;
+    ctx.fillStyle = '#e2e8f0'; ctx.font = '34px ' + FONT;
+    goodLines.forEach(l => { ctx.fillText(l, PAD, y); y += 50; });
+    y += 26;
+    ctx.fillStyle = '#fbbf24'; ctx.font = '900 38px ' + FONT;
+    ctx.fillText('🔺 改善アドバイス', PAD, y); y += 56;
+    ctx.fillStyle = '#e2e8f0'; ctx.font = '34px ' + FONT;
+    impLines.forEach(l => { ctx.fillText(l, PAD, y); y += 50; });
+    ctx.fillStyle = '#64748b'; ctx.font = '28px ' + FONT;
+    ctx.fillText('バドトレPRO v10.4.3 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
+    cv.toBlob(async (blob) => {
+      if (!blob) { alert('画像の生成に失敗しました。'); return; }
+      const file = new File([blob], 'badtore_result.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'バドトレPRO 診断結果' }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'badtore_result_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }, 'image/png');
+  } catch (err) {
+    alert('画像の生成に失敗しました: ' + err.message);
+  }
+}
+</script>
+<script id="badtore-brushup-guide-20261118">
+// =========================================================================
+// 📖 ブラッシュアップ(2026-11-18): 初回ガイド（初回訪問時のみ表示）
+// 表示済みフラグ: localStorage 'badtore_onboarding_guide_seen_v1'（新規キー）
+// 手動で開き直す場合は window.showBadtoreGuide() を呼ぶ
+// =========================================================================
+(function () {
+  var GUIDE_KEY = 'badtore_onboarding_guide_seen_v1';
+  var STEPS = [
+    { title: '👋 ようこそ、バドトレPROへ！', body: 'バドミントン専用のAI動作解析＆実践トレーニングアプリです。フットワーク・初速・フォーム分析・スコア管理まで、日々の練習をまるごとサポートします。' },
+    { title: '🎥 AIフォーム分析の使い方', body: '「3.構え＆骨格AI」タブで動画を読み込むかカメラを起動すると、姿勢を自動で解析してスコアと改善アドバイスを表示します。診断結果は「📸 診断結果を画像でシェア」ボタンから、画像で保存・共有もできます。' },
+    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「6.メンバー管理」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「8.使い方＆撮影」タブにもあります。' }
+  ];
+  var idx = 0;
+  var overlay = null, titleEl = null, bodyEl = null, dotsEl = null, prevBtn = null, nextBtn = null;
+
+  function build() {
+    overlay = document.createElement('div');
+    overlay.id = 'badtoreGuideOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,23,0.74);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px;';
+    var panel = document.createElement('div');
+    panel.style.cssText = 'background:var(--bg-panel,#0f172a);border:1px solid var(--accent-primary,#22d3ee);border-radius:16px;max-width:520px;width:100%;padding:22px 20px;color:#e2e8f0;box-shadow:0 18px 50px rgba(0,0,0,0.55);';
+    titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-weight:900;font-size:1.05rem;margin-bottom:10px;color:var(--accent-highlight,#38bdf8);';
+    bodyEl = document.createElement('div');
+    bodyEl.style.cssText = 'font-size:0.86rem;line-height:1.7;min-height:96px;';
+    dotsEl = document.createElement('div');
+    dotsEl.style.cssText = 'text-align:center;font-size:0.8rem;letter-spacing:6px;margin:12px 0 14px;color:var(--accent-primary,#22d3ee);';
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
+    var skipBtn = document.createElement('button');
+    skipBtn.className = 'btn';
+    skipBtn.textContent = '閉じる';
+    skipBtn.style.cssText = 'padding:7px 12px;font-size:0.78rem;';
+    skipBtn.addEventListener('click', closeGuide);
+    var nav = document.createElement('div');
+    nav.style.cssText = 'display:flex;gap:8px;';
+    prevBtn = document.createElement('button');
+    prevBtn.className = 'btn';
+    prevBtn.textContent = '戻る';
+    prevBtn.style.cssText = 'padding:7px 12px;font-size:0.78rem;';
+    prevBtn.addEventListener('click', function () { if (idx > 0) { idx--; renderStep(); } });
+    nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-emerald';
+    nextBtn.style.cssText = 'padding:7px 14px;font-size:0.78rem;';
+    nextBtn.addEventListener('click', function () {
+      if (idx < STEPS.length - 1) { idx++; renderStep(); } else { closeGuide(); }
+    });
+    nav.appendChild(prevBtn);
+    nav.appendChild(nextBtn);
+    btnRow.appendChild(skipBtn);
+    btnRow.appendChild(nav);
+    panel.appendChild(titleEl);
+    panel.appendChild(bodyEl);
+    panel.appendChild(dotsEl);
+    panel.appendChild(btnRow);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+  }
+
+  function renderStep() {
+    titleEl.textContent = STEPS[idx].title;
+    bodyEl.textContent = STEPS[idx].body;
+    var dots = '';
+    for (var i = 0; i < STEPS.length; i++) dots += (i === idx ? '●' : '○');
+    dotsEl.textContent = dots;
+    prevBtn.style.visibility = idx === 0 ? 'hidden' : 'visible';
+    nextBtn.textContent = idx === STEPS.length - 1 ? '🏸 はじめる' : '次へ';
+  }
+
+  function closeGuide() {
+    try { localStorage.setItem(GUIDE_KEY, '1'); } catch (e) {}
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  function showGuide() {
+    if (!overlay) build();
+    idx = 0;
+    renderStep();
+    overlay.style.display = 'flex';
+  }
+
+  window.showBadtoreGuide = showGuide;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var seen = false;
+    try { seen = !!localStorage.getItem(GUIDE_KEY); } catch (e) {}
+    if (!seen) showGuide();
+  });
+})();
+</script>
 </body>
 </html>
