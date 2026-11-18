@@ -2124,9 +2124,9 @@
 
     <button class="nav-tab" onclick="switchTab('tab-profile')" id="btn-tab-profile">👤 6.メンバー管理</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 7.撮影ガイド</button>
+    <button class="nav-tab" onclick="switchTab('tab-progress')" id="btn-tab-progress">👥 7.みんなの進捗</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-progress')" id="btn-tab-progress">👥 8.みんなの進捗</button>
+    <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 9.撮影ガイド</button>
 
   </nav>
 
@@ -3578,7 +3578,67 @@
 
 
 
-        <div class="card" style="background:var(--bg-panel); margin-bottom:12px;">
+        <!-- ☁️ Phase 1: クラウド保存＆家族共有（Supabase） -->
+
+        <div class="card" style="background:var(--bg-surface); margin:0;">
+
+          <div class="card-header">
+
+            <div class="card-title">☁️ クラウド保存 ＆ 家族グループ共有</div>
+
+          </div>
+
+          <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px;">
+
+            Googleでログインすると、練習記録・自己ベスト・XPがクラウドに自動保存され、別のスマホでも続きが見られます。家族グループを作ると「👥 7.みんなの進捗」で家族の進捗も共有できます。ログインしなくても今まで通り使えます。
+
+          </p>
+
+          <div id="cloudAuthArea"></div>
+
+          <div id="cloudSyncStatus" style="font-size:0.74rem; color:var(--text-secondary); margin-top:6px;">☁️ クラウド: 確認中…</div>
+
+          <div class="btn-group" style="margin-top:8px;">
+
+            <button class="btn btn-cyan-outline" onclick="switchTab('tab-progress')">👥 みんなの進捗・グループ管理へ</button>
+
+          </div>
+
+        </div>
+
+
+
+<!-- 📲 iPhone / iPad 間のデータ引き継ぎ（書き出し・読み込み） -->
+
+        <div class="card" style="background:var(--bg-surface); margin:0;">
+
+          <div class="card-header">
+
+            <div class="card-title">📲 iPhone ⇄ iPad データ引き継ぎ（メンバー＆過去ベスト一括共有）</div>
+
+            <div class="btn-group">
+
+              <button class="btn btn-cyan-outline" onclick="exportAllAppData()">📤 引き継ぎコードを書き出してコピー</button>
+
+              <button class="btn btn-emerald" onclick="importAllAppData()">📥 貼り付けたコードを読み込む</button>
+
+            </div>
+
+          </div>
+
+          <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px;">
+
+            iPhoneで「📤 書き出してコピー」を押し、AirDropやメモ帳でiPadへ送って下の枠に貼り付け「📥 読み込む」を押すと、全メンバーと過去ベスト記録がそのまま同期されます。
+
+          </p>
+
+          <textarea id="dataSyncTextarea" rows="2" placeholder="ここに引き継ぎコードが表示されます（または別端末からコピーしたコードをここに貼り付け）" style="font-size:0.75rem; font-family:monospace;"></textarea>
+
+        </div>
+
+
+
+<div class="card" style="background:var(--bg-panel); margin-bottom:12px;">
 
           <div class="card-header">
 
@@ -3680,67 +3740,7 @@
 
         </div>
 
-
-
-        <!-- 📲 iPhone / iPad 間のデータ引き継ぎ（書き出し・読み込み） -->
-
-        <div class="card" style="background:var(--bg-surface); margin:0;">
-
-          <div class="card-header">
-
-            <div class="card-title">📲 iPhone ⇄ iPad データ引き継ぎ（メンバー＆過去ベスト一括共有）</div>
-
-            <div class="btn-group">
-
-              <button class="btn btn-cyan-outline" onclick="exportAllAppData()">📤 引き継ぎコードを書き出してコピー</button>
-
-              <button class="btn btn-emerald" onclick="importAllAppData()">📥 貼り付けたコードを読み込む</button>
-
-            </div>
-
-          </div>
-
-          <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px;">
-
-            iPhoneで「📤 書き出してコピー」を押し、AirDropやメモ帳でiPadへ送って下の枠に貼り付け「📥 読み込む」を押すと、全メンバーと過去ベスト記録がそのまま同期されます。
-
-          </p>
-
-          <textarea id="dataSyncTextarea" rows="2" placeholder="ここに引き継ぎコードが表示されます（または別端末からコピーしたコードをここに貼り付け）" style="font-size:0.75rem; font-family:monospace;"></textarea>
-
-        </div>
-
-
-
-        <!-- ☁️ Phase 1: クラウド保存＆家族共有（Supabase） -->
-
-        <div class="card" style="background:var(--bg-surface); margin:0;">
-
-          <div class="card-header">
-
-            <div class="card-title">☁️ クラウド保存 ＆ 家族グループ共有</div>
-
-          </div>
-
-          <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px;">
-
-            Googleでログインすると、練習記録・自己ベスト・XPがクラウドに自動保存され、別のスマホでも続きが見られます。家族グループを作ると「👥 8.みんなの進捗」で家族の進捗も共有できます。ログインしなくても今まで通り使えます。
-
-          </p>
-
-          <div id="cloudAuthArea"></div>
-
-          <div id="cloudSyncStatus" style="font-size:0.74rem; color:var(--text-secondary); margin-top:6px;">☁️ クラウド: 確認中…</div>
-
-          <div class="btn-group" style="margin-top:8px;">
-
-            <button class="btn btn-cyan-outline" onclick="switchTab('tab-progress')">👥 みんなの進捗・グループ管理へ</button>
-
-          </div>
-
-        </div>
-
-      </div>
+</div>
 
     </section>
 
@@ -3834,7 +3834,7 @@
 
     <section id="tab-progress" class="tab-panel">
 
-      <div class="card">
+      <div class="card" id="progressMainCard">
 
         <div class="card-header">
 
@@ -3842,7 +3842,7 @@
 
           <div class="btn-group">
 
-            <button class="btn" onclick="refreshProgressUI()">🔄 更新</button>
+            <button class="btn" onclick="refreshProgressUI()">更新</button>
 
           </div>
 
@@ -3858,7 +3858,7 @@
 
       </div>
 
-      <div class="card">
+      <div class="card" id="progressGroupCard">
 
         <div class="card-header">
 
@@ -10098,12 +10098,12 @@
       }
     };
 
-    // 📋 TAB 7: メニュー作成（ガイドの前に配置し、ガイドを8番目へ）
+    // 📋 TAB 8: メニュー作成（ガイドの前に配置し、ガイドを9番目へ）
     function injectMenuPlannerTab() {
       const nav = document.querySelector('.nav-scroller'), guideBtn = document.getElementById('btn-tab-guide');
-      if (guideBtn) guideBtn.textContent = '📖 8.使い方＆撮影';
+      if (guideBtn) guideBtn.textContent = '📖 9.使い方＆撮影';
       if (nav && !document.getElementById('btn-tab-menu')) {
-        const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 7.メニュー作成';
+        const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 8.メニュー作成';
         b.onclick = () => switchTab('tab-menu');
         if (guideBtn) nav.insertBefore(b, guideBtn); else nav.appendChild(b);
       }
@@ -10857,7 +10857,7 @@
     }
 
     // =========================================================================
-    // 2. 📖 TAB 8：「使い方＆撮影ガイド」へのアップグレード（一番後ろのタブ）
+    // 2. 📖 TAB 9：「使い方＆撮影ガイド」へのアップグレード（一番後ろのタブ）
     // =========================================================================
     function upgradeGuideTabContent() {
       const guideSec = document.getElementById('tab-guide');
@@ -10897,7 +10897,7 @@
                 🏟️ 体育館で練習するとき（1人〜少人数・2.5時間など）
               </div>
               <div style="font-size:0.75rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 時間割を作る：</b>「📋 7.メニュー作成」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ AI自動編成］</b>を押します。<br>
+                <b>① 時間割を作る：</b>「📋 8.メニュー作成」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ AI自動編成］</b>を押します。<br>
                 <b>② 黄金順序で練習：</b>いきなり基礎打ちをせず、「抜重・FW矯正 ➔ 手投げ分解ノック ➔ 基礎打ち ➔ 半面パターン」の順で各行の<b>［▶️ 今すぐ開始］</b>を押して進めます。
               </div>
             </div>
@@ -11487,7 +11487,7 @@ function sharePoseResultImage() {
   var STEPS = [
     { title: '👋 ようこそ、バドトレPROへ！', body: 'バドミントン専用のAI動作解析＆実践トレーニングアプリです。フットワーク・初速・フォーム分析・スコア管理まで、日々の練習をまるごとサポートします。' },
     { title: '🎥 AIフォーム分析の使い方', body: '「3.構え＆骨格AI」タブで動画を読み込むかカメラを起動すると、姿勢を自動で解析してスコアと改善アドバイスを表示します。診断結果は「📸 診断結果を画像でシェア」ボタンから、画像で保存・共有もできます。' },
-    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「6.メンバー管理」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「8.使い方＆撮影」タブにもあります。' }
+    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「6.メンバー管理」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「9.使い方＆撮影」タブにもあります。' }
   ];
   var idx = 0;
   var overlay = null, titleEl = null, bodyEl = null, dotsEl = null, prevBtn = null, nextBtn = null;
@@ -12034,17 +12034,27 @@ function sharePoseResultImage() {
     return (gs.data || []).map(function (g) { g.myRole = roleBy[g.id] || 'member'; return g; });
   }
 
+
+  function orderProgressCards(groupsFirst) {
+    var sec = document.getElementById('tab-progress');
+    var main = document.getElementById('progressMainCard');
+    var grp = document.getElementById('progressGroupCard');
+    if (!sec || !main || !grp) return;
+    if (groupsFirst) sec.insertBefore(grp, main); else sec.insertBefore(main, grp);
+  }
   /* ---------- 進捗画面 ---------- */
   window.refreshProgressUI = async function () {
     var pc = document.getElementById('cloudProgressContainer');
     var gc = document.getElementById('cloudGroupsContainer');
     if (!pc || !gc) return;
     if (!sb) {
+      orderProgressCards(true);
       pc.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);">クラウドに接続できませんでした（SDK読み込み失敗）。通信環境を確認して再読み込みしてください。</div>';
       gc.innerHTML = '';
       return;
     }
     if (!cloudUser) {
+      orderProgressCards(true);
       var msg = '<div style="font-size:0.78rem;color:var(--text-secondary);">ログインすると家族の進捗が見られます。「6.メンバー管理」タブの「☁️ クラウド保存＆家族グループ共有」カードからGoogleでログインしてください。</div>';
       pc.innerHTML = msg;
       gc.innerHTML = msg;
@@ -12054,6 +12064,7 @@ function sharePoseResultImage() {
     gc.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);">読み込み中…</div>';
     try {
       var groups = await fetchMyGroups();
+      orderProgressCards(groups.length === 0);
       await renderGroupsUI(groups);
       await renderProgressCards(groups);
     } catch (e) {
@@ -12085,7 +12096,7 @@ function sharePoseResultImage() {
       html += '<div style="font-size:0.72rem;color:var(--text-secondary);margin-top:5px;">招待コード（家族に送ってください）:</div>' +
         '<div style="display:flex;gap:5px;align-items:center;margin-top:3px;">' +
         '<input type="text" readonly value="' + esc(g.invite_code) + '" style="flex:1;padding:5px 7px;font-size:0.72rem;font-family:monospace;" onclick="this.select()" />' +
-        '<button class="btn btn-cyan-outline" style="padding:5px 9px;font-size:0.72rem;" onclick="cloudCopyInvite(\'' + esc(g.invite_code) + '\')">📋 コピー</button></div>';
+        '<button class="btn btn-cyan-outline" style="padding:5px 9px;font-size:0.72rem;" onclick="cloudCopyInvite(\'' + esc(g.invite_code) + '\')">コピー</button></div>';
       if (myProfs.length) {
         html += '<div style="font-size:0.74rem;margin-top:8px;font-weight:700;">自分のプロフィールの共有:</div>';
         myProfs.forEach(function (p) {
@@ -12144,14 +12155,14 @@ function sharePoseResultImage() {
         rankHtml = '<span style="background:' + rk.bg + ';color:' + rk.color + ';border-radius:6px;padding:1px 7px;font-weight:900;">' + sum.last_diagnosis_score + '点 ' + esc(sum.last_diagnosis_rank || rk.rank) + 'ランク</span>';
       }
       html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:10px;padding:10px;">' +
-        '<div style="font-weight:900;font-size:0.88rem;">👤 ' + esc(prof.display_name || pid) + (mine ? ' <span style="font-size:0.68rem;color:var(--accent-secondary);">(自分)</span>' : '') + '</div>' +
+        '<div style="font-weight:900;font-size:0.88rem;">' + esc(prof.display_name || pid) + (mine ? ' <span style="font-size:0.68rem;color:var(--accent-secondary);">(自分)</span>' : '') + '</div>' +
         '<div style="font-size:0.76rem;margin-top:5px;">Lv.' + lv + ' ' + esc(LEVEL_TITLES[Math.min(LEVEL_TITLES.length - 1, Math.floor((lv - 1) / 2))]) + '（' + xp + ' XP）</div>' +
-        '<div style="font-size:0.76rem;margin-top:3px;">🗓️ 最終練習日: ' + esc(sum && sum.last_practice_date ? sum.last_practice_date : '記録なし') + '</div>' +
-        '<div style="font-size:0.76rem;margin-top:3px;">⏱️ 今週の練習: ' + (sum ? (sum.weekly_minutes || 0) : 0) + '分</div>' +
-        '<div style="font-size:0.76rem;margin-top:3px;">🎥 直近の診断: ' + rankHtml + '</div>' +
+        '<div style="font-size:0.76rem;margin-top:3px;">最終練習日: ' + esc(sum && sum.last_practice_date ? sum.last_practice_date : '記録なし') + '</div>' +
+        '<div style="font-size:0.76rem;margin-top:3px;">今週の練習: ' + (sum ? (sum.weekly_minutes || 0) : 0) + '分</div>' +
+        '<div style="font-size:0.76rem;margin-top:3px;">直近の診断: ' + rankHtml + '</div>' +
         '<div class="btn-group" style="margin-top:7px;">' +
-        '<button class="btn" style="padding:4px 9px;font-size:0.72rem;" onclick="cloudShowMemberDetail(\'' + esc(pid) + '\',\'logs\')">📋 練習ログ</button>' +
-        '<button class="btn" style="padding:4px 9px;font-size:0.72rem;" onclick="cloudShowMemberDetail(\'' + esc(pid) + '\',\'pb\')">🏆 自己ベスト</button>' +
+        '<button class="btn" style="padding:4px 9px;font-size:0.72rem;" onclick="cloudShowMemberDetail(\'' + esc(pid) + '\',\'logs\')">練習ログ</button>' +
+        '<button class="btn" style="padding:4px 9px;font-size:0.72rem;" onclick="cloudShowMemberDetail(\'' + esc(pid) + '\',\'pb\')">自己ベスト</button>' +
         '</div></div>';
     });
     html += '</div>';
@@ -12182,7 +12193,7 @@ function sharePoseResultImage() {
           if (!filtered.length) { filtered = logs; note = '<div style="font-size:0.7rem;color:var(--text-secondary);margin-top:3px;">※名前で絞り込めなかったため全件表示しています</div>'; }
           html += note;
           filtered.slice(0, 20).forEach(function (l) {
-            html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:7px 9px;font-size:0.74rem;margin-top:5px;"><b>📅 ' + esc(l.date || l.isoDate || '') + ' (' + (Number(l.totalMin) || 0) + '分)</b> - ' + esc(l.title || '') + '<br><span style="color:var(--text-secondary);">💬 ' + esc(l.memo || '') + '</span></div>';
+            html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:7px 9px;font-size:0.74rem;margin-top:5px;"><b>' + esc(l.date || l.isoDate || '') + ' (' + (Number(l.totalMin) || 0) + '分)</b> - ' + esc(l.title || '') + '<br><span style="color:var(--text-secondary);">' + esc(l.memo || '') + '</span></div>';
           });
         }
       } else {
@@ -12197,7 +12208,7 @@ function sharePoseResultImage() {
             var rk = (typeof r.score === 'number' && typeof getScoreRankMeta === 'function') ? getScoreRankMeta(r.score) : null;
             html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:7px 9px;font-size:0.74rem;margin-top:5px;">' +
               '<b>' + esc(SHOT_LABELS[shot] || shot) + '</b> — <b>' + (r.score != null ? r.score + '点' : '-') + '</b>' + (rk ? ' <span style="color:' + rk.color + ';font-weight:900;">' + rk.rank + 'ランク</span>' : '') +
-              '<br><span style="color:var(--text-secondary);">📅 ' + esc(r.date || '-') + ' / 肩 ' + (r.maxSh != null ? r.maxSh + '°' : '-') + ' / 肘 ' + (r.maxEl != null ? r.maxEl + '°' : '-') + ' / 膝 ' + (r.minKn != null ? r.minKn + '°' : '-') + ' / 速度 ' + (r.maxSp != null ? r.maxSp : '-') + '</span></div>';
+              '<br><span style="color:var(--text-secondary);">' + esc(r.date || '-') + ' / 肩 ' + (r.maxSh != null ? r.maxSh + '°' : '-') + ' / 肘 ' + (r.maxEl != null ? r.maxEl + '°' : '-') + ' / 膝 ' + (r.minKn != null ? r.minKn + '°' : '-') + ' / 速度 ' + (r.maxSp != null ? r.maxSp : '-') + '</span></div>';
           });
         }
       }
