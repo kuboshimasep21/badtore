@@ -11501,18 +11501,28 @@ function sharePoseResultImage() {
 
   /* ============ 2. マイルーティン & 筋トレ達成チェック ============ */
   var DEFAULT_ROUTINES=[
-    {id:"stretch", icon:"🧘", label:"ストレッチ 5分", xp:10, detail:"肩・股関節・ふくらはぎを各30秒"},
-    {id:"footwork", icon:"👣", label:"フットワーク 10分", xp:20, detail:"サイドステップ・前後・クロス"},
-    {id:"shadow", icon:"🏸", label:"素振り 100回", xp:20, detail:"クリア→ドロップ→スマッシュ"},
-    {id:"core", icon:"💪", label:"筋トレ（体幹）", xp:20, detail:"プランク60秒×2・腹筋20回"},
-    {id:"jump", icon:"🦵", label:"ジャンプ・ランジ", xp:15, detail:"スクワットジャンプ15回×2"},
-    {id:"review", icon:"📝", label:"振り返りメモ", xp:15, detail:"今日の良かった点・課題を1行"}
+    {id:"stretch", group:"warmup", label:"ストレッチ 5分", xp:10, detail:"肩・股関節・ふくらはぎを各30秒"},
+    {id:"footwork", group:"practice", label:"フットワーク 10分", xp:20, detail:"サイドステップ・前後・クロス"},
+    {id:"shadow", group:"practice", label:"素振り 100回", xp:20, detail:"クリア→ドロップ→スマッシュ"},
+    {id:"core", group:"strength", label:"筋トレ（体幹）", xp:20, detail:"プランク60秒×2・腹筋20回"},
+    {id:"jump", group:"strength", label:"ジャンプ・ランジ", xp:20, detail:"スクワットジャンプ15回×2"},
+    {id:"review", group:"review", label:"振り返りメモ", xp:10, detail:"今日の良かった点・課題を1行"}
   ];
+  // グループ定義（絵文字はグループ見出しだけ。項目自体はテキストのみ）
+  var ROUTINE_GROUPS=[
+    {key:"warmup", icon:"🏃", name:"ウォームアップ"},
+    {key:"practice", icon:"🏸", name:"フットワーク・練習"},
+    {key:"strength", icon:"💪", name:"筋トレ"},
+    {key:"review", icon:"📝", name:"振り返り"}
+  ];
+  // XPは3段階プリセットのみ（自由入力だとレベル制度が崩れるため）
+  var XP_TIERS=[10,20,30];
+  var DEFAULT_GROUP_BY_ID={stretch:"warmup", footwork:"practice", shadow:"practice", core:"strength", jump:"strength", review:"review"};
   // カスタム項目リストの保存先。未保存なら DEFAULT_ROUTINES を使う。
   var ROUTINES_KEY="bt_v105_routines_custom";
   var customSeq=0;
   function newRoutineId(){ customSeq++; return "custom_"+Date.now()+"_"+customSeq; }
-  function sanitizeXP(v){ var n=parseInt(v,10); if(isNaN(n)||n<0) n=0; return n; }
+  function sanitizeXP(v){ var n=parseInt(v,10); if(isNaN(n)) n=20; var best=XP_TIERS[0], bd=Infinity; XP_TIERS.forEach(function(t){ var d=Math.abs(n-t); if(d<bd){ bd=d; best=t; } }); return best; }
   function sanitizeRoutines(list){
     var out=[], seen={};
     (list||[]).forEach(function(it){
@@ -11520,8 +11530,11 @@ function sharePoseResultImage() {
       var id=(it.id!=null&&String(it.id)!=="")?String(it.id):newRoutineId();
       if(seen[id]) id=newRoutineId();
       seen[id]=true;
+      var grp=null;
+      ROUTINE_GROUPS.forEach(function(g){ if(it.group===g.key) grp=g.key; });
+      if(!grp) grp=DEFAULT_GROUP_BY_ID[id]||"practice";
       out.push({ id:id,
-        icon:(it.icon==null?"":String(it.icon)),
+        group:grp,
         label:(it.label==null?"":String(it.label)),
         xp:sanitizeXP(it.xp),
         detail:(it.detail==null?"":String(it.detail)) });
@@ -11569,7 +11582,7 @@ function sharePoseResultImage() {
           +'<button id="bt-routine-reset" style="flex:1;min-width:100px;padding:12px;border-radius:12px;border:1px solid #d1d5db;background:#fff;color:#4b5563;font-weight:700">デフォルトに戻す</button>'
           +'<button id="bt-routine-editdone" style="flex:1;min-width:100px;padding:12px;border-radius:12px;border:0;background:#059669;color:#fff;font-weight:700">編集を終わる</button>';
         on($("#bt-routine-add"),"click",function(){
-          items.push({id:newRoutineId(), icon:"⭐", label:"新しい項目", xp:10, detail:""});
+          items.push({id:newRoutineId(), group:"practice", label:"新しい項目", xp:20, detail:""});
           saveRoutines(items); render();
         });
         on($("#bt-routine-reset"),"click",function(){
@@ -11592,11 +11605,18 @@ function sharePoseResultImage() {
     }
     function renderCheck(){
       var list=$("#bt-routine-list"); if(!list) return;
-      list.innerHTML=items.map(function(r){
-        return '<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #e5e7eb;border-radius:14px;margin-bottom:8px;cursor:pointer">'
-          +'<input type="checkbox" data-rid="'+esc(r.id)+'" '+(done[r.id]?"checked":"")+' style="width:20px;height:20px;margin-top:2px">'
-          +'<span><b style="color:#111827">'+esc(r.icon)+' '+esc(r.label)+' <span style="color:#059669">+'+r.xp+'XP</span></b><br><span style="color:#4b5563;font-size:12.5px">'+esc(r.detail)+'</span></span></label>';
-      }).join("");
+      var html="";
+      ROUTINE_GROUPS.forEach(function(g){
+        var gi=items.filter(function(r){ return r.group===g.key; });
+        if(!gi.length) return;
+        html+='<div style="font-weight:800;color:#111827;font-size:13.5px;margin:12px 0 6px">'+g.icon+' '+esc(g.name)+'</div>';
+        html+=gi.map(function(r){
+          return '<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #e5e7eb;border-radius:14px;margin-bottom:8px;cursor:pointer">'
+            +'<input type="checkbox" data-rid="'+esc(r.id)+'" '+(done[r.id]?"checked":"")+' style="width:20px;height:20px;margin-top:2px">'
+            +'<span><b style="color:#111827">'+esc(r.label)+' <span style="color:#059669">+'+r.xp+'XP</span></b><br><span style="color:#4b5563;font-size:12.5px">'+esc(r.detail)+'</span></span></label>';
+        }).join("");
+      });
+      list.innerHTML=html;
       var total=calcXP(done);
       var all=items.every(function(r){ return done[r.id]; });
       var t=$("#bt-routine-total"); if(t) t.textContent="本日の獲得XP： "+total+" XP"+(all?"（全達成ボーナス +30 XP 対象！）":"");
@@ -11606,24 +11626,32 @@ function sharePoseResultImage() {
     }
     function renderEdit(){
       var list=$("#bt-routine-list"); if(!list) return;
-      list.innerHTML=items.map(function(r,idx){
-        var del=(items.length>1)
-          ? '<button data-del="'+idx+'" style="border:0;background:#fef2f2;color:#b91c1c;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:700">削除</button>'
-          : '<span style="color:#9ca3af;font-size:11px;padding:8px 2px">最低1項目</span>';
-        return '<div style="border:1px solid #e5e7eb;border-radius:14px;padding:10px;margin-bottom:8px">'
-          +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
-          +'<input type="text" data-idx="'+idx+'" data-field="icon" value="'+esc(r.icon)+'" style="'+inputStyle+';width:52px;text-align:center">'
-          +'<input type="text" data-idx="'+idx+'" data-field="label" value="'+esc(r.label)+'" placeholder="項目名" style="'+inputStyle+';flex:1;min-width:0">'
-          + del
-          +'</div>'
-          +'<div style="display:flex;gap:8px;align-items:center">'
-          +'<input type="text" data-idx="'+idx+'" data-field="detail" value="'+esc(r.detail)+'" placeholder="詳細（例：各30秒）" style="'+inputStyle+';flex:1;min-width:0">'
-          +'<input type="number" data-idx="'+idx+'" data-field="xp" value="'+r.xp+'" min="0" step="1" style="'+inputStyle+';width:76px">'
-          +'<span style="color:#4b5563;font-size:13px;font-weight:700">XP</span>'
-          +'</div></div>';
-      }).join("");
+      var html="";
+      ROUTINE_GROUPS.forEach(function(g){
+        var rows="";
+        items.forEach(function(r,idx){
+          if(r.group!==g.key) return;
+          var del=(items.length>1)
+            ? '<button data-del="'+idx+'" style="border:0;background:#fef2f2;color:#b91c1c;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:700">削除</button>'
+            : '<span style="color:#9ca3af;font-size:11px;padding:8px 2px">最低1項目</span>';
+          var xpOpts=XP_TIERS.map(function(t){ return '<option value="'+t+'"'+(r.xp===t?" selected":"")+'>'+(t===10?"軽め":t===20?"標準":"しっかり")+' '+t+'XP</option>'; }).join("");
+          var gOpts=ROUTINE_GROUPS.map(function(gg){ return '<option value="'+gg.key+'"'+(r.group===gg.key?" selected":"")+'>'+gg.icon+' '+esc(gg.name)+'</option>'; }).join("");
+          rows+='<div style="border:1px solid #e5e7eb;border-radius:14px;padding:10px;margin-bottom:8px">'
+            +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
+            +'<input type="text" data-idx="'+idx+'" data-field="label" value="'+esc(r.label)+'" placeholder="項目名" style="'+inputStyle+';flex:1;min-width:0">'
+            + del
+            +'</div>'
+            +'<input type="text" data-idx="'+idx+'" data-field="detail" value="'+esc(r.detail)+'" placeholder="詳細（例：各30秒）" style="'+inputStyle+';width:100%;margin-bottom:8px">'
+            +'<div style="display:flex;gap:8px;align-items:center">'
+            +'<select data-idx="'+idx+'" data-field="group" style="'+inputStyle+';flex:1;min-width:0">'+gOpts+'</select>'
+            +'<select data-idx="'+idx+'" data-field="xp" style="'+inputStyle+';flex:1;min-width:0">'+xpOpts+'</select>'
+            +'</div></div>';
+        });
+        if(rows) html+='<div style="font-weight:800;color:#111827;font-size:13.5px;margin:12px 0 6px">'+g.icon+' '+esc(g.name)+'</div>'+rows;
+      });
+      list.innerHTML=html;
       var t=$("#bt-routine-total"); if(t) t.textContent="✏️ 編集中：変更は自動で保存されます";
-      $$("#bt-routine-list input[data-idx]").forEach(function(inp){
+      $$("#bt-routine-list input[data-idx], #bt-routine-list select[data-idx]").forEach(function(inp){
         on(inp,"change",function(){
           var idx=Number(inp.getAttribute("data-idx")), f=inp.getAttribute("data-field");
           if(!items[idx]) return;
