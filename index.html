@@ -10780,7 +10780,7 @@
             </div>
 
             <!-- 👟 足裏ステップ＆肩ライン固定アニメーションマット -->
-            <div style="position:relative;width:100%;max-width:440px;height:clamp(240px,42dvh,330px);background:radial-gradient(circle,#0f2942 0%,#050d1a 100%);border:2px solid var(--border-subtle);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+            <div style="position:relative;width:100%;max-width:440px;height:clamp(300px,55dvh,420px);height:clamp(300px,55svh,420px);background:radial-gradient(circle,#0f2942 0%,#050d1a 100%);border:2px solid var(--border-subtle);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
               <!-- 上部：正面キープ用の肩ライン指標 -->
               <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(6,182,212,0.18);border:1px solid #38bdf8;border-radius:99px;padding:2px 12px;font-size:0.68rem;font-weight:800;color:#38bdf8;z-index:5;">
                 ⬆️ ネット方向（肩と目線は常に正面キープ）
@@ -11986,10 +11986,10 @@ function sharePoseResultImage() {
   function buildDualAngleCoachSVG(pose) {
     const jumpY = -pose.air * 18;
     const hipDrop = pose.cushion + pose.lunge;
-    const headY = 34 + jumpY + hipDrop * 0.7;
-    const shY   = 52 + jumpY + hipDrop * 0.7;
-    const hipY  = 90 + jumpY + hipDrop;
-    const floorY = 148;
+    const headY = 48 + jumpY + hipDrop * 0.7;
+    const shY   = 66 + jumpY + hipDrop * 0.7;
+    const hipY  = 104 + jumpY + hipDrop;
+    const floorY = 170;
 
     // ① 正面ビュー座標（中心X = 85）
     const cx = 85;
@@ -12013,10 +12013,10 @@ function sharePoseResultImage() {
     const bKneeX = (sHipX + bAnkX) / 2 - 6  - (hipDrop * 0.25);
 
     return `
-      <svg viewBox="0 0 330 176" style="width:100%;height:100%;max-height:300px;display:block;">
+      <svg viewBox="0 0 330 200" style="width:100%;height:100%;display:block;">
         <!-- 背景パネル区切り -->
-        <rect x="4" y="4" width="156" height="168" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
-        <rect x="168" y="4" width="158" height="168" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
+        <rect x="4" y="4" width="156" height="192" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
+        <rect x="168" y="4" width="158" height="192" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
 
         <!-- ラベル -->
         <text x="12" y="19" fill="#38bdf8" font-size="10" font-weight="900">👤 正面（足幅）</text>
@@ -12047,7 +12047,7 @@ function sharePoseResultImage() {
         <ellipse cx="${rAnkX}" cy="${rAnkY + 2}" rx="7" ry="4" fill="#fde047"/>
 
         <!-- ================= 2. 横モデル（左向き） ================= -->
-        <text x="176" y="34" fill="#94a3b8" font-size="9" font-weight="800">⬅️ネット方向</text>
+        <text x="176" y="40" fill="#94a3b8" font-size="9" font-weight="800">⬅️ネット方向</text>
         <!-- 奥の脚 -->
         <polyline points="${sHipX},${hipY} ${bKneeX},${kneeY} ${bAnkX},${bAnkY}" fill="none" stroke="rgba(56,189,248,0.55)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
         <line x1="${bAnkX + 5}" y1="${bAnkY}" x2="${bAnkX - 9}" y2="${bAnkY + 3}" stroke="#93c5fd" stroke-width="4" stroke-linecap="round"/>
@@ -12063,8 +12063,8 @@ function sharePoseResultImage() {
         <line x1="${sx - 28}" y1="${shY + 6}" x2="${sx - 38}" y2="${shY - 12}" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
 
         <!-- 下部ガイド字幕 -->
-        <text x="82" y="169" fill="#e2e8f0" font-size="9.5" font-weight="900" text-anchor="middle">${pose.tag}</text>
-        <text x="246" y="169" fill="#fde047" font-size="9.5" font-weight="900" text-anchor="middle">カカト浮かせ・胸を起こす</text>
+        <text x="82" y="191" fill="#e2e8f0" font-size="9.5" font-weight="900" text-anchor="middle">${pose.tag}</text>
+        <text x="246" y="191" fill="#fde047" font-size="9.5" font-weight="900" text-anchor="middle">カカト浮かせ・胸を起こす</text>
       </svg>
     `;
   }
@@ -12082,7 +12082,7 @@ function sharePoseResultImage() {
 
     const holder = document.createElement('div');
     holder.id = 'rjHumanCoachSvgHolder';
-    holder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:3;padding:32px 4px 2px 4px;';
+    holder.style.cssText = 'position:absolute;top:30px;left:4px;right:4px;bottom:2px;display:flex;align-items:center;justify-content:center;z-index:3;';
     matBox.appendChild(holder);
 
     // 上部の「ネット方向」ピルが折り返して図と重ならないよう1行に収める
