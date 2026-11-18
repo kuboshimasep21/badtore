@@ -12049,5 +12049,93 @@ function sharePoseResultImage() {
     }, 150);
   });
 </script>
+<script id="badtore-v105-step3-levelup">
+(function(){
+  if (window.__bt_v105_step3) return; window.__bt_v105_step3 = true;
+
+  /* ============ レベルアップ演出 (STEP3) ============
+     awardPlayerXP をラップし、XP獲得時にヘッダーのXPゲージを光らせ、
+     レベルアップ時にはバナーを出す。本体のXP処理には一切触らない。 */
+  var css = ""
+    + "@keyframes btXpShine{0%{filter:brightness(1)}30%{filter:brightness(2) saturate(1.5)}60%{filter:brightness(1.25)}100%{filter:brightness(1)}}"
+    + "@keyframes btXpFloat{0%{opacity:0;transform:translateY(4px) scale(.9)}15%{opacity:1}100%{opacity:0;transform:translateY(-26px) scale(1.05)}}"
+    + "@keyframes btLvBanner{0%{opacity:0;transform:translate(-50%,-16px) scale(.92)}12%{opacity:1;transform:translate(-50%,0) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-8px) scale(.98)}}"
+    + "@keyframes btLvGlow{0%,100%{box-shadow:0 0 0 rgba(250,204,21,0)}50%{box-shadow:0 0 22px rgba(250,204,21,.9)}}"
+    + ".bt-xp-sparkle{animation:btXpShine .9s ease-in-out 2}"
+    + ".bt-lv-glow{animation:btLvGlow 1s ease-in-out 3;border-radius:12px}";
+  try{
+    var st=document.createElement("style"); st.textContent=css;
+    (document.head||document.documentElement).appendChild(st);
+  }catch(e){}
+
+  function gaugeFill(){
+    var badge=document.getElementById("headerPlayerLvBadge"); if(!badge) return null;
+    var spans=badge.querySelectorAll("span");
+    for (var i=0;i<spans.length;i++){
+      if (spans[i].style && spans[i].style.display==="block") return spans[i];
+    }
+    return null;
+  }
+
+  function playXpEffect(gained, beforeLv, after){
+    try{
+      var badge=document.getElementById("headerPlayerLvBadge");
+      var fill=gaugeFill();
+      if (fill){
+        fill.classList.remove("bt-xp-sparkle"); void fill.offsetWidth;
+        fill.classList.add("bt-xp-sparkle");
+        setTimeout(function(){ try{ fill.classList.remove("bt-xp-sparkle"); }catch(e){} }, 2000);
+      }
+      if (badge){
+        badge.style.position="relative";
+        var f=document.createElement("span");
+        f.textContent="+"+gained+" XP";
+        f.style.cssText="position:absolute;right:0;top:-8px;font-size:11px;font-weight:900;color:var(--accent-highlight,#facc15);pointer-events:none;animation:btXpFloat 1.1s ease-out forwards;text-shadow:0 1px 6px rgba(0,0,0,.45);z-index:5";
+        badge.appendChild(f);
+        setTimeout(function(){ try{ f.remove(); }catch(e){} }, 1200);
+      }
+      if (after && beforeLv!=null && after.lv>beforeLv){
+        if (badge){
+          badge.classList.add("bt-lv-glow");
+          setTimeout(function(){ try{ badge.classList.remove("bt-lv-glow"); }catch(e){} }, 3100);
+        }
+        var b=document.createElement("div");
+        b.textContent="🎉 レベルアップ！ Lv."+after.lv+" "+(after.title||"");
+        b.style.cssText="position:fixed;top:14px;left:50%;z-index:99995;background:linear-gradient(135deg,#fde68a,#f59e0b);color:#451a03;padding:12px 22px;border-radius:999px;font-weight:900;font-size:15px;box-shadow:0 10px 30px rgba(245,158,11,.5);pointer-events:none;animation:btLvBanner 2.8s ease forwards;white-space:nowrap";
+        document.body.appendChild(b);
+        setTimeout(function(){ try{ b.remove(); }catch(e){} }, 2900);
+      }
+    }catch(e){}
+  }
+
+  function currentInfo(){
+    try{
+      if (typeof getPlayerLevelInfo==="function" && typeof activeProfileId!=="undefined" && activeProfileId){
+        return getPlayerLevelInfo(activeProfileId);
+      }
+    }catch(e){}
+    return null;
+  }
+
+  try{
+    if (typeof awardPlayerXP==="function" && !awardPlayerXP.__btWrapped){
+      var orig=awardPlayerXP;
+      var wrapped=function(amount){
+        var before=currentInfo();
+        var r=orig.apply(this, arguments);
+        var after=currentInfo();
+        if (before && after && after.xp>before.xp){
+          playXpEffect(after.xp-before.xp, before.lv, after);
+        }
+        return r;
+      };
+      wrapped.__btWrapped=true;
+      awardPlayerXP=wrapped;
+      window.awardPlayerXP=wrapped;
+    }
+  }catch(e){}
+  console.log("[badtore v10.5 STEP3] level-up effects loaded");
+})();
+</script>
 </body>
 </html>
