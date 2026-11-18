@@ -20,7 +20,7 @@
 
   <meta name="theme-color" content="#060b16" />
 
-  <title>バドトレPRO v10.4.3 - バドミントン専用 AI動作解析＆実践トレーニング</title>
+  <title>バドトレPRO v10.5.1 - バドミントン専用 AI動作解析＆実践トレーニング</title>
 
   <!-- MediaPipe Pose & Drawing Utils -->
 
@@ -2086,7 +2086,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v10.4.3 PRO</span>
+      <span class="badge-version">v10.5.1 PRO</span>
 
     </div>
 
@@ -3388,7 +3388,7 @@
 
               <div style="font-weight:800; color:var(--accent-highlight); margin-bottom:5px; display:flex; justify-content:space-between; flex-wrap:wrap;">
 
-                <span>📌 AIコーチ総括フィードバック</span>
+                <span>📌 測定結果サマリー</span>
 
                 <span id="sessionTimerLabel" style="color:var(--accent-secondary); font-size:0.76rem;">待機中</span>
 
@@ -3430,7 +3430,7 @@
 
         <div class="card-header">
 
-          <div class="card-title">🏸 4大ブランド別 AIラケット＆ガット診断カルテ</div>
+          <div class="card-title">🏸 4大ブランド別 ラケット＆ガット診断カルテ</div>
 
           <span class="badge-version">メンバー＆AI実測連動</span>
 
@@ -9203,7 +9203,7 @@
 
       summaryBox.innerHTML = `
 
-        <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 AIギア＆体格マッチング診断</div>
+        <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 ギア＆体格マッチング診断</div>
 
         <div style="font-size:0.8rem; color:#e2e8f0;">
 
@@ -10094,7 +10094,7 @@
       const box = document.getElementById('aiSummaryContent');
       if (box) {
         box.insertAdjacentHTML('afterbegin', `<div style="background:${rk.bg};border:1px solid ${rk.color};padding:8px 11px;border-radius:9px;margin-bottom:8px;font-weight:900;color:${rk.color};font-size:1rem;">🏆 判定：${rk.label}（${score} pt）｜ 最優先テーマ：${rxPlan.title}</div>`);
-        box.insertAdjacentHTML('beforeend', `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;"><button class="btn btn-cyan-outline" style="padding:7px;font-size:0.72rem;" onclick="pinWeaknessToFocusBar('${worstKey}')">📌 意識にピン留め</button><button class="btn btn-emerald" style="padding:7px;font-size:0.72rem;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}',true)">🏃 NEXT: FW練習へ</button><button class="btn btn-amber" style="padding:7px;font-size:0.72rem;" onclick="addPrescriptionToMenuPlan('${worstKey}')">➕ メニューに追加</button></div>`);
+        box.insertAdjacentHTML('beforeend', `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;"><button class="btn btn-cyan-outline" style="padding:7px;font-size:0.85rem;" onclick="pinWeaknessToFocusBar('${worstKey}')">📌 意識にピン留め</button><button class="btn btn-emerald" style="padding:7px;font-size:0.85rem;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}',true)">🏃 NEXT: FW練習へ</button><button class="btn btn-amber" style="padding:7px;font-size:0.85rem;" onclick="addPrescriptionToMenuPlan('${worstKey}')">➕ メニューに追加</button></div>`);
       }
     };
 
@@ -10113,9 +10113,9 @@
         sec.innerHTML = `
           <div class="card">
             <div class="card-header">
-              <div class="card-title"><span class="badge-version">少人数・1人対応</span><span>📋 AI練習メニュー自動編成 ＆ マイメニュー登録・練習記録</span></div>
+              <div class="card-title"><span class="badge-version">少人数・1人対応</span><span>📋 練習メニュー自動編成 ＆ マイメニュー登録・練習記録</span></div>
               <div class="btn-group">
-                <button class="btn btn-emerald" onclick="generateAIMenuByConditions()">✨ 条件からAI自動編成</button>
+                <button class="btn btn-emerald" onclick="generateAIMenuByConditions()">✨ 条件から自動編成</button>
                 <button class="btn btn-cyan-outline" onclick="saveCurrentMenuToMyMenus()">💾 マイメニュー保存</button>
               </div>
             </div>
@@ -10131,7 +10131,7 @@
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeFootwork" checked/> 🦶 フットワーク＆ランジ軸</label>
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeFeeding" checked/> 🔄 手投げ分解ノック(回内)</label>
               </div>
-              <button class="btn btn-emerald" style="width:100%;padding:9px;" onclick="generateAIMenuByConditions()">✨ この条件で最適メニューをAI自動編成する</button>
+              <button class="btn btn-emerald" style="width:100%;padding:9px;" onclick="generateAIMenuByConditions()">✨ この条件で最適メニューを自動編成する</button>
             </div>
             <div class="split-grid">
               <div>
@@ -10271,8 +10271,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.4.3 PRO";
-      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.4.3 PRO";
+      document.title = "バドトレPRO v10.5.1 PRO";
+      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.5.1 PRO";
       initSpeechVoices(); loadMenusAndLogsFromStorage();
       injectV103CoreStylesAndUI(); injectVideoAndDrillExtensions(); injectMenuPlannerTab();
       applyColorTheme(profileThemesMap[activeProfileId] || localStorage.getItem('badtore_last_theme_v102') || 'cyan', false);
@@ -10868,6 +10868,7 @@
       if (mc) mc.appendChild(guideSec);
 
       guideSec.innerHTML = `
+        <button class="btn btn-emerald" style="width:100%;padding:10px;margin-bottom:10px;" onclick="showBadtoreGuide()">📖 はじめてガイドを見る</button>
         <div class="card">
           <div class="card-header">
             <div class="card-title">
@@ -10897,7 +10898,7 @@
                 🏟️ 体育館で練習するとき（1人〜少人数・2.5時間など）
               </div>
               <div style="font-size:0.75rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 時間割を作る：</b>「📋 8.メニュー作成」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ AI自動編成］</b>を押します。<br>
+                <b>① 時間割を作る：</b>「📋 8.メニュー作成」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ 条件から自動編成］</b>を押します。<br>
                 <b>② 黄金順序で練習：</b>いきなり基礎打ちをせず、「抜重・FW矯正 ➔ 手投げ分解ノック ➔ 基礎打ち ➔ 半面パターン」の順で各行の<b>［▶️ 今すぐ開始］</b>を押して進めます。
               </div>
             </div>
@@ -10909,6 +10910,16 @@
               <div style="font-size:0.75rem;color:var(--text-primary);line-height:1.55;">
                 <b>① 動画の即時診断：</b>「🎥 3.構え＆骨格AI」で<b>［📁 動画読込］</b>を選ぶだけで自動採点されます。長い動画は「📍開始(A)〜🏁終了(B)」で切り出せます。<br>
                 <b>② 球速(km/h)を測る：</b>動画パネルの<b>［⚡ 球速測定］</b>を押し、<b>［⏪ -1コマ］［⏩ +1コマ］</b>でインパクトの瞬間（①打点記録）とネット通過/着弾（②到達記録）の2箇所を押すだけで推定初速が出ます。
+              </div>
+            </div>
+
+            <div class="diagram-card" style="text-align:left;">
+              <div style="font-weight:900;color:#fb923c;margin-bottom:5px;font-size:0.84rem;">
+                🔥 毎日のルーティンチェックでXPゲット
+              </div>
+              <div style="font-size:0.75rem;color:var(--text-primary);line-height:1.55;">
+                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」か「📋 7.メニュー作成」の画面で、右下の<b>［🔥 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。<br>
+                <b>② チェックして保存：</b>終わった項目にチェックを入れて保存すると、内容に応じて<b>XP</b>がもらえます。全部達成で<b>ボーナス+30 XP</b>！毎日の積み重ねでレベルアップを目指しましょう。
               </div>
             </div>
           </div>
@@ -11361,7 +11372,7 @@
       if (mc && !document.getElementById('customWorkoutBuilderCard')) {
         const chips = WORKOUT_PRESETS.map((w, i) => `<button class="btn btn-cyan-outline" style="padding:5px 8px;font-size:0.71rem;" onclick="addPresetWorkoutToMenu(${i},false)">➕ ${w.cat}：${w.name.split('（')[0]} (${w.minutes}分)</button>`).join('');
         const d = document.createElement('div'); d.id = 'customWorkoutBuilderCard';
-        d.innerHTML = `<div id="workoutTimerDrawer" class="card" style="display:none;background:var(--bg-panel);border:2px solid var(--accent-highlight);margin-top:10px;padding:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);" id="wtTitle">💪 筋トレタイマー</span><button class="btn" style="padding:2px 7px;font-size:0.68rem;" onclick="stopWorkoutIntervalTimer();document.getElementById('workoutTimerDrawer').style.display='none';">✕ 閉じる</button></div><div id="wtClockText" style="font-size:1.1rem;font-weight:900;text-align:center;padding:7px;background:var(--bg-base);border-radius:8px;margin-bottom:6px;">待機中</div><div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px;"><div class="form-group"><label>🔥 秒数</label><input type="number" id="wtWorkInput" value="30" style="padding:5px;"/></div><div class="form-group"><label>☕ 休憩</label><input type="number" id="wtRestInput" value="15" style="padding:5px;"/></div><div class="form-group"><label>🔢 セット</label><input type="number" id="wtSetsInput" value="3" style="padding:5px;"/></div></div><div class="btn-group"><button class="btn btn-emerald" style="flex:1;padding:7px;" onclick="startWorkoutIntervalTimer()">▶️ 開始</button><button class="btn btn-rose" style="padding:7px 12px;" onclick="stopWorkoutIntervalTimer()">⏹️ 停止</button></div></div><div class="card" style="background:var(--bg-surface);margin-top:10px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:6px;">💪 1. 筋トレ種目をワンタップで組み込む</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${chips}</div><div style="font-weight:900;font-size:0.76rem;color:var(--accent-secondary);margin-bottom:4px;">⭐ マイ種目ストック:</div><div id="customDrillBankHolder" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding:5px;background:var(--bg-base);border-radius:8px;"></div><div style="font-weight:900;font-size:0.8rem;color:var(--accent-primary);margin-bottom:5px;padding-top:6px;border-top:1px solid var(--border-subtle);">✏️ 2. 自作メニュー（筋トレ・実技）を自由に追加</div><div class="form-grid" style="grid-template-columns:1fr 1.6fr 0.7fr;gap:5px;margin-bottom:5px;"><select id="customItemCat" style="font-size:0.74rem;padding:5px;"><option value="💪 筋トレ">💪 筋トレ</option><option value="🦵 下半身">🦵 下半身</option><option value="🎵 リズム">🎵 リズム</option><option value="🏸 ノック">🏸 ノック</option></select><input type="text" id="customItemName" placeholder="種目名（例：カーフレイズ30回）" style="font-size:0.76rem;padding:5px 7px;"/><input type="number" id="customItemMin" value="10" style="font-size:0.76rem;padding:5px 7px;"/></div><div class="form-grid" style="grid-template-columns:1.5fr 1fr;gap:5px;margin-bottom:6px;"><input type="text" id="customItemNote" placeholder="意識ポイント・回数" style="font-size:0.74rem;padding:5px 7px;"/><select id="customItemLink" style="font-size:0.73rem;padding:5px;"><option value="workout_timer" selected>⏱️ 筋トレタイマー連動</option><option value="tab-footwork">🏃 6点FW連動</option><option value="rhythm">🎵 リズム連動</option><option value="tab-pose">🎥 骨格AI連動</option></select></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"><button class="btn btn-emerald" style="padding:7px;" onclick="addFreeCustomItemToMenu(false)">➕ メニューに追加</button><button class="btn btn-amber" style="padding:7px;" onclick="addFreeCustomItemToMenu(true)">⭐ マイ種目にも保存</button></div></div><div class="card" style="background:var(--bg-panel);border:1px solid var(--accent-secondary);margin-top:8px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:5px;">🤖 3. AIコーチに筋トレ希望を伝えて編成</div><div style="display:grid;grid-template-columns:1fr auto;gap:5px;"><input type="text" id="aiCoachMenuPromptInput" placeholder="例：カーフレイズと股関節を入れて自宅30分にして" style="font-size:0.75rem;padding:6px 8px;"/><button class="btn btn-emerald" onclick="requestAIProCoachCustomMenu()">🤖 編成</button></div><div id="aiCoachMenuStatus" style="font-size:0.73rem;margin-top:4px;"></div></div>`;
+        d.innerHTML = `<div id="workoutTimerDrawer" class="card" style="display:none;background:var(--bg-panel);border:2px solid var(--accent-highlight);margin-top:10px;padding:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);" id="wtTitle">💪 筋トレタイマー</span><button class="btn" style="padding:2px 7px;font-size:0.68rem;" onclick="stopWorkoutIntervalTimer();document.getElementById('workoutTimerDrawer').style.display='none';">✕ 閉じる</button></div><div id="wtClockText" style="font-size:1.1rem;font-weight:900;text-align:center;padding:7px;background:var(--bg-base);border-radius:8px;margin-bottom:6px;">待機中</div><div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px;"><div class="form-group"><label>🔥 秒数</label><input type="number" id="wtWorkInput" value="30" style="padding:5px;"/></div><div class="form-group"><label>☕ 休憩</label><input type="number" id="wtRestInput" value="15" style="padding:5px;"/></div><div class="form-group"><label>🔢 セット</label><input type="number" id="wtSetsInput" value="3" style="padding:5px;"/></div></div><div class="btn-group"><button class="btn btn-emerald" style="flex:1;padding:7px;" onclick="startWorkoutIntervalTimer()">▶️ 開始</button><button class="btn btn-rose" style="padding:7px 12px;" onclick="stopWorkoutIntervalTimer()">⏹️ 停止</button></div></div><div class="card" style="background:var(--bg-surface);margin-top:10px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:6px;">💪 1. 筋トレ種目をワンタップで組み込む</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${chips}</div><div style="font-weight:900;font-size:0.76rem;color:var(--accent-secondary);margin-bottom:4px;">⭐ マイ種目ストック:</div><div id="customDrillBankHolder" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding:5px;background:var(--bg-base);border-radius:8px;"></div><div style="font-weight:900;font-size:0.8rem;color:var(--accent-primary);margin-bottom:5px;padding-top:6px;border-top:1px solid var(--border-subtle);">✏️ 2. 自作メニュー（筋トレ・実技）を自由に追加</div><div class="form-grid" style="grid-template-columns:1fr 1.6fr 0.7fr;gap:5px;margin-bottom:5px;"><select id="customItemCat" style="font-size:0.74rem;padding:5px;"><option value="💪 筋トレ">💪 筋トレ</option><option value="🦵 下半身">🦵 下半身</option><option value="🎵 リズム">🎵 リズム</option><option value="🏸 ノック">🏸 ノック</option></select><input type="text" id="customItemName" placeholder="種目名（例：カーフレイズ30回）" style="font-size:0.76rem;padding:5px 7px;"/><input type="number" id="customItemMin" value="10" style="font-size:0.76rem;padding:5px 7px;"/></div><div class="form-grid" style="grid-template-columns:1.5fr 1fr;gap:5px;margin-bottom:6px;"><input type="text" id="customItemNote" placeholder="意識ポイント・回数" style="font-size:0.74rem;padding:5px 7px;"/><select id="customItemLink" style="font-size:0.73rem;padding:5px;"><option value="workout_timer" selected>⏱️ 筋トレタイマー連動</option><option value="tab-footwork">🏃 6点FW連動</option><option value="rhythm">🎵 リズム連動</option><option value="tab-pose">🎥 骨格AI連動</option></select></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"><button class="btn btn-emerald" style="padding:7px;" onclick="addFreeCustomItemToMenu(false)">➕ メニューに追加</button><button class="btn btn-amber" style="padding:7px;" onclick="addFreeCustomItemToMenu(true)">⭐ マイ種目にも保存</button></div></div><div class="card" style="background:var(--bg-panel);border:1px solid var(--accent-secondary);margin-top:8px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:5px;">🤖 3. 筋トレ希望を伝えて編成</div><div style="display:grid;grid-template-columns:1fr auto;gap:5px;"><input type="text" id="aiCoachMenuPromptInput" placeholder="例：カーフレイズと股関節を入れて自宅30分にして" style="font-size:0.75rem;padding:6px 8px;"/><button class="btn btn-emerald" onclick="requestAIProCoachCustomMenu()">🤖 編成</button></div><div id="aiCoachMenuStatus" style="font-size:0.73rem;margin-top:4px;"></div></div>`;
         mc.parentNode.appendChild(d);
       }
       renderCustomDrillBankChips();
@@ -11379,7 +11390,7 @@
       applyColorTheme(saved, false);
 
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.4.3 PRO";
+      if (vb) vb.textContent = "v10.5.1 PRO";
     });
   </script>
 <script id="badtore-brushup-share-20261118">
@@ -11457,7 +11468,7 @@ function sharePoseResultImage() {
     ctx.fillStyle = '#e2e8f0'; ctx.font = '34px ' + FONT;
     impLines.forEach(l => { ctx.fillText(l, PAD, y); y += 50; });
     ctx.fillStyle = '#64748b'; ctx.font = '28px ' + FONT;
-    ctx.fillText('バドトレPRO v10.4.3 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
+    ctx.fillText('バドトレPRO v10.5.1 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
     cv.toBlob(async (blob) => {
       if (!blob) { alert('画像の生成に失敗しました。'); return; }
       const file = new File([blob], 'badtore_result.png', { type: 'image/png' });
@@ -11567,6 +11578,720 @@ function sharePoseResultImage() {
   });
 })();
 </script>
+<!-- =====================================================================================
+     🚀 バドトレPRO v10.5 — STEP1: 末尾クリーン + 毎日のマイルーティン&筋トレ達成チェック (XP獲得)
+     ▶ 貼り付け場所: index(6).html の一番下（</body>の直前）
+     ▶ 依存: 既存の window.__bt_* / GameState / XP / toast などがあれば自動連携、無ければ単独動作
+     ▶ 既存の <script id="badtore-v105-step1"> があれば置き換え（重複貼り付け禁止）
+     ===================================================================================== -->
+<script id="badtore-v105-step1">
+(function(){
+  "use strict";
+  if (window.__bt_v105_step1) return; window.__bt_v105_step1 = true;
+
+  /* ============ 0. 安全ユーティリティ ============ */
+  var $ = function(s){ try{ return document.querySelector(s); }catch(e){ return null; } };
+  var $$ = function(s){ try{ return Array.prototype.slice.call(document.querySelectorAll(s)); }catch(e){ return []; } };
+  function on(el,ev,fn){ if(el&&el.addEventListener) el.addEventListener(ev,fn); }
+  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function todayKey(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function loadJSON(k,fb){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch(e){ return fb; } }
+  function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  function toast(msg){ try{ if(window.__bt_toast) return window.__bt_toast(msg); }catch(e){}
+    var t=document.createElement("div"); t.textContent=msg;
+    t.style.cssText="position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.35);max-width:92vw;text-align:center";
+    document.body.appendChild(t); setTimeout(function(){ t.remove(); },2600); }
+
+  /* ============ 1. XP 連携 ============ */
+  function addXP(n, reason){
+    // [Integration adjustment A] Connect to the app's real XP system:
+    // awardPlayerXP() adds XP to playerXpDB[activeProfileId], saves to
+    // localStorage (badtore_player_xp_v102) and refreshes the header Lv/XP UI.
+    try{ if(typeof window.awardPlayerXP==="function"){ window.awardPlayerXP(n); toast("+"+n+" XP "+(reason||"")); return; } }catch(e){}
+    try{ if(window.__bt_addXP) return window.__bt_addXP(n, reason); }catch(e){}
+    try{ if(window.GameState && typeof window.GameState.xp==="number"){ window.GameState.xp+=n; if(window.saveGame) window.saveGame(); } }catch(e){}
+    try{ var el=$("#xpVal"); if(el) el.textContent = String(window.GameState?window.GameState.xp:0); }catch(e){}
+    toast("+"+n+" XP "+(reason||""));
+  }
+  window.__bt_addXP_v105 = addXP;
+
+  /* ============ 2. マイルーティン & 筋トレ達成チェック ============ */
+  var DEFAULT_ROUTINES=[
+    {id:"stretch", group:"warmup", label:"ストレッチ 5分", xp:10, detail:"肩・股関節・ふくらはぎを各30秒"},
+    {id:"footwork", group:"practice", label:"フットワーク 10分", xp:20, detail:"サイドステップ・前後・クロス"},
+    {id:"shadow", group:"practice", label:"素振り 100回", xp:20, detail:"クリア→ドロップ→スマッシュ"},
+    {id:"core", group:"strength", label:"筋トレ（体幹）", xp:20, detail:"プランク60秒×2・腹筋20回"},
+    {id:"jump", group:"strength", label:"ジャンプ・ランジ", xp:20, detail:"スクワットジャンプ15回×2"},
+    {id:"review", group:"review", label:"振り返りメモ", xp:10, detail:"今日の良かった点・課題を1行"}
+  ];
+  // グループ定義（絵文字はグループ見出しだけ。項目自体はテキストのみ）
+  var ROUTINE_GROUPS=[
+    {key:"warmup", icon:"🏃", name:"ウォームアップ"},
+    {key:"practice", icon:"🏸", name:"フットワーク・練習"},
+    {key:"strength", icon:"💪", name:"筋トレ"},
+    {key:"review", icon:"📝", name:"振り返り"}
+  ];
+  // XPは3段階プリセットのみ（自由入力だとレベル制度が崩れるため）
+  var XP_TIERS=[10,20,30];
+  var DEFAULT_GROUP_BY_ID={stretch:"warmup", footwork:"practice", shadow:"practice", core:"strength", jump:"strength", review:"review"};
+  // カスタム項目リストの保存先。未保存なら DEFAULT_ROUTINES を使う。
+  var ROUTINES_KEY="bt_v105_routines_custom";
+  var customSeq=0;
+  function newRoutineId(){ customSeq++; return "custom_"+Date.now()+"_"+customSeq; }
+  function sanitizeXP(v){ var n=parseInt(v,10); if(isNaN(n)) n=20; var best=XP_TIERS[0], bd=Infinity; XP_TIERS.forEach(function(t){ var d=Math.abs(n-t); if(d<bd){ bd=d; best=t; } }); return best; }
+  function sanitizeRoutines(list){
+    var out=[], seen={};
+    (list||[]).forEach(function(it){
+      if(!it||typeof it!=="object") return;
+      var id=(it.id!=null&&String(it.id)!=="")?String(it.id):newRoutineId();
+      if(seen[id]) id=newRoutineId();
+      seen[id]=true;
+      var grp=null;
+      ROUTINE_GROUPS.forEach(function(g){ if(it.group===g.key) grp=g.key; });
+      if(!grp) grp=DEFAULT_GROUP_BY_ID[id]||"practice";
+      out.push({ id:id,
+        group:grp,
+        label:(it.label==null?"":String(it.label)),
+        xp:sanitizeXP(it.xp),
+        detail:(it.detail==null?"":String(it.detail)) });
+    });
+    return out;
+  }
+  // 現在の項目リスト（カスタム優先、無ければデフォルト）。毎回サニタイズ済みのコピーを返す。
+  function getRoutines(){
+    var saved=loadJSON(ROUTINES_KEY, null);
+    if(saved&&Object.prototype.toString.call(saved)==="[object Array]"&&saved.length){
+      var clean=sanitizeRoutines(saved);
+      if(clean.length) return clean;
+    }
+    return sanitizeRoutines(DEFAULT_ROUTINES);
+  }
+  function saveRoutines(list){ saveJSON(ROUTINES_KEY, sanitizeRoutines(list)); }
+  var LS_KEY="bt_v105_routine_"+todayKey();
+  function getDone(){ return loadJSON(LS_KEY, {}); }
+  function calcXP(done){ var s=0; getRoutines().forEach(function(r){ if(done[r.id]) s+=r.xp; }); return s; }
+  window.__bt_routinesCustom={ get:getRoutines, save:saveRoutines, calcXP:calcXP };
+
+  function openRoutine(){
+    var old=$("#bt-routine-modal"); if(old) old.remove();
+    var done=getDone();
+    var items=getRoutines();
+    var editing=false;
+    var m=document.createElement("div"); m.id="bt-routine-modal";
+    m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99990;display:flex;align-items:flex-end;justify-content:center;padding:12px";
+    var inner='<div style="background:#fff;color:#111827;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:86vh;overflow:auto;padding:18px 16px 22px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">🔥 毎日のマイルーティン</b>'
+      +'<span style="display:flex;gap:6px;align-items:center">'
+      +'<button id="bt-routine-edit" style="border:0;background:#eef2ff;color:#3730a3;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700">✏️ 編集</button>'
+      +'<button id="bt-routine-close" style="border:0;background:#f3f4f6;border-radius:999px;width:32px;height:32px;font-size:16px">✕</button></span></div>'
+      +'<p style="color:#4b5563;font-size:13px;margin:6px 0 12px">今日（'+esc(todayKey())+'）の達成にチェック → XP獲得！全部達成でボーナス +30 XP 🎉</p>'
+      +'<div id="bt-routine-list"></div>'
+      +'<div id="bt-routine-total" style="margin-top:12px;font-weight:700;color:#111827"></div>'
+      +'<div id="bt-routine-actions" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"></div>'
+      +'</div>';
+    m.innerHTML=inner; document.body.appendChild(m);
+    var inputStyle="border:1px solid #d1d5db;border-radius:10px;padding:8px;background:#fff;color:#111827;font-size:14px;box-sizing:border-box";
+    function renderActions(){
+      var box=$("#bt-routine-actions"); if(!box) return;
+      if(editing){
+        box.innerHTML='<button id="bt-routine-add" style="flex:1;min-width:100px;padding:12px;border-radius:12px;border:1px solid #059669;background:#ecfdf5;color:#065f46;font-weight:700">＋ 項目を追加</button>'
+          +'<button id="bt-routine-reset" style="flex:1;min-width:100px;padding:12px;border-radius:12px;border:1px solid #d1d5db;background:#fff;color:#4b5563;font-weight:700">デフォルトに戻す</button>'
+          +'<button id="bt-routine-editdone" style="flex:1;min-width:100px;padding:12px;border-radius:12px;border:0;background:#059669;color:#fff;font-weight:700">編集を終わる</button>';
+        on($("#bt-routine-add"),"click",function(){
+          items.push({id:newRoutineId(), group:"practice", label:"新しい項目", xp:20, detail:""});
+          saveRoutines(items); render();
+        });
+        on($("#bt-routine-reset"),"click",function(){
+          try{ localStorage.removeItem(ROUTINES_KEY); }catch(e){}
+          items=getRoutines(); render(); toast("デフォルトの項目に戻しました");
+        });
+        on($("#bt-routine-editdone"),"click",function(){ editing=false; render(); refreshRoutineFab(); });
+      }else{
+        box.innerHTML='<button id="bt-routine-save" style="flex:1;padding:12px;border-radius:12px;border:0;background:#059669;color:#fff;font-weight:700">保存して閉じる</button>';
+        on($("#bt-routine-save"),"click",function(){
+          var total=calcXP(done);
+          var all=items.every(function(r){ return done[r.id]; });
+          var key2="bt_v105_routine_xp_"+todayKey();
+          var already=loadJSON(key2, {granted:0});
+          var grant=total+(all?30:0)-already.granted;
+          if(grant>0){ addXP(grant,"マイルーティン達成"); already.granted+=grant; saveJSON(key2,already); }
+          m.remove(); refreshRoutineFab(); toast(all?"🎉 全達成！ +"+(total+30)+" XP":"✅ ルーティン保存： "+total+" XP");
+        });
+      }
+    }
+    function renderCheck(){
+      var list=$("#bt-routine-list"); if(!list) return;
+      var html="";
+      ROUTINE_GROUPS.forEach(function(g){
+        var gi=items.filter(function(r){ return r.group===g.key; });
+        if(!gi.length) return;
+        html+='<div style="font-weight:800;color:#111827;font-size:13.5px;margin:12px 0 6px">'+g.icon+' '+esc(g.name)+'</div>';
+        html+=gi.map(function(r){
+          return '<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #e5e7eb;border-radius:14px;margin-bottom:8px;cursor:pointer">'
+            +'<input type="checkbox" data-rid="'+esc(r.id)+'" '+(done[r.id]?"checked":"")+' style="width:20px;height:20px;margin-top:2px">'
+            +'<span><b style="color:#111827">'+esc(r.label)+' <span style="color:#059669">+'+r.xp+'XP</span></b><br><span style="color:#4b5563;font-size:12.5px">'+esc(r.detail)+'</span></span></label>';
+        }).join("");
+      });
+      list.innerHTML=html;
+      var total=calcXP(done);
+      var all=items.every(function(r){ return done[r.id]; });
+      var t=$("#bt-routine-total"); if(t) t.textContent="本日の獲得XP： "+total+" XP"+(all?"（全達成ボーナス +30 XP 対象！）":"");
+      $$("#bt-routine-list input[data-rid]").forEach(function(cb){
+        on(cb,"change",function(){ done[cb.getAttribute("data-rid")]=!!cb.checked; saveJSON(LS_KEY,done); render(); });
+      });
+    }
+    function renderEdit(){
+      var list=$("#bt-routine-list"); if(!list) return;
+      var html="";
+      ROUTINE_GROUPS.forEach(function(g){
+        var rows="";
+        items.forEach(function(r,idx){
+          if(r.group!==g.key) return;
+          var del=(items.length>1)
+            ? '<button data-del="'+idx+'" style="border:0;background:#fef2f2;color:#b91c1c;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:700">削除</button>'
+            : '<span style="color:#9ca3af;font-size:11px;padding:8px 2px">最低1項目</span>';
+          var xpOpts=XP_TIERS.map(function(t){ return '<option value="'+t+'"'+(r.xp===t?" selected":"")+'>'+(t===10?"軽め":t===20?"標準":"しっかり")+' '+t+'XP</option>'; }).join("");
+          var gOpts=ROUTINE_GROUPS.map(function(gg){ return '<option value="'+gg.key+'"'+(r.group===gg.key?" selected":"")+'>'+gg.icon+' '+esc(gg.name)+'</option>'; }).join("");
+          rows+='<div style="border:1px solid #e5e7eb;border-radius:14px;padding:10px;margin-bottom:8px">'
+            +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
+            +'<input type="text" data-idx="'+idx+'" data-field="label" value="'+esc(r.label)+'" placeholder="項目名" style="'+inputStyle+';flex:1;min-width:0">'
+            + del
+            +'</div>'
+            +'<input type="text" data-idx="'+idx+'" data-field="detail" value="'+esc(r.detail)+'" placeholder="詳細（例：各30秒）" style="'+inputStyle+';width:100%;margin-bottom:8px">'
+            +'<div style="display:flex;gap:8px;align-items:center">'
+            +'<select data-idx="'+idx+'" data-field="group" style="'+inputStyle+';flex:1;min-width:0">'+gOpts+'</select>'
+            +'<select data-idx="'+idx+'" data-field="xp" style="'+inputStyle+';flex:1;min-width:0">'+xpOpts+'</select>'
+            +'</div></div>';
+        });
+        if(rows) html+='<div style="font-weight:800;color:#111827;font-size:13.5px;margin:12px 0 6px">'+g.icon+' '+esc(g.name)+'</div>'+rows;
+      });
+      list.innerHTML=html;
+      var t=$("#bt-routine-total"); if(t) t.textContent="✏️ 編集中：変更は自動で保存されます";
+      $$("#bt-routine-list input[data-idx], #bt-routine-list select[data-idx]").forEach(function(inp){
+        on(inp,"change",function(){
+          var idx=Number(inp.getAttribute("data-idx")), f=inp.getAttribute("data-field");
+          if(!items[idx]) return;
+          if(f==="xp"){ items[idx].xp=sanitizeXP(inp.value); inp.value=items[idx].xp; }
+          else items[idx][f]=inp.value;
+          saveRoutines(items);
+        });
+      });
+      $$("#bt-routine-list button[data-del]").forEach(function(btn){
+        on(btn,"click",function(){
+          if(items.length<=1){ toast("最低1項目は必要です"); return; }
+          items.splice(Number(btn.getAttribute("data-del")),1);
+          saveRoutines(items); render();
+        });
+      });
+    }
+    function render(){
+      var eb=$("#bt-routine-edit"); if(eb) eb.style.display=editing?"none":"";
+      if(editing) renderEdit(); else renderCheck();
+      renderActions();
+    }
+    render();
+    on($("#bt-routine-edit"),"click",function(){ editing=true; render(); });
+    on($("#bt-routine-close"),"click",function(){ m.remove(); refreshRoutineFab(); });
+    on(m,"click",function(e){ if(e.target===m){ m.remove(); refreshRoutineFab(); } });
+  }
+
+  /* ============ 3. 起動ボタン（右下フローティング） ============ */
+  function ensureButton(){
+    if($("#bt-routine-fab")) return;
+    var b=document.createElement("button"); b.id="bt-routine-fab"; b.textContent="🔥 ルーティン";
+    b.style.cssText="position:fixed;right:14px;bottom:96px;z-index:99980;background:#f97316;color:#fff;border:0;border-radius:999px;padding:12px 16px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.25);font-size:14px";
+    on(b,"click",openRoutine); document.body.appendChild(b);
+  }
+
+  // ドリル/タイマー類が実行中かどうか（本体の状態変数を防御的に参照）
+  function isAnyDrillRunning(){
+    try{ if(typeof fwState!=="undefined" && fwState && fwState.running) return true; }catch(e){}
+    try{ if(typeof rhythmState!=="undefined" && rhythmState && rhythmState.running) return true; }catch(e){}
+    try{ if(typeof workoutTimerState!=="undefined" && workoutTimerState && workoutTimerState.running) return true; }catch(e){}
+    try{ if(typeof arrowDrillState!=="undefined" && arrowDrillState && arrowDrillState.running) return true; }catch(e){}
+    return false;
+  }
+
+  // FABの表示制御: 「1.フットワーク」「7.メニュー作成」タブの時だけ表示し、ドリル/タイマー実行中は隠す。
+  // その日のルーティンを全項目チェック済みなら「✅ ルーティン済」表示（緑）に切り替える。
+  function refreshRoutineFab(){
+    var b=$("#bt-routine-fab"); if(!b) return;
+    var panel=document.querySelector(".tab-panel.active");
+    var tabId=panel?panel.id:"";
+    var tabOk=(tabId==="tab-footwork"||tabId==="tab-menu");
+    b.style.display=(tabOk && !isAnyDrillRunning()) ? "" : "none";
+    var done=getDone();
+    var all=getRoutines().every(function(r){ return done[r.id]; });
+    if(all){ b.textContent="✅ ルーティン済"; b.style.background="#059669"; }
+    else{ b.textContent="🔥 ルーティン"; b.style.background="#f97316"; }
+  }
+
+  // タブ切替にFAB表示を追随させる（本体の switchTab をラップ）
+  if(typeof switchTab==="function"){
+    var _origSwitchTab=switchTab;
+    switchTab=function(tabId){ var r=_origSwitchTab(tabId); refreshRoutineFab(); return r; };
+  }
+
+  /* ============ 4. 起動 ============ */
+  function boot(){ ensureButton(); refreshRoutineFab(); setInterval(refreshRoutineFab, 800); }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot); else boot();
+  window.__bt_openRoutine = openRoutine;
+  console.log("[badtore v10.5 STEP1] loaded");
+})();
+</script>
+
+<!-- =========================================================================
+     🚀 バドトレPRO v10.5.1 [STEP 2: リズムジャンプ＆筋トレ 2アングル人型アニメーション]
+     ・正面ビュー（肩の正面固定・骨盤ひねり・足幅開閉）＋ 横ビュー（膝のタメ・母趾球バネ・体幹軸）
+     ・BPM同期の滑らかなジャンプ補間 ＆ スタート前のお手本スロープレビュー機能
+<script id="badtore-v105-step2">
+  let rjAnimState = {
+    pattern: 'par_stay',
+    beatNum: 1,
+    prevPattern: null,
+    prevBeatNum: null,
+    demoKey: null,
+    demoCur: null,
+    demoPrev: null,
+    lastBeatMs: performance.now(),
+    rafId: null
+  };
+
+  // リズムジャンプの拍更新時にアニメーション状態を同期
+  const _v105OrigRenderRj = typeof renderRhythmVisualStage === 'function' ? renderRhythmVisualStage : null;
+  renderRhythmVisualStage = function(pattern, beatNum, nextCallText = "") {
+    if (_v105OrigRenderRj) _v105OrigRenderRj(pattern, beatNum, nextCallText);
+    rjAnimState.prevPattern = rjAnimState.pattern;
+    rjAnimState.prevBeatNum = rjAnimState.beatNum;
+    rjAnimState.pattern = pattern || 'par_stay';
+    rjAnimState.beatNum = beatNum || 1;
+    rjAnimState.lastBeatMs = performance.now();
+  };
+
+  // パターン・拍数・ビート内進行度(0〜1)から正面・横の人型関節ポーズを算出
+  function computeHumanPose(pattern, beatNum, prog) {
+    const isHold = (pattern === 'finish_hold');
+    // ジャンプ滞空曲線（0=着地クッション, 0.5=空中ピーク, 1.0=次の着地）
+    const air = isHold ? 0 : Math.max(0, Math.sin(prog * Math.PI));
+    const cushion = isHold ? 12 : (1 - air) * 8;
+    const isOdd = (beatNum % 2 === 1);
+
+    // 初期値（正面：lx/rxは足先X、横：lfZ/rfZは前後Z、twistは骨盤回転、lungeは沈み込み）
+    let lx = -22, rx = 22, ly = 0, ry = 0, lfZ = 0, rfZ = 0, twist = 0, lunge = 0, heelLift = 6, tag = "母趾球バネ";
+
+    switch (pattern) {
+      case 'goopar':
+        if (isOdd) { lx = -7; rx = 7; tag = "グー（閉じる）"; }
+        else { lx = -28; rx = 28; tag = "パー（外へ開く）"; }
+        break;
+      case 'front_back':
+        lfZ = rfZ = isOdd ? -18 : 8;
+        tag = isOdd ? "前へジャンプ" : "中央へ戻る";
+        break;
+      case 'back_front':
+        lfZ = rfZ = isOdd ? 18 : -6;
+        tag = isOdd ? "後ろへジャンプ" : "中央へ戻る";
+        break;
+      case 'left_side':
+        lx = isOdd ? -34 : -8; rx = isOdd ? -18 : 8;
+        tag = isOdd ? "左外へジャンプ" : "中央へ戻る";
+        break;
+      case 'right_side':
+        lx = isOdd ? 18 : -8; rx = isOdd ? 34 : 8;
+        tag = isOdd ? "右外へジャンプ" : "中央へ戻る";
+        break;
+      case 'par_stay':
+        lx = -24; rx = 24; tag = "カカトを浮かせ母趾球で弾む";
+        break;
+      case 'par_cross':
+        if (isOdd) { lx = -26; rx = 26; lfZ = 0; rfZ = 0; tag = "パー（開く）"; }
+        else {
+          const swap = (beatNum % 4 === 0);
+          lx = 10; rx = -10;
+          lfZ = swap ? -12 : 12; rfZ = swap ? 12 : -12;
+          tag = "クロス（前後交差）";
+        }
+        break;
+      case 'par_scissor':
+        if (isOdd) { lx = -24; rx = 24; lfZ = 0; rfZ = 0; tag = "パー（開く）"; }
+        else {
+          const rFwd = (beatNum % 4 === 2);
+          lx = -14; rx = 14;
+          lfZ = rFwd ? 18 : -18; rfZ = rFwd ? -18 : 18;
+          tag = rFwd ? "右足前・左足後ろ" : "左足前・右足後ろ";
+        }
+        break;
+      case 'single_leg':
+        if (beatNum <= 4) { lx = -14; rx = 20; ry = -18; tag = "左足片足バウンス"; }
+        else { lx = -20; rx = 14; ly = -18; tag = "右足片足バウンス"; }
+        break;
+      case 'par_side':
+        if (isOdd) { lx = -25; rx = 25; tag = "パー（開く）"; }
+        else if (beatNum % 4 === 2) { lx = -30; rx = -14; tag = "左サイド揃え"; }
+        else { lx = 14; rx = 30; tag = "右サイド揃え"; }
+        break;
+      case 'side_cont':
+        lx = isOdd ? -30 : 12; rx = isOdd ? -12 : 30;
+        tag = isOdd ? "左へジャンプ" : "右へジャンプ";
+        break;
+      case 'hip_twist':
+        lx = -16; rx = 16;
+        twist = isOdd ? -28 : 28;
+        lfZ = isOdd ? -10 : 10; rfZ = isOdd ? 10 : -10;
+        tag = "肩は正面・骨盤だけひねる";
+        break;
+      case 'big_twist':
+        if (isOdd) { lx = -26; rx = 26; twist = 0; tag = "パー（開く）"; }
+        else {
+          const dir = (beatNum % 4 === 2) ? -42 : 42;
+          lx = -12; rx = 12; twist = dir;
+          lfZ = dir < 0 ? -16 : 16; rfZ = -lfZ;
+          tag = "空中90度反転ターン！";
+        }
+        break;
+      case 'par_lunge':
+        if (isOdd) { lx = -24; rx = 24; lunge = 0; tag = "パー（開く）"; }
+        else {
+          const rLng = (beatNum % 4 === 2);
+          lx = -16; rx = 16; lunge = 18;
+          lfZ = rLng ? 24 : -24; rfZ = rLng ? -24 : 24;
+          tag = "深くランジ（胸を起こす）";
+        }
+        break;
+      case 'heel_touch':
+        if (isOdd) { lx = -25; rx = 25; tag = "パー（開く）"; }
+        else { lx = -4; rx = 4; ly = -12; ry = -12; tag = "空中でかかとタッチ！"; }
+        break;
+      case 'finish_hold':
+        lx = -26; rx = 26; lunge = 10; heelLift = 4;
+        tag = "ピタッ！抜重姿勢で静止";
+        break;
+    }
+
+    return { air, cushion, lx, rx, ly, ry, lfZ, rfZ, twist, lunge, heelLift, tag };
+  }
+
+  // 拍と拍の間で、足位置などの離散ポーズをなめらかに補間する
+  const RJ_DISCRETE_KEYS = ['lx', 'rx', 'ly', 'ry', 'lfZ', 'rfZ', 'twist', 'lunge', 'heelLift'];
+  function blendPose(prev, cur, t) {
+    const out = Object.assign({}, cur);
+    RJ_DISCRETE_KEYS.forEach(function (k) { out[k] = prev[k] + (cur[k] - prev[k]) * t; });
+    return out;
+  }
+  // 拍の前半60%で次のポーズへ滑り切る（空中で足を運ぶイメージ）
+  function beatEase(prog) { const t = Math.min(1, Math.max(0, prog / 0.6)); return t * t * (3 - 2 * t); }
+
+  // 正面＆横の2アングル人型SVGを描画
+  function buildDualAngleCoachSVG(pose) {
+    const jumpY = -pose.air * 18;
+    const hipDrop = pose.cushion + pose.lunge;
+    const headY = 34 + jumpY + hipDrop * 0.7;
+    const shY   = 52 + jumpY + hipDrop * 0.7;
+    const hipY  = 90 + jumpY + hipDrop;
+    const floorY = 148;
+
+    // ① 正面ビュー座標（中心X = 85）
+    const cx = 85;
+    const hipShiftX = pose.twist * 0.22;
+    const lAnkX = cx + pose.lx + pose.twist * 0.25;
+    const rAnkX = cx + pose.rx + pose.twist * 0.25;
+    const lAnkY = floorY - pose.heelLift + pose.ly + (pose.air * -12);
+    const rAnkY = floorY - pose.heelLift + pose.ry + (pose.air * -12);
+    const lKneeX = (cx - 10 + hipShiftX + lAnkX) / 2 + (pose.lx < -18 ? -4 : 0);
+    const rKneeX = (cx + 10 + hipShiftX + rAnkX) / 2 + (pose.rx > 18 ? 4 : 0);
+    const kneeY  = (hipY + Math.min(lAnkY, rAnkY)) / 2 + hipDrop * 0.25;
+
+    // ② 横ビュー座標（中心X = 245、左が前方 NET 方向）
+    const sx = 245;
+    const sHipX = sx + 4;
+    const fAnkX = sx + pose.lfZ;
+    const bAnkX = sx + pose.rfZ;
+    const fAnkY = lAnkY;
+    const bAnkY = rAnkY;
+    const fKneeX = (sHipX + fAnkX) / 2 - 10 - (hipDrop * 0.45);
+    const bKneeX = (sHipX + bAnkX) / 2 - 6  - (hipDrop * 0.25);
+
+    return `
+      <svg viewBox="0 0 330 176" style="width:100%;height:100%;max-height:300px;display:block;">
+        <!-- 背景パネル区切り -->
+        <rect x="4" y="4" width="156" height="168" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
+        <rect x="168" y="4" width="158" height="168" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
+
+        <!-- ラベル -->
+        <text x="12" y="19" fill="#38bdf8" font-size="10" font-weight="900">👤 正面（足幅）</text>
+        <text x="176" y="19" fill="#fde047" font-size="10" font-weight="900">📐 横（膝のタメ）</text>
+
+        <!-- 床ライン＆黄色センターテープ -->
+        <line x1="16" y1="${floorY}" x2="150" y2="${floorY}" stroke="#475569" stroke-width="2"/>
+        <line x1="${cx}" y1="${floorY - 14}" x2="${cx}" y2="${floorY + 8}" stroke="#fde047" stroke-width="4" stroke-linecap="round"/>
+        <line x1="180" y1="${floorY}" x2="314" y2="${floorY}" stroke="#475569" stroke-width="2"/>
+        <line x1="${sx}" y1="${floorY - 12}" x2="${sx}" y2="${floorY + 8}" stroke="#fde047" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- ================= 1. 正面モデル ================= -->
+        <!-- 体幹＆頭 -->
+        <line x1="${cx}" y1="${shY}" x2="${cx + hipShiftX}" y2="${hipY}" stroke="#e2e8f0" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="${cx}" cy="${headY}" r="10" fill="#0f172a" stroke="#38bdf8" stroke-width="3"/>
+        <!-- 肩ライン（常に水平で正面キープ！） -->
+        <line x1="${cx - 22}" y1="${shY}" x2="${cx + 22}" y2="${shY}" stroke="#06b6d4" stroke-width="5" stroke-linecap="round"/>
+        <!-- 両腕（胸前リストスタンド構え） -->
+        <polyline points="${cx - 22},${shY} ${cx - 28},${shY + 20} ${cx - 14},${shY + 12}" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="${cx + 22},${shY} ${cx + 28},${shY + 20} ${cx + 14},${shY + 12}" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- 骨盤ライン（ひねりで動く） -->
+        <line x1="${cx - 12 + hipShiftX}" y1="${hipY}" x2="${cx + 12 + hipShiftX}" y2="${hipY}" stroke="#fbbf24" stroke-width="5" stroke-linecap="round"/>
+        <!-- 左脚・右脚 -->
+        <polyline points="${cx - 10 + hipShiftX},${hipY} ${lKneeX},${kneeY} ${lAnkX},${lAnkY}" fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="${cx + 10 + hipShiftX},${hipY} ${rKneeX},${kneeY} ${rAnkX},${rAnkY}" fill="none" stroke="#10b981" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- 母趾球接地ポイント -->
+        <ellipse cx="${lAnkX}" cy="${lAnkY + 2}" rx="7" ry="4" fill="#fde047"/>
+        <ellipse cx="${rAnkX}" cy="${rAnkY + 2}" rx="7" ry="4" fill="#fde047"/>
+
+        <!-- ================= 2. 横モデル（左向き） ================= -->
+        <text x="176" y="34" fill="#94a3b8" font-size="9" font-weight="800">⬅️ネット方向</text>
+        <!-- 奥の脚 -->
+        <polyline points="${sHipX},${hipY} ${bKneeX},${kneeY} ${bAnkX},${bAnkY}" fill="none" stroke="rgba(56,189,248,0.55)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="${bAnkX + 5}" y1="${bAnkY}" x2="${bAnkX - 9}" y2="${bAnkY + 3}" stroke="#93c5fd" stroke-width="4" stroke-linecap="round"/>
+        <!-- 手前の脚 -->
+        <polyline points="${sHipX},${hipY} ${fKneeX},${kneeY} ${fAnkX},${fAnkY}" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- 足裏（母趾球接地＆カカト浮き表現） -->
+        <line x1="${fAnkX + 6}" y1="${fAnkY - 2}" x2="${fAnkX - 10}" y2="${fAnkY + 3}" stroke="#fde047" stroke-width="4.5" stroke-linecap="round"/>
+        <!-- 体幹（胸を起こした前傾しすぎない軸） -->
+        <line x1="${sx - 2}" y1="${shY}" x2="${sHipX}" y2="${hipY}" stroke="#10b981" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="${sx - 3}" cy="${headY}" r="10" fill="#0f172a" stroke="#10b981" stroke-width="3"/>
+        <!-- 腕＆ラケット構え -->
+        <polyline points="${sx - 2},${shY + 2} ${sx - 16},${shY + 18} ${sx - 28},${shY + 6}" fill="none" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="${sx - 28}" y1="${shY + 6}" x2="${sx - 38}" y2="${shY - 12}" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- 下部ガイド字幕 -->
+        <text x="82" y="169" fill="#e2e8f0" font-size="9.5" font-weight="900" text-anchor="middle">${pose.tag}</text>
+        <text x="246" y="169" fill="#fde047" font-size="9.5" font-weight="900" text-anchor="middle">カカト浮かせ・胸を起こす</text>
+      </svg>
+    `;
+  }
+
+  // リズムジャンプのステージに2アングル人型アニメーション枠を組み込む
+  function mountRhythmHumanAnimator() {
+    const rotWrap = document.getElementById('rjFeetRotWrapper');
+    if (!rotWrap || document.getElementById('rjHumanCoachSvgHolder')) return;
+    const matBox = rotWrap.parentNode;
+
+    // 既存の靴アイコンは右下の小型ワイプにするか非表示にして、中央に2アングル人型モデルを大きく表示
+    rotWrap.style.display = 'none';
+    const guideShape = document.getElementById('rjGuideShape');
+    if (guideShape) guideShape.style.display = 'none';
+
+    const holder = document.createElement('div');
+    holder.id = 'rjHumanCoachSvgHolder';
+    holder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:3;padding:32px 4px 2px 4px;';
+    matBox.appendChild(holder);
+
+    // 上部の「ネット方向」ピルが折り返して図と重ならないよう1行に収める
+    Array.prototype.forEach.call(matBox.children, function (ch) {
+      if (ch && ch.style && ch.style.position === 'absolute' && ch.textContent && ch.textContent.indexOf('ネット方向') >= 0) {
+        ch.style.whiteSpace = 'nowrap';
+        ch.style.fontSize = '0.62rem';
+        ch.style.maxWidth = '94%';
+        ch.style.overflow = 'hidden';
+        ch.style.textOverflow = 'ellipsis';
+        ch.style.zIndex = '6';
+      }
+    });
+
+    const loop = () => {
+      const panel = document.getElementById('subPanelRhythmJump');
+      if (panel && panel.style.display !== 'none') {
+        const now = performance.now();
+        if (rhythmState.running && !rhythmState.paused) {
+          const beatMs = 60000 / (rhythmState.bpm || 122);
+          const prog = Math.min(1, Math.max(0, (now - rjAnimState.lastBeatMs) / beatMs));
+          const cur = computeHumanPose(rjAnimState.pattern, rjAnimState.beatNum, prog);
+          const prev = computeHumanPose(rjAnimState.prevPattern || rjAnimState.pattern, (rjAnimState.prevBeatNum == null ? rjAnimState.beatNum : rjAnimState.prevBeatNum), 1);
+          holder.innerHTML = buildDualAngleCoachSVG(blendPose(prev, cur, beatEase(prog)));
+        } else {
+          // 待機中も動きが分かるよう、選択中コースの最初の種目をゆっくり自動プレビュー再生
+          const demoBeatMs = 700;
+          const demoBeat = (Math.floor(now / demoBeatMs) % 8) + 1;
+          const demoProg = (now % demoBeatMs) / demoBeatMs;
+          const DEMO_PATTERNS = ['par_stay', 'goopar', 'par_cross', 'front_back'];
+          const demoPat = DEMO_PATTERNS[Math.floor(now / (demoBeatMs * 8)) % DEMO_PATTERNS.length];
+          const dKey = demoPat + ':' + demoBeat;
+          if (rjAnimState.demoKey !== dKey) {
+            rjAnimState.demoPrev = rjAnimState.demoCur || { pattern: demoPat, beat: demoBeat };
+            rjAnimState.demoCur = { pattern: demoPat, beat: demoBeat };
+            rjAnimState.demoKey = dKey;
+          }
+          const dCur = computeHumanPose(demoPat, demoBeat, demoProg);
+          const dPrev = computeHumanPose(rjAnimState.demoPrev.pattern, rjAnimState.demoPrev.beat, 1);
+          holder.innerHTML = buildDualAngleCoachSVG(blendPose(dPrev, dCur, beatEase(demoProg)));
+        }
+      }
+      rjAnimState.rafId = requestAnimationFrame(loop);
+    };
+    rjAnimState.rafId = requestAnimationFrame(loop);
+  }
+
+  // 💪 筋トレインターバルタイマー用の人型アニメーション（カーフレイズ・ジャンピングSQ・ランジ・四股・プランク）
+  function mountWorkoutTimerHumanAnimator() {
+    const drawer = document.getElementById('workoutTimerDrawer');
+    const clockEl = document.getElementById('wtClockText');
+    if (!drawer || !clockEl || document.getElementById('wtHumanAnimBox')) return;
+
+    const animBox = document.createElement('div');
+    animBox.id = 'wtHumanAnimBox';
+    animBox.style.cssText = 'width:100%;height:165px;background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+    drawer.insertBefore(animBox, clockEl.nextSibling);
+
+    const renderWorkoutFrame = () => {
+      if (drawer.style.display === 'none') {
+        requestAnimationFrame(renderWorkoutFrame);
+        return;
+      }
+      const title = (document.getElementById('wtTitle') ? document.getElementById('wtTitle').textContent : "") || "";
+      const now = performance.now();
+      const wave = (Math.sin((now / 1000) * Math.PI * 1.6) + 1) / 2; // 0.0 〜 1.0 の滑らかな往復
+
+      let pose = { air: 0, cushion: 6, lx: -20, rx: 20, ly: 0, ry: 0, lfZ: 0, rfZ: 0, twist: 0, lunge: 0, heelLift: 4, tag: "フォームを維持" };
+
+      if (workoutTimerState.running && workoutTimerState.phase === 'rest') {
+        pose.tag = "☕ 呼吸を整えてリラックス";
+        pose.cushion = 3;
+      } else if (title.includes('カーフ') || title.includes('足首')) {
+        // 🦵 カーフレイズ：カカトを大きく上下
+        pose.lx = -14; pose.rx = 14;
+        pose.heelLift = 2 + wave * 18;
+        pose.air = wave * 0.45;
+        pose.cushion = 2;
+        pose.tag = wave > 0.5 ? "⬆️ 母趾球でグッと高く立つ！" : "⬇️ カカトを床ギリギリまで下ろす";
+      } else if (title.includes('ジャンピング') || title.includes('瞬発')) {
+        // 🦘 ジャンピングスクワット：深くしゃがむ ➔ 高くジャンプ
+        if (wave > 0.55) {
+          pose.air = (wave - 0.55) * 2.2;
+          pose.cushion = 0;
+          pose.tag = "🚀 真上へ爆発的にジャンプ！";
+        } else {
+          pose.lunge = (0.55 - wave) * 38;
+          pose.tag = "🦵 股関節を折りたたんで深くタメる";
+        }
+      } else if (title.includes('ブルガリアン') || title.includes('ランジ')) {
+        // 🏋️ ブルガリアンスクワット／ランジ：前後に足を開いて上下
+        pose.lx = -14; pose.rx = 14;
+        pose.lfZ = -22; pose.rfZ = 22;
+        pose.lunge = wave * 22;
+        pose.tag = wave > 0.5 ? "⬇️ 前足カカトに体重を乗せ深く沈む" : "⬆️ 胸を起こしたまま押し上げる";
+      } else if (title.includes('四股') || title.includes('股関節')) {
+        // 🧘 四股スクワット：ワイドに足を開いて腰を割る
+        pose.lx = -34; pose.rx = 34;
+        pose.lunge = wave * 22;
+        pose.tag = "🧘 膝とつま先を外へ向け深く腰を割る";
+      } else {
+        // 🔥 体幹・その他
+        pose.twist = Math.sin((now / 1000) * Math.PI * 1.5) * 24;
+        pose.tag = "🔥 おへそに力を入れて体幹キープ";
+      }
+
+      animBox.innerHTML = buildDualAngleCoachSVG(pose);
+      requestAnimationFrame(renderWorkoutFrame);
+    };
+    requestAnimationFrame(renderWorkoutFrame);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      mountRhythmHumanAnimator();
+      mountWorkoutTimerHumanAnimator();
+      const vb = document.querySelector('header .badge-version');
+      if (vb) vb.textContent = "v10.5.1 PRO";
+    }, 150);
+  });
+</script>
+<script id="badtore-v105-step3-levelup">
+(function(){
+  if (window.__bt_v105_step3) return; window.__bt_v105_step3 = true;
+
+  /* ============ レベルアップ演出 (STEP3) ============
+     awardPlayerXP をラップし、XP獲得時にヘッダーのXPゲージを光らせ、
+     レベルアップ時にはバナーを出す。本体のXP処理には一切触らない。 */
+  var css = ""
+    + "@keyframes btXpShine{0%{filter:brightness(1)}30%{filter:brightness(2) saturate(1.5)}60%{filter:brightness(1.25)}100%{filter:brightness(1)}}"
+    + "@keyframes btXpFloat{0%{opacity:0;transform:translateY(4px) scale(.9)}15%{opacity:1}100%{opacity:0;transform:translateY(-26px) scale(1.05)}}"
+    + "@keyframes btLvBanner{0%{opacity:0;transform:translate(-50%,-16px) scale(.92)}12%{opacity:1;transform:translate(-50%,0) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-8px) scale(.98)}}"
+    + "@keyframes btLvGlow{0%,100%{box-shadow:0 0 0 rgba(250,204,21,0)}50%{box-shadow:0 0 22px rgba(250,204,21,.9)}}"
+    + ".bt-xp-sparkle{animation:btXpShine .9s ease-in-out 2}"
+    + ".bt-lv-glow{animation:btLvGlow 1s ease-in-out 3;border-radius:12px}";
+  try{
+    var st=document.createElement("style"); st.textContent=css;
+    (document.head||document.documentElement).appendChild(st);
+  }catch(e){}
+
+  function gaugeFill(){
+    var badge=document.getElementById("headerPlayerLvBadge"); if(!badge) return null;
+    var spans=badge.querySelectorAll("span");
+    for (var i=0;i<spans.length;i++){
+      if (spans[i].style && spans[i].style.display==="block") return spans[i];
+    }
+    return null;
+  }
+
+  function playXpEffect(gained, beforeLv, after){
+    try{
+      var badge=document.getElementById("headerPlayerLvBadge");
+      var fill=gaugeFill();
+      if (fill){
+        fill.classList.remove("bt-xp-sparkle"); void fill.offsetWidth;
+        fill.classList.add("bt-xp-sparkle");
+        setTimeout(function(){ try{ fill.classList.remove("bt-xp-sparkle"); }catch(e){} }, 2000);
+      }
+      if (badge){
+        badge.style.position="relative";
+        var f=document.createElement("span");
+        f.textContent="+"+gained+" XP";
+        f.style.cssText="position:absolute;right:0;top:-8px;font-size:11px;font-weight:900;color:var(--accent-highlight,#facc15);pointer-events:none;animation:btXpFloat 1.1s ease-out forwards;text-shadow:0 1px 6px rgba(0,0,0,.45);z-index:5";
+        badge.appendChild(f);
+        setTimeout(function(){ try{ f.remove(); }catch(e){} }, 1200);
+      }
+      if (after && beforeLv!=null && after.lv>beforeLv){
+        if (badge){
+          badge.classList.add("bt-lv-glow");
+          setTimeout(function(){ try{ badge.classList.remove("bt-lv-glow"); }catch(e){} }, 3100);
+        }
+        var b=document.createElement("div");
+        b.textContent="🎉 レベルアップ！ Lv."+after.lv+" "+(after.title||"");
+        b.style.cssText="position:fixed;top:14px;left:50%;z-index:99995;background:linear-gradient(135deg,#fde68a,#f59e0b);color:#451a03;padding:12px 22px;border-radius:999px;font-weight:900;font-size:15px;box-shadow:0 10px 30px rgba(245,158,11,.5);pointer-events:none;animation:btLvBanner 2.8s ease forwards;white-space:nowrap";
+        document.body.appendChild(b);
+        setTimeout(function(){ try{ b.remove(); }catch(e){} }, 2900);
+      }
+    }catch(e){}
+  }
+
+  function currentInfo(){
+    try{
+      if (typeof getPlayerLevelInfo==="function" && typeof activeProfileId!=="undefined" && activeProfileId){
+        return getPlayerLevelInfo(activeProfileId);
+      }
+    }catch(e){}
+    return null;
+  }
+
+  try{
+    if (typeof awardPlayerXP==="function" && !awardPlayerXP.__btWrapped){
+      var orig=awardPlayerXP;
+      var wrapped=function(amount){
+        var before=currentInfo();
+        var r=orig.apply(this, arguments);
+        var after=currentInfo();
+        if (before && after && after.xp>before.xp){
+          playXpEffect(after.xp-before.xp, before.lv, after);
+        }
+        return r;
+      };
+      wrapped.__btWrapped=true;
+      awardPlayerXP=wrapped;
+      window.awardPlayerXP=wrapped;
+    }
+  }catch(e){}
+  console.log("[badtore v10.5 STEP3] level-up effects loaded");
+})();
+</script>
+=======
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script id="badtore-phase1-cloud">
