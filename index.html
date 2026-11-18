@@ -12969,5 +12969,197 @@ function sharePoseResultImage() {
 })();
 </script>
 
+<script id="badtore-tester-feedback">
+(function(){
+  "use strict";
+  if (window.__bt_tester_feedback) return; window.__bt_tester_feedback = true;
+  var SB_URL = 'https://bgmngjwkfcvapcdtkcpx.supabase.co';
+  var SB_KEY = 'sb_publishable_ji-jxS2T-VnXBjvfVkJ8pw_7r-_QOAG';
+  var APP_VERSION = 'v10.5.1';
+  var tsb = null, tUser = null, tReg = null, tRegLoaded = false;
+
+  function initClient(){
+    if (window.supabase && window.supabase.createClient) {
+      try { tsb = window.supabase.createClient(SB_URL, SB_KEY); } catch(e) { tsb = null; }
+    }
+  }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function activeTabId(){
+    var el = document.querySelector('.tab-content.active');
+    return el ? (el.id || '') : '';
+  }
+
+  function buildCard(){
+    if (document.getElementById('testerFeedbackCard')) return;
+    var anchor = document.getElementById('cloudSyncStatus');
+    if (!anchor || !anchor.closest) return;
+    var cloudCard = anchor.closest('.card');
+    if (!cloudCard || !cloudCard.parentNode) return;
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'testerFeedbackCard';
+    card.style.cssText = 'background:var(--bg-surface); margin:0;';
+    card.innerHTML = '<div class="card-header"><div class="card-title">🎫 テスターコード ＆ 💬 フィードバック</div></div><div id="tfArea"></div>';
+    cloudCard.parentNode.insertBefore(card, cloudCard.nextSibling);
+    renderArea();
+  }
+
+  function addGuideButton(){
+    if (document.getElementById('tfGuideBtn')) return;
+    var btns = document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].textContent && btns[i].textContent.indexOf('はじめてガイドを見る') >= 0) {
+        var b = document.createElement('button');
+        b.className = 'btn btn-cyan-outline';
+        b.id = 'tfGuideBtn';
+        b.style.cssText = 'width:100%;padding:10px;margin-bottom:10px;';
+        b.textContent = '💬 フィードバックを送る';
+        b.addEventListener('click', function(){
+          if (typeof switchTab === 'function') switchTab('tab-profile');
+          setTimeout(function(){
+            var c = document.getElementById('testerFeedbackCard');
+            if (c && c.scrollIntoView) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 250);
+        });
+        btns[i].parentNode.insertBefore(b, btns[i].nextSibling);
+        break;
+      }
+    }
+  }
+
+  function renderArea(){
+    var area = document.getElementById('tfArea');
+    if (!area) return;
+    if (!tsb) { area.innerHTML = '<p style="font-size:0.75rem;color:var(--text-secondary);">接続を準備中です…</p>'; return; }
+    if (!tUser) {
+      area.innerHTML = '<p style="font-size:0.75rem;color:var(--text-secondary);">テスターコードの登録とフィードバック送信には、上の「☁️ クラウド保存」カードからGoogleでログインしてください。</p>';
+      return;
+    }
+    var html = '<div style="margin-bottom:12px;">' +
+      '<div style="font-weight:900;font-size:0.82rem;margin-bottom:4px;">🎫 テスター登録</div>';
+    if (!tRegLoaded) {
+      html += '<p style="font-size:0.75rem;color:var(--text-secondary);">確認中…</p>';
+    } else if (tReg) {
+      html += '<p style="font-size:0.78rem;">✅ テスター登録済みです（コード: ' + esc(tReg.code) + '）<br><span style="color:var(--text-secondary);font-size:0.72rem;">有料機能が始まっても、テスターの方は無料で使えるようにします。</span></p>';
+    } else {
+      html += '<p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:6px;">配布されたテスターコードを入力してください。</p>' +
+        '<div style="display:flex;gap:6px;">' +
+        '<input id="tfCodeInput" type="text" placeholder="BT-XXXXXX" autocomplete="off" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;text-transform:uppercase;">' +
+        '<button class="btn btn-emerald" id="tfRedeemBtn" style="padding:8px 14px;">登録</button></div>' +
+        '<div id="tfRedeemMsg" style="font-size:0.74rem;margin-top:5px;"></div>';
+    }
+    html += '</div>';
+    html += '<div>' +
+      '<div style="font-weight:900;font-size:0.82rem;margin-bottom:4px;">💬 フィードバックを送る</div>' +
+      '<p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:6px;">バグ報告・要望・感想など、開発者に直接届きます。</p>' +
+      '<select id="tfCategory" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;margin-bottom:6px;">' +
+      '<option value="bug">🐛 バグ・不具合</option><option value="request">💡 要望・あったらいいな</option><option value="impression">😊 感想</option><option value="other">📝 その他</option></select>' +
+      '<textarea id="tfMessage" rows="3" placeholder="気づいたことを書いてください" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box;"></textarea>' +
+      '<div class="btn-group" style="margin-top:6px;"><button class="btn btn-cyan-outline" id="tfSendBtn" style="padding:8px 14px;">📨 送信する</button></div>' +
+      '<div id="tfSendMsg" style="font-size:0.74rem;margin-top:5px;"></div>' +
+      '</div>';
+    area.innerHTML = html;
+    var rb = document.getElementById('tfRedeemBtn');
+    if (rb) rb.addEventListener('click', redeemCode);
+    var sd = document.getElementById('tfSendBtn');
+    if (sd) sd.addEventListener('click', sendFeedback);
+  }
+
+  async function loadRegistration(){
+    if (!tsb || !tUser) return;
+    try {
+      var res = await tsb.from('tester_registrations').select('code, registered_at').eq('user_id', tUser.id).maybeSingle();
+      tReg = (res && res.data) || null;
+    } catch(e) { tReg = null; }
+    tRegLoaded = true;
+    renderArea();
+  }
+
+  async function redeemCode(){
+    var input = document.getElementById('tfCodeInput');
+    var msg = document.getElementById('tfRedeemMsg');
+    var code = (input && input.value ? input.value : '').trim();
+    if (!code) { if (msg) msg.textContent = 'コードを入力してください。'; return; }
+    if (msg) msg.textContent = '登録中…';
+    try {
+      var res = await tsb.rpc('redeem_tester_code', { p_code: code });
+      if (res.error) throw res.error;
+      var d = res.data || {};
+      if (d.ok) {
+        tReg = { code: d.code, registered_at: new Date().toISOString() };
+        tRegLoaded = true;
+        renderArea();
+        alert('🎫 テスター登録が完了しました！ありがとうございます。');
+      } else {
+        var reasons = {
+          invalid_code: 'コードが見つかりませんでした。入力を確認してください。',
+          already_registered: 'すでにテスター登録済みです。',
+          code_exhausted: 'このコードは使用上限に達しています。',
+          not_logged_in: '先にログインしてください。'
+        };
+        if (msg) msg.textContent = reasons[d.reason] || '登録できませんでした。';
+      }
+    } catch(e) {
+      if (msg) msg.textContent = '通信エラーが発生しました。時間をおいて試してください。';
+    }
+  }
+
+  async function sendFeedback(){
+    var cat = document.getElementById('tfCategory');
+    var ta = document.getElementById('tfMessage');
+    var msg = document.getElementById('tfSendMsg');
+    var text = (ta && ta.value ? ta.value : '').trim();
+    if (!text) { if (msg) msg.textContent = '内容を入力してください。'; return; }
+    if (msg) msg.textContent = '送信中…';
+    try {
+      var res = await tsb.from('feedback').insert({
+        user_id: tUser.id,
+        email: tUser.email || '',
+        category: cat ? cat.value : 'other',
+        message: text,
+        app_version: APP_VERSION,
+        context: activeTabId()
+      });
+      if (res.error) throw res.error;
+      if (ta) ta.value = '';
+      if (msg) msg.textContent = '✅ 送信しました。ありがとうございます！';
+    } catch(e) {
+      if (msg) msg.textContent = '送信できませんでした。時間をおいて試してください。';
+    }
+  }
+
+  function boot(){
+    initClient();
+    buildCard();
+    addGuideButton();
+    if (tsb) {
+      tsb.auth.getSession().then(function(r){
+        var session = (r && r.data) ? r.data.session : null;
+        tUser = session ? session.user : null;
+        if (tUser) loadRegistration(); else renderArea();
+      }).catch(function(){ renderArea(); });
+      tsb.auth.onAuthStateChange(function(event, session){
+        tUser = session ? session.user : null;
+        tRegLoaded = false; tReg = null;
+        if (tUser) loadRegistration(); else renderArea();
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 350); });
+  else setTimeout(boot, 350);
+
+  window.__bt_tf_test = {
+    setUser: function(u){ tUser = u; },
+    setClient: function(c){ tsb = c; },
+    renderArea: renderArea,
+    redeemCode: redeemCode,
+    sendFeedback: sendFeedback,
+    getState: function(){ return { tReg: tReg, tRegLoaded: tRegLoaded }; }
+  };
+  console.log('[badtore tester-feedback] loaded');
+})();
+</script>
+
 </body>
 </html>
