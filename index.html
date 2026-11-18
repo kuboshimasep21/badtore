@@ -2126,6 +2126,8 @@
 
     <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 7.撮影ガイド</button>
 
+    <button class="nav-tab" onclick="switchTab('tab-progress')" id="btn-tab-progress">👥 8.みんなの進捗</button>
+
   </nav>
 
 
@@ -3708,6 +3710,36 @@
 
         </div>
 
+
+
+        <!-- ☁️ Phase 1: クラウド保存＆家族共有（Supabase） -->
+
+        <div class="card" style="background:var(--bg-surface); margin:0;">
+
+          <div class="card-header">
+
+            <div class="card-title">☁️ クラウド保存 ＆ 家族グループ共有</div>
+
+          </div>
+
+          <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px;">
+
+            Googleでログインすると、練習記録・自己ベスト・XPがクラウドに自動保存され、別のスマホでも続きが見られます。家族グループを作ると「👥 8.みんなの進捗」で家族の進捗も共有できます。ログインしなくても今まで通り使えます。
+
+          </p>
+
+          <div id="cloudAuthArea"></div>
+
+          <div id="cloudSyncStatus" style="font-size:0.74rem; color:var(--text-secondary); margin-top:6px;">☁️ クラウド: 確認中…</div>
+
+          <div class="btn-group" style="margin-top:8px;">
+
+            <button class="btn btn-cyan-outline" onclick="switchTab('tab-progress')">👥 みんなの進捗・グループ管理へ</button>
+
+          </div>
+
+        </div>
+
       </div>
 
     </section>
@@ -3783,6 +3815,90 @@
               Safari上部の共有ボタン（四角から上矢印 📤）をタップし、メニューから<b>「ホーム画面に追加」</b>を押してください。ホーム画面に作られた「バドトレPRO」アイコンから開くと、上のURLバーが完全に消えて専用アプリとして広く使えます。
 
             </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =========================================================
+
+         TAB 8: 👥 みんなの進捗（Phase 1 家族グループ共有）
+
+    ========================================================== -->
+
+    <section id="tab-progress" class="tab-panel">
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">👥 みんなの進捗（家族グループ）</div>
+
+          <div class="btn-group">
+
+            <button class="btn" onclick="refreshProgressUI()">🔄 更新</button>
+
+          </div>
+
+        </div>
+
+        <div id="cloudProgressContainer">
+
+          <div style="font-size:0.78rem;color:var(--text-secondary);">読み込み中…</div>
+
+        </div>
+
+        <div id="cloudMemberDetail" style="margin-top:8px;"></div>
+
+      </div>
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">🏠 グループ管理</div>
+
+        </div>
+
+        <div id="cloudGroupsContainer">
+
+          <div style="font-size:0.78rem;color:var(--text-secondary);">読み込み中…</div>
+
+        </div>
+
+        <div style="border-top:1px solid var(--border-subtle); margin-top:10px; padding-top:10px;">
+
+          <div class="form-group">
+
+            <label>新しいグループを作る（グループ名）</label>
+
+            <input type="text" id="cloudGroupNameInput" placeholder="例：我が家バドミントン部" style="width:100%; padding:6px 8px; font-size:0.8rem;" />
+
+          </div>
+
+          <div class="btn-group" style="margin-top:6px;">
+
+            <button class="btn btn-emerald" onclick="cloudCreateGroup()">➕ グループを作成</button>
+
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+
+            <label>招待コードで参加する</label>
+
+            <input type="text" id="cloudJoinCodeInput" placeholder="家族から受け取った招待コードを貼り付け" style="width:100%; padding:6px 8px; font-size:0.8rem;" />
+
+          </div>
+
+          <div class="btn-group" style="margin-top:6px;">
+
+            <button class="btn btn-cyan-outline" onclick="cloudJoinGroup()">🤝 グループに参加</button>
 
           </div>
 
@@ -11451,5 +11567,671 @@ function sharePoseResultImage() {
   });
 })();
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script id="badtore-phase1-cloud">
+/* =========================================================================
+   Phase 1: Supabase ログイン＋クラウド保存＋家族グループ共有
+   - localStorage を正とし、裏でクラウドと同期する（未ログイン時は完全ローカル動作）
+   - Gemini APIキー等の端末設定はクラウドへ送信しない
+   ========================================================================= */
+(function () {
+  'use strict';
+
+  var SB_URL = 'https://bgmngjwkfcvapcdtkcpx.supabase.co';
+  var SB_KEY = 'sb_publishable_ji-jxS2T-VnXBjvfVkJ8pw_7r-_QOAG';
+  var META_KEY = 'badtore_cloud_meta_v1';
+  var BACKUP_KEY = 'badtore_cloud_backup_v1';
+
+  // 同期対象の localStorage キー → 論理データ種別
+  var SYNC_KEYS = {
+    'badtore_profiles_list_v90': 'profiles_list',
+    'badtore_personal_bests_v90': 'personal_bests',
+    'badtore_practice_logs_v100': 'practice_logs',
+    'badtore_player_xp_v102': 'xp',
+    'badtore_saved_menus_v100': 'saved_menus',
+    'badtore_working_menu_v100': 'working_menu',
+    'badtore_custom_drill_bank_v104': 'custom_drills'
+  };
+  // プロフィール単位で分割して保存する種別 / アカウント全体で1つの種別
+  var SPLIT_TYPES = { personal_bests: true, xp: true };
+  var GLOBAL_TYPES = ['profiles_list', 'practice_logs', 'saved_menus', 'working_menu', 'custom_drills'];
+  var KEY_BY_TYPE = {};
+  Object.keys(SYNC_KEYS).forEach(function (k) { KEY_BY_TYPE[SYNC_KEYS[k]] = k; });
+
+  var LEVEL_TITLES = ['ルーキー', 'ステップ習得者', '抜重ストライカー', 'リストマスター', 'コート支配者', 'ハイスピードエース', 'AIバイオメカニスト', 'バドトレ達人'];
+  var SHOT_LABELS = {
+    ready_stance: '🛡️ 基本の構え', smash: '💥 スマッシュ', clear: '🌈 ハイクリア',
+    drive: '💨 ドライブ', drop: '🎯 ドロップ', net: '🕸️ ネット', serve: '🎾 サーブ',
+    receive: '🧲 レシーブ', push: '👉 プッシュ', lob: '🚀 ロブ'
+  };
+
+  var sb = null;
+  try {
+    if (window.supabase && window.supabase.createClient) sb = window.supabase.createClient(SB_URL, SB_KEY);
+  } catch (e) { console.warn('[cloud] supabase init failed', e); }
+
+  var cloudUser = null;
+  var cloudInitFor = null;
+  var cloudSyncing = false;
+  var cloudSyncTimer = null;
+
+  var origSetItem = Storage.prototype.setItem;
+  function rawSet(key, value) { try { origSetItem.call(window.localStorage, key, value); } catch (e) {} }
+  function rawGet(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ---------- メタ情報（最終変更時刻の管理） ---------- */
+  function loadMeta() {
+    try { var m = JSON.parse(rawGet(META_KEY) || '{}'); if (m && typeof m === 'object') { m.dirty = m.dirty || {}; m.cloudAt = m.cloudAt || {}; return m; } } catch (e) {}
+    return { dirty: {}, cloudAt: {}, backupDone: false };
+  }
+  function saveMeta(m) { rawSet(META_KEY, JSON.stringify(m)); }
+
+  function cloudNewer(meta, unitKey, type, iso) {
+    var ct = Date.parse(iso);
+    if (!isFinite(ct)) return false;
+    var lt = Math.max(Number(meta.dirty[unitKey] || 0), Number(meta.dirty['*:' + type] || 0));
+    return ct > lt;
+  }
+
+  /* ---------- localStorage.setItem フック ---------- */
+  Storage.prototype.setItem = function (key, value) {
+    origSetItem.call(this, key, value);
+    try {
+      if (this !== window.localStorage) return;
+      var type = SYNC_KEYS[key];
+      if (!type) return;
+      var meta = loadMeta();
+      var now = Date.now();
+      if (SPLIT_TYPES[type]) {
+        var marked = false;
+        try {
+          var parsed = JSON.parse(value || '{}');
+          if (parsed && typeof parsed === 'object') {
+            Object.keys(parsed).forEach(function (pid) { meta.dirty[pid + ':' + type] = now; marked = true; });
+          }
+        } catch (e) {}
+        if (!marked) meta.dirty['*:' + type] = now;
+      } else {
+        meta.dirty['global:' + type] = now;
+      }
+      saveMeta(meta);
+      scheduleSync();
+    } catch (e) { /* フックの失敗で本体を止めない */ }
+  };
+
+  function scheduleSync() {
+    if (!cloudUser || !sb) return;
+    if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+    cloudSyncTimer = setTimeout(function () { syncUp(); }, 2500);
+  }
+
+  /* ---------- アプリ内データへの安全なアクセス ---------- */
+  function appProfiles() { try { return Array.isArray(profilesList) ? profilesList : []; } catch (e) { return []; } }
+  function appPB() { try { return personalBestsDB || {}; } catch (e) { return {}; } }
+  function appXP() { try { return playerXpDB || {}; } catch (e) { return {}; } }
+  function appLogs() { try { return Array.isArray(practiceLogsDB) ? practiceLogsDB : []; } catch (e) { return []; } }
+  function appMenus() { try { return Array.isArray(savedMenusDB) ? savedMenusDB : []; } catch (e) { return []; } }
+  function appWorkingMenu() { try { return currentMenuPlan || {}; } catch (e) { return {}; } }
+  function appDrills() { try { return Array.isArray(customDrillBankDB) ? customDrillBankDB : []; } catch (e) { return []; } }
+  function appThemes() { try { return profileThemesMap || {}; } catch (e) { return {}; } }
+
+  function globalPayload(type) {
+    if (type === 'profiles_list') return appProfiles();
+    if (type === 'practice_logs') return appLogs();
+    if (type === 'saved_menus') return appMenus();
+    if (type === 'working_menu') return appWorkingMenu();
+    if (type === 'custom_drills') return appDrills();
+    return null;
+  }
+
+  /* ---------- サマリー計算 ---------- */
+  function computeSummary(pid) {
+    var profs = appProfiles();
+    var prof = null;
+    for (var i = 0; i < profs.length; i++) if (profs[i].id === pid) prof = profs[i];
+    var name = prof ? prof.name : '';
+    var xpRec = appXP()[pid] || { xp: 100, days: [] };
+    var xp = Number(xpRec.xp) || 100;
+    var level = Math.max(1, Math.floor(xp / 100));
+    var logs = appLogs();
+    var mine = logs.filter(function (l) { return name && l.memberName === name; });
+    if (!mine.length && profs.length && profs[0].id === pid) mine = logs;
+    var lastDate = null, weekly = 0;
+    var cutoffIso = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+    mine.forEach(function (l) {
+      if (!l.isoDate) return;
+      if (!lastDate || l.isoDate > lastDate) lastDate = l.isoDate;
+      if (l.isoDate >= cutoffIso) weekly += Number(l.totalMin) || 0;
+    });
+    var best = null;
+    var pb = appPB()[pid] || {};
+    Object.keys(pb).forEach(function (shot) {
+      var r = pb[shot];
+      if (!r || typeof r.score !== 'number') return;
+      var t = r.date ? Date.parse(String(r.date).replace(/\//g, '-')) : NaN;
+      if (!best) { best = { score: r.score, t: t }; return; }
+      if (isFinite(t) && (!isFinite(best.t) || t > best.t)) best = { score: r.score, t: t };
+      else if (!isFinite(t) && !isFinite(best.t) && r.score > best.score) best = { score: r.score, t: t };
+    });
+    var rank = null;
+    if (best) {
+      if (typeof getScoreRankMeta === 'function') rank = getScoreRankMeta(best.score).rank;
+      else rank = best.score >= 88 ? 'S' : best.score >= 78 ? 'A' : best.score >= 66 ? 'B' : 'C';
+    }
+    return {
+      profile_id: pid, xp: xp, level: level,
+      last_practice_date: lastDate, weekly_minutes: weekly,
+      last_diagnosis_score: best ? best.score : null,
+      last_diagnosis_rank: rank,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  /* ---------- アップロード ---------- */
+  function backupLocalOnce(meta) {
+    if (meta.backupDone) return;
+    try {
+      var snap = {};
+      Object.keys(SYNC_KEYS).forEach(function (k) { var v = rawGet(k); if (v !== null) snap[k] = v; });
+      rawSet(BACKUP_KEY, JSON.stringify({ at: new Date().toISOString(), data: snap }));
+    } catch (e) {}
+    meta.backupDone = true;
+    saveMeta(meta);
+  }
+
+  async function syncUp() {
+    if (!sb || !cloudUser || cloudSyncing) return;
+    var profs = appProfiles();
+    if (!profs.length) return;
+    cloudSyncing = true;
+    setSyncStatus('同期中…');
+    var meta = loadMeta();
+    backupLocalOnce(meta);
+    var nowIso = new Date().toISOString();
+    var nowMs = Date.now();
+    var uid = cloudUser.id;
+    try {
+      // プロフィール登録
+      var themes = appThemes();
+      var profRows = profs.map(function (p) {
+        return { id: p.id, owner_user_id: uid, display_name: p.name || p.id, theme_color: themes[p.id] || null, updated_at: nowIso };
+      });
+      var pr = await sb.from('player_profiles').upsert(profRows, { onConflict: 'id' });
+      if (pr.error) console.warn('[cloud] player_profiles upsert', pr.error);
+
+      // データ本体
+      var pb = appPB(), xp = appXP();
+      var rows = [];
+      profs.forEach(function (p) {
+        rows.push({ profile_id: p.id, data_type: 'personal_bests', payload: pb[p.id] || {}, updated_at: nowIso });
+        rows.push({ profile_id: p.id, data_type: 'xp', payload: xp[p.id] || { xp: 100, days: [] }, updated_at: nowIso });
+        GLOBAL_TYPES.forEach(function (t) {
+          rows.push({ profile_id: p.id, data_type: t, payload: globalPayload(t), updated_at: nowIso });
+        });
+      });
+      var dr = await sb.from('profile_data').upsert(rows, { onConflict: 'profile_id,data_type' });
+      if (dr.error) throw dr.error;
+
+      // サマリー
+      var sums = profs.map(function (p) { return computeSummary(p.id); });
+      var sr = await sb.from('profile_summaries').upsert(sums, { onConflict: 'profile_id' });
+      if (sr.error) console.warn('[cloud] profile_summaries upsert', sr.error);
+
+      // メタ更新（このバッチで送った分はクリーン扱い）
+      meta = loadMeta();
+      profs.forEach(function (p) {
+        ['personal_bests', 'xp'].forEach(function (t) {
+          meta.cloudAt[p.id + ':' + t] = nowIso;
+          if ((meta.dirty[p.id + ':' + t] || 0) <= nowMs) delete meta.dirty[p.id + ':' + t];
+        });
+        GLOBAL_TYPES.forEach(function (t) {
+          meta.cloudAt['global:' + t] = nowIso;
+          if ((meta.dirty['global:' + t] || 0) <= nowMs) delete meta.dirty['global:' + t];
+        });
+      });
+      saveMeta(meta);
+      var d = new Date();
+      setSyncStatus('同期済み ' + d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2));
+    } catch (e) {
+      console.warn('[cloud] syncUp failed', e);
+      setSyncStatus('同期エラー: ' + (e.message || e));
+    } finally {
+      cloudSyncing = false;
+    }
+  }
+
+  /* ---------- ダウンロード＆マージ ---------- */
+  async function pullMerge() {
+    var uid = cloudUser.id;
+    var pr = await sb.from('player_profiles').select('*').eq('owner_user_id', uid);
+    if (pr.error) throw pr.error;
+    var cloudProfs = pr.data || [];
+    if (!cloudProfs.length) return false; // 初回: アップロードのみ
+    var ids = cloudProfs.map(function (p) { return p.id; });
+    var dr = await sb.from('profile_data').select('*').in('profile_id', ids);
+    if (dr.error) throw dr.error;
+    var rows = dr.data || [];
+    var meta = loadMeta();
+    var changed = false;
+
+    function applyLocal(type, payload) {
+      if (type === 'profiles_list') { try { profilesList = payload; } catch (e) {} }
+      else if (type === 'practice_logs') { try { practiceLogsDB = payload; } catch (e) {} }
+      else if (type === 'saved_menus') { try { savedMenusDB = payload; } catch (e) {} }
+      else if (type === 'working_menu') { try { currentMenuPlan = payload; } catch (e) {} }
+      else if (type === 'custom_drills') { try { customDrillBankDB = payload; } catch (e) {} }
+      rawSet(KEY_BY_TYPE[type], JSON.stringify(payload));
+    }
+
+    // グローバル種別: 自分の全プロフィール行の中で最新のものを採用
+    GLOBAL_TYPES.forEach(function (t) {
+      var cand = null;
+      rows.forEach(function (r) { if (r.data_type === t && (!cand || r.updated_at > cand.updated_at)) cand = r; });
+      if (cand && cloudNewer(meta, 'global:' + t, t, cand.updated_at)) {
+        if (JSON.stringify(globalPayload(t)) !== JSON.stringify(cand.payload)) {
+          applyLocal(t, cand.payload);
+          changed = true;
+        }
+        meta.cloudAt['global:' + t] = cand.updated_at;
+        delete meta.dirty['global:' + t];
+      }
+    });
+
+    // 分割種別: プロフィールごとに採用
+    ['personal_bests', 'xp'].forEach(function (t) {
+      var touched = false;
+      rows.forEach(function (r) {
+        if (r.data_type !== t) return;
+        var unit = r.profile_id + ':' + t;
+        if (!cloudNewer(meta, unit, t, r.updated_at)) return;
+        if (t === 'personal_bests') { var pb = appPB(); pb[r.profile_id] = r.payload || {}; try { personalBestsDB = pb; } catch (e) {} }
+        else { var xd = appXP(); xd[r.profile_id] = r.payload || { xp: 100, days: [] }; try { playerXpDB = xd; } catch (e) {} }
+        meta.cloudAt[unit] = r.updated_at;
+        delete meta.dirty[unit];
+        touched = true;
+        changed = true;
+      });
+      if (touched) rawSet(KEY_BY_TYPE[t], JSON.stringify(t === 'personal_bests' ? appPB() : appXP()));
+    });
+
+    // クラウドにあるのにローカルに無いプロフィールを補完（profiles_list payload が無い場合の保険）
+    var localIds = {};
+    appProfiles().forEach(function (p) { localIds[p.id] = true; });
+    var missing = cloudProfs.filter(function (p) { return !localIds[p.id]; });
+    if (missing.length) {
+      var list = appProfiles().slice();
+      missing.forEach(function (p) {
+        list.push({ id: p.id, name: p.display_name || p.id, height: 165, category: 'adult', power: 'mid', style: 'speed', hand: 'right' });
+      });
+      try { profilesList = list; } catch (e) {}
+      rawSet(KEY_BY_TYPE['profiles_list'], JSON.stringify(list));
+      changed = true;
+    }
+
+    saveMeta(meta);
+    return changed;
+  }
+
+  /* ---------- 認証 ---------- */
+  window.cloudLoginGoogle = async function () {
+    if (!sb) { alert('クラウド機能の読み込みに失敗しました。通信環境を確認して、ページを再読み込みしてください。'); return; }
+    var res = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.origin + location.pathname }
+    });
+    if (res.error) alert('ログインを開始できませんでした: ' + res.error.message);
+  };
+
+  window.cloudLogout = async function () {
+    if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+    cloudUser = null;
+    cloudInitFor = null;
+    try { sessionStorage.removeItem('badtore_p1_pull_done'); sessionStorage.removeItem('badtore_p1_reloaded'); } catch (e) {}
+    renderCloudAuthUI();
+    setSyncStatus('ログアウトしました（データはこの端末に残ります）');
+    if (typeof window.refreshProgressUI === 'function') window.refreshProgressUI();
+  };
+
+  window.cloudSyncNow = async function () { await syncUp(); };
+
+  async function onSignedIn(user) {
+    cloudUser = user;
+    renderCloudAuthUI();
+    if (cloudInitFor === user.id) return;
+    cloudInitFor = user.id;
+    try {
+      var pulled = false;
+      try { pulled = sessionStorage.getItem('badtore_p1_pull_done') === '1'; } catch (e) {}
+      if (!pulled) {
+        try { sessionStorage.setItem('badtore_p1_pull_done', '1'); } catch (e) {}
+        setSyncStatus('クラウドから取得中…');
+        var changed = await pullMerge();
+        if (changed) {
+          var reloaded = false;
+          try { reloaded = sessionStorage.getItem('badtore_p1_reloaded') === '1'; } catch (e) {}
+          if (!reloaded) {
+            try { sessionStorage.setItem('badtore_p1_reloaded', '1'); } catch (e) {}
+            location.reload();
+            return;
+          }
+        }
+      }
+      await syncUp();
+    } catch (e) {
+      console.warn('[cloud] onSignedIn', e);
+      setSyncStatus('同期エラー: ' + (e.message || e));
+    }
+    if (typeof window.refreshProgressUI === 'function') window.refreshProgressUI();
+  }
+
+  /* ---------- 認証UI ---------- */
+  function setSyncStatus(t) {
+    var el = document.getElementById('cloudSyncStatus');
+    if (el) el.textContent = '☁️ クラウド: ' + t;
+  }
+
+  function renderCloudAuthUI() {
+    var area = document.getElementById('cloudAuthArea');
+    if (!area) return;
+    if (cloudUser) {
+      var email = cloudUser.email || (cloudUser.user_metadata && cloudUser.user_metadata.email) || '';
+      area.innerHTML =
+        '<div style="font-size:0.8rem;">✅ ログイン中: <b>' + esc(email) + '</b></div>' +
+        '<div class="btn-group" style="margin-top:6px;">' +
+        '<button class="btn btn-emerald" onclick="cloudSyncNow()">☁️ 今すぐ同期</button>' +
+        '<button class="btn btn-rose" onclick="cloudLogout()">ログアウト</button>' +
+        '</div>';
+    } else {
+      area.innerHTML =
+        '<div class="btn-group">' +
+        '<button class="btn btn-emerald" onclick="cloudLoginGoogle()">🔐 Googleでログイン</button>' +
+        '</div>';
+      setSyncStatus('未ログイン（ローカル保存のみ）');
+    }
+  }
+
+  /* ---------- グループ ---------- */
+  function newUuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  window.cloudCreateGroup = async function () {
+    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「6.メンバー管理」タブの☁️カードから）。'); return; }
+    var input = document.getElementById('cloudGroupNameInput');
+    var name = ((input && input.value) || '').trim() || '家族グループ';
+    var gid = newUuid();
+    // 招待コード = グループID（UUID）。コードを知っている人だけが参加手続きを進められる
+    var g = await sb.from('groups').insert({ id: gid, name: name, group_type: 'family', invite_code: gid, owner_user_id: cloudUser.id });
+    if (g.error) { alert('グループ作成に失敗しました: ' + g.error.message); return; }
+    var m = await sb.from('group_members').insert({ group_id: gid, user_id: cloudUser.id, role: 'owner' });
+    if (m.error) { alert('グループは作られましたが、メンバー登録に失敗しました: ' + m.error.message); return; }
+    alert('グループ「' + name + '」を作成しました！\n招待コードを家族に送って、参加してもらってください。');
+    window.refreshProgressUI();
+  };
+
+  window.cloudJoinGroup = async function () {
+    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「6.メンバー管理」タブの☁️カードから）。'); return; }
+    var input = document.getElementById('cloudJoinCodeInput');
+    var code = ((input && input.value) || '').trim();
+    if (!code) { alert('招待コードを入力してください。'); return; }
+    var res = await sb.from('group_members').insert({ group_id: code, user_id: cloudUser.id, role: 'member' });
+    if (res.error) {
+      if (res.error.code === '23505' || /duplicate/i.test(res.error.message || '')) alert('すでにこのグループに参加しています。');
+      else alert('参加できませんでした。招待コードを確認してください。\n(' + res.error.message + ')');
+      return;
+    }
+    alert('グループに参加しました！');
+    window.refreshProgressUI();
+  };
+
+  window.cloudLeaveGroup = async function (gid) {
+    if (!confirm('このグループから退出しますか？')) return;
+    var res = await sb.from('group_members').delete().eq('group_id', gid).eq('user_id', cloudUser.id);
+    if (res.error) { alert('退出に失敗しました: ' + res.error.message); return; }
+    window.refreshProgressUI();
+  };
+
+  window.cloudCopyInvite = function (code) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(function () { alert('招待コードをコピーしました'); }, function () { window.prompt('招待コードをコピーしてください', code); });
+    } else {
+      window.prompt('招待コードをコピーしてください', code);
+    }
+  };
+
+  window.cloudToggleShare = async function (profileId, groupId, on) {
+    if (!sb || !cloudUser) return;
+    if (on) {
+      var r1 = await sb.from('profile_group_shares').insert({ profile_id: profileId, group_id: groupId });
+      if (r1.error && r1.error.code !== '23505') { alert('共有の設定に失敗しました: ' + r1.error.message); }
+    } else {
+      var r2 = await sb.from('profile_group_shares').delete().eq('profile_id', profileId).eq('group_id', groupId);
+      if (r2.error) alert('共有の解除に失敗しました: ' + r2.error.message);
+    }
+    window.refreshProgressUI();
+  };
+
+  async function fetchMyGroups() {
+    var mems = await sb.from('group_members').select('group_id, role').eq('user_id', cloudUser.id);
+    if (mems.error) throw mems.error;
+    if (!mems.data || !mems.data.length) return [];
+    var ids = mems.data.map(function (m) { return m.group_id; });
+    var gs = await sb.from('groups').select('*').in('id', ids);
+    if (gs.error) throw gs.error;
+    var roleBy = {};
+    mems.data.forEach(function (m) { roleBy[m.group_id] = m.role; });
+    return (gs.data || []).map(function (g) { g.myRole = roleBy[g.id] || 'member'; return g; });
+  }
+
+  /* ---------- 進捗画面 ---------- */
+  window.refreshProgressUI = async function () {
+    var pc = document.getElementById('cloudProgressContainer');
+    var gc = document.getElementById('cloudGroupsContainer');
+    if (!pc || !gc) return;
+    if (!sb) {
+      pc.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);">クラウドに接続できませんでした（SDK読み込み失敗）。通信環境を確認して再読み込みしてください。</div>';
+      gc.innerHTML = '';
+      return;
+    }
+    if (!cloudUser) {
+      var msg = '<div style="font-size:0.78rem;color:var(--text-secondary);">ログインすると家族の進捗が見られます。「6.メンバー管理」タブの「☁️ クラウド保存＆家族グループ共有」カードからGoogleでログインしてください。</div>';
+      pc.innerHTML = msg;
+      gc.innerHTML = msg;
+      return;
+    }
+    pc.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);">読み込み中…</div>';
+    gc.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);">読み込み中…</div>';
+    try {
+      var groups = await fetchMyGroups();
+      await renderGroupsUI(groups);
+      await renderProgressCards(groups);
+    } catch (e) {
+      console.warn('[cloud] refreshProgressUI', e);
+      pc.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);">読み込みエラー: ' + esc(e.message || e) + '</div>';
+    }
+  };
+
+  async function renderGroupsUI(groups) {
+    var gc = document.getElementById('cloudGroupsContainer');
+    if (!groups.length) {
+      gc.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);">まだグループに参加していません。下のフォームからグループを作成するか、家族の招待コードで参加してください。</div>';
+      return;
+    }
+    var gids = groups.map(function (g) { return g.id; });
+    var memsRes = await sb.from('group_members').select('group_id, user_id, role').in('group_id', gids);
+    var mems = memsRes.data || [];
+    var sharesRes = await sb.from('profile_group_shares').select('*').in('group_id', gids);
+    var shares = sharesRes.data || [];
+    var myProfs = appProfiles();
+    var html = '';
+    groups.forEach(function (g) {
+      var memberCount = mems.filter(function (m) { return m.group_id === g.id; }).length;
+      var gShares = shares.filter(function (s) { return s.group_id === g.id; });
+      html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:10px;padding:9px;margin-bottom:8px;">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">' +
+        '<b style="font-size:0.86rem;">🏠 ' + esc(g.name) + '</b>' +
+        '<span style="font-size:0.72rem;color:var(--text-secondary);">メンバー ' + memberCount + '人 / あなたは' + (g.myRole === 'owner' ? 'オーナー' : 'メンバー') + '</span></div>';
+      html += '<div style="font-size:0.72rem;color:var(--text-secondary);margin-top:5px;">招待コード（家族に送ってください）:</div>' +
+        '<div style="display:flex;gap:5px;align-items:center;margin-top:3px;">' +
+        '<input type="text" readonly value="' + esc(g.invite_code) + '" style="flex:1;padding:5px 7px;font-size:0.72rem;font-family:monospace;" onclick="this.select()" />' +
+        '<button class="btn btn-cyan-outline" style="padding:5px 9px;font-size:0.72rem;" onclick="cloudCopyInvite(\'' + esc(g.invite_code) + '\')">📋 コピー</button></div>';
+      if (myProfs.length) {
+        html += '<div style="font-size:0.74rem;margin-top:8px;font-weight:700;">自分のプロフィールの共有:</div>';
+        myProfs.forEach(function (p) {
+          var on = gShares.some(function (s) { return s.profile_id === p.id; });
+          html += '<label style="display:flex;align-items:center;gap:6px;font-size:0.76rem;margin-top:4px;">' +
+            '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="cloudToggleShare(\'' + esc(p.id) + '\',\'' + esc(g.id) + '\',this.checked)" style="width:16px;height:16px;accent-color:var(--accent-primary);" />' +
+            esc(p.name) + ' をこのグループに共有する</label>';
+        });
+      }
+      if (g.myRole !== 'owner') {
+        html += '<div style="margin-top:8px;"><button class="btn btn-rose" style="padding:4px 9px;font-size:0.72rem;" onclick="cloudLeaveGroup(\'' + esc(g.id) + '\')">グループから退出</button></div>';
+      }
+      html += '</div>';
+    });
+    gc.innerHTML = html;
+  }
+
+  async function renderProgressCards(groups) {
+    var pc = document.getElementById('cloudProgressContainer');
+    var gids = groups.map(function (g) { return g.id; });
+    var shareRows = [];
+    if (gids.length) {
+      var sRes = await sb.from('profile_group_shares').select('*').in('group_id', gids);
+      shareRows = sRes.data || [];
+    }
+    var idSet = {};
+    shareRows.forEach(function (s) { idSet[s.profile_id] = true; });
+    var myIds = appProfiles().map(function (p) { return p.id; });
+    myIds.forEach(function (id) { idSet[id] = true; });
+    var ids = Object.keys(idSet);
+    if (!ids.length) {
+      pc.innerHTML = '<div style="font-size:0.78rem;color:var(--text-secondary);">まだ表示できるメンバーがいません。グループを作って、自分のプロフィールの共有をONにすると、ここに進捗カードが出ます。</div>';
+      return;
+    }
+    var profsRes = await sb.from('player_profiles').select('*').in('id', ids);
+    var profs = profsRes.data || [];
+    var sumsRes = await sb.from('profile_summaries').select('*').in('profile_id', ids);
+    var sums = {};
+    (sumsRes.data || []).forEach(function (s) { sums[s.profile_id] = s; });
+    var profById = {};
+    profs.forEach(function (p) { profById[p.id] = p; });
+    // クラウドに無い自分のプロフィールはローカル表示で補完
+    appProfiles().forEach(function (p) { if (!profById[p.id]) profById[p.id] = { id: p.id, display_name: p.name, owner_user_id: cloudUser.id }; });
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;">';
+    ids.forEach(function (pid) {
+      var prof = profById[pid];
+      if (!prof) return;
+      var sum = sums[pid];
+      if (!sum && myIds.indexOf(pid) >= 0) sum = computeSummary(pid);
+      var mine = myIds.indexOf(pid) >= 0;
+      var lv = sum ? (sum.level || 1) : 1;
+      var xp = sum ? (sum.xp || 0) : 0;
+      var rankHtml = '<span style="color:var(--text-secondary);">未診断</span>';
+      if (sum && sum.last_diagnosis_score != null) {
+        var rk = (typeof getScoreRankMeta === 'function') ? getScoreRankMeta(sum.last_diagnosis_score) : { rank: sum.last_diagnosis_rank || '', color: '#fde047', bg: 'rgba(250,204,21,0.18)' };
+        rankHtml = '<span style="background:' + rk.bg + ';color:' + rk.color + ';border-radius:6px;padding:1px 7px;font-weight:900;">' + sum.last_diagnosis_score + '点 ' + esc(sum.last_diagnosis_rank || rk.rank) + 'ランク</span>';
+      }
+      html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:10px;padding:10px;">' +
+        '<div style="font-weight:900;font-size:0.88rem;">👤 ' + esc(prof.display_name || pid) + (mine ? ' <span style="font-size:0.68rem;color:var(--accent-secondary);">(自分)</span>' : '') + '</div>' +
+        '<div style="font-size:0.76rem;margin-top:5px;">Lv.' + lv + ' ' + esc(LEVEL_TITLES[Math.min(LEVEL_TITLES.length - 1, Math.floor((lv - 1) / 2))]) + '（' + xp + ' XP）</div>' +
+        '<div style="font-size:0.76rem;margin-top:3px;">🗓️ 最終練習日: ' + esc(sum && sum.last_practice_date ? sum.last_practice_date : '記録なし') + '</div>' +
+        '<div style="font-size:0.76rem;margin-top:3px;">⏱️ 今週の練習: ' + (sum ? (sum.weekly_minutes || 0) : 0) + '分</div>' +
+        '<div style="font-size:0.76rem;margin-top:3px;">🎥 直近の診断: ' + rankHtml + '</div>' +
+        '<div class="btn-group" style="margin-top:7px;">' +
+        '<button class="btn" style="padding:4px 9px;font-size:0.72rem;" onclick="cloudShowMemberDetail(\'' + esc(pid) + '\',\'logs\')">📋 練習ログ</button>' +
+        '<button class="btn" style="padding:4px 9px;font-size:0.72rem;" onclick="cloudShowMemberDetail(\'' + esc(pid) + '\',\'pb\')">🏆 自己ベスト</button>' +
+        '</div></div>';
+    });
+    html += '</div>';
+    pc.innerHTML = html;
+  }
+
+  window.cloudShowMemberDetail = async function (profileId, kind) {
+    var box = document.getElementById('cloudMemberDetail');
+    if (!box) return;
+    box.innerHTML = '<div style="font-size:0.76rem;color:var(--text-secondary);">読み込み中…</div>';
+    try {
+      var profRes = await sb.from('player_profiles').select('*').eq('id', profileId).maybeSingle();
+      var prof = profRes.data;
+      var name = prof ? prof.display_name : profileId;
+      var rowsRes = await sb.from('profile_data').select('*').eq('profile_id', profileId).in('data_type', ['practice_logs', 'personal_bests']);
+      var byType = {};
+      (rowsRes.data || []).forEach(function (r) { byType[r.data_type] = r.payload; });
+      var html = '<div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px;padding:10px;">' +
+        '<div style="font-weight:900;font-size:0.84rem;">👤 ' + esc(name) + ' の' + (kind === 'logs' ? '練習ログ' : '自己ベスト') + '</div>';
+      if (kind === 'logs') {
+        var logs = Array.isArray(byType['practice_logs']) ? byType['practice_logs'] : null;
+        if (!logs && appProfiles().some(function (p) { return p.id === profileId; })) logs = appLogs();
+        if (!logs || !logs.length) {
+          html += '<div style="font-size:0.76rem;color:var(--text-secondary);margin-top:5px;">練習ログがありません。</div>';
+        } else {
+          var filtered = logs.filter(function (l) { return l.memberName === name; });
+          var note = '';
+          if (!filtered.length) { filtered = logs; note = '<div style="font-size:0.7rem;color:var(--text-secondary);margin-top:3px;">※名前で絞り込めなかったため全件表示しています</div>'; }
+          html += note;
+          filtered.slice(0, 20).forEach(function (l) {
+            html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:7px 9px;font-size:0.74rem;margin-top:5px;"><b>📅 ' + esc(l.date || l.isoDate || '') + ' (' + (Number(l.totalMin) || 0) + '分)</b> - ' + esc(l.title || '') + '<br><span style="color:var(--text-secondary);">💬 ' + esc(l.memo || '') + '</span></div>';
+          });
+        }
+      } else {
+        var pb = byType['personal_bests'];
+        if (!pb && appProfiles().some(function (p) { return p.id === profileId; })) pb = appPB()[profileId];
+        var shots = pb ? Object.keys(pb) : [];
+        if (!shots.length) {
+          html += '<div style="font-size:0.76rem;color:var(--text-secondary);margin-top:5px;">自己ベストの記録がありません。</div>';
+        } else {
+          shots.forEach(function (shot) {
+            var r = pb[shot] || {};
+            var rk = (typeof r.score === 'number' && typeof getScoreRankMeta === 'function') ? getScoreRankMeta(r.score) : null;
+            html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:7px 9px;font-size:0.74rem;margin-top:5px;">' +
+              '<b>' + esc(SHOT_LABELS[shot] || shot) + '</b> — <b>' + (r.score != null ? r.score + '点' : '-') + '</b>' + (rk ? ' <span style="color:' + rk.color + ';font-weight:900;">' + rk.rank + 'ランク</span>' : '') +
+              '<br><span style="color:var(--text-secondary);">📅 ' + esc(r.date || '-') + ' / 肩 ' + (r.maxSh != null ? r.maxSh + '°' : '-') + ' / 肘 ' + (r.maxEl != null ? r.maxEl + '°' : '-') + ' / 膝 ' + (r.minKn != null ? r.minKn + '°' : '-') + ' / 速度 ' + (r.maxSp != null ? r.maxSp : '-') + '</span></div>';
+          });
+        }
+      }
+      html += '<div style="margin-top:7px;"><button class="btn" style="padding:4px 9px;font-size:0.72rem;" onclick="document.getElementById(\'cloudMemberDetail\').innerHTML=\'\'">✕ 閉じる</button></div></div>';
+      box.innerHTML = html;
+    } catch (e) {
+      box.innerHTML = '<div style="font-size:0.76rem;color:var(--text-secondary);">読み込みエラー: ' + esc(e.message || e) + '</div>';
+    }
+  };
+
+  /* ---------- 初期化 ---------- */
+  function initCloud() {
+    renderCloudAuthUI();
+    var tabBtn = document.getElementById('btn-tab-progress');
+    if (tabBtn) tabBtn.addEventListener('click', function () { setTimeout(function () { window.refreshProgressUI(); }, 60); });
+    if (!sb) { setSyncStatus('クラウドSDKの読み込みに失敗しました'); return; }
+    setSyncStatus('未ログイン（ローカル保存のみ）');
+    sb.auth.getSession().then(function (res) {
+      var session = res && res.data ? res.data.session : null;
+      if (session && session.user) onSignedIn(session.user);
+    }).catch(function () {});
+    sb.auth.onAuthStateChange(function (event, session) {
+      if (session && session.user) onSignedIn(session.user);
+      else if (event === 'SIGNED_OUT') {
+        cloudUser = null;
+        cloudInitFor = null;
+        renderCloudAuthUI();
+      }
+    });
+  }
+
+  initCloud();
+})();
+</script>
+
 </body>
 </html>
