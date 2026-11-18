@@ -11733,6 +11733,11 @@ function sharePoseResultImage() {
   let rjAnimState = {
     pattern: 'par_stay',
     beatNum: 1,
+    prevPattern: null,
+    prevBeatNum: null,
+    demoKey: null,
+    demoCur: null,
+    demoPrev: null,
     lastBeatMs: performance.now(),
     rafId: null
   };
@@ -11741,6 +11746,8 @@ function sharePoseResultImage() {
   const _v105OrigRenderRj = typeof renderRhythmVisualStage === 'function' ? renderRhythmVisualStage : null;
   renderRhythmVisualStage = function(pattern, beatNum, nextCallText = "") {
     if (_v105OrigRenderRj) _v105OrigRenderRj(pattern, beatNum, nextCallText);
+    rjAnimState.prevPattern = rjAnimState.pattern;
+    rjAnimState.prevBeatNum = rjAnimState.beatNum;
     rjAnimState.pattern = pattern || 'par_stay';
     rjAnimState.beatNum = beatNum || 1;
     rjAnimState.lastBeatMs = performance.now();
@@ -11849,6 +11856,16 @@ function sharePoseResultImage() {
     return { air, cushion, lx, rx, ly, ry, lfZ, rfZ, twist, lunge, heelLift, tag };
   }
 
+  // 拍と拍の間で、足位置などの離散ポーズをなめらかに補間する
+  const RJ_DISCRETE_KEYS = ['lx', 'rx', 'ly', 'ry', 'lfZ', 'rfZ', 'twist', 'lunge', 'heelLift'];
+  function blendPose(prev, cur, t) {
+    const out = Object.assign({}, cur);
+    RJ_DISCRETE_KEYS.forEach(function (k) { out[k] = prev[k] + (cur[k] - prev[k]) * t; });
+    return out;
+  }
+  // 拍の前半60%で次のポーズへ滑り切る（空中で足を運ぶイメージ）
+  function beatEase(prog) { const t = Math.min(1, Math.max(0, prog / 0.6)); return t * t * (3 - 2 * t); }
+
   // 正面＆横の2アングル人型SVGを描画
   function buildDualAngleCoachSVG(pose) {
     const jumpY = -pose.air * 18;
@@ -11880,14 +11897,14 @@ function sharePoseResultImage() {
     const bKneeX = (sHipX + bAnkX) / 2 - 6  - (hipDrop * 0.25);
 
     return `
-      <svg viewBox="0 0 330 172" style="width:100%;height:100%;max-height:240px;display:block;">
+      <svg viewBox="0 0 330 176" style="width:100%;height:100%;max-height:300px;display:block;">
         <!-- 背景パネル区切り -->
-        <rect x="4" y="4" width="156" height="164" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
-        <rect x="168" y="4" width="158" height="164" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
+        <rect x="4" y="4" width="156" height="168" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
+        <rect x="168" y="4" width="158" height="168" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
 
         <!-- ラベル -->
-        <text x="12" y="19" fill="#38bdf8" font-size="10" font-weight="900">👤 正面（肩固定・足幅）</text>
-        <text x="176" y="19" fill="#fde047" font-size="10" font-weight="900">📐 横（膝のタメ・母趾球）</text>
+        <text x="12" y="19" fill="#38bdf8" font-size="10" font-weight="900">👤 正面（足幅）</text>
+        <text x="176" y="19" fill="#fde047" font-size="10" font-weight="900">📐 横（膝のタメ）</text>
 
         <!-- 床ライン＆黄色センターテープ -->
         <line x1="16" y1="${floorY}" x2="150" y2="${floorY}" stroke="#475569" stroke-width="2"/>
@@ -11930,8 +11947,8 @@ function sharePoseResultImage() {
         <line x1="${sx - 28}" y1="${shY + 6}" x2="${sx - 38}" y2="${shY - 12}" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
 
         <!-- 下部ガイド字幕 -->
-        <text x="82" y="163" fill="#e2e8f0" font-size="9.5" font-weight="900" text-anchor="middle">${pose.tag}</text>
-        <text x="246" y="163" fill="#fde047" font-size="9.5" font-weight="900" text-anchor="middle">カカト浮かせ・胸を起こす</text>
+        <text x="82" y="169" fill="#e2e8f0" font-size="9.5" font-weight="900" text-anchor="middle">${pose.tag}</text>
+        <text x="246" y="169" fill="#fde047" font-size="9.5" font-weight="900" text-anchor="middle">カカト浮かせ・胸を起こす</text>
       </svg>
     `;
   }
@@ -11949,8 +11966,20 @@ function sharePoseResultImage() {
 
     const holder = document.createElement('div');
     holder.id = 'rjHumanCoachSvgHolder';
-    holder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:3;padding:24px 6px 6px 6px;';
+    holder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:3;padding:32px 4px 2px 4px;';
     matBox.appendChild(holder);
+
+    // 上部の「ネット方向」ピルが折り返して図と重ならないよう1行に収める
+    Array.prototype.forEach.call(matBox.children, function (ch) {
+      if (ch && ch.style && ch.style.position === 'absolute' && ch.textContent && ch.textContent.indexOf('ネット方向') >= 0) {
+        ch.style.whiteSpace = 'nowrap';
+        ch.style.fontSize = '0.62rem';
+        ch.style.maxWidth = '94%';
+        ch.style.overflow = 'hidden';
+        ch.style.textOverflow = 'ellipsis';
+        ch.style.zIndex = '6';
+      }
+    });
 
     const loop = () => {
       const panel = document.getElementById('subPanelRhythmJump');
@@ -11959,15 +11988,25 @@ function sharePoseResultImage() {
         if (rhythmState.running && !rhythmState.paused) {
           const beatMs = 60000 / (rhythmState.bpm || 122);
           const prog = Math.min(1, Math.max(0, (now - rjAnimState.lastBeatMs) / beatMs));
-          const pose = computeHumanPose(rjAnimState.pattern, rjAnimState.beatNum, prog);
-          holder.innerHTML = buildDualAngleCoachSVG(pose);
+          const cur = computeHumanPose(rjAnimState.pattern, rjAnimState.beatNum, prog);
+          const prev = computeHumanPose(rjAnimState.prevPattern || rjAnimState.pattern, (rjAnimState.prevBeatNum == null ? rjAnimState.beatNum : rjAnimState.prevBeatNum), 1);
+          holder.innerHTML = buildDualAngleCoachSVG(blendPose(prev, cur, beatEase(prog)));
         } else {
           // 待機中も動きが分かるよう、選択中コースの最初の種目をゆっくり自動プレビュー再生
           const demoBeatMs = 700;
           const demoBeat = (Math.floor(now / demoBeatMs) % 8) + 1;
           const demoProg = (now % demoBeatMs) / demoBeatMs;
-          const pose = computeHumanPose(rjAnimState.pattern || 'par_stay', demoBeat, demoProg);
-          holder.innerHTML = buildDualAngleCoachSVG(pose);
+          const DEMO_PATTERNS = ['par_stay', 'goopar', 'par_cross', 'front_back'];
+          const demoPat = DEMO_PATTERNS[Math.floor(now / (demoBeatMs * 8)) % DEMO_PATTERNS.length];
+          const dKey = demoPat + ':' + demoBeat;
+          if (rjAnimState.demoKey !== dKey) {
+            rjAnimState.demoPrev = rjAnimState.demoCur || { pattern: demoPat, beat: demoBeat };
+            rjAnimState.demoCur = { pattern: demoPat, beat: demoBeat };
+            rjAnimState.demoKey = dKey;
+          }
+          const dCur = computeHumanPose(demoPat, demoBeat, demoProg);
+          const dPrev = computeHumanPose(rjAnimState.demoPrev.pattern, rjAnimState.demoPrev.beat, 1);
+          holder.innerHTML = buildDualAngleCoachSVG(blendPose(dPrev, dCur, beatEase(demoProg)));
         }
       }
       rjAnimState.rafId = requestAnimationFrame(loop);
