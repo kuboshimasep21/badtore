@@ -3386,7 +3386,7 @@
 
               <div style="font-weight:800; color:var(--accent-highlight); margin-bottom:5px; display:flex; justify-content:space-between; flex-wrap:wrap;">
 
-                <span>📌 AIコーチ総括フィードバック</span>
+                <span>📌 測定結果サマリー</span>
 
                 <span id="sessionTimerLabel" style="color:var(--accent-secondary); font-size:0.76rem;">待機中</span>
 
@@ -3428,7 +3428,7 @@
 
         <div class="card-header">
 
-          <div class="card-title">🏸 4大ブランド別 AIラケット＆ガット診断カルテ</div>
+          <div class="card-title">🏸 4大ブランド別 ラケット＆ガット診断カルテ</div>
 
           <span class="badge-version">メンバー＆AI実測連動</span>
 
@@ -9087,7 +9087,7 @@
 
       summaryBox.innerHTML = `
 
-        <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 AIギア＆体格マッチング診断</div>
+        <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 ギア＆体格マッチング診断</div>
 
         <div style="font-size:0.8rem; color:#e2e8f0;">
 
@@ -9978,7 +9978,7 @@
       const box = document.getElementById('aiSummaryContent');
       if (box) {
         box.insertAdjacentHTML('afterbegin', `<div style="background:${rk.bg};border:1px solid ${rk.color};padding:8px 11px;border-radius:9px;margin-bottom:8px;font-weight:900;color:${rk.color};font-size:1rem;">🏆 判定：${rk.label}（${score} pt）｜ 最優先テーマ：${rxPlan.title}</div>`);
-        box.insertAdjacentHTML('beforeend', `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;"><button class="btn btn-cyan-outline" style="padding:7px;font-size:0.72rem;" onclick="pinWeaknessToFocusBar('${worstKey}')">📌 意識にピン留め</button><button class="btn btn-emerald" style="padding:7px;font-size:0.72rem;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}',true)">🏃 NEXT: FW練習へ</button><button class="btn btn-amber" style="padding:7px;font-size:0.72rem;" onclick="addPrescriptionToMenuPlan('${worstKey}')">➕ メニューに追加</button></div>`);
+        box.insertAdjacentHTML('beforeend', `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;"><button class="btn btn-cyan-outline" style="padding:7px;font-size:0.85rem;" onclick="pinWeaknessToFocusBar('${worstKey}')">📌 意識にピン留め</button><button class="btn btn-emerald" style="padding:7px;font-size:0.85rem;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}',true)">🏃 NEXT: FW練習へ</button><button class="btn btn-amber" style="padding:7px;font-size:0.85rem;" onclick="addPrescriptionToMenuPlan('${worstKey}')">➕ メニューに追加</button></div>`);
       }
     };
 
@@ -9997,9 +9997,9 @@
         sec.innerHTML = `
           <div class="card">
             <div class="card-header">
-              <div class="card-title"><span class="badge-version">少人数・1人対応</span><span>📋 AI練習メニュー自動編成 ＆ マイメニュー登録・練習記録</span></div>
+              <div class="card-title"><span class="badge-version">少人数・1人対応</span><span>📋 練習メニュー自動編成 ＆ マイメニュー登録・練習記録</span></div>
               <div class="btn-group">
-                <button class="btn btn-emerald" onclick="generateAIMenuByConditions()">✨ 条件からAI自動編成</button>
+                <button class="btn btn-emerald" onclick="generateAIMenuByConditions()">✨ 条件から自動編成</button>
                 <button class="btn btn-cyan-outline" onclick="saveCurrentMenuToMyMenus()">💾 マイメニュー保存</button>
               </div>
             </div>
@@ -10015,7 +10015,7 @@
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeFootwork" checked/> 🦶 フットワーク＆ランジ軸</label>
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeFeeding" checked/> 🔄 手投げ分解ノック(回内)</label>
               </div>
-              <button class="btn btn-emerald" style="width:100%;padding:9px;" onclick="generateAIMenuByConditions()">✨ この条件で最適メニューをAI自動編成する</button>
+              <button class="btn btn-emerald" style="width:100%;padding:9px;" onclick="generateAIMenuByConditions()">✨ この条件で最適メニューを自動編成する</button>
             </div>
             <div class="split-grid">
               <div>
@@ -10752,6 +10752,7 @@
       if (mc) mc.appendChild(guideSec);
 
       guideSec.innerHTML = `
+        <button class="btn btn-emerald" style="width:100%;padding:10px;margin-bottom:10px;" onclick="showBadtoreGuide()">📖 はじめてガイドを見る</button>
         <div class="card">
           <div class="card-header">
             <div class="card-title">
@@ -10781,7 +10782,7 @@
                 🏟️ 体育館で練習するとき（1人〜少人数・2.5時間など）
               </div>
               <div style="font-size:0.75rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 時間割を作る：</b>「📋 7.メニュー作成」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ AI自動編成］</b>を押します。<br>
+                <b>① 時間割を作る：</b>「📋 7.メニュー作成」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ 条件から自動編成］</b>を押します。<br>
                 <b>② 黄金順序で練習：</b>いきなり基礎打ちをせず、「抜重・FW矯正 ➔ 手投げ分解ノック ➔ 基礎打ち ➔ 半面パターン」の順で各行の<b>［▶️ 今すぐ開始］</b>を押して進めます。
               </div>
             </div>
@@ -10793,6 +10794,16 @@
               <div style="font-size:0.75rem;color:var(--text-primary);line-height:1.55;">
                 <b>① 動画の即時診断：</b>「🎥 3.構え＆骨格AI」で<b>［📁 動画読込］</b>を選ぶだけで自動採点されます。長い動画は「📍開始(A)〜🏁終了(B)」で切り出せます。<br>
                 <b>② 球速(km/h)を測る：</b>動画パネルの<b>［⚡ 球速測定］</b>を押し、<b>［⏪ -1コマ］［⏩ +1コマ］</b>でインパクトの瞬間（①打点記録）とネット通過/着弾（②到達記録）の2箇所を押すだけで推定初速が出ます。
+              </div>
+            </div>
+
+            <div class="diagram-card" style="text-align:left;">
+              <div style="font-weight:900;color:#fb923c;margin-bottom:5px;font-size:0.84rem;">
+                🔥 毎日のルーティンチェックでXPゲット
+              </div>
+              <div style="font-size:0.75rem;color:var(--text-primary);line-height:1.55;">
+                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」か「📋 7.メニュー作成」の画面で、右下の<b>［🔥 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。<br>
+                <b>② チェックして保存：</b>終わった項目にチェックを入れて保存すると、内容に応じて<b>XP</b>がもらえます。全部達成で<b>ボーナス+30 XP</b>！毎日の積み重ねでレベルアップを目指しましょう。
               </div>
             </div>
           </div>
@@ -11245,7 +11256,7 @@
       if (mc && !document.getElementById('customWorkoutBuilderCard')) {
         const chips = WORKOUT_PRESETS.map((w, i) => `<button class="btn btn-cyan-outline" style="padding:5px 8px;font-size:0.71rem;" onclick="addPresetWorkoutToMenu(${i},false)">➕ ${w.cat}：${w.name.split('（')[0]} (${w.minutes}分)</button>`).join('');
         const d = document.createElement('div'); d.id = 'customWorkoutBuilderCard';
-        d.innerHTML = `<div id="workoutTimerDrawer" class="card" style="display:none;background:var(--bg-panel);border:2px solid var(--accent-highlight);margin-top:10px;padding:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);" id="wtTitle">💪 筋トレタイマー</span><button class="btn" style="padding:2px 7px;font-size:0.68rem;" onclick="stopWorkoutIntervalTimer();document.getElementById('workoutTimerDrawer').style.display='none';">✕ 閉じる</button></div><div id="wtClockText" style="font-size:1.1rem;font-weight:900;text-align:center;padding:7px;background:var(--bg-base);border-radius:8px;margin-bottom:6px;">待機中</div><div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px;"><div class="form-group"><label>🔥 秒数</label><input type="number" id="wtWorkInput" value="30" style="padding:5px;"/></div><div class="form-group"><label>☕ 休憩</label><input type="number" id="wtRestInput" value="15" style="padding:5px;"/></div><div class="form-group"><label>🔢 セット</label><input type="number" id="wtSetsInput" value="3" style="padding:5px;"/></div></div><div class="btn-group"><button class="btn btn-emerald" style="flex:1;padding:7px;" onclick="startWorkoutIntervalTimer()">▶️ 開始</button><button class="btn btn-rose" style="padding:7px 12px;" onclick="stopWorkoutIntervalTimer()">⏹️ 停止</button></div></div><div class="card" style="background:var(--bg-surface);margin-top:10px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:6px;">💪 1. 筋トレ種目をワンタップで組み込む</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${chips}</div><div style="font-weight:900;font-size:0.76rem;color:var(--accent-secondary);margin-bottom:4px;">⭐ マイ種目ストック:</div><div id="customDrillBankHolder" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding:5px;background:var(--bg-base);border-radius:8px;"></div><div style="font-weight:900;font-size:0.8rem;color:var(--accent-primary);margin-bottom:5px;padding-top:6px;border-top:1px solid var(--border-subtle);">✏️ 2. 自作メニュー（筋トレ・実技）を自由に追加</div><div class="form-grid" style="grid-template-columns:1fr 1.6fr 0.7fr;gap:5px;margin-bottom:5px;"><select id="customItemCat" style="font-size:0.74rem;padding:5px;"><option value="💪 筋トレ">💪 筋トレ</option><option value="🦵 下半身">🦵 下半身</option><option value="🎵 リズム">🎵 リズム</option><option value="🏸 ノック">🏸 ノック</option></select><input type="text" id="customItemName" placeholder="種目名（例：カーフレイズ30回）" style="font-size:0.76rem;padding:5px 7px;"/><input type="number" id="customItemMin" value="10" style="font-size:0.76rem;padding:5px 7px;"/></div><div class="form-grid" style="grid-template-columns:1.5fr 1fr;gap:5px;margin-bottom:6px;"><input type="text" id="customItemNote" placeholder="意識ポイント・回数" style="font-size:0.74rem;padding:5px 7px;"/><select id="customItemLink" style="font-size:0.73rem;padding:5px;"><option value="workout_timer" selected>⏱️ 筋トレタイマー連動</option><option value="tab-footwork">🏃 6点FW連動</option><option value="rhythm">🎵 リズム連動</option><option value="tab-pose">🎥 骨格AI連動</option></select></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"><button class="btn btn-emerald" style="padding:7px;" onclick="addFreeCustomItemToMenu(false)">➕ メニューに追加</button><button class="btn btn-amber" style="padding:7px;" onclick="addFreeCustomItemToMenu(true)">⭐ マイ種目にも保存</button></div></div><div class="card" style="background:var(--bg-panel);border:1px solid var(--accent-secondary);margin-top:8px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:5px;">🤖 3. AIコーチに筋トレ希望を伝えて編成</div><div style="display:grid;grid-template-columns:1fr auto;gap:5px;"><input type="text" id="aiCoachMenuPromptInput" placeholder="例：カーフレイズと股関節を入れて自宅30分にして" style="font-size:0.75rem;padding:6px 8px;"/><button class="btn btn-emerald" onclick="requestAIProCoachCustomMenu()">🤖 編成</button></div><div id="aiCoachMenuStatus" style="font-size:0.73rem;margin-top:4px;"></div></div>`;
+        d.innerHTML = `<div id="workoutTimerDrawer" class="card" style="display:none;background:var(--bg-panel);border:2px solid var(--accent-highlight);margin-top:10px;padding:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);" id="wtTitle">💪 筋トレタイマー</span><button class="btn" style="padding:2px 7px;font-size:0.68rem;" onclick="stopWorkoutIntervalTimer();document.getElementById('workoutTimerDrawer').style.display='none';">✕ 閉じる</button></div><div id="wtClockText" style="font-size:1.1rem;font-weight:900;text-align:center;padding:7px;background:var(--bg-base);border-radius:8px;margin-bottom:6px;">待機中</div><div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px;"><div class="form-group"><label>🔥 秒数</label><input type="number" id="wtWorkInput" value="30" style="padding:5px;"/></div><div class="form-group"><label>☕ 休憩</label><input type="number" id="wtRestInput" value="15" style="padding:5px;"/></div><div class="form-group"><label>🔢 セット</label><input type="number" id="wtSetsInput" value="3" style="padding:5px;"/></div></div><div class="btn-group"><button class="btn btn-emerald" style="flex:1;padding:7px;" onclick="startWorkoutIntervalTimer()">▶️ 開始</button><button class="btn btn-rose" style="padding:7px 12px;" onclick="stopWorkoutIntervalTimer()">⏹️ 停止</button></div></div><div class="card" style="background:var(--bg-surface);margin-top:10px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:6px;">💪 1. 筋トレ種目をワンタップで組み込む</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${chips}</div><div style="font-weight:900;font-size:0.76rem;color:var(--accent-secondary);margin-bottom:4px;">⭐ マイ種目ストック:</div><div id="customDrillBankHolder" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding:5px;background:var(--bg-base);border-radius:8px;"></div><div style="font-weight:900;font-size:0.8rem;color:var(--accent-primary);margin-bottom:5px;padding-top:6px;border-top:1px solid var(--border-subtle);">✏️ 2. 自作メニュー（筋トレ・実技）を自由に追加</div><div class="form-grid" style="grid-template-columns:1fr 1.6fr 0.7fr;gap:5px;margin-bottom:5px;"><select id="customItemCat" style="font-size:0.74rem;padding:5px;"><option value="💪 筋トレ">💪 筋トレ</option><option value="🦵 下半身">🦵 下半身</option><option value="🎵 リズム">🎵 リズム</option><option value="🏸 ノック">🏸 ノック</option></select><input type="text" id="customItemName" placeholder="種目名（例：カーフレイズ30回）" style="font-size:0.76rem;padding:5px 7px;"/><input type="number" id="customItemMin" value="10" style="font-size:0.76rem;padding:5px 7px;"/></div><div class="form-grid" style="grid-template-columns:1.5fr 1fr;gap:5px;margin-bottom:6px;"><input type="text" id="customItemNote" placeholder="意識ポイント・回数" style="font-size:0.74rem;padding:5px 7px;"/><select id="customItemLink" style="font-size:0.73rem;padding:5px;"><option value="workout_timer" selected>⏱️ 筋トレタイマー連動</option><option value="tab-footwork">🏃 6点FW連動</option><option value="rhythm">🎵 リズム連動</option><option value="tab-pose">🎥 骨格AI連動</option></select></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"><button class="btn btn-emerald" style="padding:7px;" onclick="addFreeCustomItemToMenu(false)">➕ メニューに追加</button><button class="btn btn-amber" style="padding:7px;" onclick="addFreeCustomItemToMenu(true)">⭐ マイ種目にも保存</button></div></div><div class="card" style="background:var(--bg-panel);border:1px solid var(--accent-secondary);margin-top:8px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:5px;">🤖 3. 筋トレ希望を伝えて編成</div><div style="display:grid;grid-template-columns:1fr auto;gap:5px;"><input type="text" id="aiCoachMenuPromptInput" placeholder="例：カーフレイズと股関節を入れて自宅30分にして" style="font-size:0.75rem;padding:6px 8px;"/><button class="btn btn-emerald" onclick="requestAIProCoachCustomMenu()">🤖 編成</button></div><div id="aiCoachMenuStatus" style="font-size:0.73rem;margin-top:4px;"></div></div>`;
         mc.parentNode.appendChild(d);
       }
       renderCustomDrillBankChips();
@@ -11475,39 +11486,7 @@ function sharePoseResultImage() {
     t.style.cssText="position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.35);max-width:92vw;text-align:center";
     document.body.appendChild(t); setTimeout(function(){ t.remove(); },2600); }
 
-  /* ============ 1. Gemini API 連携（既存設定を最優先） ============ */
-  var DEFAULT_EMBEDDED_KEY = ["AQ.Ab8RN6LGd9Phj1g","_GOJoM9jlgJd2c9E1r","diJFFjXi8_7cQdLJQ"].join("");
-  function getApiKey(){
-    try{
-      if (window.GEMINI_API_KEY) return window.GEMINI_API_KEY;
-      if (window.__bt_apiKey) return window.__bt_apiKey;
-      var s = localStorage.getItem("gemini_api_key") || localStorage.getItem("GEMINI_API_KEY") || "";
-      if (s) return s;
-    }catch(e){}
-    return DEFAULT_EMBEDDED_KEY;
-  }
-  function getModel(){
-    try{
-      if (window.GEMINI_MODEL) return window.GEMINI_MODEL;
-      var m = localStorage.getItem("gemini_model") || "";
-      if (m) return m;
-    }catch(e){}
-    return "gemini-2.5-flash";
-  }
-  window.__bt_getApiKey = getApiKey;
-
-  async function callGemini(prompt){
-    var key = getApiKey(); if(!key) throw new Error("APIキーが未設定です");
-    var url = "https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(getModel())+":generateContent?key="+encodeURIComponent(key);
-    var res = await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-    if(!res.ok){ var t=""; try{ t=await res.text(); }catch(e){} throw new Error("Gemini API "+res.status+" "+t.slice(0,200)); }
-    var j = await res.json();
-    return (j&&j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts&&j.candidates[0].content.parts[0]&&j.candidates[0].content.parts[0].text)||"";
-  }
-  window.__bt_callGemini = callGemini;
-
-  /* ============ 2. XP 連携 ============ */
+  /* ============ 1. XP 連携 ============ */
   function addXP(n, reason){
     // [Integration adjustment A] Connect to the app's real XP system:
     // awardPlayerXP() adds XP to playerXpDB[activeProfileId], saves to
@@ -11520,7 +11499,7 @@ function sharePoseResultImage() {
   }
   window.__bt_addXP_v105 = addXP;
 
-  /* ============ 3. マイルーティン & 筋トレ達成チェック ============ */
+  /* ============ 2. マイルーティン & 筋トレ達成チェック ============ */
   var ROUTINES=[
     {id:"stretch", icon:"🧘", label:"ストレッチ 5分", xp:10, detail:"肩・股関節・ふくらはぎを各30秒"},
     {id:"footwork", icon:"👣", label:"フットワーク 10分", xp:20, detail:"サイドステップ・前後・クロス"},
@@ -11545,10 +11524,8 @@ function sharePoseResultImage() {
       +'<div id="bt-routine-list"></div>'
       +'<div id="bt-routine-total" style="margin-top:12px;font-weight:700;color:#111827"></div>'
       +'<div style="display:flex;gap:8px;margin-top:12px">'
-      +'<button id="bt-routine-ai" style="flex:1;padding:12px;border-radius:12px;border:0;background:#7c3aed;color:#fff;font-weight:700">✨ AIアドバイス</button>'
       +'<button id="bt-routine-save" style="flex:1;padding:12px;border-radius:12px;border:0;background:#059669;color:#fff;font-weight:700">保存して閉じる</button>'
       +'</div>'
-      +'<div id="bt-routine-aiout" style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#374151;margin-top:12px"></div>'
       +'</div>';
     m.innerHTML=inner; document.body.appendChild(m);
     function render(){
@@ -11566,8 +11543,8 @@ function sharePoseResultImage() {
       });
     }
     render();
-    on($("#bt-routine-close"),"click",function(){ m.remove(); });
-    on(m,"click",function(e){ if(e.target===m) m.remove(); });
+    on($("#bt-routine-close"),"click",function(){ m.remove(); refreshRoutineFab(); });
+    on(m,"click",function(e){ if(e.target===m){ m.remove(); refreshRoutineFab(); } });
     on($("#bt-routine-save"),"click",function(){
       var total=calcXP(done);
       var all=ROUTINES.every(function(r){ return done[r.id]; });
@@ -11575,20 +11552,11 @@ function sharePoseResultImage() {
       var already=loadJSON(key2, {granted:0});
       var grant=total+(all?30:0)-already.granted;
       if(grant>0){ addXP(grant,"マイルーティン達成"); already.granted+=grant; saveJSON(key2,already); }
-      m.remove(); toast(all?"🎉 全達成！ +"+(total+30)+" XP":"✅ ルーティン保存： "+total+" XP");
-    });
-    on($("#bt-routine-ai"),"click",async function(){
-      var out=$("#bt-routine-aiout"); if(out) out.textContent="AIがアドバイスを作成中…";
-      var checked=ROUTINES.filter(function(r){ return done[r.id]; }).map(function(r){ return r.label; });
-      var unchecked=ROUTINES.filter(function(r){ return !done[r.id]; }).map(function(r){ return r.label; });
-      try{
-        var txt=await callGemini("バドミントン初心者〜中級者向けに、今日のトレーニング達成状況をもとに短いアドバイスを日本語でください。達成済み："+(checked.join("、")||"なし")+"。未達成："+(unchecked.join("、")||"なし")+"。3行以内、励ましと具体的な次の一手を。");
-        if(out) out.textContent=txt||"アドバイスを取得できませんでした";
-      }catch(e){ if(out) out.textContent="AI取得に失敗しました: "+e.message; }
+      m.remove(); refreshRoutineFab(); toast(all?"🎉 全達成！ +"+(total+30)+" XP":"✅ ルーティン保存： "+total+" XP");
     });
   }
 
-  /* ============ 4. 起動ボタン（右下フローティング） ============ */
+  /* ============ 3. 起動ボタン（右下フローティング） ============ */
   function ensureButton(){
     if($("#bt-routine-fab")) return;
     var b=document.createElement("button"); b.id="bt-routine-fab"; b.textContent="🔥 ルーティン";
@@ -11596,8 +11564,37 @@ function sharePoseResultImage() {
     on(b,"click",openRoutine); document.body.appendChild(b);
   }
 
-  /* ============ 5. 起動 ============ */
-  function boot(){ ensureButton(); }
+  // ドリル/タイマー類が実行中かどうか（本体の状態変数を防御的に参照）
+  function isAnyDrillRunning(){
+    try{ if(typeof fwState!=="undefined" && fwState && fwState.running) return true; }catch(e){}
+    try{ if(typeof rhythmState!=="undefined" && rhythmState && rhythmState.running) return true; }catch(e){}
+    try{ if(typeof workoutTimerState!=="undefined" && workoutTimerState && workoutTimerState.running) return true; }catch(e){}
+    try{ if(typeof arrowDrillState!=="undefined" && arrowDrillState && arrowDrillState.running) return true; }catch(e){}
+    return false;
+  }
+
+  // FABの表示制御: 「1.フットワーク」「7.メニュー作成」タブの時だけ表示し、ドリル/タイマー実行中は隠す。
+  // その日のルーティンを全項目チェック済みなら「✅ ルーティン済」表示（緑）に切り替える。
+  function refreshRoutineFab(){
+    var b=$("#bt-routine-fab"); if(!b) return;
+    var panel=document.querySelector(".tab-panel.active");
+    var tabId=panel?panel.id:"";
+    var tabOk=(tabId==="tab-footwork"||tabId==="tab-menu");
+    b.style.display=(tabOk && !isAnyDrillRunning()) ? "" : "none";
+    var done=getDone();
+    var all=ROUTINES.every(function(r){ return done[r.id]; });
+    if(all){ b.textContent="✅ ルーティン済"; b.style.background="#059669"; }
+    else{ b.textContent="🔥 ルーティン"; b.style.background="#f97316"; }
+  }
+
+  // タブ切替にFAB表示を追随させる（本体の switchTab をラップ）
+  if(typeof switchTab==="function"){
+    var _origSwitchTab=switchTab;
+    switchTab=function(tabId){ var r=_origSwitchTab(tabId); refreshRoutineFab(); return r; };
+  }
+
+  /* ============ 4. 起動 ============ */
+  function boot(){ ensureButton(); refreshRoutineFab(); setInterval(refreshRoutineFab, 800); }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot); else boot();
   window.__bt_openRoutine = openRoutine;
   console.log("[badtore v10.5 STEP1] loaded");
