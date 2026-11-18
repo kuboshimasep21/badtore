@@ -20,7 +20,7 @@
 
   <meta name="theme-color" content="#060b16" />
 
-  <title>バドトレPRO v10.4.3 - バドミントン専用 AI動作解析＆実践トレーニング</title>
+  <title>バドトレPRO v10.5.1 - バドミントン専用 AI動作解析＆実践トレーニング</title>
 
   <!-- MediaPipe Pose & Drawing Utils -->
 
@@ -2086,7 +2086,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v10.4.3 PRO</span>
+      <span class="badge-version">v10.5.1 PRO</span>
 
     </div>
 
@@ -10155,8 +10155,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.4.3 PRO";
-      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.4.3 PRO";
+      document.title = "バドトレPRO v10.5.1 PRO";
+      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.5.1 PRO";
       initSpeechVoices(); loadMenusAndLogsFromStorage();
       injectV103CoreStylesAndUI(); injectVideoAndDrillExtensions(); injectMenuPlannerTab();
       applyColorTheme(profileThemesMap[activeProfileId] || localStorage.getItem('badtore_last_theme_v102') || 'cyan', false);
@@ -11263,7 +11263,7 @@
       applyColorTheme(saved, false);
 
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.4.3 PRO";
+      if (vb) vb.textContent = "v10.5.1 PRO";
     });
   </script>
 <script id="badtore-brushup-share-20261118">
@@ -11341,7 +11341,7 @@ function sharePoseResultImage() {
     ctx.fillStyle = '#e2e8f0'; ctx.font = '34px ' + FONT;
     impLines.forEach(l => { ctx.fillText(l, PAD, y); y += 50; });
     ctx.fillStyle = '#64748b'; ctx.font = '28px ' + FONT;
-    ctx.fillText('バドトレPRO v10.4.3 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
+    ctx.fillText('バドトレPRO v10.5.1 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
     cv.toBlob(async (blob) => {
       if (!blob) { alert('画像の生成に失敗しました。'); return; }
       const file = new File([blob], 'badtore_result.png', { type: 'image/png' });
@@ -11450,6 +11450,484 @@ function sharePoseResultImage() {
     if (!seen) showGuide();
   });
 })();
+</script>
+<!-- =====================================================================================
+     🚀 バドトレPRO v10.5 — STEP1: 末尾クリーン + 毎日のマイルーティン&筋トレ達成チェック (XP獲得)
+     ▶ 貼り付け場所: index(6).html の一番下（</body>の直前）
+     ▶ 依存: 既存の window.__bt_* / GameState / XP / toast などがあれば自動連携、無ければ単独動作
+     ▶ 既存の <script id="badtore-v105-step1"> があれば置き換え（重複貼り付け禁止）
+     ===================================================================================== -->
+<script id="badtore-v105-step1">
+(function(){
+  "use strict";
+  if (window.__bt_v105_step1) return; window.__bt_v105_step1 = true;
+
+  /* ============ 0. 安全ユーティリティ ============ */
+  var $ = function(s){ try{ return document.querySelector(s); }catch(e){ return null; } };
+  var $$ = function(s){ try{ return Array.prototype.slice.call(document.querySelectorAll(s)); }catch(e){ return []; } };
+  function on(el,ev,fn){ if(el&&el.addEventListener) el.addEventListener(ev,fn); }
+  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function todayKey(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function loadJSON(k,fb){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch(e){ return fb; } }
+  function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  function toast(msg){ try{ if(window.__bt_toast) return window.__bt_toast(msg); }catch(e){}
+    var t=document.createElement("div"); t.textContent=msg;
+    t.style.cssText="position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.35);max-width:92vw;text-align:center";
+    document.body.appendChild(t); setTimeout(function(){ t.remove(); },2600); }
+
+  /* ============ 1. Gemini API 連携（既存設定を最優先） ============ */
+  var DEFAULT_EMBEDDED_KEY = ["AQ.Ab8RN6LGd9Phj1g","_GOJoM9jlgJd2c9E1r","diJFFjXi8_7cQdLJQ"].join("");
+  function getApiKey(){
+    try{
+      if (window.GEMINI_API_KEY) return window.GEMINI_API_KEY;
+      if (window.__bt_apiKey) return window.__bt_apiKey;
+      var s = localStorage.getItem("gemini_api_key") || localStorage.getItem("GEMINI_API_KEY") || "";
+      if (s) return s;
+    }catch(e){}
+    return DEFAULT_EMBEDDED_KEY;
+  }
+  function getModel(){
+    try{
+      if (window.GEMINI_MODEL) return window.GEMINI_MODEL;
+      var m = localStorage.getItem("gemini_model") || "";
+      if (m) return m;
+    }catch(e){}
+    return "gemini-2.5-flash";
+  }
+  window.__bt_getApiKey = getApiKey;
+
+  async function callGemini(prompt){
+    var key = getApiKey(); if(!key) throw new Error("APIキーが未設定です");
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(getModel())+":generateContent?key="+encodeURIComponent(key);
+    var res = await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+    if(!res.ok){ var t=""; try{ t=await res.text(); }catch(e){} throw new Error("Gemini API "+res.status+" "+t.slice(0,200)); }
+    var j = await res.json();
+    return (j&&j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts&&j.candidates[0].content.parts[0]&&j.candidates[0].content.parts[0].text)||"";
+  }
+  window.__bt_callGemini = callGemini;
+
+  /* ============ 2. XP 連携 ============ */
+  function addXP(n, reason){
+    // [Integration adjustment A] Connect to the app's real XP system:
+    // awardPlayerXP() adds XP to playerXpDB[activeProfileId], saves to
+    // localStorage (badtore_player_xp_v102) and refreshes the header Lv/XP UI.
+    try{ if(typeof window.awardPlayerXP==="function"){ window.awardPlayerXP(n); toast("+"+n+" XP "+(reason||"")); return; } }catch(e){}
+    try{ if(window.__bt_addXP) return window.__bt_addXP(n, reason); }catch(e){}
+    try{ if(window.GameState && typeof window.GameState.xp==="number"){ window.GameState.xp+=n; if(window.saveGame) window.saveGame(); } }catch(e){}
+    try{ var el=$("#xpVal"); if(el) el.textContent = String(window.GameState?window.GameState.xp:0); }catch(e){}
+    toast("+"+n+" XP "+(reason||""));
+  }
+  window.__bt_addXP_v105 = addXP;
+
+  /* ============ 3. マイルーティン & 筋トレ達成チェック ============ */
+  var ROUTINES=[
+    {id:"stretch", icon:"🧘", label:"ストレッチ 5分", xp:10, detail:"肩・股関節・ふくらはぎを各30秒"},
+    {id:"footwork", icon:"👣", label:"フットワーク 10分", xp:20, detail:"サイドステップ・前後・クロス"},
+    {id:"shadow", icon:"🏸", label:"素振り 100回", xp:20, detail:"クリア→ドロップ→スマッシュ"},
+    {id:"core", icon:"💪", label:"筋トレ（体幹）", xp:20, detail:"プランク60秒×2・腹筋20回"},
+    {id:"jump", icon:"🦵", label:"ジャンプ・ランジ", xp:15, detail:"スクワットジャンプ15回×2"},
+    {id:"review", icon:"📝", label:"振り返りメモ", xp:15, detail:"今日の良かった点・課題を1行"}
+  ];
+  var LS_KEY="bt_v105_routine_"+todayKey();
+  function getDone(){ return loadJSON(LS_KEY, {}); }
+  function calcXP(done){ var s=0; ROUTINES.forEach(function(r){ if(done[r.id]) s+=r.xp; }); return s; }
+
+  function openRoutine(){
+    var old=$("#bt-routine-modal"); if(old) old.remove();
+    var done=getDone();
+    var m=document.createElement("div"); m.id="bt-routine-modal";
+    m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99990;display:flex;align-items:flex-end;justify-content:center;padding:12px";
+    var inner='<div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:86vh;overflow:auto;padding:18px 16px 22px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">🔥 毎日のマイルーティン</b>'
+      +'<button id="bt-routine-close" style="border:0;background:#f3f4f6;border-radius:999px;width:32px;height:32px;font-size:16px">✕</button></div>'
+      +'<p style="color:#6b7280;font-size:13px;margin:6px 0 12px">今日（'+esc(todayKey())+'）の達成にチェック → XP獲得！全部達成でボーナス +30 XP 🎉</p>'
+      +'<div id="bt-routine-list"></div>'
+      +'<div id="bt-routine-total" style="margin-top:12px;font-weight:700"></div>'
+      +'<div style="display:flex;gap:8px;margin-top:12px">'
+      +'<button id="bt-routine-ai" style="flex:1;padding:12px;border-radius:12px;border:0;background:#7c3aed;color:#fff;font-weight:700">✨ AIアドバイス</button>'
+      +'<button id="bt-routine-save" style="flex:1;padding:12px;border-radius:12px;border:0;background:#059669;color:#fff;font-weight:700">保存して閉じる</button>'
+      +'</div>'
+      +'<div id="bt-routine-aiout" style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#374151;margin-top:12px"></div>'
+      +'</div>';
+    m.innerHTML=inner; document.body.appendChild(m);
+    function render(){
+      var list=$("#bt-routine-list"); if(!list) return;
+      list.innerHTML=ROUTINES.map(function(r){
+        return '<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #e5e7eb;border-radius:14px;margin-bottom:8px;cursor:pointer">'
+          +'<input type="checkbox" data-rid="'+r.id+'" '+(done[r.id]?"checked":"")+' style="width:20px;height:20px;margin-top:2px">'
+          +'<span><b>'+r.icon+' '+esc(r.label)+' <span style="color:#059669">+'+r.xp+'XP</span></b><br><span style="color:#6b7280;font-size:12px">'+esc(r.detail)+'</span></span></label>';
+      }).join("");
+      var total=calcXP(done);
+      var all=ROUTINES.every(function(r){ return done[r.id]; });
+      var t=$("#bt-routine-total"); if(t) t.textContent="本日の獲得XP： "+total+" XP"+(all?"（全達成ボーナス +30 XP 対象！）":"");
+      $$("#bt-routine-list input[data-rid]").forEach(function(cb){
+        on(cb,"change",function(){ done[cb.getAttribute("data-rid")]=!!cb.checked; saveJSON(LS_KEY,done); render(); });
+      });
+    }
+    render();
+    on($("#bt-routine-close"),"click",function(){ m.remove(); });
+    on(m,"click",function(e){ if(e.target===m) m.remove(); });
+    on($("#bt-routine-save"),"click",function(){
+      var total=calcXP(done);
+      var all=ROUTINES.every(function(r){ return done[r.id]; });
+      var key2="bt_v105_routine_xp_"+todayKey();
+      var already=loadJSON(key2, {granted:0});
+      var grant=total+(all?30:0)-already.granted;
+      if(grant>0){ addXP(grant,"マイルーティン達成"); already.granted+=grant; saveJSON(key2,already); }
+      m.remove(); toast(all?"🎉 全達成！ +"+(total+30)+" XP":"✅ ルーティン保存： "+total+" XP");
+    });
+    on($("#bt-routine-ai"),"click",async function(){
+      var out=$("#bt-routine-aiout"); if(out) out.textContent="AIがアドバイスを作成中…";
+      var checked=ROUTINES.filter(function(r){ return done[r.id]; }).map(function(r){ return r.label; });
+      var unchecked=ROUTINES.filter(function(r){ return !done[r.id]; }).map(function(r){ return r.label; });
+      try{
+        var txt=await callGemini("バドミントン初心者〜中級者向けに、今日のトレーニング達成状況をもとに短いアドバイスを日本語でください。達成済み："+(checked.join("、")||"なし")+"。未達成："+(unchecked.join("、")||"なし")+"。3行以内、励ましと具体的な次の一手を。");
+        if(out) out.textContent=txt||"アドバイスを取得できませんでした";
+      }catch(e){ if(out) out.textContent="AI取得に失敗しました: "+e.message; }
+    });
+  }
+
+  /* ============ 4. 起動ボタン（右下フローティング） ============ */
+  function ensureButton(){
+    if($("#bt-routine-fab")) return;
+    var b=document.createElement("button"); b.id="bt-routine-fab"; b.textContent="🔥 ルーティン";
+    b.style.cssText="position:fixed;right:14px;bottom:96px;z-index:99980;background:#f97316;color:#fff;border:0;border-radius:999px;padding:12px 16px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.25);font-size:14px";
+    on(b,"click",openRoutine); document.body.appendChild(b);
+  }
+
+  /* ============ 5. 起動 ============ */
+  function boot(){ ensureButton(); }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot); else boot();
+  window.__bt_openRoutine = openRoutine;
+  console.log("[badtore v10.5 STEP1] loaded");
+})();
+</script>
+
+<!-- =========================================================================
+     🚀 バドトレPRO v10.5.1 [STEP 2: リズムジャンプ＆筋トレ 2アングル人型アニメーション]
+     ・正面ビュー（肩の正面固定・骨盤ひねり・足幅開閉）＋ 横ビュー（膝のタメ・母趾球バネ・体幹軸）
+     ・BPM同期の滑らかなジャンプ補間 ＆ スタート前のお手本スロープレビュー機能
+========================================================================= -->
+<script id="badtore-v105-step2">
+  let rjAnimState = {
+    pattern: 'par_stay',
+    beatNum: 1,
+    lastBeatMs: performance.now(),
+    rafId: null
+  };
+
+  // リズムジャンプの拍更新時にアニメーション状態を同期
+  const _v105OrigRenderRj = typeof renderRhythmVisualStage === 'function' ? renderRhythmVisualStage : null;
+  renderRhythmVisualStage = function(pattern, beatNum, nextCallText = "") {
+    if (_v105OrigRenderRj) _v105OrigRenderRj(pattern, beatNum, nextCallText);
+    rjAnimState.pattern = pattern || 'par_stay';
+    rjAnimState.beatNum = beatNum || 1;
+    rjAnimState.lastBeatMs = performance.now();
+  };
+
+  // パターン・拍数・ビート内進行度(0〜1)から正面・横の人型関節ポーズを算出
+  function computeHumanPose(pattern, beatNum, prog) {
+    const isHold = (pattern === 'finish_hold');
+    // ジャンプ滞空曲線（0=着地クッション, 0.5=空中ピーク, 1.0=次の着地）
+    const air = isHold ? 0 : Math.max(0, Math.sin(prog * Math.PI));
+    const cushion = isHold ? 12 : (1 - air) * 8;
+    const isOdd = (beatNum % 2 === 1);
+
+    // 初期値（正面：lx/rxは足先X、横：lfZ/rfZは前後Z、twistは骨盤回転、lungeは沈み込み）
+    let lx = -22, rx = 22, ly = 0, ry = 0, lfZ = 0, rfZ = 0, twist = 0, lunge = 0, heelLift = 6, tag = "母趾球バネ";
+
+    switch (pattern) {
+      case 'goopar':
+        if (isOdd) { lx = -7; rx = 7; tag = "グー（閉じる）"; }
+        else { lx = -28; rx = 28; tag = "パー（外へ開く）"; }
+        break;
+      case 'front_back':
+        lfZ = rfZ = isOdd ? -18 : 8;
+        tag = isOdd ? "前へジャンプ" : "中央へ戻る";
+        break;
+      case 'back_front':
+        lfZ = rfZ = isOdd ? 18 : -6;
+        tag = isOdd ? "後ろへジャンプ" : "中央へ戻る";
+        break;
+      case 'left_side':
+        lx = isOdd ? -34 : -8; rx = isOdd ? -18 : 8;
+        tag = isOdd ? "左外へジャンプ" : "中央へ戻る";
+        break;
+      case 'right_side':
+        lx = isOdd ? 18 : -8; rx = isOdd ? 34 : 8;
+        tag = isOdd ? "右外へジャンプ" : "中央へ戻る";
+        break;
+      case 'par_stay':
+        lx = -24; rx = 24; tag = "カカトを浮かせ母趾球で弾む";
+        break;
+      case 'par_cross':
+        if (isOdd) { lx = -26; rx = 26; lfZ = 0; rfZ = 0; tag = "パー（開く）"; }
+        else {
+          const swap = (beatNum % 4 === 0);
+          lx = 10; rx = -10;
+          lfZ = swap ? -12 : 12; rfZ = swap ? 12 : -12;
+          tag = "クロス（前後交差）";
+        }
+        break;
+      case 'par_scissor':
+        if (isOdd) { lx = -24; rx = 24; lfZ = 0; rfZ = 0; tag = "パー（開く）"; }
+        else {
+          const rFwd = (beatNum % 4 === 2);
+          lx = -14; rx = 14;
+          lfZ = rFwd ? 18 : -18; rfZ = rFwd ? -18 : 18;
+          tag = rFwd ? "右足前・左足後ろ" : "左足前・右足後ろ";
+        }
+        break;
+      case 'single_leg':
+        if (beatNum <= 4) { lx = -14; rx = 20; ry = -18; tag = "左足片足バウンス"; }
+        else { lx = -20; rx = 14; ly = -18; tag = "右足片足バウンス"; }
+        break;
+      case 'par_side':
+        if (isOdd) { lx = -25; rx = 25; tag = "パー（開く）"; }
+        else if (beatNum % 4 === 2) { lx = -30; rx = -14; tag = "左サイド揃え"; }
+        else { lx = 14; rx = 30; tag = "右サイド揃え"; }
+        break;
+      case 'side_cont':
+        lx = isOdd ? -30 : 12; rx = isOdd ? -12 : 30;
+        tag = isOdd ? "左へジャンプ" : "右へジャンプ";
+        break;
+      case 'hip_twist':
+        lx = -16; rx = 16;
+        twist = isOdd ? -28 : 28;
+        lfZ = isOdd ? -10 : 10; rfZ = isOdd ? 10 : -10;
+        tag = "肩は正面・骨盤だけひねる";
+        break;
+      case 'big_twist':
+        if (isOdd) { lx = -26; rx = 26; twist = 0; tag = "パー（開く）"; }
+        else {
+          const dir = (beatNum % 4 === 2) ? -42 : 42;
+          lx = -12; rx = 12; twist = dir;
+          lfZ = dir < 0 ? -16 : 16; rfZ = -lfZ;
+          tag = "空中90度反転ターン！";
+        }
+        break;
+      case 'par_lunge':
+        if (isOdd) { lx = -24; rx = 24; lunge = 0; tag = "パー（開く）"; }
+        else {
+          const rLng = (beatNum % 4 === 2);
+          lx = -16; rx = 16; lunge = 18;
+          lfZ = rLng ? 24 : -24; rfZ = rLng ? -24 : 24;
+          tag = "深くランジ（胸を起こす）";
+        }
+        break;
+      case 'heel_touch':
+        if (isOdd) { lx = -25; rx = 25; tag = "パー（開く）"; }
+        else { lx = -4; rx = 4; ly = -12; ry = -12; tag = "空中でかかとタッチ！"; }
+        break;
+      case 'finish_hold':
+        lx = -26; rx = 26; lunge = 10; heelLift = 4;
+        tag = "ピタッ！抜重姿勢で静止";
+        break;
+    }
+
+    return { air, cushion, lx, rx, ly, ry, lfZ, rfZ, twist, lunge, heelLift, tag };
+  }
+
+  // 正面＆横の2アングル人型SVGを描画
+  function buildDualAngleCoachSVG(pose) {
+    const jumpY = -pose.air * 18;
+    const hipDrop = pose.cushion + pose.lunge;
+    const headY = 34 + jumpY + hipDrop * 0.7;
+    const shY   = 52 + jumpY + hipDrop * 0.7;
+    const hipY  = 90 + jumpY + hipDrop;
+    const floorY = 148;
+
+    // ① 正面ビュー座標（中心X = 85）
+    const cx = 85;
+    const hipShiftX = pose.twist * 0.22;
+    const lAnkX = cx + pose.lx + pose.twist * 0.25;
+    const rAnkX = cx + pose.rx + pose.twist * 0.25;
+    const lAnkY = floorY - pose.heelLift + pose.ly + (pose.air * -12);
+    const rAnkY = floorY - pose.heelLift + pose.ry + (pose.air * -12);
+    const lKneeX = (cx - 10 + hipShiftX + lAnkX) / 2 + (pose.lx < -18 ? -4 : 0);
+    const rKneeX = (cx + 10 + hipShiftX + rAnkX) / 2 + (pose.rx > 18 ? 4 : 0);
+    const kneeY  = (hipY + Math.min(lAnkY, rAnkY)) / 2 + hipDrop * 0.25;
+
+    // ② 横ビュー座標（中心X = 245、左が前方 NET 方向）
+    const sx = 245;
+    const sHipX = sx + 4;
+    const fAnkX = sx + pose.lfZ;
+    const bAnkX = sx + pose.rfZ;
+    const fAnkY = lAnkY;
+    const bAnkY = rAnkY;
+    const fKneeX = (sHipX + fAnkX) / 2 - 10 - (hipDrop * 0.45);
+    const bKneeX = (sHipX + bAnkX) / 2 - 6  - (hipDrop * 0.25);
+
+    return `
+      <svg viewBox="0 0 330 172" style="width:100%;height:100%;max-height:240px;display:block;">
+        <!-- 背景パネル区切り -->
+        <rect x="4" y="4" width="156" height="164" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
+        <rect x="168" y="4" width="158" height="164" rx="10" fill="rgba(4,12,26,0.82)" stroke="rgba(56,189,248,0.3)"/>
+
+        <!-- ラベル -->
+        <text x="12" y="19" fill="#38bdf8" font-size="10" font-weight="900">👤 正面（肩固定・足幅）</text>
+        <text x="176" y="19" fill="#fde047" font-size="10" font-weight="900">📐 横（膝のタメ・母趾球）</text>
+
+        <!-- 床ライン＆黄色センターテープ -->
+        <line x1="16" y1="${floorY}" x2="150" y2="${floorY}" stroke="#475569" stroke-width="2"/>
+        <line x1="${cx}" y1="${floorY - 14}" x2="${cx}" y2="${floorY + 8}" stroke="#fde047" stroke-width="4" stroke-linecap="round"/>
+        <line x1="180" y1="${floorY}" x2="314" y2="${floorY}" stroke="#475569" stroke-width="2"/>
+        <line x1="${sx}" y1="${floorY - 12}" x2="${sx}" y2="${floorY + 8}" stroke="#fde047" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- ================= 1. 正面モデル ================= -->
+        <!-- 体幹＆頭 -->
+        <line x1="${cx}" y1="${shY}" x2="${cx + hipShiftX}" y2="${hipY}" stroke="#e2e8f0" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="${cx}" cy="${headY}" r="10" fill="#0f172a" stroke="#38bdf8" stroke-width="3"/>
+        <!-- 肩ライン（常に水平で正面キープ！） -->
+        <line x1="${cx - 22}" y1="${shY}" x2="${cx + 22}" y2="${shY}" stroke="#06b6d4" stroke-width="5" stroke-linecap="round"/>
+        <!-- 両腕（胸前リストスタンド構え） -->
+        <polyline points="${cx - 22},${shY} ${cx - 28},${shY + 20} ${cx - 14},${shY + 12}" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="${cx + 22},${shY} ${cx + 28},${shY + 20} ${cx + 14},${shY + 12}" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- 骨盤ライン（ひねりで動く） -->
+        <line x1="${cx - 12 + hipShiftX}" y1="${hipY}" x2="${cx + 12 + hipShiftX}" y2="${hipY}" stroke="#fbbf24" stroke-width="5" stroke-linecap="round"/>
+        <!-- 左脚・右脚 -->
+        <polyline points="${cx - 10 + hipShiftX},${hipY} ${lKneeX},${kneeY} ${lAnkX},${lAnkY}" fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="${cx + 10 + hipShiftX},${hipY} ${rKneeX},${kneeY} ${rAnkX},${rAnkY}" fill="none" stroke="#10b981" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- 母趾球接地ポイント -->
+        <ellipse cx="${lAnkX}" cy="${lAnkY + 2}" rx="7" ry="4" fill="#fde047"/>
+        <ellipse cx="${rAnkX}" cy="${rAnkY + 2}" rx="7" ry="4" fill="#fde047"/>
+
+        <!-- ================= 2. 横モデル（左向き） ================= -->
+        <text x="176" y="34" fill="#94a3b8" font-size="9" font-weight="800">⬅️ネット方向</text>
+        <!-- 奥の脚 -->
+        <polyline points="${sHipX},${hipY} ${bKneeX},${kneeY} ${bAnkX},${bAnkY}" fill="none" stroke="rgba(56,189,248,0.55)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="${bAnkX + 5}" y1="${bAnkY}" x2="${bAnkX - 9}" y2="${bAnkY + 3}" stroke="#93c5fd" stroke-width="4" stroke-linecap="round"/>
+        <!-- 手前の脚 -->
+        <polyline points="${sHipX},${hipY} ${fKneeX},${kneeY} ${fAnkX},${fAnkY}" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- 足裏（母趾球接地＆カカト浮き表現） -->
+        <line x1="${fAnkX + 6}" y1="${fAnkY - 2}" x2="${fAnkX - 10}" y2="${fAnkY + 3}" stroke="#fde047" stroke-width="4.5" stroke-linecap="round"/>
+        <!-- 体幹（胸を起こした前傾しすぎない軸） -->
+        <line x1="${sx - 2}" y1="${shY}" x2="${sHipX}" y2="${hipY}" stroke="#10b981" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="${sx - 3}" cy="${headY}" r="10" fill="#0f172a" stroke="#10b981" stroke-width="3"/>
+        <!-- 腕＆ラケット構え -->
+        <polyline points="${sx - 2},${shY + 2} ${sx - 16},${shY + 18} ${sx - 28},${shY + 6}" fill="none" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="${sx - 28}" y1="${shY + 6}" x2="${sx - 38}" y2="${shY - 12}" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- 下部ガイド字幕 -->
+        <text x="82" y="163" fill="#e2e8f0" font-size="9.5" font-weight="900" text-anchor="middle">${pose.tag}</text>
+        <text x="246" y="163" fill="#fde047" font-size="9.5" font-weight="900" text-anchor="middle">カカト浮かせ・胸を起こす</text>
+      </svg>
+    `;
+  }
+
+  // リズムジャンプのステージに2アングル人型アニメーション枠を組み込む
+  function mountRhythmHumanAnimator() {
+    const rotWrap = document.getElementById('rjFeetRotWrapper');
+    if (!rotWrap || document.getElementById('rjHumanCoachSvgHolder')) return;
+    const matBox = rotWrap.parentNode;
+
+    // 既存の靴アイコンは右下の小型ワイプにするか非表示にして、中央に2アングル人型モデルを大きく表示
+    rotWrap.style.display = 'none';
+    const guideShape = document.getElementById('rjGuideShape');
+    if (guideShape) guideShape.style.display = 'none';
+
+    const holder = document.createElement('div');
+    holder.id = 'rjHumanCoachSvgHolder';
+    holder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:3;padding:24px 6px 6px 6px;';
+    matBox.appendChild(holder);
+
+    const loop = () => {
+      const panel = document.getElementById('subPanelRhythmJump');
+      if (panel && panel.style.display !== 'none') {
+        const now = performance.now();
+        if (rhythmState.running && !rhythmState.paused) {
+          const beatMs = 60000 / (rhythmState.bpm || 122);
+          const prog = Math.min(1, Math.max(0, (now - rjAnimState.lastBeatMs) / beatMs));
+          const pose = computeHumanPose(rjAnimState.pattern, rjAnimState.beatNum, prog);
+          holder.innerHTML = buildDualAngleCoachSVG(pose);
+        } else {
+          // 待機中も動きが分かるよう、選択中コースの最初の種目をゆっくり自動プレビュー再生
+          const demoBeatMs = 700;
+          const demoBeat = (Math.floor(now / demoBeatMs) % 8) + 1;
+          const demoProg = (now % demoBeatMs) / demoBeatMs;
+          const pose = computeHumanPose(rjAnimState.pattern || 'par_stay', demoBeat, demoProg);
+          holder.innerHTML = buildDualAngleCoachSVG(pose);
+        }
+      }
+      rjAnimState.rafId = requestAnimationFrame(loop);
+    };
+    rjAnimState.rafId = requestAnimationFrame(loop);
+  }
+
+  // 💪 筋トレインターバルタイマー用の人型アニメーション（カーフレイズ・ジャンピングSQ・ランジ・四股・プランク）
+  function mountWorkoutTimerHumanAnimator() {
+    const drawer = document.getElementById('workoutTimerDrawer');
+    const clockEl = document.getElementById('wtClockText');
+    if (!drawer || !clockEl || document.getElementById('wtHumanAnimBox')) return;
+
+    const animBox = document.createElement('div');
+    animBox.id = 'wtHumanAnimBox';
+    animBox.style.cssText = 'width:100%;height:165px;background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+    drawer.insertBefore(animBox, clockEl.nextSibling);
+
+    const renderWorkoutFrame = () => {
+      if (drawer.style.display === 'none') {
+        requestAnimationFrame(renderWorkoutFrame);
+        return;
+      }
+      const title = (document.getElementById('wtTitle') ? document.getElementById('wtTitle').textContent : "") || "";
+      const now = performance.now();
+      const wave = (Math.sin((now / 1000) * Math.PI * 1.6) + 1) / 2; // 0.0 〜 1.0 の滑らかな往復
+
+      let pose = { air: 0, cushion: 6, lx: -20, rx: 20, ly: 0, ry: 0, lfZ: 0, rfZ: 0, twist: 0, lunge: 0, heelLift: 4, tag: "フォームを維持" };
+
+      if (workoutTimerState.running && workoutTimerState.phase === 'rest') {
+        pose.tag = "☕ 呼吸を整えてリラックス";
+        pose.cushion = 3;
+      } else if (title.includes('カーフ') || title.includes('足首')) {
+        // 🦵 カーフレイズ：カカトを大きく上下
+        pose.lx = -14; pose.rx = 14;
+        pose.heelLift = 2 + wave * 18;
+        pose.air = wave * 0.45;
+        pose.cushion = 2;
+        pose.tag = wave > 0.5 ? "⬆️ 母趾球でグッと高く立つ！" : "⬇️ カカトを床ギリギリまで下ろす";
+      } else if (title.includes('ジャンピング') || title.includes('瞬発')) {
+        // 🦘 ジャンピングスクワット：深くしゃがむ ➔ 高くジャンプ
+        if (wave > 0.55) {
+          pose.air = (wave - 0.55) * 2.2;
+          pose.cushion = 0;
+          pose.tag = "🚀 真上へ爆発的にジャンプ！";
+        } else {
+          pose.lunge = (0.55 - wave) * 38;
+          pose.tag = "🦵 股関節を折りたたんで深くタメる";
+        }
+      } else if (title.includes('ブルガリアン') || title.includes('ランジ')) {
+        // 🏋️ ブルガリアンスクワット／ランジ：前後に足を開いて上下
+        pose.lx = -14; pose.rx = 14;
+        pose.lfZ = -22; pose.rfZ = 22;
+        pose.lunge = wave * 22;
+        pose.tag = wave > 0.5 ? "⬇️ 前足カカトに体重を乗せ深く沈む" : "⬆️ 胸を起こしたまま押し上げる";
+      } else if (title.includes('四股') || title.includes('股関節')) {
+        // 🧘 四股スクワット：ワイドに足を開いて腰を割る
+        pose.lx = -34; pose.rx = 34;
+        pose.lunge = wave * 22;
+        pose.tag = "🧘 膝とつま先を外へ向け深く腰を割る";
+      } else {
+        // 🔥 体幹・その他
+        pose.twist = Math.sin((now / 1000) * Math.PI * 1.5) * 24;
+        pose.tag = "🔥 おへそに力を入れて体幹キープ";
+      }
+
+      animBox.innerHTML = buildDualAngleCoachSVG(pose);
+      requestAnimationFrame(renderWorkoutFrame);
+    };
+    requestAnimationFrame(renderWorkoutFrame);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      mountRhythmHumanAnimator();
+      mountWorkoutTimerHumanAnimator();
+      const vb = document.querySelector('header .badge-version');
+      if (vb) vb.textContent = "v10.5.1 PRO";
+    }, 150);
+  });
 </script>
 </body>
 </html>
