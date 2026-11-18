@@ -13161,5 +13161,238 @@ function sharePoseResultImage() {
 })();
 </script>
 
+<!-- ============================================================
+     バドトレPRO Phase 2: 課金 (Stripe) + 機能ゲート
+     - 契約状態は Supabase subscriptions が正本。テスター登録者は無料Pro扱い。
+     - 自分の Gemini API キーを設定している場合はゲート対象外 (自分のキー=自分の費用)。
+     - ゲート対象: AI深掘り診断 (requestAIProCoachPoseAnalysis),
+       Proチャット共有 (shareImageAndCarteToProChat), 診断の共有画像 (sharePoseResultImage)
+     - 決済は Stripe Checkout / Portal (Edge Functions 経由)。カード情報は持たない。
+     ============================================================ -->
+<script id="badtore-phase2-billing">
+(function () {
+  "use strict";
+  var SUPABASE_URL = "https://bgmngjwkfcvapcdtkcpx.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_ji-jxS2T-VnXBjvfVkJ8pw_7r-_QOAG";
+  var PRICE_LABEL = "月額 ¥500";
+  var sb = null;
+  var bill = { known: false, loggedIn: false, email: "", isTester: false, subStatus: null, periodEnd: null };
+
+  function hasOwnKey() {
+    try {
+      var saved = (localStorage.getItem("badtore_gemini_api_key_v104") || "").trim();
+      if (!saved) return false;
+      var emb = (typeof DEFAULT_EMBEDDED_KEY !== "undefined") ? String(DEFAULT_EMBEDDED_KEY || "").trim() : "";
+      return !emb || saved !== emb;
+    } catch (e) { return false; }
+  }
+  function isPro() {
+    if (hasOwnKey()) return true;
+    if (!bill.known) return true; // 判定が終わるまでは邪魔しない
+    if (!bill.loggedIn) return false;
+    if (bill.isTester) return true;
+    return bill.subStatus === "active" || bill.subStatus === "trialing";
+  }
+  function planLabel() {
+    if (hasOwnKey()) return "自分のAPIキーで利用中（ゲート対象外）";
+    if (!bill.known) return "確認中…";
+    if (!bill.loggedIn) return "未ログイン（無料プラン）";
+    if (bill.isTester) return "テスター（無料Pro）";
+    if (bill.subStatus === "active" || bill.subStatus === "trialing") {
+      var d = bill.periodEnd ? new Date(bill.periodEnd) : null;
+      return "Proプラン契約中" + (d ? "（次回更新: " + d.toLocaleDateString("ja-JP") + "）" : "");
+    }
+    if (bill.subStatus === "past_due") return "お支払い確認中（カードをご確認ください）";
+    if (bill.subStatus === "canceled") return "無料プラン（解約済み）";
+    return "無料プラン";
+  }
+
+  function setStatus(msg, ok) {
+    var el = document.getElementById("btBillingStatus");
+    if (el) { el.textContent = msg; el.style.color = ok ? "#34d399" : "#fbbf24"; }
+  }
+
+  function renderPlanCard() {
+    var st = document.getElementById("btBillingPlan");
+    if (st) st.textContent = planLabel();
+    var sub = document.getElementById("btBillingSubscribeBtn");
+    var por = document.getElementById("btBillingPortalBtn");
+    var pro = bill.loggedIn && (bill.isTester || bill.subStatus === "active" || bill.subStatus === "trialing");
+    if (sub) sub.style.display = (bill.loggedIn && !pro) ? "" : "none";
+    if (por) por.style.display = (bill.loggedIn && !bill.isTester && (bill.subStatus === "active" || bill.subStatus === "trialing" || bill.subStatus === "past_due")) ? "" : "none";
+  }
+
+  async function refresh() {
+    if (!sb) return;
+    try {
+      var sess = await sb.auth.getSession();
+      var session = sess && sess.data ? sess.data.session : null;
+      var user = session ? session.user : null;
+      bill.loggedIn = !!user;
+      bill.email = user ? (user.email || "") : "";
+      bill.isTester = false; bill.subStatus = null; bill.periodEnd = null;
+      if (user) {
+        var results = await Promise.all([
+          sb.from("subscriptions").select("status, current_period_end").eq("user_id", user.id).maybeSingle(),
+          sb.from("tester_registrations").select("user_id").eq("user_id", user.id).maybeSingle()
+        ]);
+        var subRes = results[0], tstRes = results[1];
+        if (subRes && subRes.data) { bill.subStatus = subRes.data.status; bill.periodEnd = subRes.data.current_period_end; }
+        if (tstRes && tstRes.data) bill.isTester = true;
+      }
+      bill.known = true;
+    } catch (e) { /* 判定できない時は邪魔しない */ }
+    renderPlanCard();
+  }
+
+  async function callBillingFn(name) {
+    var sess = await sb.auth.getSession();
+    var session = sess && sess.data ? sess.data.session : null;
+    if (!session) throw new Error("not_logged_in");
+    var res = await fetch(SUPABASE_URL + "/functions/v1/" + name, {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + session.access_token, "apikey": SUPABASE_KEY, "Content-Type": "application/json" },
+      body: "{}"
+    });
+    if (!res.ok) throw new Error("fn_" + res.status);
+    var j = await res.json();
+    if (!j || !j.url) throw new Error("no_url");
+    location.href = j.url;
+  }
+  async function startCheckout() {
+    setStatus("決済ページを準備しています…", true);
+    try { await callBillingFn("create-checkout"); }
+    catch (e) { setStatus("決済機能は現在準備中です。もう少しお待ちください。", false); closeUpgradeModal(); }
+  }
+  async function openPortal() {
+    setStatus("契約管理ページを準備しています…", true);
+    try { await callBillingFn("create-portal"); }
+    catch (e) { setStatus("契約管理ページを開けませんでした。時間をおいてお試しください。", false); }
+  }
+
+  function goProfile() {
+    if (typeof switchTab === "function") switchTab("tab-profile");
+    setTimeout(function () {
+      var c = document.getElementById("btBillingCard");
+      if (c && c.scrollIntoView) c.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  }
+
+  function openUpgradeModal() {
+    if (document.getElementById("btUpgradeModal")) return;
+    var wrap = document.createElement("div");
+    wrap.id = "btUpgradeModal";
+    wrap.setAttribute("style", "position:fixed;inset:0;background:rgba(2,6,23,0.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;");
+    var loggedIn = bill.loggedIn;
+    wrap.innerHTML =
+      '<div style="background:#ffffff;color:#0f172a;border-radius:16px;max-width:420px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,0.4);">' +
+      '<div style="font-weight:900;font-size:1.05rem;margin-bottom:6px;">AI診断は Pro プランの機能です</div>' +
+      '<div style="font-size:0.85rem;line-height:1.6;color:#334155;">AIプロコーチ深掘り診断と診断結果の共有は、Proプラン（' + PRICE_LABEL + '）でご利用いただけます。トレーニング・記録などの基本機能は無料のまま使えます。</div>' +
+      (loggedIn
+        ? '<button id="btUpgradeBuyBtn" style="width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:#0ea5e9;color:#fff;font-weight:900;font-size:0.95rem;cursor:pointer;">Proに申し込む（' + PRICE_LABEL + '）</button>'
+        : '<button id="btUpgradeLoginBtn" style="width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:#0ea5e9;color:#fff;font-weight:900;font-size:0.95rem;cursor:pointer;">ログインして申し込む</button>') +
+      '<button id="btUpgradeTesterBtn" style="width:100%;margin-top:8px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#0f172a;font-weight:800;font-size:0.85rem;cursor:pointer;">テスターコードをお持ちの方</button>' +
+      '<button id="btUpgradeCloseBtn" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:10px;background:transparent;color:#64748b;font-weight:800;font-size:0.85rem;cursor:pointer;">閉じる</button>' +
+      '</div>';
+    document.body.appendChild(wrap);
+    var buy = document.getElementById("btUpgradeBuyBtn");
+    if (buy) buy.addEventListener("click", function () { closeUpgradeModal(); goProfile(); startCheckout(); });
+    var login = document.getElementById("btUpgradeLoginBtn");
+    if (login) login.addEventListener("click", function () { closeUpgradeModal(); goProfile(); });
+    var tst = document.getElementById("btUpgradeTesterBtn");
+    if (tst) tst.addEventListener("click", function () {
+      closeUpgradeModal(); goProfile();
+      setTimeout(function () {
+        var input = document.getElementById("btTesterCodeInput");
+        if (input) { input.focus(); if (input.scrollIntoView) input.scrollIntoView({ behavior: "smooth", block: "center" }); }
+      }, 350);
+    });
+    var close = document.getElementById("btUpgradeCloseBtn");
+    if (close) close.addEventListener("click", closeUpgradeModal);
+    wrap.addEventListener("click", function (ev) { if (ev.target === wrap) closeUpgradeModal(); });
+  }
+  function closeUpgradeModal() {
+    var m = document.getElementById("btUpgradeModal");
+    if (m && m.parentNode) m.parentNode.removeChild(m);
+  }
+
+  function gate(original) {
+    return function () {
+      if (!isPro()) { openUpgradeModal(); return undefined; }
+      return original.apply(this, arguments);
+    };
+  }
+  function installGates() {
+    var names = ["requestAIProCoachPoseAnalysis", "shareImageAndCarteToProChat", "sharePoseResultImage"];
+    names.forEach(function (name) {
+      var orig = window[name];
+      if (typeof orig === "function" && !orig.__btGated) {
+        var wrapped = gate(orig);
+        wrapped.__btGated = true;
+        window[name] = wrapped;
+      }
+    });
+  }
+
+  function buildBillingCard() {
+    var tab = document.getElementById("tab-profile");
+    if (!tab || document.getElementById("btBillingCard")) return;
+    var card = document.createElement("div");
+    card.className = "card";
+    card.id = "btBillingCard";
+    card.innerHTML =
+      '<h3 style="margin-bottom:6px;">プラン</h3>' +
+      '<div style="font-size:0.82rem;">現在のプラン: <b id="btBillingPlan">確認中…</b></div>' +
+      '<div style="font-size:0.76rem;color:var(--text-secondary);margin:4px 0 8px;">Proプラン（' + PRICE_LABEL + '）: AIプロコーチ深掘り診断・診断結果の共有が使えます。基本機能は無料です。</div>' +
+      '<button class="btn btn-cyan" id="btBillingSubscribeBtn" style="display:none;padding:8px 12px;font-size:0.8rem;">Proに申し込む</button> ' +
+      '<button class="btn btn-slate" id="btBillingPortalBtn" style="display:none;padding:8px 12px;font-size:0.8rem;">契約を管理する（解約・カード変更）</button>' +
+      '<div id="btBillingStatus" style="font-size:0.78rem;margin-top:6px;min-height:1em;"></div>';
+    var anchor = document.getElementById("btTfCard");
+    if (!anchor) {
+      var cs = document.getElementById("cloudSyncStatus");
+      if (cs) anchor = cs.closest ? cs.closest(".card") : null;
+    }
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(card, anchor.nextSibling);
+    else tab.appendChild(card);
+    var sub = document.getElementById("btBillingSubscribeBtn");
+    if (sub) sub.addEventListener("click", startCheckout);
+    var por = document.getElementById("btBillingPortalBtn");
+    if (por) por.addEventListener("click", openPortal);
+  }
+
+  function init() {
+    try {
+      if (window.supabase && window.supabase.createClient) {
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    } catch (e) { sb = null; }
+    buildBillingCard();
+    installGates();
+    if (sb) {
+      refresh();
+      try { sb.auth.onAuthStateChange(function () { setTimeout(refresh, 300); }); } catch (e) {}
+      try {
+        if (/[?&]checkout=success/.test(location.search)) {
+          setTimeout(refresh, 2500); setTimeout(refresh, 7000);
+          setTimeout(function () { setStatus("お申し込みありがとうございます。Proプランが有効になります。", true); }, 2600);
+          if (window.history && history.replaceState) history.replaceState(null, "", location.pathname);
+        }
+      } catch (e) {}
+    }
+  }
+
+  window.__bt_billing = {
+    state: function () { return { known: bill.known, loggedIn: bill.loggedIn, isTester: bill.isTester, subStatus: bill.subStatus, ownKey: hasOwnKey() }; },
+    isPro: isPro,
+    refresh: refresh,
+    openUpgradeModal: openUpgradeModal,
+    setBill: function (patch) { Object.assign(bill, patch); bill.known = true; renderPlanCard(); }
+  };
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+
 </body>
 </html>
