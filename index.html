@@ -11538,12 +11538,12 @@ function sharePoseResultImage() {
     var done=getDone();
     var m=document.createElement("div"); m.id="bt-routine-modal";
     m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99990;display:flex;align-items:flex-end;justify-content:center;padding:12px";
-    var inner='<div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:86vh;overflow:auto;padding:18px 16px 22px">'
+    var inner='<div style="background:#fff;color:#111827;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:86vh;overflow:auto;padding:18px 16px 22px">'
       +'<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">🔥 毎日のマイルーティン</b>'
       +'<button id="bt-routine-close" style="border:0;background:#f3f4f6;border-radius:999px;width:32px;height:32px;font-size:16px">✕</button></div>'
-      +'<p style="color:#6b7280;font-size:13px;margin:6px 0 12px">今日（'+esc(todayKey())+'）の達成にチェック → XP獲得！全部達成でボーナス +30 XP 🎉</p>'
+      +'<p style="color:#4b5563;font-size:13px;margin:6px 0 12px">今日（'+esc(todayKey())+'）の達成にチェック → XP獲得！全部達成でボーナス +30 XP 🎉</p>'
       +'<div id="bt-routine-list"></div>'
-      +'<div id="bt-routine-total" style="margin-top:12px;font-weight:700"></div>'
+      +'<div id="bt-routine-total" style="margin-top:12px;font-weight:700;color:#111827"></div>'
       +'<div style="display:flex;gap:8px;margin-top:12px">'
       +'<button id="bt-routine-ai" style="flex:1;padding:12px;border-radius:12px;border:0;background:#7c3aed;color:#fff;font-weight:700">✨ AIアドバイス</button>'
       +'<button id="bt-routine-save" style="flex:1;padding:12px;border-radius:12px;border:0;background:#059669;color:#fff;font-weight:700">保存して閉じる</button>'
@@ -11556,7 +11556,7 @@ function sharePoseResultImage() {
       list.innerHTML=ROUTINES.map(function(r){
         return '<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid #e5e7eb;border-radius:14px;margin-bottom:8px;cursor:pointer">'
           +'<input type="checkbox" data-rid="'+r.id+'" '+(done[r.id]?"checked":"")+' style="width:20px;height:20px;margin-top:2px">'
-          +'<span><b>'+r.icon+' '+esc(r.label)+' <span style="color:#059669">+'+r.xp+'XP</span></b><br><span style="color:#6b7280;font-size:12px">'+esc(r.detail)+'</span></span></label>';
+          +'<span><b style="color:#111827">'+r.icon+' '+esc(r.label)+' <span style="color:#059669">+'+r.xp+'XP</span></b><br><span style="color:#4b5563;font-size:12.5px">'+esc(r.detail)+'</span></span></label>';
       }).join("");
       var total=calcXP(done);
       var all=ROUTINES.every(function(r){ return done[r.id]; });
