@@ -16008,5 +16008,757 @@ function sharePoseResultImage() {
 })();
 </script>
 
+<script id="badtore-tournament">
+/* =========================================================
+   🏆 大会資料／トーナメント表（スコアタブ追加カード）
+   - 写真（対戦表・進行表）は圧縮して IndexedDB に端末内保存（localStorage／クラウド同期には載せない）
+   - 写真読み取りは既存 Gemini 連携を利用し、結果は必ず確認・修正画面を経て確定する
+   - 確定データからトーナメント表を描画し、結果入力で勝者が次戦へ進む
+   ========================================================= */
+(function(){
+'use strict';
+
+  /* ---------- 小物ユーティリティ ---------- */
+  function btTnEsc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function btTnUid(){ return 'tn' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function btTnNormName(s){ return String(s || '').replace(/[\s　]+/g, '').trim(); }
+  function btTnClone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  /* ---------- IndexedDB 層（端末内保存専用） ---------- */
+  var BT_TN_DB_NAME = 'badtore_tournament_db';
+  var btTnDbPromise = null;
+  function btTnDbOpen(){
+    if (btTnDbPromise) return btTnDbPromise;
+    btTnDbPromise = new Promise(function(resolve, reject){
+      if (typeof indexedDB === 'undefined') { reject(new Error('IndexedDB未対応')); return; }
+      var req = indexedDB.open(BT_TN_DB_NAME, 1);
+      req.onupgradeneeded = function(ev){
+        var db = ev.target.result;
+        if (!db.objectStoreNames.contains('tournaments')) db.createObjectStore('tournaments', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('images')) {
+          var st = db.createObjectStore('images', { keyPath: 'key' });
+          st.createIndex('tnId', 'tnId', { unique: false });
+        }
+      };
+      req.onsuccess = function(){ resolve(req.result); };
+      req.onerror = function(){ reject(req.error || new Error('IndexedDB open失敗')); };
+    });
+    return btTnDbPromise;
+  }
+  function btTnDbReq(storeName, mode, makeReq){
+    return btTnDbOpen().then(function(db){
+      return new Promise(function(resolve, reject){
+        var tx = db.transaction(storeName, mode);
+        var req = makeReq(tx.objectStore(storeName));
+        if (req && typeof req === 'object' && 'onsuccess' in req) {
+          req.onsuccess = function(){ resolve(req.result); };
+          req.onerror = function(){ reject(req.error || new Error('IndexedDB req失敗')); };
+        } else {
+          tx.oncomplete = function(){ resolve(req); };
+          tx.onerror = function(){ reject(tx.error || new Error('IndexedDB tx失敗')); };
+          tx.onabort = function(){ reject(tx.error || new Error('IndexedDB tx中断')); };
+        }
+      });
+    });
+  }
+  function btTnDbPut(storeName, value){
+    return btTnDbReq(storeName, 'readwrite', function(store){ return store.put(value); });
+  }
+  function btTnDbDelete(storeName, key){
+    return btTnDbReq(storeName, 'readwrite', function(store){ return store.delete(key); });
+  }
+  function btTnDbGetAll(storeName){
+    return btTnDbReq(storeName, 'readonly', function(store){ return store.getAll(); });
+  }
+  function btTnDbGetAllByTn(tnId){
+    return btTnDbOpen().then(function(db){
+      return new Promise(function(resolve, reject){
+        var tx = db.transaction('images', 'readonly');
+        var idx = tx.objectStore('images').index('tnId');
+        var req = idx.getAll(tnId);
+        req.onsuccess = function(){ resolve(req.result || []); };
+        req.onerror = function(){ reject(req.error); };
+      });
+    });
+  }
+
+  /* ---------- 状態 ---------- */
+  var btTnState = {
+    list: [],            // 大会レコード（画像を含まない）
+    currentId: null,
+    images: { bracket: [], schedule: [] },  // 現在の大会の画像 {imgId, kind, dataUrl}
+    divCode: null,       // 表示中の部門コード
+    editDraft: null,     // 確認・修正画面のドラフト
+    viewer: null         // {kind, imgId, zoom}
+  };
+  function btTnCurrent(){
+    for (var i = 0; i < btTnState.list.length; i++) if (btTnState.list[i].id === btTnState.currentId) return btTnState.list[i];
+    return null;
+  }
+
+  /* ---------- プロフィール名（自試合ハイライト用） ---------- */
+  function btTnProfileNames(){
+    var names = [];
+    try {
+      if (typeof profilesList !== 'undefined' && Array.isArray(profilesList)) {
+        var activeName = '';
+        profilesList.forEach(function(p){
+          if (!p || !p.name) return;
+          var nm = String(p.name).replace(/\s*\(.*?\)\s*/g, '').trim();
+          if (!nm) return;
+          if (typeof activeProfileId !== 'undefined' && p.id === activeProfileId) activeName = nm;
+          else names.push(nm);
+        });
+        if (activeName) names.unshift(activeName);
+      }
+    } catch (e) { /* プロフィール未読込時はハイライトなし */ }
+    return names;
+  }
+  function btTnIsOwnName(name, names){
+    var n = btTnNormName(name);
+    if (!n) return false;
+    names = names || btTnProfileNames();
+    for (var i = 0; i < names.length; i++) {
+      var pn = btTnNormName(names[i]);
+      if (pn && (pn === n || (pn.length >= 2 && n.indexOf(pn) >= 0) || (n.length >= 2 && pn.indexOf(n) >= 0))) return true;
+    }
+    return false;
+  }
+
+  /* ---------- Gemini応答のパースとデータ化（純粋関数） ---------- */
+  function btTnParseGeminiJson(text){
+    if (!text) return null;
+    var t = String(text).replace(/```json/gi, '').replace(/```/g, '');
+    var s = t.indexOf('{'), e = t.lastIndexOf('}');
+    if (s < 0 || e <= s) return null;
+    try { return JSON.parse(t.slice(s, e + 1)); } catch (err) { return null; }
+  }
+  function btTnBuildData(parsed){
+    var out = { divisions: [], schedule: [] };
+    if (!parsed || typeof parsed !== 'object') return out;
+    (Array.isArray(parsed.divisions) ? parsed.divisions : []).forEach(function(d, di){
+      if (!d) return;
+      var div = { code: String(d.code || ('D' + (di + 1))).trim(), label: String(d.label || d.code || '').trim(), rounds: [] };
+      var order = [], byName = {};
+      (Array.isArray(d.matches) ? d.matches : []).forEach(function(m){
+        if (!m) return;
+        var rn = String(m.round || '1回戦').trim() || '1回戦';
+        if (!byName[rn]) { byName[rn] = { name: rn, third: /3位/.test(rn), matches: [] }; order.push(byName[rn]); }
+        byName[rn].matches.push({
+          no: String(m.no || '').trim(),
+          p1: String(m.p1 || '').trim(),
+          p2: String(m.p2 || '').trim(),
+          winner: 0, score: ''
+        });
+      });
+      div.rounds = order;
+      out.divisions.push(div);
+    });
+    (Array.isArray(parsed.schedule) ? parsed.schedule : []).forEach(function(s){
+      if (!s) return;
+      out.schedule.push({ no: String(s.no || '').trim(), court: String(s.court || '').trim(), time: String(s.time || '').trim() });
+    });
+    return out;
+  }
+  /* 確定済みデータ → 編集ドラフト（ラウンドを平坦化） */
+  function btTnFlattenForEditor(data){
+    var draft = { divisions: [], schedule: [] };
+    (data.divisions || []).forEach(function(div){
+      var d = { code: div.code, label: div.label, matches: [] };
+      (div.rounds || []).forEach(function(r){
+        (r.matches || []).forEach(function(m){
+          d.matches.push({ no: m.no || '', round: r.name || '1回戦', p1: m.p1 || '', p2: m.p2 || '' });
+        });
+      });
+      draft.divisions.push(d);
+    });
+    (data.schedule || []).forEach(function(s){ draft.schedule.push({ no: s.no || '', court: s.court || '', time: s.time || '' }); });
+    return draft;
+  }
+  /* 旧データの結果（勝者・スコア）を試合番号キーで新データへ引き継ぐ */
+  function btTnMergeResults(oldData, newData){
+    var map = {};
+    (oldData.divisions || []).forEach(function(div){
+      (div.rounds || []).forEach(function(r){
+        (r.matches || []).forEach(function(m){
+          if (m.no) map[div.code + '|' + m.no] = { winner: m.winner || 0, score: m.score || '' };
+        });
+      });
+    });
+    (newData.divisions || []).forEach(function(div){
+      (div.rounds || []).forEach(function(r){
+        (r.matches || []).forEach(function(m){
+          var prev = map[div.code + '|' + m.no];
+          if (prev) { m.winner = prev.winner; m.score = prev.score; }
+        });
+      });
+    });
+    return newData;
+  }
+  function btTnScheduleMap(tn){
+    var map = {};
+    ((tn && tn.schedule) || []).forEach(function(s){ if (s.no) map[s.no] = s; });
+    return map;
+  }
+  /* 実効対戦者：前ラウンド勝者（3位決定戦は敗者）を繰り上げて表示する */
+  function btTnFeederName(div, ri, mi, wantLoser, base){
+    var prev = div.rounds[ri];
+    if (!prev || mi >= prev.matches.length) return base || '';
+    var fm = prev.matches[mi];
+    if (!fm.winner) return base || '';
+    var fp = btTnMatchPlayers(div, ri, mi);
+    var winName = fm.winner === 1 ? fp.p1 : fp.p2;
+    var loseName = fm.winner === 1 ? fp.p2 : fp.p1;
+    return wantLoser ? loseName : winName;
+  }
+  function btTnMatchPlayers(div, ri, mi){
+    var round = div.rounds[ri];
+    var m = round.matches[mi];
+    if (ri === 0) return { p1: m.p1 || '', p2: m.p2 || '' };
+    if (round.third) {
+      /* 3位決定戦は準決勝の敗者同士。前ラウンドが決勝（1試合）の場合はそれを飛ばして準決勝から取る */
+      var fri = ri - 1;
+      if (fri > 0 && div.rounds[fri].matches.length < 2) fri = fri - 1;
+      return {
+        p1: btTnFeederName(div, fri, mi * 2, true, m.p1),
+        p2: btTnFeederName(div, fri, mi * 2 + 1, true, m.p2)
+      };
+    }
+    return {
+      p1: btTnFeederName(div, ri - 1, mi * 2, false, m.p1),
+      p2: btTnFeederName(div, ri - 1, mi * 2 + 1, false, m.p2)
+    };
+  }
+
+  /* ---------- CSS ---------- */
+  function btTnInjectCss(){
+    if (document.getElementById('btTnStyle')) return;
+    var st = document.createElement('style');
+    st.id = 'btTnStyle';
+    st.textContent = [
+      '.bt-tn-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;}',
+      '.bt-tn-thumb{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;border:1px solid var(--border-subtle);cursor:pointer;background:#000;}',
+      '.bt-tn-thumb img{width:100%;height:100%;object-fit:cover;display:block;}',
+      '.bt-tn-thumb-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:0.7rem;line-height:1;cursor:pointer;}',
+      '.bt-tn-viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;flex-direction:column;}',
+      '.bt-tn-viewer-bar{display:flex;gap:8px;justify-content:flex-end;padding:10px;}',
+      '.bt-tn-viewer-body{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;}',
+      '.bt-tn-viewer-body img{display:block;max-width:none;}',
+      '.bt-tn-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9997;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:12px;}',
+      '.bt-tn-modal{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;max-width:640px;width:100%;margin:auto;}',
+      '.bt-tn-ed-row{display:flex;gap:5px;align-items:center;margin:4px 0;flex-wrap:wrap;}',
+      '.bt-tn-ed-row input{background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;font-size:0.8rem;min-height:32px;}',
+      '.bt-tn-bracket{display:flex;gap:10px;overflow-x:auto;padding:6px 2px;}',
+      '.bt-tn-round{min-width:172px;flex:0 0 auto;}',
+      '.bt-tn-round-title{font-weight:900;font-size:0.8rem;color:var(--accent-primary);margin-bottom:6px;}',
+      '.bt-tn-match{border:1px solid var(--border-subtle);border-radius:10px;padding:7px;margin-bottom:8px;background:var(--bg-main);}',
+      '.bt-tn-match-own{border:2px solid var(--accent-primary);background:var(--bg-panel);box-shadow:0 0 0 2px var(--accent-primary) inset;}',
+      '.bt-tn-match-no{font-size:0.72rem;font-weight:800;color:var(--accent-secondary);cursor:pointer;}',
+      '.bt-tn-player{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:7px;padding:6px;margin:2px 0;color:var(--text-main);font-size:0.82rem;cursor:pointer;min-height:34px;}',
+      '.bt-tn-player-win{border-color:var(--accent-primary);font-weight:900;background:var(--bg-panel);}',
+      '.bt-tn-player:disabled{opacity:.55;cursor:default;}',
+      '.bt-tn-score{width:100%;background:var(--bg-panel);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:5px;font-size:0.78rem;margin-top:4px;min-height:30px;}',
+      '.bt-tn-chip{border:1px solid var(--border-subtle);background:var(--bg-main);color:var(--text-main);border-radius:999px;padding:6px 12px;font-size:0.8rem;cursor:pointer;min-height:32px;}',
+      '.bt-tn-chip-on{background:var(--accent-primary);color:#fff;font-weight:800;}',
+      '.bt-tn-sec-title{font-weight:900;font-size:0.84rem;margin:10px 0 4px;}',
+      '.bt-tn-note{font-size:0.74rem;color:var(--text-sub);line-height:1.5;}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+
+  /* ---------- カード骨格（スコアタブ末尾へ注入） ---------- */
+  function btTnCardHtml(){
+    return '<div class="card-header"><div class="card-title">🏆 大会資料（対戦表・進行表）</div></div>'
+      + '<div class="bt-tn-note">大会の対戦表・進行表の写真を登録できます。写真はこの端末の中だけに保存され、クラウドには送られません。写真から対戦表を読み取る場合は、必ず確認・修正画面で内容を確かめてから確定します。</div>'
+      + '<div class="bt-tn-sec-title">📁 大会</div>'
+      + '<div class="bt-tn-ed-row">'
+      + '<select id="btTnSelect" onchange="btTn.select(this.value)" style="flex:1;min-width:140px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;min-height:34px;"></select>'
+      + '<button class="btn btn-rose" onclick="btTn.removeCurrent()">🗑 大会を削除</button>'
+      + '</div>'
+      + '<div class="bt-tn-ed-row">'
+      + '<input id="btTnNewName" type="text" placeholder="新しい大会名（例：南区個人戦 2026-11-22）" style="flex:1;min-width:180px;">'
+      + '<button class="btn btn-emerald" onclick="btTn.create()">＋ 大会を追加</button>'
+      + '</div>'
+      + '<div id="btTnBody"></div>';
+  }
+
+  function btTnBodyHtml(){
+    var tn = btTnCurrent();
+    if (!tn) return '<div class="bt-tn-note" style="margin-top:10px;">大会がまだ登録されていません。上の「新しい大会名」に名前を入れて「＋ 大会を追加」を押してください。</div>';
+    var h = '';
+    /* 写真エリア */
+    h += '<div class="bt-tn-sec-title">🖼 対戦表の写真</div>'
+      + btTnThumbsHtml('bracket')
+      + '<label class="btn btn-cyan-outline" style="display:inline-block;cursor:pointer;">📷 対戦表の写真を追加<input type="file" accept="image/*" multiple style="display:none;" onchange="btTn.photoSelected(\'bracket\', this)"></label>'
+      + '<div class="bt-tn-sec-title">🕐 進行表の写真</div>'
+      + btTnThumbsHtml('schedule')
+      + '<label class="btn btn-cyan-outline" style="display:inline-block;cursor:pointer;">📷 進行表の写真を追加<input type="file" accept="image/*" multiple style="display:none;" onchange="btTn.photoSelected(\'schedule\', this)"></label>';
+    /* 読み取り・編集 */
+    h += '<div class="bt-tn-sec-title">📖 対戦表データ</div>'
+      + '<div class="bt-tn-ed-row">'
+      + '<button class="btn btn-emerald" onclick="btTn.readFromPhotos()">🤖 写真から読み取る（確認画面へ）</button>'
+      + '<button class="btn" onclick="btTn.openEditor(null)">✏️ 手入力・修正する</button>'
+      + '</div>'
+      + '<div class="bt-tn-note">読み取りはAI（Gemini）に写真を送って行います。読み取り結果はそのまま使わず、確認・修正画面で直してから確定してください。</div>';
+    /* トーナメント表 */
+    h += '<div id="btTnBracketWrap">' + btTnBracketHtml(tn) + '</div>';
+    return h;
+  }
+
+  function btTnThumbsHtml(kind){
+    var imgs = btTnState.images[kind] || [];
+    if (!imgs.length) return '<div class="bt-tn-note">（まだ写真がありません）</div>';
+    var h = '<div class="bt-tn-thumbs">';
+    imgs.forEach(function(im, i){
+      h += '<div class="bt-tn-thumb" onclick="btTn.view(\'' + kind + '\',' + i + ')">'
+        + '<img src="' + im.dataUrl + '" alt="大会資料写真">'
+        + '<button class="bt-tn-thumb-del" onclick="event.stopPropagation();btTn.deletePhoto(\'' + kind + '\',' + i + ')" aria-label="写真を削除">✕</button>'
+        + '</div>';
+    });
+    return h + '</div>';
+  }
+
+  /* ---------- トーナメント表描画 ---------- */
+  function btTnOwnSummaryHtml(tn, names){
+    var smap = btTnScheduleMap(tn);
+    var lines = [];
+    (tn.divisions || []).forEach(function(div){
+      (div.rounds || []).forEach(function(r, ri){
+        (r.matches || []).forEach(function(m, mi){
+          if (m.winner) return;
+          var eff = btTnMatchPlayers(div, ri, mi);
+          var own1 = btTnIsOwnName(eff.p1, names), own2 = btTnIsOwnName(eff.p2, names);
+          if (!own1 && !own2) return;
+          var opp = own1 ? eff.p2 : eff.p1;
+          var sch = smap[m.no];
+          lines.push('⭐ ' + btTnEsc(div.label || div.code) + ' ' + btTnEsc(r.name) + ' ' + btTnEsc(m.no || '')
+            + '：vs ' + btTnEsc(opp || '（対戦相手未定）')
+            + (sch ? '（' + btTnEsc(sch.court || '') + (sch.time ? ' ' + btTnEsc(sch.time) : '') + '）' : ''));
+        });
+      });
+    });
+    if (!lines.length) return '';
+    return '<div style="border:1px solid var(--accent-primary);border-radius:10px;padding:8px;margin:8px 0;background:var(--bg-panel);">'
+      + '<div style="font-weight:900;font-size:0.82rem;color:var(--accent-primary);">⭐ 自分の試合（未確定の次戦）</div>'
+      + lines.map(function(l){ return '<div style="font-size:0.8rem;margin-top:3px;">' + l + '</div>'; }).join('')
+      + '</div>';
+  }
+
+  function btTnMatchHtml(tn, div, di, ri, mi, names, smap){
+    var m = div.rounds[ri].matches[mi];
+    var eff = btTnMatchPlayers(div, ri, mi);
+    var own = btTnIsOwnName(eff.p1, names) || btTnIsOwnName(eff.p2, names);
+    var sch = m.no ? smap[m.no] : null;
+    var h = '<div class="bt-tn-match' + (own ? ' bt-tn-match-own' : '') + '">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;">'
+      + '<span class="bt-tn-match-no" onclick="btTn.showMatchSchedule(' + di + ',' + ri + ',' + mi + ')">' + btTnEsc(m.no || '(番号なし)') + '</span>'
+      + (own ? '<span style="font-size:0.7rem;font-weight:900;color:var(--accent-primary);">⭐自分の試合</span>' : '')
+      + '</div>';
+    if (sch) h += '<div class="bt-tn-note">' + btTnEsc(sch.court || '') + (sch.time ? ' ' + btTnEsc(sch.time) : '') + '</div>';
+    [1, 2].forEach(function(side){
+      var nm = side === 1 ? eff.p1 : eff.p2;
+      var isWin = m.winner === side;
+      var dis = nm ? '' : ' disabled';
+      h += '<button class="bt-tn-player' + (isWin ? ' bt-tn-player-win' : '') + '"' + dis
+        + ' onclick="btTn.setWinner(' + di + ',' + ri + ',' + mi + ',' + side + ')">'
+        + '<span>' + btTnEsc(nm || '（未定）') + '</span>' + (isWin ? '<span>🏆</span>' : '')
+        + '</button>';
+    });
+    h += '<input class="bt-tn-score" type="text" placeholder="スコア（例 21-15, 21-10）" value="' + btTnEsc(m.score || '') + '" onchange="btTn.setScore(' + di + ',' + ri + ',' + mi + ', this.value)">';
+    if (m.winner) h += '<button class="btn" style="margin-top:4px;" onclick="btTn.clearResult(' + di + ',' + ri + ',' + mi + ')">結果を取り消す</button>';
+    return h + '</div>';
+  }
+
+  function btTnBracketHtml(tn){
+    if (!tn || !tn.divisions || !tn.divisions.length) {
+      return '<div class="bt-tn-note" style="margin-top:8px;">対戦表データはまだありません。「写真から読み取る」か「手入力・修正する」から確定すると、ここに対戦表が出ます。</div>';
+    }
+    var names = btTnProfileNames();
+    var smap = btTnScheduleMap(tn);
+    if (!btTnState.divCode || !tn.divisions.some(function(d){ return d.code === btTnState.divCode; })) {
+      btTnState.divCode = tn.divisions[0].code;
+    }
+    var h = btTnOwnSummaryHtml(tn, names);
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">';
+    tn.divisions.forEach(function(div, di){
+      h += '<button class="bt-tn-chip' + (div.code === btTnState.divCode ? ' bt-tn-chip-on' : '') + '" onclick="btTn.setDivisionByIdx(' + di + ')">' + btTnEsc(div.label || div.code) + '</button>';
+    });
+    h += '</div>';
+    tn.divisions.forEach(function(div, di){
+      if (div.code !== btTnState.divCode) return;
+      h += '<div class="bt-tn-bracket">';
+      (div.rounds || []).forEach(function(r, ri){
+        h += '<div class="bt-tn-round"><div class="bt-tn-round-title">' + btTnEsc(r.name) + '</div>';
+        (r.matches || []).forEach(function(m, mi){ h += btTnMatchHtml(tn, div, di, ri, mi, names, smap); });
+        h += '</div>';
+      });
+      h += '</div>';
+      h += '<div class="bt-tn-note">選手名をタップすると勝者になり、次の試合へ進みます。試合番号をタップすると進行表の情報が出ます。</div>';
+    });
+    return h;
+  }
+
+  /* ---------- 写真ビューア ---------- */
+  function btTnCloseOverlay(id){ var el = document.getElementById(id); if (el) el.remove(); }
+  function btTnViewerHtml(){
+    var v = btTnState.viewer;
+    if (!v) return '';
+    var im = (btTnState.images[v.kind] || [])[v.idx];
+    if (!im) return '';
+    var w = v.zoom ? '200%' : '100%';
+    return '<div class="bt-tn-viewer" id="btTnViewer">'
+      + '<div class="bt-tn-viewer-bar">'
+      + '<button class="btn" onclick="btTn.toggleZoom()">' + (v.zoom ? '🔍 縮小する' : '🔍 拡大する') + '</button>'
+      + '<button class="btn btn-rose" onclick="btTn.closeViewer()">✕ 閉じる</button>'
+      + '</div>'
+      + '<div class="bt-tn-viewer-body"><img src="' + im.dataUrl + '" style="width:' + w + ';" alt="大会資料写真（拡大）"></div>'
+      + '</div>';
+  }
+
+  /* ---------- 確認・修正エディタ ---------- */
+  function btTnEditorHtml(){
+    var d = btTnState.editDraft;
+    if (!d) return '';
+    var h = '<div class="bt-tn-modal-ov" id="btTnEditor"><div class="bt-tn-modal" role="dialog" aria-modal="true">'
+      + '<div style="font-weight:900;font-size:0.95rem;color:var(--accent-primary);">📝 対戦表の確認・修正</div>'
+      + '<div class="bt-tn-note">内容を確かめて、間違いがあれば直してください。「この内容で確定」を押すと対戦表に反映されます。</div>';
+    d.divisions.forEach(function(div, di){
+      h += '<div style="border:1px solid var(--border-subtle);border-radius:10px;padding:8px;margin-top:10px;">'
+        + '<div class="bt-tn-ed-row">'
+        + '<input type="text" value="' + btTnEsc(div.code) + '" placeholder="部門コード（BS）" style="width:80px;" onchange="btTn.edDiv(' + di + ',\'code\',this.value)">'
+        + '<input type="text" value="' + btTnEsc(div.label) + '" placeholder="部門名（男子シングルス）" style="flex:1;min-width:140px;" onchange="btTn.edDiv(' + di + ',\'label\',this.value)">'
+        + '<button class="btn btn-rose" onclick="btTn.edDelDiv(' + di + ')">部門を削除</button>'
+        + '</div>';
+      div.matches.forEach(function(m, mi){
+        h += '<div class="bt-tn-ed-row">'
+          + '<input type="text" value="' + btTnEsc(m.no) + '" placeholder="BS1" style="width:64px;" onchange="btTn.edMatch(' + di + ',' + mi + ',\'no\',this.value)">'
+          + '<input type="text" value="' + btTnEsc(m.round) + '" placeholder="1回戦" style="width:76px;" onchange="btTn.edMatch(' + di + ',' + mi + ',\'round\',this.value)">'
+          + '<input type="text" value="' + btTnEsc(m.p1) + '" placeholder="選手1" style="flex:1;min-width:96px;" onchange="btTn.edMatch(' + di + ',' + mi + ',\'p1\',this.value)">'
+          + '<input type="text" value="' + btTnEsc(m.p2) + '" placeholder="選手2" style="flex:1;min-width:96px;" onchange="btTn.edMatch(' + di + ',' + mi + ',\'p2\',this.value)">'
+          + '<button class="btn" onclick="btTn.edDelMatch(' + di + ',' + mi + ')">✕</button>'
+          + '</div>';
+      });
+      h += '<button class="btn" onclick="btTn.edAddMatch(' + di + ')">＋ 試合を追加</button></div>';
+    });
+    h += '<button class="btn" style="margin-top:8px;" onclick="btTn.edAddDiv()">＋ 部門を追加</button>';
+    h += '<div class="bt-tn-sec-title">🕐 進行表（試合番号 → コート・時刻）</div>';
+    d.schedule.forEach(function(s, si){
+      h += '<div class="bt-tn-ed-row">'
+        + '<input type="text" value="' + btTnEsc(s.no) + '" placeholder="BS1" style="width:64px;" onchange="btTn.edSch(' + si + ',\'no\',this.value)">'
+        + '<input type="text" value="' + btTnEsc(s.court) + '" placeholder="第1コート" style="flex:1;min-width:96px;" onchange="btTn.edSch(' + si + ',\'court\',this.value)">'
+        + '<input type="text" value="' + btTnEsc(s.time) + '" placeholder="13:00" style="width:76px;" onchange="btTn.edSch(' + si + ',\'time\',this.value)">'
+        + '<button class="btn" onclick="btTn.edDelSch(' + si + ')">✕</button>'
+        + '</div>';
+    });
+    h += '<button class="btn" onclick="btTn.edAddSch()">＋ 進行表の行を追加</button>'
+      + '<div class="bt-tn-ed-row" style="margin-top:12px;justify-content:flex-end;">'
+      + '<button class="btn" onclick="btTn.closeEditor()">キャンセル</button>'
+      + '<button class="btn btn-emerald" onclick="btTn.confirmEditor()">✅ この内容で確定</button>'
+      + '</div></div></div>';
+    return h;
+  }
+  function btTnShowEditor(){
+    btTnCloseOverlay('btTnEditor');
+    var wrap = document.createElement('div');
+    wrap.innerHTML = btTnEditorHtml();
+    if (wrap.firstChild) document.body.appendChild(wrap.firstChild);
+  }
+
+  /* ---------- 永続化ヘルパー ---------- */
+  function btTnSaveRecord(tn){
+    tn.updatedAt = Date.now();
+    return btTnDbPut('tournaments', btTnClone(tn)).catch(function(e){ console.warn('[badtore tournament] save失敗', e); });
+  }
+  function btTnLoadImages(tnId){
+    return btTnDbGetAllByTn(tnId).then(function(rows){
+      var imgs = { bracket: [], schedule: [] };
+      rows.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); });
+      rows.forEach(function(r){ if (imgs[r.kind]) imgs[r.kind].push({ imgId: r.imgId, kind: r.kind, dataUrl: r.dataUrl }); });
+      btTnState.images = imgs;
+    }).catch(function(){ btTnState.images = { bracket: [], schedule: [] }; });
+  }
+  function btTnRender(){
+    var sel = document.getElementById('btTnSelect');
+    if (sel) {
+      sel.innerHTML = btTnState.list.map(function(t){
+        return '<option value="' + btTnEsc(t.id) + '"' + (t.id === btTnState.currentId ? ' selected' : '') + '>' + btTnEsc(t.name) + '</option>';
+      }).join('');
+    }
+    var body = document.getElementById('btTnBody');
+    if (body) body.innerHTML = btTnBodyHtml();
+  }
+  function btTnRenderBracket(){
+    var w = document.getElementById('btTnBracketWrap');
+    var tn = btTnCurrent();
+    if (w && tn) w.innerHTML = btTnBracketHtml(tn);
+  }
+
+  /* ---------- 画像圧縮 ---------- */
+  function btTnCompressImage(file){
+    return new Promise(function(resolve, reject){
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function(){
+        try {
+          var maxSide = 1600;
+          var scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+          var c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          resolve(c.toDataURL('image/jpeg', 0.82));
+        } catch (e) { URL.revokeObjectURL(url); reject(e); }
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('画像を読み込めませんでした')); };
+      img.src = url;
+    });
+  }
+
+  /* ---------- Gemini読み取り ---------- */
+  var BT_TN_READ_PROMPT = [
+    'あなたはバドミントン大会の資料を読み取るアシスタントです。',
+    '添付画像のうち、トーナメント対戦表の写真からは部門・試合番号・ラウンド・選手名を、進行表（タイムテーブル）の写真からは試合番号・コート・時刻を読み取ってください。',
+    '出力はJSONだけにしてください（説明文やコードフェンスは付けない）。形式は次のとおりです：',
+    '{"divisions":[{"code":"BS","label":"男子シングルス","matches":[{"no":"BS1","round":"1回戦","p1":"選手名","p2":"選手名"}]}],"schedule":[{"no":"BS1","court":"第1コート","time":"13:00"}]}',
+    '部門コードは BS=男子シングルス、BD=男子ダブルス、GS=女子シングルス、GD=女子ダブルス のように写真の表記に合わせてください。',
+    'ラウンド名は「1回戦」「2回戦」「準々決勝」「準決勝」「決勝」「3位決定戦」など写真の表記どおりに。',
+    '対戦相手が未定・シード等で読み取れない選手名は空文字にしてください。読み取れない項目は推測で埋めず、空文字にしてください。',
+    'ダブルスの選手名は「選手A・選手B」のように1つの文字列にまとめてください。'
+  ].join('\n');
+  function btTnReadWithGemini(){
+    if (typeof callGeminiWithFallback !== 'function' || typeof getSavedGeminiApiKey !== 'function') {
+      return Promise.reject(new Error('AI読み取り機能が見つかりませんでした'));
+    }
+    var parts = [{ text: BT_TN_READ_PROMPT }];
+    var count = 0;
+    ['bracket', 'schedule'].forEach(function(kind){
+      (btTnState.images[kind] || []).forEach(function(im){
+        if (count >= 8) return;
+        var b64 = String(im.dataUrl || '').split(',')[1];
+        if (b64) { parts.push({ inline_data: { mime_type: 'image/jpeg', data: b64 } }); count++; }
+      });
+    });
+    if (!count) return Promise.reject(new Error('写真が登録されていません'));
+    return callGeminiWithFallback(getSavedGeminiApiKey(), parts).then(function(res){
+      var parsed = btTnParseGeminiJson(res && res.text);
+      if (!parsed) throw new Error('読み取り結果を解釈できませんでした');
+      return btTnBuildData(parsed);
+    });
+  }
+
+  /* ---------- アクション（画面操作） ---------- */
+  var btTnApi = {
+    create: function(){
+      var inp = document.getElementById('btTnNewName');
+      var name = inp ? inp.value.trim() : '';
+      if (!name) { alert('大会名を入力してください'); return; }
+      var tn = { id: btTnUid(), name: name, createdAt: Date.now(), updatedAt: Date.now(), divisions: [], schedule: [] };
+      btTnState.list.unshift(tn);
+      btTnState.currentId = tn.id;
+      btTnState.divCode = null;
+      btTnState.images = { bracket: [], schedule: [] };
+      if (inp) inp.value = '';
+      btTnSaveRecord(tn).then(btTnRender);
+    },
+    select: function(id){
+      btTnState.currentId = id;
+      btTnState.divCode = null;
+      btTnLoadImages(id).then(btTnRender);
+    },
+    removeCurrent: function(){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      if (!confirm('大会「' + tn.name + '」と、その写真・対戦表データをすべて削除します。よろしいですか？')) return;
+      var id = tn.id;
+      btTnDbDelete('tournaments', id).then(function(){
+        return btTnDbGetAllByTn(id);
+      }).then(function(rows){
+        return Promise.all(rows.map(function(r){ return btTnDbDelete('images', r.key); }));
+      }).then(function(){
+        btTnState.list = btTnState.list.filter(function(t){ return t.id !== id; });
+        btTnState.currentId = btTnState.list.length ? btTnState.list[0].id : null;
+        btTnState.divCode = null;
+        return btTnState.currentId ? btTnLoadImages(btTnState.currentId) : null;
+      }).then(btTnRender).catch(function(){ btTnRender(); });
+    },
+    photoSelected: function(kind, input){
+      var tn = btTnCurrent();
+      if (!tn || !input.files || !input.files.length) return;
+      var files = Array.prototype.slice.call(input.files);
+      input.value = '';
+      var chain = Promise.resolve();
+      files.forEach(function(f){
+        chain = chain.then(function(){
+          return btTnCompressImage(f).then(function(dataUrl){
+            var imgId = btTnUid();
+            var rec = { key: tn.id + '::' + imgId, tnId: tn.id, imgId: imgId, kind: kind, dataUrl: dataUrl, createdAt: Date.now() };
+            return btTnDbPut('images', rec);
+          });
+        });
+      });
+      chain.then(function(){ return btTnLoadImages(tn.id); }).then(btTnRender)
+        .catch(function(e){ alert('写真の保存に失敗しました：' + (e && e.message)); });
+    },
+    deletePhoto: function(kind, idx){
+      var tn = btTnCurrent();
+      var im = (btTnState.images[kind] || [])[idx];
+      if (!tn || !im) return;
+      if (!confirm('この写真を削除しますか？')) return;
+      btTnDbDelete('images', tn.id + '::' + im.imgId).then(function(){
+        return btTnLoadImages(tn.id);
+      }).then(btTnRender);
+    },
+    view: function(kind, idx){
+      btTnState.viewer = { kind: kind, idx: idx, zoom: false };
+      btTnCloseOverlay('btTnViewer');
+      var wrap = document.createElement('div');
+      wrap.innerHTML = btTnViewerHtml();
+      if (wrap.firstChild) document.body.appendChild(wrap.firstChild);
+    },
+    toggleZoom: function(){
+      if (!btTnState.viewer) return;
+      btTnState.viewer.zoom = !btTnState.viewer.zoom;
+      btTnCloseOverlay('btTnViewer');
+      var wrap = document.createElement('div');
+      wrap.innerHTML = btTnViewerHtml();
+      if (wrap.firstChild) document.body.appendChild(wrap.firstChild);
+    },
+    closeViewer: function(){ btTnState.viewer = null; btTnCloseOverlay('btTnViewer'); },
+    showMatchSchedule: function(di, ri, mi){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      var m = tn.divisions[di].rounds[ri].matches[mi];
+      var no = m.no || '';
+      if (!no) { alert('この試合には試合番号がありません'); return; }
+      var s = btTnScheduleMap(tn)[no];
+      if (s) alert('🏸 ' + no + '\nコート：' + (s.court || '―') + '\n時刻：' + (s.time || '―') + '\n※進行表の時刻は目安です（流し込みの場合があります）');
+      else alert('🏸 ' + no + '\n進行表にこの試合番号の情報がありません。進行表の写真を読み取るか、手入力・修正画面で追加してください。');
+    },
+    readFromPhotos: function(){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      if (!btTnState.images.bracket.length && !btTnState.images.schedule.length) {
+        alert('先に写真を登録してください'); return;
+      }
+      var body = document.getElementById('btTnBody');
+      if (body) body.innerHTML = '<div class="bt-tn-note" style="margin-top:10px;">⏳ 写真を読み取っています…（少し時間がかかります）</div>';
+      btTnReadWithGemini().then(function(data){
+        btTnState.editDraft = btTnFlattenForEditor(data);
+        btTnRender();
+        btTnShowEditor();
+      }).catch(function(e){
+        btTnRender();
+        alert('読み取りに失敗しました：' + (e && e.message) + '\n「✏️ 手入力・修正する」から手で入力もできます。');
+      });
+    },
+    openEditor: function(data){
+      var tn = btTnCurrent();
+      if (!tn) { alert('先に大会を作成してください'); return; }
+      if (data) btTnState.editDraft = btTnFlattenForEditor(data);
+      else if (tn.divisions && tn.divisions.length) btTnState.editDraft = btTnFlattenForEditor(tn);
+      else btTnState.editDraft = { divisions: [{ code: 'BS', label: '男子シングルス', matches: [{ no: 'BS1', round: '1回戦', p1: '', p2: '' }] }], schedule: [] };
+      btTnShowEditor();
+    },
+    closeEditor: function(){ btTnState.editDraft = null; btTnCloseOverlay('btTnEditor'); },
+    edDiv: function(di, field, val){ if (btTnState.editDraft) btTnState.editDraft.divisions[di][field] = val; },
+    edMatch: function(di, mi, field, val){ if (btTnState.editDraft) btTnState.editDraft.divisions[di].matches[mi][field] = val; },
+    edSch: function(si, field, val){ if (btTnState.editDraft) btTnState.editDraft.schedule[si][field] = val; },
+    edAddMatch: function(di){ btTnState.editDraft.divisions[di].matches.push({ no: '', round: '1回戦', p1: '', p2: '' }); btTnShowEditor(); },
+    edDelMatch: function(di, mi){ btTnState.editDraft.divisions[di].matches.splice(mi, 1); btTnShowEditor(); },
+    edAddDiv: function(){ btTnState.editDraft.divisions.push({ code: '', label: '', matches: [] }); btTnShowEditor(); },
+    edDelDiv: function(di){ btTnState.editDraft.divisions.splice(di, 1); btTnShowEditor(); },
+    edAddSch: function(){ btTnState.editDraft.schedule.push({ no: '', court: '', time: '' }); btTnShowEditor(); },
+    edDelSch: function(si){ btTnState.editDraft.schedule.splice(si, 1); btTnShowEditor(); },
+    confirmEditor: function(){
+      var tn = btTnCurrent();
+      if (!tn || !btTnState.editDraft) return;
+      var built = btTnBuildData(btTnState.editDraft);
+      if (!built.divisions.length && !built.schedule.length) { alert('部門や試合が入力されていません'); return; }
+      built = btTnMergeResults(tn, built);
+      tn.divisions = built.divisions;
+      tn.schedule = built.schedule;
+      btTnState.divCode = tn.divisions.length ? tn.divisions[0].code : null;
+      btTnState.editDraft = null;
+      btTnCloseOverlay('btTnEditor');
+      btTnSaveRecord(tn).then(btTnRender);
+    },
+    setDivisionByIdx: function(di){
+      var tn = btTnCurrent();
+      if (!tn || !tn.divisions[di]) return;
+      btTnState.divCode = tn.divisions[di].code;
+      btTnRenderBracket();
+    },
+    setWinner: function(di, ri, mi, side){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      var m = tn.divisions[di].rounds[ri].matches[mi];
+      m.winner = (m.winner === side) ? 0 : side;
+      btTnSaveRecord(tn).then(btTnRenderBracket);
+    },
+    clearResult: function(di, ri, mi){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      var m = tn.divisions[di].rounds[ri].matches[mi];
+      m.winner = 0; m.score = '';
+      btTnSaveRecord(tn).then(btTnRenderBracket);
+    },
+    setScore: function(di, ri, mi, val){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      tn.divisions[di].rounds[ri].matches[mi].score = val;
+      btTnSaveRecord(tn);
+    }
+  };
+  window.btTn = btTnApi;
+
+  /* ---------- 起動 ---------- */
+  function btTnBoot(){
+    try {
+      btTnInjectCss();
+      var sec = document.getElementById('tab-score');
+      if (!sec || document.getElementById('btTnCard')) return;
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.id = 'btTnCard';
+      card.innerHTML = btTnCardHtml();
+      sec.appendChild(card);
+      btTnDbGetAll('tournaments').then(function(rows){
+        rows = rows || [];
+        rows.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+        btTnState.list = rows;
+        btTnState.currentId = rows.length ? rows[0].id : null;
+        return btTnState.currentId ? btTnLoadImages(btTnState.currentId) : null;
+      }).then(btTnRender).catch(function(){ btTnRender(); });
+    } catch (e) { console.warn('[badtore tournament] boot失敗', e); }
+  }
+  if (typeof document !== 'undefined' && document.getElementById) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', btTnBoot);
+    else btTnBoot();
+  }
+
+  /* ---------- テスト用フック ---------- */
+  window.__bt_tournament = {
+    parseGeminiJson: btTnParseGeminiJson,
+    buildData: btTnBuildData,
+    flattenForEditor: btTnFlattenForEditor,
+    mergeResults: btTnMergeResults,
+    scheduleMap: btTnScheduleMap,
+    matchPlayers: btTnMatchPlayers,
+    isOwnName: btTnIsOwnName,
+    bracketHtml: btTnBracketHtml,
+    bodyHtml: btTnBodyHtml,
+    viewerHtml: btTnViewerHtml,
+    thumbsHtml: btTnThumbsHtml,
+    ownSummaryHtml: btTnOwnSummaryHtml,
+    editorHtml: btTnEditorHtml,
+    state: btTnState,
+    api: btTnApi
+  };
+  console.log('[badtore tournament] loaded');
+})();
+</script>
+
+
 </body>
 </html>
