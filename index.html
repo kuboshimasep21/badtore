@@ -13163,7 +13163,7 @@ function sharePoseResultImage() {
 
 <script id="badtore-drill-library">
 /* =========================================================================
-   📚 ドリル集（プロ式メニュー）Step 1・2
+   📚 ドリル集（プロ式メニュー）Step 1〜3
    - 配置：メニュー作成タブ（tab-menu）内の一区画としてカードを追加（設計B案）
    - データ：スタイル別メニュー＋ドリルの静的データ（プリセット・読み取り専用）
    - 看板はスタイル名、選手名は「参考選手／参考方式」として小さく表示
@@ -13172,6 +13172,9 @@ function sharePoseResultImage() {
      （フットワーク徹底型／ジャンピングスマッシュ習得プログラムのステップ1）
    - Step 2 の範囲：ドリル詳細表示（モーダル）＋「作業中メニューに追加」連携
      （ドリル単位／メニュー（パック）単位。追加先は既存の currentMenuPlan 形式）
+   - Step 3 の範囲：残りメニューのデータ投入（3a 方式・海外系＝多球／アクセルセン／
+     アン・セヨン＋韓国式の追加ドリル、3b 日本人選手系＝桃田／山口／ダブルス組、
+     3c 田口／五十嵐有紗＋習得プログラムのステップ2〜4と補助トレ枠）
    - リンク方針：リンク化してよいのは主要プラットフォーム（YouTube／Instagram／
      TikTok／X）のみ。それ以外の出典はリンクにせず出典名のテキスト表示のみとし、
      URL文字列も出さない。判定は btDrillLinkHtml に一元化し、カード・詳細の
@@ -13219,20 +13222,85 @@ function sharePoseResultImage() {
       referenceLabel: '参考方式：韓国式・フットワーク重視',
       type: 'pack',
       description: '毎回の練習でフットワークだけの時間を確保し、考えなくても動ける「自動化」を目指す方式をアプリ用に構成しました。タブ1のフットワークドリルと組み合わせるのがおすすめです。',
-      drillIds: ['drill_fw_six_corners','drill_fw_court_running']
+      drillIds: ['drill_fw_six_corners','drill_fw_court_running','drill_fw_reactive']
+    },
+    {
+      menuId: 'menu_power',
+      title: 'パワー型メニュー',
+      referenceLabel: '参考選手：ビクトル・アクセルセン',
+      type: 'pack',
+      description: '長いリーチと高い打点からの攻撃を支える、脚力とインターバル能力を鍛えるメニューです。プロの処方は負荷が高いため、ジュニア版は半量程度から始めてください。',
+      drillIds: ['drill_power_fw_interval','drill_power_trapbar','drill_power_single_leg','drill_power_defense_interval']
+    },
+    {
+      menuId: 'menu_technique',
+      title: 'テクニック型メニュー',
+      referenceLabel: '参考選手：桃田賢斗',
+      type: 'pack',
+      description: '速さよりも「良い体勢で打つ」ことを軸にしたメニューです。本人の公式YouTube「桃CHANNEL」の解説テーマ（ラダー／クリアの体勢／力を入れるのは一瞬）をドリル化しました。回数の処方は出典にないため、目安はアプリ独自のものです。',
+      drillIds: ['drill_tech_ladder','drill_tech_clear_stance','drill_tech_knock','drill_tech_defense_long']
+    },
+    {
+      menuId: 'menu_endurance',
+      title: '持久・スピード型メニュー',
+      referenceLabel: '参考選手：山口茜',
+      type: 'pack',
+      description: '小柄でもコート全体をカバーし続けるスタミナとスピードを鍛えるメニューです。高校時代の報道（2対1パターン練習など）と代表合宿の内容をもとに構成しました。「集中できる時間の中で質を保つ」ことが軸です。',
+      drillIds: ['drill_end_2v1','drill_end_multi_knock','drill_end_speed_rally']
+    },
+    {
+      menuId: 'menu_wall',
+      title: '鉄壁守備型メニュー',
+      referenceLabel: '参考選手：アン・セヨン',
+      type: 'pack',
+      description: '拾い続ける守備の土台——深いランジ、低い重心、全身の筋力——を鍛えるメニューです。本人の発信（週3回の全身筋トレ等）と、映像分析で知られる守備の型をもとに構成しました。',
+      drillIds: ['drill_wall_lunge','drill_wall_defense_fw','drill_wall_fullbody','drill_wall_hill_dash']
+    },
+    {
+      menuId: 'menu_doubles',
+      title: 'ダブルス・前衛型メニュー',
+      referenceLabel: '参考選手：渡辺勇大／東野有紗／保木卓朗',
+      type: 'pack',
+      description: '前衛の組み立てと後衛の攻撃を分担する、ダブルスの型を鍛えるメニューです。公開練習やインタビューで確認できた、3対1ノックやレシーブ起点のパターン練習を収録しました。',
+      drillIds: ['drill_dbl_handfeed','drill_dbl_3v1','drill_dbl_front_sink','drill_dbl_receive_pattern','drill_dbl_drive_ready']
+    },
+    {
+      menuId: 'menu_multifeed',
+      title: '多球トレーニング',
+      referenceLabel: '参考方式：中国式・多球練習',
+      type: 'pack',
+      description: '球出し役が連続で出し続け、受ける側が休みなく返し続ける追い込み方式です。本数は中国国内の合宿体験記に基づく目安で、中国代表公式の公開資料ではありません。球出し役が必要です。',
+      drillIds: ['drill_multi_random','drill_multi_defense','drill_multi_smash_kill','drill_multi_net']
+    },
+    {
+      menuId: 'menu_net',
+      title: 'ネット制圧・スピード型メニュー',
+      referenceLabel: '参考選手：田口真彩（スタイル分析から構成）',
+      type: 'pack',
+      description: '左腕のパワフルな攻撃と、ネット際での圧倒的なスピードが持ち味のスタイルを分析し、前衛ドリルとして構成した一般ドリル集です。本人の練習メニューそのものではありません（処方レベルの出典が確認できなかったため、明記しています）。',
+      drillIds: ['drill_net_front_push','drill_net_back_attack','drill_net_rotation']
+    },
+    {
+      menuId: 'menu_jump_smash_style',
+      title: 'ジャンピングスマッシュ型メニュー',
+      referenceLabel: '参考選手：五十嵐有紗（旧姓・東野）',
+      type: 'pack',
+      description: '女子が後衛からジャンピングスマッシュを打てることで、ダブルスのフォーメーションが変幻自在になるスタイルです。育成期に指導された「両足でジャンプ」の型と、打った後の復帰を軸に構成しました。習得の段階練習は「ジャンピングスマッシュ習得プログラム」と合わせてどうぞ。',
+      drillIds: ['drill_jss_twofoot','drill_jss_followup']
     },
     {
       menuId: 'program_jump_smash',
       title: 'ジャンピングスマッシュ習得プログラム',
       referenceLabel: '参考：コーチング公開情報（特定選手の練習ではありません）',
       type: 'program',
-      description: '立ちスマッシュが安定していることを前提に、シャドー→球出し→フォローアップ連結→実戦判断の順で、段階的にジャンプ要素を足していく習得プログラムです。ステップを飛ばさないことが、上達と安全の両方で大切です。',
-      drillIds: ['drill_js_shadow','drill_js_landing','drill_js_scissor'],
+      description: '立ちスマッシュが安定していることを前提に、シャドー→球出し→フォローアップ連結→実戦判断の順で、段階的にジャンプ要素を足していく習得プログラムです。ステップを飛ばさないことが、上達と安全の両方で大切です。補助トレーニングとして、ジャンプ力を高める筋力・プライオメトリクスの枠も並行して行えます。',
+      drillIds: ['drill_js_shadow','drill_js_landing','drill_js_scissor','drill_js_feed','drill_js_followup','drill_js_decision','drill_js_strength','drill_js_plyo'],
       programSteps: [
         { step: 1, title: 'シャドー（シャトルなし）', drillIds: ['drill_js_shadow','drill_js_landing','drill_js_scissor'] },
-        { step: 2, title: '球出し（フィード）', drillIds: [] },
-        { step: 3, title: 'フォローアップ連結', drillIds: [] },
-        { step: 4, title: '実戦判断', drillIds: [] }
+        { step: 2, title: '球出し（フィード）', drillIds: ['drill_js_feed'] },
+        { step: 3, title: 'フォローアップ連結', drillIds: ['drill_js_followup'] },
+        { step: 4, title: '実戦判断', drillIds: ['drill_js_decision'] },
+        { step: 0, label: '補助トレ', title: 'ジャンプ力アップ（筋力・プライオ）※ステップと並行して行う', drillIds: ['drill_js_strength','drill_js_plyo'] }
       ]
     }
   ];
@@ -13385,6 +13453,1040 @@ function sharePoseResultImage() {
       video: null,
       link: { type: 'footwork', target: '' },
       poseChecks: ['scissor']
+    },
+    {
+      id: 'drill_fw_reactive',
+      name: '反応型コンバインド・フットワーク',
+      menuId: 'menu_footwork_thorough',
+      category: 'フットワーク',
+      level: ['初級','中級'],
+      target: '球出しに反応して動く一歩目と、ランジの安定を1つの流れで身につける',
+      steps: [
+        'コーチ／パートナーがネット際からシャトルを出す（または指さしで方向を示す）',
+        'スプリットステップのタイミングを合わせて、指示された方向へ動く',
+        'ランジで止まり、姿勢が崩れないことを確認してセンターへ戻る',
+        '反応の速さより、止まる姿勢の安定を優先する'
+      ],
+      dose: {
+        standard: '1回10分程度を目安に、質を保てる範囲で',
+        junior: '1回8分程度から。方向は4方向までに絞る',
+        note: '出典に本数・セット数の指定はないため、時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['韓国式（方式）'],
+      originType: 'sourced',
+      sources: [
+        { label: '元韓国代表コーチの解説：反応型コンバインド・フットワーク', url: 'https://www.instagram.com/reel/DapeHGqRJ92/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['lunge_recovery']
+    },
+    {
+      id: 'drill_power_fw_interval',
+      name: 'フットワーク・インターバル',
+      menuId: 'menu_power',
+      category: 'フットワーク',
+      level: ['中級','上級'],
+      target: '高い強度のまま動き続けるフットワークの持久力と、攻守の切り替えを身につける',
+      steps: [
+        '45秒動く／30秒休むを10本行う（攻撃方向と守備方向を半分ずつ）',
+        '続けて30秒／30秒を12本、20秒／25秒を12本、10秒／10秒を10本と、短く速くしていく',
+        'パートナーがいる場合は、4隅＋両サイドをランダムに指示してもらう',
+        '動きの質が落ちたら、そのセットで終了する'
+      ],
+      dose: {
+        standard: '45秒/30秒×10本→30秒/30秒×12本→20秒/25秒×12本→10秒/10秒×10本（心拍は最大の90〜95%が目安）',
+        junior: '45秒/45秒×6本→20秒/40秒×8本の2段までにし、心拍の目安は使わず「会話がやっとできる強度」まで',
+        note: 'プロのセッション例をもとにした構成。ジュニアは本数と強度を落とした調整版から始めること'
+      },
+      durationMin: 30,
+      mode: 'solo',
+      referencePlayers: ['アクセルセン'],
+      originType: 'sourced',
+      sources: [
+        { label: 'Beast Badminton：フットワーク・セッション例', url: 'https://beastbadminton.com/badminton-footwork/' }
+      ],
+      video: { label: '試合前ウォームアップ（公式YouTube）', url: 'https://www.youtube.com/watch?v=SQ8cYP-0BrY' },
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center'],
+      riskLevel: '高負荷',
+      safetyNote: '高強度インターバル。体調が悪い日は行わず、翌日に疲労が残る場合は本数を減らす'
+    },
+    {
+      id: 'drill_power_trapbar',
+      name: 'トラップバー・デッドリフト系',
+      menuId: 'menu_power',
+      category: '筋力・フィジカル',
+      level: ['中級','上級'],
+      target: '脚力とバランスを高め、スマッシュとジャンプのパワーの土台を作る',
+      steps: [
+        'トラップバー（なければ通常のデッドリフト）で、正しいフォームを確認できる重さから始める',
+        '背筋を伸ばし、脚で床を押す意識で持ち上げる',
+        '下ろす動作もゆっくりコントロールする',
+        'フォームが崩れる重さでは行わない'
+      ],
+      dose: {
+        standard: '3〜4セット×8〜12回',
+        junior: '軽い負荷で2セット×8回、フォーム習得を優先（指導者の確認のもとで行う）',
+        note: '本人が「スマッシュの鍵」と説明する種目。重さよりフォームを優先すること'
+      },
+      durationMin: 20,
+      mode: 'gear',
+      referencePlayers: ['アクセルセン'],
+      originType: 'sourced',
+      sources: [
+        { label: 'Indian Express：本人の筋トレ紹介', url: 'https://indianexpress.com/article/sports/badminton/want-a-jump-smash-like-viktor-axelsen-olympic-champion-reveals-his-workout-secrets-9535211/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: [],
+      safetyNote: '重量種目。腰に違和感があれば即中止し、初めての人は指導者にフォームを見てもらう'
+    },
+    {
+      id: 'drill_power_single_leg',
+      name: '片脚トレーニング（スプリットスクワット／ランジ）',
+      menuId: 'menu_power',
+      category: '筋力・フィジカル',
+      level: ['初級','中級'],
+      target: '片脚の筋力と方向転換の安定性を高め、怪我を予防する',
+      steps: [
+        'ブルガリアン・スプリットスクワットを、後ろ脚を台に乗せて行う',
+        'ダンベルランジで、前後の移動をコントロールしながら行う',
+        '膝が内側に入らないよう、膝とつま先の向きを揃える',
+        '左右とも同じ回数を行う'
+      ],
+      dose: {
+        standard: '各種目 各脚3セット×6〜8回',
+        junior: '自重のみで各脚2セット×6回から',
+        note: '片脚筋力・方向転換・怪我予防が目的とされる種目群'
+      },
+      durationMin: 15,
+      mode: 'gear',
+      referencePlayers: ['アクセルセン'],
+      originType: 'sourced',
+      sources: [
+        { label: 'Indian Express：本人の筋トレ紹介', url: 'https://indianexpress.com/article/sports/badminton/want-a-jump-smash-like-viktor-axelsen-olympic-champion-reveals-his-workout-secrets-9535211/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['lunge_recovery']
+    },
+    {
+      id: 'drill_power_defense_interval',
+      name: '守備インターバル（4分）',
+      menuId: 'menu_power',
+      category: '守備',
+      level: ['上級'],
+      target: 'プレッシャーを受け続けても守備の質を落とさない持久力をつける',
+      steps: [
+        'スパーリング相手2人とコートに入る',
+        '前半2分は深いプレッシャーを受け続ける展開にする',
+        '後半2分は守備とラリーに徹し、簡単に決められないことを目指す',
+        'きつければ全体を3分に短縮してよい'
+      ],
+      dose: {
+        standard: '4分×1〜2本（きつければ3分）',
+        junior: '2分（プレッシャー1分＋守備1分）×1本まで',
+        note: 'プロ向けの高負荷ドリル。ジュニア版は時間を半分以下に短縮した調整版'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['アクセルセン'],
+      originType: 'sourced',
+      sources: [
+        { label: 'Stadium Astro：守備インターバルの本人発言', url: 'https://english.stadiumastro.com/sports-badminton/axelsen-looks-great-shape-ahead-french-open-allengland-258733' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center'],
+      riskLevel: '高負荷',
+      safetyNote: '非常に高負荷。週1回までを目安にし、体調と相談して行う'
+    },
+    {
+      id: 'drill_tech_ladder',
+      name: 'ラダートレーニング',
+      menuId: 'menu_technique',
+      category: 'フットワーク',
+      level: ['入門','初級','中級'],
+      target: '足の回転の速さと、細かいステップのリズムを身につける',
+      steps: [
+        'ラダーを床に置き、1マスずつ正確にステップを踏む',
+        '慣れてきたら速さを上げるが、マスを外したら速さより正確さを優先する',
+        '前後・左右など、向きを変えたパターンも行う',
+        '最後はコート上の実際のフットワークに繋げる意識で行う'
+      ],
+      dose: {
+        standard: '1回10分程度を目安に',
+        junior: '1回8分程度、正しさを優先',
+        note: '本人の公式動画で紹介されるテーマ。セット数の処方は出典になく、時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'gear',
+      referencePlayers: ['桃田賢斗'],
+      originType: 'sourced',
+      sources: [
+        { label: '桃CHANNEL（公式YouTube）：ラダートレーニング', url: 'https://www.youtube.com/channel/UCwf8veewSudlOdWZpodYuXg' }
+      ],
+      video: { label: '桃CHANNEL（公式YouTube）', url: 'https://www.youtube.com/channel/UCwf8veewSudlOdWZpodYuXg' },
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_tech_clear_stance',
+      name: 'クリアの体勢づくり',
+      menuId: 'menu_technique',
+      category: 'フットワーク',
+      level: ['初級','中級'],
+      target: '打つ前の体勢（サイドオンと、打点を体の前に取る形）を安定させ、クリアの質を上げる',
+      steps: [
+        'ネットに対して体を横向き（サイドオン）にし、ラケット腕をしっかり後ろへ引く',
+        'シャトルを体の前で捉える意識で、体重を後ろから前へ移しながら打つ',
+        '肩→肘→手首の順に力が伝わるよう、インパクトの瞬間だけ力を入れる',
+        '肘の位置は両肩のライン付近を目安にし、打った後はすぐにセンターへ戻る'
+      ],
+      dose: {
+        standard: 'シャドー10回→実打10球を1セットとし、3セットを目安に',
+        junior: 'シャドー中心に2セット。体勢が崩れたらシャドーに戻る',
+        note: '本人の公式動画の主題「打つ前の体勢がポイント」をドリル化。回数はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'solo',
+      referencePlayers: ['桃田賢斗'],
+      originType: 'sourced',
+      sources: [
+        { label: '桃CHANNEL（公式YouTube）：クリア解説', url: 'https://www.youtube.com/channel/UCwf8veewSudlOdWZpodYuXg' },
+        { label: '技術解説：サイドオンと打点の位置', url: 'https://bad-log.com/badminton-smash-point-movies/' }
+      ],
+      video: { label: '桃CHANNEL（公式YouTube）', url: 'https://www.youtube.com/channel/UCwf8veewSudlOdWZpodYuXg' },
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['side_on','contact_front','elbow_height']
+    },
+    {
+      id: 'drill_tech_knock',
+      name: 'ノック反復',
+      menuId: 'menu_technique',
+      category: 'ノック・多球',
+      level: ['中級'],
+      target: '球出しの反復で、ショットの再現性とフットワークの持続力を高める',
+      steps: [
+        '球出し役が一定のリズムでノックを出す',
+        '受ける側は毎回センターに戻り、同じフォームで打ち続ける',
+        'フォームが崩れてきたらペースを落とすか、そのセットを終える'
+      ],
+      dose: {
+        standard: '1セット10分程度×2〜3セットを目安に',
+        junior: '1セット8分×2セットまで。質が落ちたら止める',
+        note: '代表合宿では、午前3時間のうち約2時間をフットワークとフィジカルに充てる配分が報じられている。ノックの球数の処方は出典になく、時間はアプリ独自の目安'
+      },
+      durationMin: 30,
+      mode: 'pair',
+      referencePlayers: ['桃田賢斗'],
+      originType: 'sourced',
+      sources: [
+        { label: '合宿・再強化期の練習内容（二次まとめ）', url: 'https://nhk.shigeyuki.net/?p=33268' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_tech_defense_long',
+      name: 'ディフェンス長時間',
+      menuId: 'menu_technique',
+      category: '守備',
+      level: ['中級','上級'],
+      target: '長時間の守備でも集中とフォームを保ち、ラリーを切らさない力をつける',
+      steps: [
+        '相手の攻撃を受け続ける、守備専用の時間を作る',
+        '低い姿勢とラケットを立てた構えを保ち、簡単に浮かせない',
+        '疲れてきても一歩目の反応を落とさないことを意識する',
+        '終了後は十分な休憩を取る'
+      ],
+      dose: {
+        standard: '20〜30分を1枠とし、間に休憩を挟む',
+        junior: '10分×2枠まで。集中が切れたら切り上げる',
+        note: '再強化期には約1時間のディフェンス練習が報じられている。ここでは一般向けに短縮した目安'
+      },
+      durationMin: 30,
+      mode: 'pair',
+      referencePlayers: ['桃田賢斗'],
+      originType: 'sourced',
+      sources: [
+        { label: '合宿・再強化期の練習内容（二次まとめ）', url: 'https://nhk.shigeyuki.net/?p=33268' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center'],
+      safetyNote: '長時間の守備は関節への負担が大きい。痛みが出たら切り上げる'
+    },
+    {
+      id: 'drill_end_2v1',
+      name: '2対1パターン練習',
+      menuId: 'menu_endurance',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: '人数不利の条件でも全面をカバーし、高い打点と良い体勢を保ち続ける',
+      steps: [
+        '相手2人はコート半面、自分1人は全面を担当する',
+        '相手は左右に振り続け、自分は落下点の下へ早く入る',
+        'ただ返すだけでなく、高い打点で体勢を崩さずに打ち分ける',
+        '質が落ちたら交代・休憩する'
+      ],
+      dose: {
+        standard: '1回5分×2〜3本を目安に',
+        junior: '1回3分×2本まで。相手の振る幅を狭めて始める',
+        note: '高校時代に行われていた条件付け（相手半面・自分全面）を一般向けに構成。時間はアプリ独自の目安'
+      },
+      durationMin: 20,
+      mode: 'pair',
+      referencePlayers: ['山口茜'],
+      originType: 'sourced',
+      sources: [
+        { label: '福井新聞：高校時代の練習（本人・監督インタビュー）', url: 'https://www.fukuishimbun.co.jp/articles/-/38186' },
+        { label: 'Number：高校時代の練習と恩師談', url: 'https://number.bunshun.jp/articles/-/854428?page=2' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['contact_height_stability'],
+      safetyNote: '高負荷の追い込み形式。連日は避け、回復日を挟む'
+    },
+    {
+      id: 'drill_end_multi_knock',
+      name: '多人数対1ノック',
+      menuId: 'menu_endurance',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: '複数人から連続で出される球に対応し、守備と配球の持続力を高める',
+      steps: [
+        '複数の球出し役が、1人に対して連続でノックを出す',
+        '受ける側は守備を軸に、コースを散らして返し続ける',
+        '呼吸が整わないほど追い込まれたら、そのセットを終える'
+      ],
+      dose: {
+        standard: '1セット3分程度×2〜3セットを目安に',
+        junior: '1セット2分×2セットまで。球出しのペースを落とす',
+        note: '代表合宿の公開練習で報じられた形式。回数・時間の指定は出典になく、目安はアプリ独自のもの'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['山口茜'],
+      originType: 'sourced',
+      sources: [
+        { label: '代表合宿の公開練習レポート', url: 'https://syncsports.corp.rakuten.net/articles/badminton-yamaguchi-shida-miyazaki-260617/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_end_speed_rally',
+      name: 'スピードラリー',
+      menuId: 'menu_endurance',
+      category: '反応・スピード',
+      level: ['中級'],
+      target: '速いテンポのラリーでも精度を落とさず、高い打点を取り続ける',
+      steps: [
+        '格上または同等の相手と、通常より速いテンポでラリーする',
+        'スピードに食らいつきながら、打点の高さと体勢を保つ',
+        'ミスが増えたらテンポを少し落として立て直す'
+      ],
+      dose: {
+        standard: '1回10分程度を目安に',
+        junior: '1回8分まで。テンポは「少し速い」程度から',
+        note: '世界選手権に向け、男子学生を相手にスピード強化した取り組みを一般化したもの。時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['山口茜'],
+      originType: 'sourced',
+      sources: [
+        { label: 'スポーツナビ：世界選手権に向けたスピード強化', url: 'https://sports.yahoo.co.jp/column/detail/2025090300004-spnavi' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['contact_height_stability']
+    },
+    {
+      id: 'drill_wall_lunge',
+      name: 'ランジ反復',
+      menuId: 'menu_wall',
+      category: 'フットワーク',
+      level: ['初級','中級'],
+      target: 'ネット前へ大きく踏み込むランジの深さと、低い姿勢からの素早い回復を身につける',
+      steps: [
+        'センターからネット前へ、片脚を大きく伸ばして踏み込む',
+        '低い姿勢で一瞬止まり、足首と膝の安定を確認する',
+        '前脚で押し戻して、センターへ素早く復帰する',
+        '左右交互に行い、復帰の速さが落ちたら休憩する'
+      ],
+      dose: {
+        standard: '左右各6回×3セットを目安に',
+        junior: '左右各4回×2セットから。深さより姿勢の安定を優先',
+        note: '本人の代名詞とされるランジの型をドリル化。回数はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'solo',
+      referencePlayers: ['アン・セヨン'],
+      originType: 'sourced',
+      sources: [
+        { label: 'ランジの型の解説（朝鮮日報ヘルス）', url: 'https://health.chosun.com/english/site/data/html_dir/2026/10/14/2026101401796.html' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['lunge_recovery'],
+      safetyNote: '膝が内側に入らないよう、膝とつま先の向きを揃える'
+    },
+    {
+      id: 'drill_wall_defense_fw',
+      name: '守備フットワーク（クロスバック・ランジ）',
+      menuId: 'menu_wall',
+      category: '守備',
+      level: ['中級'],
+      target: '守備時の低い重心と、隅への移動から押し戻る一連の型を身につける',
+      steps: [
+        '低い重心の守備スタンスから、2ステップでクロスバック・ランジに入る',
+        '非ラケット脚を後ろへ置き、体を傾けて打ち脚を回旋させて押し戻る',
+        'センターへ戻り、低い重心を保ったまま次に備える',
+        '左右両方向で行う'
+      ],
+      dose: {
+        standard: '左右各5回×3セットを目安に',
+        junior: '左右各4回×2セット。ゆっくりした速さで型を優先',
+        note: '映像分析で分解された守備フットワークの型をもとに構成。回数はアプリ独自の目安'
+      },
+      durationMin: 12,
+      mode: 'solo',
+      referencePlayers: ['アン・セヨン'],
+      originType: 'sourced',
+      sources: [
+        { label: '守備フットワークの映像分析', url: 'https://www.instagram.com/reel/DQ5xYWRk_jq/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['lunge_recovery','defense_low_center']
+    },
+    {
+      id: 'drill_wall_fullbody',
+      name: '全身筋トレ（フルボディ）',
+      menuId: 'menu_wall',
+      category: '筋力・フィジカル',
+      level: ['中級'],
+      target: '上下に分割せず全身を鍛え、守備と移動を支える全身の筋力を作る',
+      steps: [
+        '週3回、全身をまんべんなく鍛える構成にする',
+        '種目例：スクワット、デッドリフト、ショルダープレス、片手ケーブルロー、レッグエクステンション、片脚レッグプレス、ボックスジャンプなど',
+        '各種目はフォームを保てる重さで行う',
+        'コート練習と両立するよう、試合前日は軽めにする'
+      ],
+      dose: {
+        standard: '週3回、1回45〜60分を目安に',
+        junior: '週2回、自重と軽負荷中心で1回30分程度',
+        note: '本人のジム映像で確認された種目例（14種目）をもとにした構成。個別の回数は出典で確認できていないため、時間はアプリ独自の目安'
+      },
+      durationMin: 45,
+      mode: 'gear',
+      referencePlayers: ['アン・セヨン'],
+      originType: 'sourced',
+      sources: [
+        { label: '本人のジムVlog紹介（Instagram）', url: 'https://www.instagram.com/reel/DXe5qGSEhqn/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: [],
+      safetyNote: '重量種目はフォーム優先。初めての種目は指導者に確認する'
+    },
+    {
+      id: 'drill_wall_hill_dash',
+      name: '坂道ダッシュ（砂丘ランの置き換え）',
+      menuId: 'menu_wall',
+      category: '筋力・フィジカル',
+      level: ['上級'],
+      target: '斜面を駆け上がることで、脚力と心肺を同時に追い込む',
+      steps: [
+        '緩やかな坂道を選び、全力に近いダッシュで駆け上がる',
+        '下りは歩いて戻り、呼吸を整える',
+        'フォームが崩れたら、そのセットで終了する'
+      ],
+      dose: {
+        standard: '6〜8本を目安に',
+        junior: '4本まで。ウェイトベストは使わない',
+        note: '本人の高強度トレーニング（ウェイトベストを着けて砂丘を走る）の一般向け置き換え。ジュニアは重りなし・本数半分以下'
+      },
+      durationMin: 15,
+      mode: 'solo',
+      referencePlayers: ['アン・セヨン'],
+      originType: 'sourced',
+      sources: [
+        { label: '本人発言：ウェイトベスト＋砂丘ラン', url: 'https://maxbad.news/2025/11/24/an-se-young-reveals-strict-routine-behind-her-world-no-1-success/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: [],
+      riskLevel: '高負荷',
+      safetyNote: '高強度。心肺に不安がある場合は行わない。翌日に疲労が残る場合は本数を減らす'
+    },
+    {
+      id: 'drill_dbl_handfeed',
+      name: '手投げノック（基本ショットの質）',
+      menuId: 'menu_doubles',
+      category: 'ノック・多球',
+      level: ['初級','中級'],
+      target: 'コート四隅への精度と、相手コート後方まで運ぶ球の質を見直す',
+      steps: [
+        'コーチ／パートナーが手投げでシャトルを出す',
+        '1人でコート四隅を突くショットを打ち分ける',
+        '「負ける試合は細かい1本の球の質で劣る」——1本ごとの質を確認しながら行う'
+      ],
+      dose: {
+        standard: '1回15分程度を目安に',
+        junior: '1回10分程度。コースを2〜3か所に絞って始める',
+        note: '公開練習で報じられた形式。回数・本数は出典になく、時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['渡辺勇大'],
+      originType: 'sourced',
+      sources: [
+        { label: '公開練習レポート：手投げノックと球の質', url: 'https://news.yahoo.co.jp/expert/articles/5997b949eed1c01d8fe73c7b2c47c290c4dbbe94' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_dbl_3v1',
+      name: '3対1ノック',
+      menuId: 'menu_doubles',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: '人数不利の状況で、前衛の反応と守備を追い込む',
+      steps: [
+        '3人が、1人に対してノックを行う',
+        '1人は前衛の反応と守備に集中し、コースを散らされても対応する',
+        '短い時間で区切り、役割を交代する'
+      ],
+      dose: {
+        standard: '1回3分×2〜3本を目安に',
+        junior: '1回2分×2本まで。出す側のペースを落とす',
+        note: '公開練習で報じられた形式。時間・本数は出典になく、目安はアプリ独自のもの'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['東野有紗'],
+      originType: 'sourced',
+      sources: [
+        { label: '日刊スポーツ：公開練習の3対1ノック', url: 'https://www.nikkansports.com/m/sports/news/amp/202206030001634.html' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['receive_racket_high'],
+      safetyNote: '追い込み形式のため短時間で区切る。疲労時は交代する'
+    },
+    {
+      id: 'drill_dbl_front_sink',
+      name: '前衛で「沈める」球',
+      menuId: 'menu_doubles',
+      category: '前衛・ダブルス',
+      level: ['中級'],
+      target: '前衛で強く打ち込むだけでなく、正確に沈めて次の攻撃につなげる球を身につける',
+      steps: [
+        '前衛の位置で、相手の返球を待つ',
+        '強打だけでなく、ネット際に正確に沈める球を使い分ける',
+        '沈めた後に、パートナーの攻撃へつながる形を意識する',
+        '前衛でのプレーのバリエーションを増やすことがテーマ'
+      ],
+      dose: {
+        standard: '1回10分程度を目安に',
+        junior: '1回8分程度。沈める球の精度を優先',
+        note: '公開練習のテーマをもとに構成。時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['東野有紗'],
+      originType: 'sourced',
+      sources: [
+        { label: '公開練習レポート：前衛で沈める球', url: 'https://news.yahoo.co.jp/expert/articles/5997b949eed1c01d8fe73c7b2c47c290c4dbbe94' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['net_contact_height']
+    },
+    {
+      id: 'drill_dbl_receive_pattern',
+      name: 'レシーブ→前衛パターン',
+      menuId: 'menu_doubles',
+      category: '前衛・ダブルス',
+      level: ['中級'],
+      target: '奥へ返し続けるレシーブから、ショートリターンで前衛に入って攻撃へ転じる形を身につける',
+      steps: [
+        'リスクのある返球をせず、相手コートの奥へ返し続ける',
+        '相手に自分側へ打たせ、ショートリターンで前衛に入る',
+        '前衛から攻撃へ移る一連の流れを繰り返す',
+        'レシーブ時のラケットは、腰より下から出さず、立てて構える'
+      ],
+      dose: {
+        standard: 'パターンを10往復×3セットを目安に',
+        junior: '5往復×2セットから。レシーブの安定を優先',
+        note: 'インタビューで語られたパターン練習をドリル化。回数はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['保木卓朗','東野有紗'],
+      originType: 'sourced',
+      sources: [
+        { label: 'J SPORTS：レシーブ起点のパターン練習', url: 'https://news.jsports.co.jp/badminton/article/20190310222001/?p=4' },
+        { label: 'テレ朝：攻めのレシーブ強化', url: 'https://post.tv-asahi.co.jp/post-194487/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['receive_racket_high','form_consistency']
+    },
+    {
+      id: 'drill_dbl_drive_ready',
+      name: 'ドライブの準備（構え）',
+      menuId: 'menu_doubles',
+      category: '前衛・ダブルス',
+      level: ['初級','中級'],
+      target: 'ラケットを立てた構えを保ち、ドライブへの反応を速くする',
+      steps: [
+        '体の力を抜き、足を細かく動かし続ける',
+        'ラケットを立てた構え（リストスタンド）を維持する',
+        '「準備が一番大事。すぐ準備し、前に向かっていく」——打った直後から次の準備に入る',
+        'ペアがいる場合は、ドライブの打ち合いで構えが崩れないか確認する'
+      ],
+      dose: {
+        standard: '構えの確認5分＋打ち合い10分を目安に',
+        junior: '構えの確認中心に10分程度',
+        note: '本人の指導発言をもとに構成。時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'solo',
+      referencePlayers: ['渡辺勇大'],
+      originType: 'sourced',
+      sources: [
+        { label: '本人の指導発言：ドライブの準備', url: 'https://news.yahoo.co.jp/articles/3d89e9043874be9962f4f0c9fc531cee66c34b56' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['front_racket_high']
+    },
+    {
+      id: 'drill_multi_random',
+      name: 'ランダム多球',
+      menuId: 'menu_multifeed',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: '実戦に近い速さのランダムな球出しで、反応とフットワークの速さを鍛える',
+      steps: [
+        '球出し役はシャトルをまとめて持ち、拾いに行かず連続で出す',
+        'コースもタイミングも完全ランダムにする（対応できない速さにはしない）',
+        '受ける側は毎回センターに戻りながら返し続ける',
+        'セットの間に60〜90秒休む'
+      ],
+      dose: {
+        standard: '20本×3セット（スタミナ日は40本→60本→80本と増やす）',
+        junior: '10本×3セットから。80本形式は行わない',
+        note: '本数は中国国内合宿の体験記に基づく目安。中国代表公式の処方ではない'
+      },
+      durationMin: 20,
+      mode: 'pair',
+      referencePlayers: ['中国式（方式）'],
+      originType: 'sourced',
+      sources: [
+        { label: '中国国内合宿の体験記：ランダム多球', url: 'https://www.getgoodatbadminton.com/blog/badminton-training-program-in-china-an-in-depth-guide' },
+        { label: 'Badminton Insight：マルチフィード解説', url: 'https://badminton-insight.com/multi-feed-training-for-badminton/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: [],
+      riskLevel: '高負荷',
+      safetyNote: '本数を増やすのは週1回まで。質が落ちたら本数を減らす'
+    },
+    {
+      id: 'drill_multi_defense',
+      name: '守備多球',
+      menuId: 'menu_multifeed',
+      category: 'ノック・多球',
+      level: ['中級'],
+      target: '低く速い守備の動きを、連続した球出しで身につける',
+      steps: [
+        '球出し役は受ける側と同じ側に立ち、ドロップ／スマッシュ／プッシュを模して各所へトスする',
+        '受ける側は低く構え、速く動いて守る',
+        'セットの間に十分休む'
+      ],
+      dose: {
+        standard: '20本×5セット',
+        junior: '10本×3セットから',
+        note: '本数は中国国内合宿の体験記に基づく目安'
+      },
+      durationMin: 20,
+      mode: 'pair',
+      referencePlayers: ['中国式（方式）'],
+      originType: 'sourced',
+      sources: [
+        { label: '中国国内合宿の体験記：守備多球', url: 'https://www.getgoodatbadminton.com/blog/badminton-training-program-in-china-an-in-depth-guide' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center']
+    },
+    {
+      id: 'drill_multi_smash_kill',
+      name: 'スマッシュ＆ネットキル多球',
+      menuId: 'menu_multifeed',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: 'スマッシュの質と、打った後に前へ出る攻撃的フットワークを鍛える',
+      steps: [
+        '球出し役が後衛へ出し、受ける側がスマッシュを打つ',
+        '続けて前衛へ出された球をネットキルする',
+        '後衛→スマッシュ→前衛→キルの流れを繰り返す',
+        '前への詰めが遅れたら、そのセットで調整する'
+      ],
+      dose: {
+        standard: '20本×5セット（一般的な推奨では12本×5セット前後も）',
+        junior: '10本×3セットから',
+        note: '本数は中国国内合宿の体験記と、一般的なマルチフィード解説に基づく目安'
+      },
+      durationMin: 20,
+      mode: 'pair',
+      referencePlayers: ['中国式（方式）'],
+      originType: 'sourced',
+      sources: [
+        { label: '中国国内合宿の体験記：スマッシュ＆ネットキル', url: 'https://www.getgoodatbadminton.com/blog/badminton-training-program-in-china-an-in-depth-guide' },
+        { label: 'Badminton Insight：マルチフィード解説', url: 'https://badminton-insight.com/multi-feed-training-for-badminton/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['contact_front']
+    },
+    {
+      id: 'drill_multi_net',
+      name: 'ネットショット多球（クールダウン）',
+      menuId: 'menu_multifeed',
+      category: 'ノック・多球',
+      level: ['入門','初級','中級'],
+      target: 'セッション終盤に、ネット際の繊細なタッチを確認する',
+      steps: [
+        '球出し役が手投げでネット際へ出す',
+        '受ける側はネットショットで丁寧に返す',
+        '追い込みではなく、タッチの確認としてゆっくり行う'
+      ],
+      dose: {
+        standard: '本数は定めず、5〜10分程度',
+        junior: '同じ（無理のない範囲で）',
+        note: 'セッション終盤のクールダウン的に行われる形式'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['中国式（方式）'],
+      originType: 'sourced',
+      sources: [
+        { label: '中国国内合宿の体験記：ネットショット', url: 'https://www.getgoodatbadminton.com/blog/badminton-training-program-in-china-an-in-depth-guide' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['net_contact_height']
+    },
+    {
+      id: 'drill_net_front_push',
+      name: '前衛のプッシュ＆ヘアピン',
+      menuId: 'menu_net',
+      category: '前衛・ダブルス',
+      level: ['中級'],
+      target: '相手が打つ瞬間に動き出し、高い打点からプッシュとヘアピンで攻撃の芽を摘む',
+      steps: [
+        '前衛で、ネット際に高い位置でラケットを構える',
+        '相手のインパクトに合わせて、初動を早くする',
+        '高い打点からプッシュで沈める／ヘアピンで際どく落とす、を使い分ける',
+        '打った後も前衛の壁を保ち、パートナーの強打につなげる'
+      ],
+      dose: {
+        standard: '1回10分程度を目安に',
+        junior: '1回8分程度。構えの高さと初動を優先',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['田口真彩'],
+      originType: 'style-derived',
+      sources: [
+        { label: '田口真彩のスタイル紹介', url: 'https://kureba.co.jp/badminton/58' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['front_racket_high','net_contact_height']
+    },
+    {
+      id: 'drill_net_back_attack',
+      name: '後衛からの角度ある攻撃',
+      menuId: 'menu_net',
+      category: '前衛・ダブルス',
+      level: ['中級'],
+      target: '全身をしなやかに使ったフォームから、角度のあるスマッシュと緩急の組み立てを身につける',
+      steps: [
+        '後衛で、全身を使ったフォームを確認する',
+        '角度のあるスマッシュを軸に打つ',
+        'ドロップやカットを織り交ぜ、緩急で相手を揺さぶる',
+        '甘い返球は、前衛のパートナーと連携して仕留める'
+      ],
+      dose: {
+        standard: '1回10分程度を目安に',
+        junior: '1回8分程度。フォームのしなやかさを優先',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['田口真彩'],
+      originType: 'style-derived',
+      sources: [
+        { label: '田口真彩のスタイル紹介', url: 'https://kureba.co.jp/badminton/58' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['chest_rotation']
+    },
+    {
+      id: 'drill_net_rotation',
+      name: '前後ローテーション',
+      menuId: 'menu_net',
+      category: '前衛・ダブルス',
+      level: ['中級'],
+      target: '前衛と後衛の入れ替わりを滑らかにし、コート全体を俯瞰して球を組み立てる',
+      steps: [
+        'パートナーと前後の役割を決めてラリーを始める',
+        '状況に応じて前後を入れ替わり、空いたスペースを作らない',
+        'パートナーが打ちやすい球を作ることを意識する'
+      ],
+      dose: {
+        standard: '1回10分程度を目安に',
+        junior: '1回8分程度。入れ替わりの合図を決めてから行う',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['田口真彩'],
+      originType: 'style-derived',
+      sources: [
+        { label: '田口真彩のスタイル紹介', url: 'https://kureba.co.jp/badminton/58' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_jss_twofoot',
+      name: '両足踏み切りジャンプスマッシュ',
+      menuId: 'menu_jump_smash_style',
+      category: 'ジャンプ・空中動作',
+      level: ['中級','上級'],
+      target: '両足で踏み切る型と、空中での体幹の安定を身につける',
+      steps: [
+        '球出し役が、後衛へ高く安定したリフトを上げる',
+        '両足で踏み切り、沈み込みから伸び上がって跳ぶ',
+        '空中で体幹を安定させ、インパクト前の脱力から一気に力を伝える',
+        '着地したら、すぐに次の動きへ移る'
+      ],
+      dose: {
+        standard: '5〜8本×3セットを目安に',
+        junior: 'シャドーで両足踏み切りを確認してから、球出しは5本×2セットまで',
+        note: '育成期の指導（両足でジャンプしなさい）が土台とされる型。前提として、習得プログラムのステップ1が安定してから取り組むこと'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['五十嵐有紗'],
+      originType: 'sourced',
+      sources: [
+        { label: '中日スポーツ：育成期の指導（大堀均監督の証言）', url: 'https://www.chunichi.co.jp/article/301207?rct=tags_tokyo2020_top' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['two_foot_takeoff','peak_timing'],
+      safetyNote: '着地は両足で膝を柔らかく。疲れて着地が崩れたら切り上げる'
+    },
+    {
+      id: 'drill_jss_followup',
+      name: '着地→前衛入れ替わり',
+      menuId: 'menu_jump_smash_style',
+      category: 'ジャンプ・空中動作',
+      level: ['中級'],
+      target: '後衛で打った直後に前衛へ入れ替わる回復力を鍛え、フォーメーションの流動性を支える',
+      steps: [
+        '後衛でジャンプスマッシュ（または立ちスマッシュ）を打つ',
+        '着地から間を置かず、スプリットステップを入れて前衛へ移動する',
+        'パートナーは後衛へ回り、フォーメーションを入れ替える',
+        '入れ替わりが遅れたら、着地の姿勢から見直す'
+      ],
+      dose: {
+        standard: '6回×3セットを目安に',
+        junior: '立ちスマッシュから始め、4回×2セット',
+        note: '打った後の復帰までがセットという考え方をもとに構成。回数はアプリ独自の目安'
+      },
+      durationMin: 12,
+      mode: 'pair',
+      referencePlayers: ['五十嵐有紗'],
+      originType: 'sourced',
+      sources: [
+        { label: 'テレ朝：変幻自在なフォーメーション', url: 'https://post.tv-asahi.co.jp/post-87480/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['landing_recovery']
+    },
+    {
+      id: 'drill_js_feed',
+      name: 'ジャンプスマッシュ球出し（ハイフィード）',
+      menuId: 'program_jump_smash',
+      category: 'ジャンプ・空中動作',
+      level: ['中級'],
+      target: '高く安定したリフトに対し、ジャンプの最高点で捉えるタイミングを身につける',
+      steps: [
+        'コーチ／パートナーが、フォア後衛へ高く安定したリフトを上げる',
+        'シャトルの下へ早く入り、最高点でインパクトする',
+        '早すぎて落ちながら打つ／遅すぎて打点を過ぎる、になっていないか確認する',
+        '質が落ちる前にセットを終える'
+      ],
+      dose: {
+        standard: '5〜8本×3セット（手投げフィードなら3セット×6本）',
+        junior: '5本×2セットまで。立ちスマッシュと交互でもよい',
+        note: '前提：ステップ1のシャドーで、着地まで安定していること'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'ST Badminton Academy：ジャンプスマッシュ解説', url: 'https://stbadmintonacademy.my/unleash-the-powerful-badminton-jump-smash-with-expert-tips/' },
+        { label: 'TopSportGear：ジャンプスマッシュ習得解説', url: 'https://topsportgear.co/badminton-jump-smash-how-to-add-power-with-jump-technique/' },
+        { label: 'FrankBadminton：ジャンプスマッシュ練習プラン', url: 'https://www.frankbadminton.com/en-us/blog/jump-smash-explosive-power-training-plan' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['peak_timing','contact_front'],
+      safetyNote: '最高点＝インパクトの一致が原則。小さなジャンプでも、タイミングを優先する'
+    },
+    {
+      id: 'drill_js_followup',
+      name: 'ジャンプスマッシュ→ネット連結',
+      menuId: 'program_jump_smash',
+      category: 'ジャンプ・空中動作',
+      level: ['中級','上級'],
+      target: 'ジャンプスマッシュから相手のブロックを前で処理し、着地と復帰をショットと一体化する',
+      steps: [
+        'ジャンプスマッシュを打つ',
+        '相手がブロックで返したら、前へ出てネットショット／キルで処理する',
+        '着地と復帰を初日から組み込み、一連の流れにする',
+        '流れが崩れたら、スマッシュ単体に戻って確認する'
+      ],
+      dose: {
+        standard: '6回×3セットを目安に',
+        junior: '4回×2セット。立ちスマッシュでの連結から始めてもよい',
+        note: '回数はアプリ独自の目安。ステップ2が安定してから進むこと'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'ST Badminton Academy：ジャンプスマッシュ解説', url: 'https://stbadmintonacademy.my/unleash-the-powerful-badminton-jump-smash-with-expert-tips/' },
+        { label: 'FrankBadminton：ジャンプスマッシュ練習プラン', url: 'https://www.frankbadminton.com/en-us/blog/jump-smash-explosive-power-training-plan' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['landing_recovery','scissor']
+    },
+    {
+      id: 'drill_js_decision',
+      name: '実戦判断（跳ぶ／跳ばない）',
+      menuId: 'program_jump_smash',
+      category: 'ジャンプ・空中動作',
+      level: ['上級'],
+      target: '球の高さと深さで、ジャンプスマッシュと立ち打ちを使い分ける判断を身につける',
+      steps: [
+        '球出し役が、リフトの高さ・深さをランダムに変える',
+        '短く高い球だけ、ジャンプスマッシュで打つ',
+        '深い球は、立ちスマッシュ／ドロップ／クリアを選ぶ',
+        'ジャンプスマッシュはデフォルトではなく「判断」として使う'
+      ],
+      dose: {
+        standard: '1回10分程度を目安に',
+        junior: '対象外を推奨（ステップ1〜3が安定した上級者向け）',
+        note: 'ジュニア版は「行わない」が目安。判断の前に、技術の安定が前提'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'ST Badminton Academy：ジャンプスマッシュ解説', url: 'https://stbadmintonacademy.my/unleash-the-powerful-badminton-jump-smash-with-expert-tips/' },
+        { label: 'TopSportGear：ジャンプスマッシュ習得解説', url: 'https://topsportgear.co/badminton-jump-smash-how-to-add-power-with-jump-technique/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['peak_timing']
+    },
+    {
+      id: 'drill_js_strength',
+      name: '筋力フェーズ（ジャンプ力の土台）',
+      menuId: 'program_jump_smash',
+      category: '筋力・フィジカル',
+      level: ['中級','上級'],
+      target: '力を出す能力と、着地の力を受け止める能力を、同時に作る',
+      steps: [
+        'A日：デッドリフト／後ろ足上げスプリットスクワット／カーフレイズ／パロフプレス',
+        'B日：フロント（またはゴブレット）スクワット／ノルディックハムストリング（またはレッグカール）／ランドマインプレス／デッドバグ',
+        '週2回・各40分を目安に、A日とB日を交互に行う',
+        'ジャンプの高さを4週ごとに測り直し、目安より低い場合はプライオより筋力を優先する'
+      ],
+      dose: {
+        standard: 'デッドリフト4×4、スプリットスクワット両脚3×6、スクワット4×5、ノルディック3×4〜6など（コーチング資料の4週間構成例）',
+        junior: '自重と軽負荷でフォーム優先。ノルディックハムストリングは補助付きで行う',
+        note: 'コーチング資料の構成例であり、特定選手の処方ではない。ジャンプ測定の目安（CMJ約35cm）は一般向けの指標'
+      },
+      durationMin: 40,
+      mode: 'gear',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'FrankBadminton：ジャンプスマッシュ練習プラン', url: 'https://www.frankbadminton.com/en-us/blog/jump-smash-explosive-power-training-plan' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: [],
+      safetyNote: '重量種目はフォーム優先。初めての人は指導者に確認する'
+    },
+    {
+      id: 'drill_js_plyo',
+      name: 'プライオメトリクス段階ドリル',
+      menuId: 'program_jump_smash',
+      category: 'ジャンプ・空中動作',
+      level: ['上級'],
+      target: '足首のバネから高さのあるジャンプへ、段階的に跳躍力を高める',
+      steps: [
+        'ポゴホップで、足首をバネ化する',
+        'ボックスジャンプ（降りる時はステップダウン）→ブロードジャンプ＆スティック（着地で2秒静止）へ進む',
+        'デプスジャンプは、ジャンプの高さが条件（CMJ40cm超の目安）を満たす場合のみ行う',
+        'ジャンプが低くなったり着地音が大きくなったら、その日は終了する'
+      ],
+      dose: {
+        standard: '週2回。ポゴホップ4×12→ボックスジャンプ4×4→ブロードジャンプ4×3→デプスジャンプ4×3（条件付き）→片脚バウンド両脚4×5。接地回数は60〜100回から約120回へ',
+        junior: 'ポゴホップと低台のボックスジャンプのみ。デプスジャンプは行わない',
+        note: '「疲労ではなくパワーを鍛える」が原則。セット間は60〜90秒以上の完全休養'
+      },
+      durationMin: 20,
+      mode: 'solo',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'FrankBadminton：ジャンプスマッシュ練習プラン', url: 'https://www.frankbadminton.com/en-us/blog/jump-smash-explosive-power-training-plan' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['two_foot_takeoff'],
+      riskLevel: '高負荷',
+      safetyNote: 'ハードなプライオの翌日に試合を入れない（腱には48時間）。膝や足首前面の痛みが1日を超えて残る場合は、まず量を3分の1減らす'
     }
   ];
 
@@ -13445,12 +14547,12 @@ function sharePoseResultImage() {
         });
         if (!st.drillIds.length) {
           if (btDrillFilter === 'all') {
-            body += '<div class="bt-drill-step bt-drill-step-soon"><span class="badge-version">ステップ' + st.step + '</span> ' + st.title + ' <span class="bt-drill-soon">（準備中）</span></div>';
+            body += '<div class="bt-drill-step bt-drill-step-soon"><span class="badge-version">' + (st.label || ('ステップ' + st.step)) + '</span> ' + st.title + ' <span class="bt-drill-soon">（準備中）</span></div>';
           }
           return;
         }
         if (!stDrills.length) return;
-        body += '<div class="bt-drill-step"><span class="badge-version">ステップ' + st.step + '</span> ' + st.title + '</div>';
+        body += '<div class="bt-drill-step"><span class="badge-version">' + (st.label || ('ステップ' + st.step)) + '</span> ' + st.title + '</div>';
         body += stDrills.map(btDrillCardHtml).join('');
       });
     } else {
