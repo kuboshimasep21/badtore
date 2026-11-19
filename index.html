@@ -13161,5 +13161,370 @@ function sharePoseResultImage() {
 })();
 </script>
 
+<script id="badtore-drill-library">
+/* =========================================================================
+   📚 ドリル集（プロ式メニュー）Step 1
+   - 配置：メニュー作成タブ（tab-menu）内の一区画としてカードを追加（設計B案）
+   - データ：スタイル別メニュー＋ドリルの静的データ（プリセット・読み取り専用）
+   - 看板はスタイル名、選手名は「参考選手／参考方式」として小さく表示
+   - 角度などの数値を選手名と結びつけない。負荷の目安は「アプリ独自の目安」
+   - Step 1 の範囲：器（カテゴリフィルタ＋カード一覧）と2メニュー分の先行データ
+     （フットワーク徹底型／ジャンピングスマッシュ習得プログラムのステップ1）
+   ========================================================================= */
+(function(){
+  'use strict';
+
+  var BT_DRILL_CATEGORIES = ['フットワーク','筋力・フィジカル','ノック・多球','守備','前衛・ダブルス','ジャンプ・空中動作','反応・スピード'];
+  var BT_DRILL_MODE_LABELS = { solo:'一人で可', pair:'ペア・球出し役が必要', gear:'器具が必要' };
+  var BT_DRILL_SAFETY_COMMON = '共通注意：着地の質を最優先にしてください。痛みが翌日まで残る場合は量を減らし、強いジャンプ系ドリルの翌日に試合を入れないこと。プログラムは段階を飛ばさず、前のステップが安定してから次へ進んでください。ここでの負荷の数値はアプリ独自の目安です。';
+
+  var BT_DRILL_MENUS = [
+    {
+      menuId: 'menu_footwork_thorough',
+      title: 'フットワーク徹底型メニュー',
+      referenceLabel: '参考方式：韓国式・フットワーク重視',
+      type: 'pack',
+      description: '毎回の練習でフットワークだけの時間を確保し、考えなくても動ける「自動化」を目指す方式をアプリ用に構成しました。タブ1のフットワークドリルと組み合わせるのがおすすめです。',
+      drillIds: ['drill_fw_six_corners','drill_fw_court_running']
+    },
+    {
+      menuId: 'program_jump_smash',
+      title: 'ジャンピングスマッシュ習得プログラム',
+      referenceLabel: '参考：コーチング公開情報（特定選手の練習ではありません）',
+      type: 'program',
+      description: '立ちスマッシュが安定していることを前提に、シャドー→球出し→フォローアップ連結→実戦判断の順で、段階的にジャンプ要素を足していく習得プログラムです。ステップを飛ばさないことが、上達と安全の両方で大切です。',
+      drillIds: ['drill_js_shadow','drill_js_landing','drill_js_scissor'],
+      programSteps: [
+        { step: 1, title: 'シャドー（シャトルなし）', drillIds: ['drill_js_shadow','drill_js_landing','drill_js_scissor'] },
+        { step: 2, title: '球出し（フィード）', drillIds: [] },
+        { step: 3, title: 'フォローアップ連結', drillIds: [] },
+        { step: 4, title: '実戦判断', drillIds: [] }
+      ]
+    }
+  ];
+
+  var BT_DRILLS = [
+    {
+      id: 'drill_fw_six_corners',
+      name: '6コーナー・フットワーク',
+      menuId: 'menu_footwork_thorough',
+      category: 'フットワーク',
+      level: ['初級','中級'],
+      target: 'コート6方向への移動を自動化し、スプリットステップのタイミングを身につける',
+      steps: [
+        'コートの6方向（前・中・後の左右）に、コーンなどの目印を置く',
+        'センターでスプリットステップを入れてから、各コーナーへシャドーで移動する',
+        '移動したら毎回センターへ戻り、次の動きに備える',
+        'スプリットステップのタイミングと、低い姿勢を崩さないことを優先する'
+      ],
+      dose: {
+        standard: '1日15分以上を目安に、質を保てる範囲で',
+        junior: '1日10分程度から開始し、動きが崩れたら止める',
+        note: '韓国式では毎回の練習で最低30分はフットワークのみに充てる考え方。まずは短時間で質を保つことから始める'
+      },
+      durationMin: 15,
+      mode: 'solo',
+      referencePlayers: ['韓国式（方式）'],
+      originType: 'sourced',
+      sources: [
+        { label: '元韓国代表コーチの解説：6コーナー・フットワーク', url: 'https://www.instagram.com/reel/DDpS9XMyJel/' },
+        { label: 'フットワーク重視の考え方', url: 'https://www.instagram.com/reel/DcbMwM7Pt1Z/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: 'all6' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_fw_court_running',
+      name: 'コートランニング・フットワーク',
+      menuId: 'menu_footwork_thorough',
+      category: 'フットワーク',
+      level: ['初級','中級'],
+      target: 'コート全体のライン感覚と、低い姿勢での方向転換・タッチ動作を身につける',
+      steps: [
+        'ペアで、コートのラインに沿って移動するパターン1〜5を行う',
+        '各パターンは60%の速さで3回、続けて80%の速さで2回行う',
+        '最後のパターン6は80%の速さで、各ラインに10回ずつタッチする（左右往復で20回）',
+        '後ろ向きの移動は低い姿勢で小刻みに、サイドシャッフルは低く幅広く動く'
+      ],
+      dose: {
+        standard: 'パターン1〜5：60%×3回→80%×2回／パターン6：80%で各ライン10回タッチ',
+        junior: '速さは60%までに抑え、回数は半分から開始する',
+        note: 'ウォームアップ兼ドリルとして、練習の冒頭に入れるのがおすすめ'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['韓国式（方式）'],
+      originType: 'sourced',
+      sources: [
+        { label: 'コートランニング・フットワーク解説', url: 'https://clipzag.com/watch?v=tbBSncAGEBE' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_js_shadow',
+      name: 'シャドー・ジャンプスマッシュ',
+      menuId: 'program_jump_smash',
+      category: 'ジャンプ・空中動作',
+      level: ['中級'],
+      target: '下がる→構える→跳ぶ→空中で回旋とシザー→着地→復帰、の一連の流れをシャトルなしで体に覚えさせる',
+      steps: [
+        '後衛の位置へ下がり、サイドオンで構える',
+        '踏み切って跳び、空中で体を回旋させながら脚を入れ替える（シザー）',
+        '着地したら間を置かず、前方・センターへ復帰する',
+        '着地の質を最優先にし、崩れるようなら回数を減らす'
+      ],
+      dose: {
+        standard: '3セット×6回（セット間は完全休養）',
+        junior: '2セット×4回から。着地が安定しないうちは回数を増やさない',
+        note: '前提：立ちスマッシュが安定してから取り組むこと'
+      },
+      durationMin: 10,
+      mode: 'solo',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'TopSportGear：ジャンプスマッシュ習得解説', url: 'https://topsportgear.co/badminton-jump-smash-how-to-add-power-with-jump-technique/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['peak_timing','scissor','landing_recovery'],
+      safetyNote: '着地で膝が内側に入らないよう、膝とつま先の向きを揃える'
+    },
+    {
+      id: 'drill_js_landing',
+      name: '着地だけの練習',
+      menuId: 'program_jump_smash',
+      category: 'ジャンプ・空中動作',
+      level: ['入門','初級'],
+      target: 'シザー着地と両足着地を安定させ、静かで柔らかい着地を身につける',
+      steps: [
+        'その場で小さく跳び、シザー着地（非ラケット脚から先に着き、ラケット脚を前へ）を練習する',
+        '次に両足着地を練習する',
+        '膝を柔らかく使い、膝とつま先の向きを揃えて、着地音を小さくする',
+        '着地した姿勢のまま、2秒バランスを保てるようにする'
+      ],
+      dose: {
+        standard: '各パターン 3セット×5回',
+        junior: '低いジャンプのみ、2セット×4回から',
+        note: 'ジャンプが低くなったり着地音が大きくなったら、その日は終了する'
+      },
+      durationMin: 8,
+      mode: 'solo',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'TopSportGear：ジャンプスマッシュ習得解説', url: 'https://topsportgear.co/badminton-jump-smash-how-to-add-power-with-jump-technique/' },
+        { label: 'ST Badminton Academy：ジャンプスマッシュ解説', url: 'https://stbadmintonacademy.my/unleash-the-powerful-badminton-jump-smash-with-expert-tips/' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['landing_recovery'],
+      safetyNote: '着地はショットの一部。疲れてフォームが崩れる前に止める'
+    },
+    {
+      id: 'drill_js_scissor',
+      name: 'シザースジャンプ練習（ラケットなし）',
+      menuId: 'program_jump_smash',
+      category: 'ジャンプ・空中動作',
+      level: ['初級','中級'],
+      target: '空中で足を入れ替える動きそのものと、空中姿勢の安定を鍛える',
+      steps: [
+        'ラケットを持たず、その場で跳ぶ',
+        '空中で前後の足を入れ替える',
+        '着地の安定を保ちながら、リズムよく繰り返す'
+      ],
+      dose: {
+        standard: '3セット×6回',
+        junior: '2セット×5回から',
+        note: ''
+      },
+      durationMin: 8,
+      mode: 'solo',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: '指導記事：シザースジャンプ練習', url: 'https://badnet.jp/archives/1193' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['scissor']
+    }
+  ];
+
+  var btDrillFilter = 'all';
+
+  function btDrillById(id) {
+    for (var i = 0; i < BT_DRILLS.length; i++) if (BT_DRILLS[i].id === id) return BT_DRILLS[i];
+    return null;
+  }
+  function btDrillsByCategory(cat) {
+    if (!cat || cat === 'all') return BT_DRILLS.slice();
+    return BT_DRILLS.filter(function(d){ return d.category === cat; });
+  }
+  function btDrillCategoriesInData() {
+    var seen = [];
+    BT_DRILLS.forEach(function(d){ if (seen.indexOf(d.category) < 0) seen.push(d.category); });
+    return BT_DRILL_CATEGORIES.filter(function(c){ return seen.indexOf(c) >= 0; });
+  }
+
+  function btDrillCardHtml(d) {
+    var src = (d.sources || []).map(function(s){
+      return '<a href="' + s.url + '" target="_blank" rel="noopener">' + s.label + '</a>';
+    }).join(' ／ ');
+    var ref = (d.referencePlayers && d.referencePlayers.length)
+      ? '<div class="bt-drill-src">参考：' + d.referencePlayers.join('・') + '</div>' : '';
+    var origin = (d.originType === 'style-derived')
+      ? '<div class="bt-drill-src">※スタイル分析から構成した一般ドリルです</div>' : '';
+    var safety = d.safetyNote
+      ? '<div class="bt-drill-safety-note">⚠️ ' + d.safetyNote + '</div>' : '';
+    var steps = (d.steps || []).map(function(s){ return '<li>' + s + '</li>'; }).join('');
+    var doseNote = (d.dose && d.dose.note)
+      ? '<br><span class="bt-drill-dose-note">' + d.dose.note + '</span>' : '';
+    return '<div class="bt-drill-card">'
+      + '<div class="bt-drill-card-head"><span class="bt-drill-name">' + d.name + '</span>'
+      + '<span class="badge-version">' + d.category + '</span></div>'
+      + '<div class="bt-drill-meta">対象：' + (d.level || []).join('・') + '／約' + d.durationMin + '分／' + (BT_DRILL_MODE_LABELS[d.mode] || '') + '</div>'
+      + '<div class="bt-drill-target">🎯 ' + d.target + '</div>'
+      + '<ol class="bt-drill-steps">' + steps + '</ol>'
+      + '<div class="bt-drill-dose">目安（通常版）：' + d.dose.standard + '<br>ジュニア版：' + d.dose.junior + doseNote + '</div>'
+      + ref + origin
+      + '<div class="bt-drill-src">出典：' + src + '</div>'
+      + safety
+      + '</div>';
+  }
+
+  function btDrillMenuHtml(menu) {
+    var visibleDrills = menu.drillIds.map(btDrillById).filter(function(d){
+      return d && (btDrillFilter === 'all' || d.category === btDrillFilter);
+    });
+    if (!visibleDrills.length) return '';
+    var body = '';
+    if (menu.type === 'program' && menu.programSteps) {
+      menu.programSteps.forEach(function(st){
+        var stDrills = st.drillIds.map(btDrillById).filter(function(d){
+          return d && (btDrillFilter === 'all' || d.category === btDrillFilter);
+        });
+        if (!st.drillIds.length) {
+          if (btDrillFilter === 'all') {
+            body += '<div class="bt-drill-step bt-drill-step-soon"><span class="badge-version">ステップ' + st.step + '</span> ' + st.title + ' <span class="bt-drill-soon">（準備中）</span></div>';
+          }
+          return;
+        }
+        if (!stDrills.length) return;
+        body += '<div class="bt-drill-step"><span class="badge-version">ステップ' + st.step + '</span> ' + st.title + '</div>';
+        body += stDrills.map(btDrillCardHtml).join('');
+      });
+    } else {
+      body = visibleDrills.map(btDrillCardHtml).join('');
+    }
+    if (!body) return '';
+    return '<div class="bt-drill-menu">'
+      + '<div class="bt-drill-menu-head"><span class="bt-drill-menu-title">' + menu.title + '</span>'
+      + '<span class="bt-drill-ref">' + menu.referenceLabel + '</span></div>'
+      + '<p class="bt-drill-menu-desc">' + menu.description + '</p>'
+      + body
+      + '</div>';
+  }
+
+  function renderBtDrillLibrary() {
+    var chips = document.getElementById('btDrillFilters');
+    var bodyEl = document.getElementById('btDrillLibraryBody');
+    if (!bodyEl) return;
+    if (chips) {
+      var cats = ['all'].concat(btDrillCategoriesInData());
+      chips.innerHTML = cats.map(function(c){
+        var label = (c === 'all') ? 'すべて' : c;
+        var cls = 'bt-drill-chip' + (btDrillFilter === c ? ' active' : '');
+        return '<button type="button" class="' + cls + '" onclick="btDrillSetFilter(\'' + c + '\')">' + label + '</button>';
+      }).join('');
+    }
+    var html = BT_DRILL_MENUS.map(btDrillMenuHtml).join('');
+    bodyEl.innerHTML = html || '<div class="bt-drill-empty">このカテゴリのドリルは準備中です</div>';
+  }
+
+  function btDrillSetFilter(cat) {
+    btDrillFilter = cat || 'all';
+    renderBtDrillLibrary();
+  }
+
+  function btDrillInjectStyles() {
+    if (document.getElementById('btDrillLibraryStyle')) return;
+    var st = document.createElement('style');
+    st.id = 'btDrillLibraryStyle';
+    st.textContent = ''
+      + '.bt-drill-safety{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:8px 10px;font-size:0.74rem;color:var(--text-secondary);margin-bottom:10px;}'
+      + '.bt-drill-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}'
+      + '.bt-drill-chip{padding:5px 12px;border-radius:999px;border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-secondary);font-size:0.76rem;font-weight:800;cursor:pointer;}'
+      + '.bt-drill-chip.active{background:var(--accent-primary);color:#020617;border-color:var(--accent-primary);}'
+      + '.bt-drill-menu{margin-bottom:18px;}'
+      + '.bt-drill-menu-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:4px;}'
+      + '.bt-drill-menu-title{font-weight:900;font-size:0.95rem;color:var(--accent-primary);}'
+      + '.bt-drill-ref{font-size:0.7rem;color:var(--text-secondary);}'
+      + '.bt-drill-menu-desc{font-size:0.78rem;color:var(--text-secondary);margin:0 0 8px;}'
+      + '.bt-drill-step{font-weight:900;font-size:0.84rem;margin:10px 0 6px;}'
+      + '.bt-drill-step-soon{color:var(--text-secondary);font-weight:700;}'
+      + '.bt-drill-soon{font-size:0.72rem;}'
+      + '.bt-drill-card{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:10px;padding:10px 12px;margin-bottom:8px;}'
+      + '.bt-drill-card-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;}'
+      + '.bt-drill-name{font-weight:900;font-size:0.86rem;}'
+      + '.bt-drill-meta{font-size:0.72rem;color:var(--text-secondary);margin-bottom:4px;}'
+      + '.bt-drill-target{font-size:0.78rem;margin-bottom:4px;}'
+      + '.bt-drill-steps{margin:4px 0 6px;padding-left:20px;font-size:0.76rem;color:var(--text-secondary);}'
+      + '.bt-drill-steps li{margin-bottom:2px;}'
+      + '.bt-drill-dose{font-size:0.74rem;background:var(--bg-surface);border-radius:8px;padding:6px 8px;margin-bottom:6px;}'
+      + '.bt-drill-dose-note{color:var(--text-secondary);}'
+      + '.bt-drill-src{font-size:0.7rem;color:var(--text-secondary);margin-bottom:2px;}'
+      + '.bt-drill-src a{color:var(--accent-secondary);}'
+      + '.bt-drill-safety-note{font-size:0.72rem;color:var(--accent-highlight);margin-top:4px;}'
+      + '.bt-drill-empty{font-size:0.78rem;color:var(--text-secondary);text-align:center;padding:10px;}';
+    document.head.appendChild(st);
+  }
+
+  function mountBtDrillLibrary(sec) {
+    if (document.getElementById('btDrillLibraryCard')) { renderBtDrillLibrary(); return; }
+    btDrillInjectStyles();
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'btDrillLibraryCard';
+    card.innerHTML = ''
+      + '<div class="card-header"><div class="card-title"><span>📚 ドリル集（プロ式メニュー）</span></div></div>'
+      + '<div class="bt-drill-safety">⚠️ ' + BT_DRILL_SAFETY_COMMON + '</div>'
+      + '<div class="bt-drill-filters" id="btDrillFilters"></div>'
+      + '<div id="btDrillLibraryBody"></div>';
+    sec.appendChild(card);
+    renderBtDrillLibrary();
+  }
+
+  function btDrillBoot() {
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      var sec = document.getElementById('tab-menu');
+      if (sec) { clearInterval(iv); mountBtDrillLibrary(sec); }
+      else if (tries > 40) { clearInterval(iv); }
+    }, 250);
+  }
+
+  window.btDrillSetFilter = btDrillSetFilter;
+  window.__bt_drills = {
+    menus: BT_DRILL_MENUS,
+    drills: BT_DRILLS,
+    categories: BT_DRILL_CATEGORIES,
+    byCategory: btDrillsByCategory,
+    setFilter: btDrillSetFilter,
+    render: renderBtDrillLibrary,
+    getFilter: function(){ return btDrillFilter; }
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', btDrillBoot);
+  else btDrillBoot();
+
+  console.log('[badtore drill-library] loaded');
+})();
+</script>
+
 </body>
 </html>
