@@ -13163,13 +13163,15 @@ function sharePoseResultImage() {
 
 <script id="badtore-drill-library">
 /* =========================================================================
-   📚 ドリル集（プロ式メニュー）Step 1
+   📚 ドリル集（プロ式メニュー）Step 1・2
    - 配置：メニュー作成タブ（tab-menu）内の一区画としてカードを追加（設計B案）
    - データ：スタイル別メニュー＋ドリルの静的データ（プリセット・読み取り専用）
    - 看板はスタイル名、選手名は「参考選手／参考方式」として小さく表示
    - 角度などの数値を選手名と結びつけない。負荷の目安は「アプリ独自の目安」
    - Step 1 の範囲：器（カテゴリフィルタ＋カード一覧）と2メニュー分の先行データ
      （フットワーク徹底型／ジャンピングスマッシュ習得プログラムのステップ1）
+   - Step 2 の範囲：ドリル詳細表示（モーダル）＋「作業中メニューに追加」連携
+     （ドリル単位／メニュー（パック）単位。追加先は既存の currentMenuPlan 形式）
    ========================================================================= */
 (function(){
   'use strict';
@@ -13393,6 +13395,10 @@ function sharePoseResultImage() {
       + ref + origin
       + '<div class="bt-drill-src">出典：' + src + '</div>'
       + safety
+      + '<div class="bt-drill-card-actions">'
+      + '<button type="button" class="bt-drill-btn" onclick="btDrillOpenDetail(\'' + d.id + '\')">📖 詳細を見る</button>'
+      + '<button type="button" class="bt-drill-btn bt-drill-btn-add" onclick="btDrillAddToMenu(\'' + d.id + '\', this)">＋ 作業中メニューに追加</button>'
+      + '</div>'
       + '</div>';
   }
 
@@ -13425,8 +13431,173 @@ function sharePoseResultImage() {
       + '<div class="bt-drill-menu-head"><span class="bt-drill-menu-title">' + menu.title + '</span>'
       + '<span class="bt-drill-ref">' + menu.referenceLabel + '</span></div>'
       + '<p class="bt-drill-menu-desc">' + menu.description + '</p>'
+      + '<button type="button" class="bt-drill-pack-add" onclick="btDrillAddMenuToMenu(\'' + menu.menuId + '\', this)">📋 このメニューの全ドリルを作業中メニューに追加</button>'
       + body
       + '</div>';
+  }
+
+  /* ===== Step 2: ドリル詳細表示（モーダル） ===== */
+  var btDrillDetailId = null;
+
+  function btDrillEnsureDetailModal() {
+    var ov = document.getElementById('btDrillDetailOverlay');
+    if (ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'btDrillDetailOverlay';
+    ov.className = 'bt-drill-overlay';
+    ov.style.display = 'none';
+    ov.innerHTML = '<div class="bt-drill-modal" role="dialog" aria-modal="true">'
+      + '<div class="bt-drill-modal-head"><span class="bt-drill-modal-title">📖 ドリル詳細</span>'
+      + '<button type="button" class="bt-drill-btn" onclick="btDrillCloseDetail()">✕ 閉じる</button></div>'
+      + '<div id="btDrillDetailBody"></div>'
+      + '</div>';
+    ov.addEventListener('click', function(ev){ if (ev.target === ov) btDrillCloseDetail(); });
+    document.body.appendChild(ov);
+    return ov;
+  }
+
+  function btDrillDetailHtml(d) {
+    var src = (d.sources || []).map(function(s){
+      return '<a href="' + s.url + '" target="_blank" rel="noopener">' + s.label + '</a>';
+    }).join('<br>');
+    var ref = (d.referencePlayers && d.referencePlayers.length)
+      ? '<div class="bt-drill-src">参考：' + d.referencePlayers.join('・') + '</div>' : '';
+    var origin = (d.originType === 'style-derived')
+      ? '<div class="bt-drill-src">※このドリルはスタイル分析から構成した一般ドリルです（特定選手の練習そのものではありません）</div>' : '';
+    var safety = d.safetyNote
+      ? '<div class="bt-drill-safety-note">⚠️ ' + d.safetyNote + '</div>' : '';
+    var risk = (d.riskLevel === '高負荷')
+      ? ' <span class="badge-version bt-drill-risk">⚠️ 高負荷</span>' : '';
+    var steps = (d.steps || []).map(function(s){ return '<li>' + s + '</li>'; }).join('');
+    var doseNote = (d.dose && d.dose.note)
+      ? '<br><span class="bt-drill-dose-note">' + d.dose.note + '</span>' : '';
+    var video = (d.video && d.video.url)
+      ? '<div class="bt-drill-src">🎬 参考動画：<a href="' + d.video.url + '" target="_blank" rel="noopener">' + (d.video.label || '動画を見る') + '</a></div>' : '';
+    return '<div class="bt-drill-card-head"><span class="bt-drill-name">' + d.name + '</span>'
+      + '<span><span class="badge-version">' + d.category + '</span>' + risk + '</span></div>'
+      + '<div class="bt-drill-meta">対象：' + (d.level || []).join('・') + '／約' + d.durationMin + '分／' + (BT_DRILL_MODE_LABELS[d.mode] || '') + '</div>'
+      + '<div class="bt-drill-target">🎯 ' + d.target + '</div>'
+      + '<div class="bt-drill-detail-sec">やり方</div>'
+      + '<ol class="bt-drill-steps">' + steps + '</ol>'
+      + '<div class="bt-drill-dose">目安（通常版）：' + d.dose.standard + '<br>ジュニア版：' + d.dose.junior + doseNote + '</div>'
+      + ref + origin + video
+      + '<div class="bt-drill-src">出典：<br>' + src + '</div>'
+      + safety
+      + '<div class="bt-drill-safety-note">⚠️ ' + BT_DRILL_SAFETY_COMMON + '</div>'
+      + '<div class="bt-drill-card-actions">'
+      + '<button type="button" class="bt-drill-btn bt-drill-btn-add" onclick="btDrillAddToMenu(\'' + d.id + '\', this)">＋ 作業中メニューに追加</button>'
+      + '</div>'
+      + '<div class="bt-drill-add-status" id="btDrillDetailStatus"></div>';
+  }
+
+  function btDrillOpenDetail(id) {
+    var d = btDrillById(id);
+    if (!d) return false;
+    var ov = btDrillEnsureDetailModal();
+    var bodyEl = document.getElementById('btDrillDetailBody');
+    if (!bodyEl) return false;
+    btDrillDetailId = id;
+    bodyEl.innerHTML = btDrillDetailHtml(d);
+    ov.style.display = 'flex';
+    return true;
+  }
+
+  function btDrillCloseDetail() {
+    var ov = document.getElementById('btDrillDetailOverlay');
+    if (ov) ov.style.display = 'none';
+    btDrillDetailId = null;
+  }
+
+  /* ===== Step 2: 作業中メニューへの追加連携 =====
+     追加先は既存の作業中メニュー（currentMenuPlan / localStorage
+     'badtore_working_menu_v100'）。項目形式は既存の addPresetWorkoutToMenu と同じ。
+     プリセット自体は読み取り専用のまま、コピーが作業中メニューに入る。 */
+  function btDrillToMenuItem(d) {
+    var linkTab = '', fwPreset = '';
+    if (d.link && d.link.type === 'footwork' && d.link.target) { linkTab = 'tab-footwork'; fwPreset = d.link.target; }
+    return {
+      id: 'm_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      cat: d.category,
+      name: d.name,
+      minutes: Number(d.durationMin) || 10,
+      note: d.target || 'フォームを意識して反復',
+      linkTab: linkTab,
+      fwPreset: fwPreset,
+      workSec: 30, restSec: 15, sets: 3,
+      done: false
+    };
+  }
+
+  function btDrillPlanRef() {
+    try { if (typeof currentMenuPlan !== 'undefined' && currentMenuPlan && Array.isArray(currentMenuPlan.items)) return currentMenuPlan; } catch (e) {}
+    return null;
+  }
+
+  function btDrillPersistPlan(plan) {
+    var saved = false;
+    try { if (typeof saveCurrentWorkingMenuToStorage === 'function') { saveCurrentWorkingMenuToStorage(); saved = true; } } catch (e) {}
+    if (!saved) { try { localStorage.setItem('badtore_working_menu_v100', JSON.stringify(plan)); saved = true; } catch (e) {} }
+    try { if (typeof renderCurrentMenuEditorUI === 'function') renderCurrentMenuEditorUI(); } catch (e) {}
+    return saved;
+  }
+
+  function btDrillPushToWorkingMenu(d) {
+    var plan = btDrillPlanRef();
+    if (plan) {
+      plan.items.push(btDrillToMenuItem(d));
+      btDrillPersistPlan(plan);
+      return plan.items.length;
+    }
+    try {
+      var raw = localStorage.getItem('badtore_working_menu_v100');
+      var p = raw ? JSON.parse(raw) : null;
+      if (!p || typeof p !== 'object') p = { title: '今日の練習メニュー', targetMin: 150, playersMode: 'gym_2', items: [] };
+      if (!Array.isArray(p.items)) p.items = [];
+      p.items.push(btDrillToMenuItem(d));
+      localStorage.setItem('badtore_working_menu_v100', JSON.stringify(p));
+      return p.items.length;
+    } catch (e) { return -1; }
+  }
+
+  function btDrillFlashButton(btn, text) {
+    if (!btn) return;
+    var orig = btn.innerHTML;
+    btn.innerHTML = text;
+    btn.disabled = true;
+    setTimeout(function(){ btn.innerHTML = orig; btn.disabled = false; }, 1400);
+  }
+
+  function btDrillAddToMenu(id, btn) {
+    var d = btDrillById(id);
+    if (!d) return -1;
+    var count = btDrillPushToWorkingMenu(d);
+    if (count < 0) { btDrillFlashButton(btn, '⚠️ 追加できませんでした'); return -1; }
+    try { if (typeof playBeep === 'function') playBeep(1120, 90); } catch (e) {}
+    btDrillFlashButton(btn, '✅ 追加しました');
+    var st = document.getElementById('btDrillDetailStatus');
+    if (st && btDrillDetailId === id) st.textContent = '✅ 「' + d.name + '」を作業中メニューに追加しました（現在 ' + count + ' 件）。作業中メニューの一覧で確認できます。';
+    return count;
+  }
+
+  function btDrillMenuById(menuId) {
+    for (var i = 0; i < BT_DRILL_MENUS.length; i++) if (BT_DRILL_MENUS[i].menuId === menuId) return BT_DRILL_MENUS[i];
+    return null;
+  }
+
+  function btDrillAddMenuToMenu(menuId, btn) {
+    var menu = btDrillMenuById(menuId);
+    if (!menu) return -1;
+    var added = 0, total = -1;
+    menu.drillIds.forEach(function(did){
+      var d = btDrillById(did);
+      if (!d) return;
+      var c = btDrillPushToWorkingMenu(d);
+      if (c >= 0) { added++; total = c; }
+    });
+    if (!added) { btDrillFlashButton(btn, '⚠️ 追加できませんでした'); return -1; }
+    try { if (typeof playBeep === 'function') playBeep(1120, 90); } catch (e) {}
+    btDrillFlashButton(btn, '✅ ' + added + '件追加しました');
+    return total;
   }
 
   function renderBtDrillLibrary() {
@@ -13479,7 +13650,20 @@ function sharePoseResultImage() {
       + '.bt-drill-src{font-size:0.7rem;color:var(--text-secondary);margin-bottom:2px;}'
       + '.bt-drill-src a{color:var(--accent-secondary);}'
       + '.bt-drill-safety-note{font-size:0.72rem;color:var(--accent-highlight);margin-top:4px;}'
-      + '.bt-drill-empty{font-size:0.78rem;color:var(--text-secondary);text-align:center;padding:10px;}';
+      + '.bt-drill-empty{font-size:0.78rem;color:var(--text-secondary);text-align:center;padding:10px;}'
+      + '.bt-drill-card-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}'
+      + '.bt-drill-btn{padding:6px 10px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-secondary);font-size:0.74rem;font-weight:800;cursor:pointer;}'
+      + '.bt-drill-btn-add{background:var(--accent-primary);color:#020617;border-color:var(--accent-primary);}'
+      + '.bt-drill-btn:disabled{opacity:0.75;cursor:default;}'
+      + '.bt-drill-pack-add{padding:6px 10px;border-radius:8px;border:1px solid var(--accent-primary);background:var(--bg-surface);color:var(--accent-primary);font-size:0.74rem;font-weight:800;cursor:pointer;margin-bottom:10px;}'
+      + '.bt-drill-pack-add:disabled{opacity:0.75;cursor:default;}'
+      + '.bt-drill-overlay{position:fixed;inset:0;background:rgba(2,6,23,0.72);display:flex;align-items:flex-start;justify-content:center;padding:18px 10px;z-index:9999;overflow-y:auto;}'
+      + '.bt-drill-modal{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;max-width:560px;width:100%;}'
+      + '.bt-drill-modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}'
+      + '.bt-drill-modal-title{font-weight:900;font-size:0.92rem;color:var(--accent-primary);}'
+      + '.bt-drill-detail-sec{font-weight:900;font-size:0.8rem;margin:8px 0 2px;}'
+      + '.bt-drill-add-status{font-size:0.74rem;color:var(--accent-highlight);margin-top:6px;}'
+      + '.bt-drill-risk{background:var(--accent-highlight);color:#020617;}';
     document.head.appendChild(st);
   }
 
@@ -13509,15 +13693,32 @@ function sharePoseResultImage() {
   }
 
   window.btDrillSetFilter = btDrillSetFilter;
+  window.btDrillOpenDetail = btDrillOpenDetail;
+  window.btDrillCloseDetail = btDrillCloseDetail;
+  window.btDrillAddToMenu = btDrillAddToMenu;
+  window.btDrillAddMenuToMenu = btDrillAddMenuToMenu;
   window.__bt_drills = {
     menus: BT_DRILL_MENUS,
     drills: BT_DRILLS,
     categories: BT_DRILL_CATEGORIES,
     byCategory: btDrillsByCategory,
+    byId: btDrillById,
+    menuById: btDrillMenuById,
     setFilter: btDrillSetFilter,
     render: renderBtDrillLibrary,
-    getFilter: function(){ return btDrillFilter; }
+    getFilter: function(){ return btDrillFilter; },
+    openDetail: btDrillOpenDetail,
+    closeDetail: btDrillCloseDetail,
+    getDetailId: function(){ return btDrillDetailId; },
+    detailHtml: btDrillDetailHtml,
+    addToMenu: btDrillAddToMenu,
+    addMenuToMenu: btDrillAddMenuToMenu,
+    toMenuItem: btDrillToMenuItem
   };
+
+  document.addEventListener('keydown', function(ev){
+    if (ev.key === 'Escape' && btDrillDetailId) btDrillCloseDetail();
+  });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', btDrillBoot);
   else btDrillBoot();
