@@ -3304,6 +3304,8 @@
 
                     <option value="cross_hairpin">🕸️ ヘアピン・クロスヘアピン（深いランジ・リストスタンド）</option>
 
+                    <option value="jump_smash">🚀 ジャンピングスマッシュ（両足踏み切り・空中姿勢・着地）</option>
+
                   </optgroup>
 
                 </select>
@@ -3351,6 +3353,8 @@
                     <button type="button" class="bt-shot-chip" data-shot-value="cut_reverse" onclick="btSelectShotType('cut_reverse')">✂️ カット・リバースカット</button>
 
                     <button type="button" class="bt-shot-chip" data-shot-value="cross_hairpin" onclick="btSelectShotType('cross_hairpin')">🕸️ ヘアピン・クロスヘアピン</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="jump_smash" onclick="btSelectShotType('jump_smash')">🚀 ジャンピングスマッシュ</button>
 
                   </div>
 
@@ -6666,6 +6670,16 @@
 
         desc: "🎯 <b>クロスヘアピン100pt基準:</b> ①下半身（最深膝角の沈み込み：基準118°：55%）、②最大スイング速度指数（45%）で採点します。"
 
+      },
+
+      jump_smash: {
+
+        title: "ジャンピングスマッシュ［応用技］",
+
+        focus: "overhead", idealShoulder: 148, idealElbow: 163, idealKnee: 130,
+
+        desc: "🚀 <b>ジャンピングスマッシュ100pt基準:</b> ①上半身（空中での最大肩挙上角・最大肘伸展：30%）、②下半身（踏み切り前の最深膝角のタメ：20%）、③最大スイング速度指数（20%）、④ジャンプ要素（両足踏み切りの同期・滞空・着地の吸収と安定：30%）で採点します。④の数値基準はすべてアプリ独自の目安です。ジャンプ（両足の浮き上がり）が検出できない場合は、通常スマッシュと同じ配点（①40%・②30%・③30%）で評価し、その旨を結果に表示します。"
+
       }
 
     };
@@ -8283,6 +8297,8 @@
 
       lastImpactWindowInfo = null;
 
+      lastJumpAnalysis = null;
+
 
       aiMetrics.smoothElbow = null;
 
@@ -8338,7 +8354,15 @@
 
         if (stanceGroup) stanceGroup.style.display = 'none';
 
-        if (model.focus === 'lower') {
+        if (shot === 'jump_smash') {
+
+          document.getElementById('bdLabel1').textContent = "① 上半身・空中の打点＆肘角度（30%）";
+
+          document.getElementById('bdLabel2').textContent = "② 下半身・踏み切り前の膝のタメ（20%）";
+
+          document.getElementById('bdLabel3').textContent = "③ スイング速度（20%）＋④ジャンプ要素（30%）※④の詳細は診断結果に表示";
+
+        } else if (model.focus === 'lower') {
 
           document.getElementById('bdLabel1').textContent = "① 上半身（採点対象外・参考表示）";
 
@@ -8832,6 +8856,194 @@
 
 
 
+    // ===== 🚀 ジャンピングスマッシュ解析 =====
+
+    // フレームサンプルの足首ランドマーク（MediaPipe Pose: 27=左足首 / 28=右足首）から、
+
+    // 両足踏み切り・滞空・着地を検出して採点する。数値基準はすべてアプリ独自の目安であり、特定選手の基準ではない。
+
+    const BT_JUMP_AIR_LIFT_RATIO = 0.10;
+
+    const BT_JUMP_SYNC_GOOD_SEC = 0.08;
+
+    const BT_JUMP_SYNC_OK_SEC = 0.15;
+
+    const BT_JUMP_SYNC_LOOSE_SEC = 0.25;
+
+    const BT_JUMP_LAND_KNEE_TARGET = 118;
+
+    let lastJumpAnalysis = null;
+
+
+
+    function btAnalyzeJumpSmash(samples, peakT) {
+
+      if (!samples || samples.length < 5) return { detected: false, reason: 'few-samples' };
+
+      // サンプルごとの体幹長と足首位置を取り出す（ランドマーク控えがないサンプルは除外）
+
+      const rows = [];
+
+      for (const s of samples) {
+
+        const lm = s.landmarks;
+
+        if (!lm || !lm[11] || !lm[12] || !lm[23] || !lm[24] || !lm[27] || !lm[28]) continue;
+
+        const torso = Math.hypot((lm[11].x + lm[12].x) / 2 - (lm[23].x + lm[24].x) / 2, (lm[11].y + lm[12].y) / 2 - (lm[23].y + lm[24].y) / 2);
+
+        if (!(torso > 0.05)) continue;
+
+        rows.push({ t: s.t, torso: torso, yL: lm[27].y, yR: lm[28].y, kneeDeg: s.kneeDeg, hipRatio: s.hipRatio, wristVel: Math.max(0, Number(s.wristVel) || 0) });
+
+      }
+
+      if (rows.length < 5) return { detected: false, reason: 'no-landmarks' };
+
+      // 地面の基準：各足首Yの92パーセンタイル（画像座標は下向きが正。立位の足首は最下部＝最大Y付近にある）
+
+      const pct92 = (arr) => { const a = arr.slice().sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(0.92 * a.length))]; };
+
+      const groundL = pct92(rows.map(r => r.yL));
+
+      const groundR = pct92(rows.map(r => r.yR));
+
+      for (const r of rows) {
+
+        r.liftL = (groundL - r.yL) / r.torso;
+
+        r.liftR = (groundR - r.yR) / r.torso;
+
+        r.air = r.liftL >= BT_JUMP_AIR_LIFT_RATIO && r.liftR >= BT_JUMP_AIR_LIFT_RATIO;
+
+      }
+
+      // 滞空ラン（両足が浮いた連続区間）を列挙する
+
+      const runs = [];
+
+      let cur = null;
+
+      rows.forEach((r, i) => {
+
+        if (r.air) { if (!cur) cur = { start: i, end: i }; else cur.end = i; }
+
+        else if (cur) { runs.push(cur); cur = null; }
+
+      });
+
+      if (cur) runs.push(cur);
+
+      const validRuns = runs.filter(r => (r.end - r.start + 1) >= 2);
+
+      if (!validRuns.length) return { detected: false, reason: 'no-air' };
+
+      // 対象ラン：打球ピーク（手首速度最大の瞬間）を含むランを優先し、なければ最長ラン
+
+      let pkT = (typeof peakT === 'number' && isFinite(peakT)) ? peakT : null;
+
+      if (pkT === null) {
+
+        let pk = rows[0];
+
+        for (const r of rows) if (r.wristVel > pk.wristVel) pk = r;
+
+        pkT = pk.t;
+
+      }
+
+      let run = validRuns.find(r => rows[r.start].t <= pkT && pkT <= rows[r.end].t) || null;
+
+      if (!run) run = validRuns.reduce((a, b) => ((b.end - b.start) > (a.end - a.start) ? b : a));
+
+      // 踏み切り：ラン開始直前に各足首が最後に地面にいたサンプルの時刻差（左右の離地のズレ）
+
+      const lastGroundIdx = (key) => {
+
+        for (let i = run.start; i >= 0; i--) { if (rows[i][key] < BT_JUMP_AIR_LIFT_RATIO) return i; }
+
+        return -1;
+
+      };
+
+      const iL = lastGroundIdx('liftL');
+
+      const iR = lastGroundIdx('liftR');
+
+      let syncSec = null;
+
+      let takeoffPt = 40;
+
+      if (iL >= 0 && iR >= 0) {
+
+        syncSec = Math.abs(rows[iL].t - rows[iR].t);
+
+        takeoffPt = syncSec <= BT_JUMP_SYNC_GOOD_SEC ? 100 : syncSec <= BT_JUMP_SYNC_OK_SEC ? 90 : syncSec <= BT_JUMP_SYNC_LOOSE_SEC ? 65 : 40;
+
+      }
+
+      const twoFoot = syncSec !== null && syncSec <= BT_JUMP_SYNC_OK_SEC;
+
+      // 滞空：両足の浮き上がり（小さい方）の最大値で評価する
+
+      let maxLift = 0;
+
+      for (let i = run.start; i <= run.end; i++) maxLift = Math.max(maxLift, Math.min(rows[i].liftL, rows[i].liftR));
+
+      const airPt = Math.round(Math.min(100, Math.max(40, 40 + (maxLift - BT_JUMP_AIR_LIFT_RATIO) / 0.20 * 60)));
+
+      const airDurSec = rows[run.end].t - rows[run.start].t;
+
+      // 着地：ラン終了後0.6秒以内の最深膝角（衝撃吸収）、0.8秒間の股関節のふらつき、着地直後の両足首の高さの揃い
+
+      const landT = rows[run.end].t;
+
+      let landKnee = null;
+
+      for (const r of rows) {
+
+        if (r.t >= landT && r.t <= landT + 0.6 && typeof r.kneeDeg === 'number' && isFinite(r.kneeDeg)) {
+
+          if (landKnee === null || r.kneeDeg < landKnee) landKnee = r.kneeDeg;
+
+        }
+
+      }
+
+      const landKneePt = landKnee === null ? 60 : Math.round(Math.min(100, Math.max(40, 100 - Math.abs(landKnee - BT_JUMP_LAND_KNEE_TARGET) * 1.3)));
+
+      const post = rows.filter(r => r.t >= landT && r.t <= landT + 0.8 && typeof r.hipRatio === 'number' && isFinite(r.hipRatio));
+
+      let landStabilityPt = 70;
+
+      if (post.length >= 4) {
+
+        const mean = post.reduce((a, r) => a + r.hipRatio, 0) / post.length;
+
+        let maxDev = 0;
+
+        for (const r of post) maxDev = Math.max(maxDev, Math.abs(r.hipRatio - mean));
+
+        landStabilityPt = Math.min(100, Math.max(40, Math.round(105 - maxDev * 320)));
+
+      }
+
+      const landRow = rows[run.end + 1] || rows[run.end];
+
+      const alignDiff = Math.abs(landRow.yL - landRow.yR) / landRow.torso;
+
+      const alignPt = Math.round(Math.min(100, Math.max(40, 100 - Math.max(0, alignDiff - 0.04) * 600)));
+
+      const landingPt = Math.round(landKneePt * 0.5 + landStabilityPt * 0.3 + alignPt * 0.2);
+
+      const jumpPt = Math.round(takeoffPt * 0.35 + airPt * 0.30 + landingPt * 0.35);
+
+      return { detected: true, takeoffPt: takeoffPt, airPt: airPt, landingPt: landingPt, jumpPt: jumpPt, syncSec: syncSec, twoFoot: twoFoot, maxLift: maxLift, airDurSec: airDurSec, landKneeDeg: landKnee, landStabilityPt: landStabilityPt };
+
+    }
+
+
+
     function finishPoseRecording(fromVideoAuto = false) {
 
       clearInterval(poseSession.timerId);
@@ -8895,6 +9107,16 @@
       const minKn = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
 
       const maxSp = aiMetrics.maxSpeedPt;
+
+
+
+      // 🚀 ジャンピングスマッシュ解析（対象種目のみ。それ以外の種目では lastJumpAnalysis は null）
+
+      lastJumpAnalysis = (shot === 'jump_smash')
+
+        ? btAnalyzeJumpSmash(poseFrameSamples, lastImpactWindowInfo ? lastImpactWindowInfo.peakT : null)
+
+        : null;
 
 
 
@@ -8974,6 +9196,54 @@
 
 
 
+      } else if (shot === 'jump_smash') {
+
+        const upperBest = Math.min(100, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)));
+
+        const lowerBest = minKn <= (model.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8);
+
+        if (lastJumpAnalysis && lastJumpAnalysis.detected) {
+
+          const j = lastJumpAnalysis;
+
+          totalScore = Math.round(upperBest * 0.30 + lowerBest * 0.20 + maxSp * 0.20 + j.jumpPt * 0.30);
+
+
+
+          if (maxSh >= model.idealShoulder - 5) goodPoints.push(`空中でも最大肩挙上角 ${maxSh}°（肘伸展 ${maxEl}°）と高い打点を保てています。`);
+
+          else improvePoints.push(`空中の最大肩挙上角が ${maxSh}° でした。画面の水色レーザー（${model.idealShoulder}°）の位置まで肘・肩を引き上げると角度と球威が増します。`);
+
+
+
+          if (j.twoFoot) goodPoints.push(`両足踏み切りがそろっていました（左右の離地のズレ約${j.syncSec !== null ? j.syncSec.toFixed(2) : '--'}秒）。`);
+
+          else improvePoints.push(`踏み切りの左右のズレが約${j.syncSec !== null ? j.syncSec.toFixed(2) : '--'}秒あり、片足踏み切り寄りでした。両足同時に地面を蹴ると高さと安定感が増します。`);
+
+
+
+          if (j.landKneeDeg !== null && j.landKneeDeg >= 95 && j.landKneeDeg <= 145) goodPoints.push(`着地の膝（最深 ${j.landKneeDeg}°）で衝撃を吸収できています。`);
+
+          else if (j.landKneeDeg !== null) improvePoints.push(`着地直後の膝は最深 ${j.landKneeDeg}° でした。膝を軽く沈めて（目安110〜125°）衝撃を吸収すると、次の動き出しとケガ予防につながります。`);
+
+        } else {
+
+          // ジャンプ未検出：ジャンプ要素を0点で押し切らず、通常スマッシュと同じ配点で評価する
+
+          totalScore = Math.round(upperBest * 0.40 + lowerBest * 0.30 + maxSp * 0.30);
+
+
+
+          if (maxSh >= model.idealShoulder - 5) goodPoints.push(`最大肩挙上角 ${maxSh}°（肘伸展 ${maxEl}°）と理想ターゲットレベルの高い打点でシャトルを捉えられています。`);
+
+          else improvePoints.push(`最大肩挙上角が ${maxSh}° でした。画面の水色レーザー（${model.idealShoulder}°）の位置まで肘・肩を引き上げると角度と球威が増します。`);
+
+
+
+          improvePoints.push(`今回はジャンプ（両足の浮き上がり）が検出できなかったため、通常スマッシュとして評価しました。両足で踏み切って跳ぶ動きと、頭から足首まで全身が映る画角で撮り直すとジャンプ要素も採点できます。`);
+
+        }
+
       } else {
 
         const upperBest = Math.min(100, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)));
@@ -9036,6 +9306,28 @@
 
 
 
+      // 🚀 ジャンピングスマッシュ結果の内訳表示（数値基準はアプリ独自の目安である旨を明記）
+
+      let jumpHtml = '';
+
+      if (shot === 'jump_smash') {
+
+        if (lastJumpAnalysis && lastJumpAnalysis.detected) {
+
+          const j = lastJumpAnalysis;
+
+          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem;">🚀 <b>ジャンプ要素（アプリ独自の目安）:</b> 踏み切り ${j.takeoffPt}pt（${j.twoFoot ? '両足そろって離地' : '片足寄りの踏み切り'}）／ 滞空 ${j.airPt}pt（両足の浮き上がり最大：体幹長の約${Math.round(j.maxLift * 100)}%）／ 着地 ${j.landingPt}pt（膝 ${j.landKneeDeg === null ? '--' : j.landKneeDeg + '°'}・安定度 ${j.landStabilityPt}pt）</div>`;
+
+        } else {
+
+          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🚀 ジャンプが検出できませんでした：両足の浮き上がり（滞空）を確認できなかったため、ジャンプ要素は採点せず、通常スマッシュと同じ配点で評価しています。</div>`;
+
+        }
+
+      }
+
+
+
       document.getElementById('aiSummaryContent').innerHTML = `
 
         ${recordBannerHtml}
@@ -9047,6 +9339,8 @@
         </div>
 
         ${lastImpactWindowInfo ? `<div style="margin-bottom:5px; font-size:0.85rem;">🎯 打球の瞬間前後で判定しています：スイング速度が最大になった場面を中心に、前${BT_IMPACT_WINDOW_PRE_SEC}秒・後${BT_IMPACT_WINDOW_POST_SEC}秒のフレームだけで集計しました（シャトル拾いなど、打球と無関係な動きは集計から除かれます）。</div>` : ``}
+
+        ${jumpHtml}
 
         <div style="margin-bottom:5px;">
 
