@@ -13172,6 +13172,10 @@ function sharePoseResultImage() {
      （フットワーク徹底型／ジャンピングスマッシュ習得プログラムのステップ1）
    - Step 2 の範囲：ドリル詳細表示（モーダル）＋「作業中メニューに追加」連携
      （ドリル単位／メニュー（パック）単位。追加先は既存の currentMenuPlan 形式）
+   - リンク方針：リンク化してよいのは主要プラットフォーム（YouTube／Instagram／
+     TikTok／X）のみ。それ以外の出典はリンクにせず出典名のテキスト表示のみとし、
+     URL文字列も出さない。判定は btDrillLinkHtml に一元化し、カード・詳細の
+     両描画が必ず通る（データが増えても自動で効く）
    ========================================================================= */
 (function(){
   'use strict';
@@ -13179,6 +13183,34 @@ function sharePoseResultImage() {
   var BT_DRILL_CATEGORIES = ['フットワーク','筋力・フィジカル','ノック・多球','守備','前衛・ダブルス','ジャンプ・空中動作','反応・スピード'];
   var BT_DRILL_MODE_LABELS = { solo:'一人で可', pair:'ペア・球出し役が必要', gear:'器具が必要' };
   var BT_DRILL_SAFETY_COMMON = '共通注意：着地の質を最優先にしてください。痛みが翌日まで残る場合は量を減らし、強いジャンプ系ドリルの翌日に試合を入れないこと。プログラムは段階を飛ばさず、前のステップが安定してから次へ進んでください。ここでの負荷の数値はアプリ独自の目安です。';
+
+  /* リンク方針：リンク（aタグ）にしてよいドメインは主要プラットフォームのみ。
+     ホワイトリスト外はリンクにせず、ラベルのテキスト表示のみ（URL文字列も出さない）。
+     判定・描画はここに一元化し、カード表示・詳細モーダルの両方が必ず通る。 */
+  var BT_DRILL_LINK_HOSTS = ['youtube.com', 'youtu.be', 'instagram.com', 'tiktok.com', 'x.com', 'twitter.com'];
+
+  function btDrillLinkAllowed(url) {
+    if (!url || typeof url !== 'string') return false;
+    var m = url.match(/^https?:\/\/([^/?#]+)/i);
+    if (!m) return false;
+    var host = m[1].split('@').pop().split(':')[0].toLowerCase();
+    for (var i = 0; i < BT_DRILL_LINK_HOSTS.length; i++) {
+      var h = BT_DRILL_LINK_HOSTS[i];
+      if (host === h || host.slice(-(h.length + 1)) === '.' + h) return true;
+    }
+    return false;
+  }
+
+  function btDrillLinkHtml(url, label) {
+    if (btDrillLinkAllowed(url)) {
+      return '<a href="' + url + '" target="_blank" rel="noopener">' + label + '</a>';
+    }
+    return label;
+  }
+
+  function btDrillSourceHtml(s) {
+    return btDrillLinkHtml(s.url, s.label);
+  }
 
   var BT_DRILL_MENUS = [
     {
@@ -13373,9 +13405,7 @@ function sharePoseResultImage() {
   }
 
   function btDrillCardHtml(d) {
-    var src = (d.sources || []).map(function(s){
-      return '<a href="' + s.url + '" target="_blank" rel="noopener">' + s.label + '</a>';
-    }).join(' ／ ');
+    var src = (d.sources || []).map(btDrillSourceHtml).join(' ／ ');
     var ref = (d.referencePlayers && d.referencePlayers.length)
       ? '<div class="bt-drill-src">参考：' + d.referencePlayers.join('・') + '</div>' : '';
     var origin = (d.originType === 'style-derived')
@@ -13457,9 +13487,7 @@ function sharePoseResultImage() {
   }
 
   function btDrillDetailHtml(d) {
-    var src = (d.sources || []).map(function(s){
-      return '<a href="' + s.url + '" target="_blank" rel="noopener">' + s.label + '</a>';
-    }).join('<br>');
+    var src = (d.sources || []).map(btDrillSourceHtml).join('<br>');
     var ref = (d.referencePlayers && d.referencePlayers.length)
       ? '<div class="bt-drill-src">参考：' + d.referencePlayers.join('・') + '</div>' : '';
     var origin = (d.originType === 'style-derived')
@@ -13472,7 +13500,7 @@ function sharePoseResultImage() {
     var doseNote = (d.dose && d.dose.note)
       ? '<br><span class="bt-drill-dose-note">' + d.dose.note + '</span>' : '';
     var video = (d.video && d.video.url)
-      ? '<div class="bt-drill-src">🎬 参考動画：<a href="' + d.video.url + '" target="_blank" rel="noopener">' + (d.video.label || '動画を見る') + '</a></div>' : '';
+      ? '<div class="bt-drill-src">🎬 参考動画：' + btDrillLinkHtml(d.video.url, d.video.label || '動画を見る') + '</div>' : '';
     return '<div class="bt-drill-card-head"><span class="bt-drill-name">' + d.name + '</span>'
       + '<span><span class="badge-version">' + d.category + '</span>' + risk + '</span></div>'
       + '<div class="bt-drill-meta">対象：' + (d.level || []).join('・') + '／約' + d.durationMin + '分／' + (BT_DRILL_MODE_LABELS[d.mode] || '') + '</div>'
@@ -13711,6 +13739,10 @@ function sharePoseResultImage() {
     closeDetail: btDrillCloseDetail,
     getDetailId: function(){ return btDrillDetailId; },
     detailHtml: btDrillDetailHtml,
+    cardHtml: btDrillCardHtml,
+    linkAllowed: btDrillLinkAllowed,
+    linkHtml: btDrillLinkHtml,
+    sourceHtml: btDrillSourceHtml,
     addToMenu: btDrillAddToMenu,
     addMenuToMenu: btDrillAddMenuToMenu,
     toMenuItem: btDrillToMenuItem
