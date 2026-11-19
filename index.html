@@ -704,6 +704,32 @@
 
 
 
+    /* ライト系テーマではアクセント色が濃くなるため、アクセント背景上の文字を白にしてコントラストを確保する */
+
+    body[data-theme-mode="light"] .btn-emerald,
+
+    body[data-theme-mode="light"] .nav-tab.active,
+
+    body[data-theme-mode="light"] .badge-version,
+
+    body[data-theme-mode="light"] .bt-shot-chip.active,
+
+    body[data-theme-mode="light"] .mode-switch-btn.active,
+
+    body[data-theme-mode="light"] .btn-cyan-outline.active,
+
+    body[data-theme-mode="light"] .bt-drill-btn-view,
+
+    body[data-theme-mode="light"] .bt-drill-chip.active,
+
+    body[data-theme-mode="light"] .bt-drill-btn-add {
+
+      color: #ffffff;
+
+    }
+
+
+
     .mode-switch-bar {
 
       display: grid;
@@ -10401,11 +10427,14 @@
 
     const UI_COLOR_THEMES = {
       cyan:    { label: "🩵 アイス・シアン", bgBase: "#040d1a", bgSurface: "#09192e", bgCard: "#0f233f", bgPanel: "#163054", textPrimary: "#f0f9ff", textSecondary: "#93c5fd", accentPrimary: "#06b6d4", glow: "rgba(6,182,212,0.42)", accentSecondary: "#38bdf8", accentHighlight: "#fde047", border: "rgba(56,189,248,0.32)", court: "linear-gradient(160deg,#0c4a6e 0%,#082f49 100%)", light: false },
-      pink:    { label: "🩷 ネオン・サクラ", bgBase: "#160714", bgSurface: "#240c21", bgCard: "#30112c", bgPanel: "#42183d", textPrimary: "#fdf2f8", textSecondary: "#f9a8d4", accentPrimary: "#ec4899", glow: "rgba(236,72,153,0.42)", accentSecondary: "#f472b6", accentHighlight: "#fde047", border: "rgba(244,114,182,0.34)", court: "linear-gradient(160deg,#701a75 0%,#4a044e 100%)", light: false },
+      pink:    { label: "🩷 ネオン・サクラ", bgBase: "#160714", bgSurface: "#240c21", bgCard: "#30112c", bgPanel: "#42183d", textPrimary: "#fdf2f8", textSecondary: "#f9a8d4", accentPrimary: "#f062a8", glow: "rgba(240,98,168,0.42)", accentSecondary: "#f472b6", accentHighlight: "#fde047", border: "rgba(244,114,182,0.34)", court: "linear-gradient(160deg,#701a75 0%,#4a044e 100%)", light: false },
       emerald: { label: "🟢 エメラルド・プロ", bgBase: "#060b16", bgSurface: "#0c1528", bgCard: "#111d36", bgPanel: "#172645", textPrimary: "#f8fafc", textSecondary: "#94a3b8", accentPrimary: "#10b981", glow: "rgba(16,185,129,0.42)", accentSecondary: "#06b6d4", accentHighlight: "#fbbf24", border: "rgba(56,189,248,0.24)", court: "linear-gradient(160deg,#065f46 0%,#044e3a 100%)", light: false },
-      violet:  { label: "💜 バイオレット", bgBase: "#0b0719", bgSurface: "#140d2b", bgCard: "#1d143d", bgPanel: "#291d54", textPrimary: "#f5f3ff", textSecondary: "#c4b5fd", accentPrimary: "#8b5cf6", glow: "rgba(139,92,246,0.42)", accentSecondary: "#a78bfa", accentHighlight: "#38bdf8", border: "rgba(167,139,250,0.32)", court: "linear-gradient(160deg,#3b0764 0%,#1e1b4b 100%)", light: false },
+      violet:  { label: "💜 バイオレット", bgBase: "#0b0719", bgSurface: "#140d2b", bgCard: "#1d143d", bgPanel: "#291d54", textPrimary: "#f5f3ff", textSecondary: "#c4b5fd", accentPrimary: "#a07df9", glow: "rgba(160,125,249,0.42)", accentSecondary: "#a78bfa", accentHighlight: "#38bdf8", border: "rgba(167,139,250,0.32)", court: "linear-gradient(160deg,#3b0764 0%,#1e1b4b 100%)", light: false },
       orange:  { label: "🧡 サンセット・橙", bgBase: "#140904", bgSurface: "#211008", bgCard: "#2e160b", bgPanel: "#3f2011", textPrimary: "#fff7ed", textSecondary: "#fdba74", accentPrimary: "#f97316", glow: "rgba(249,115,22,0.42)", accentSecondary: "#fb923c", accentHighlight: "#fde047", border: "rgba(251,146,60,0.32)", court: "linear-gradient(160deg,#7c2d12 0%,#431407 100%)", light: false },
-      light:   { label: "🤍 クリスタル・白", bgBase: "#f0f7ff", bgSurface: "#e0f2fe", bgCard: "#ffffff", bgPanel: "#f1f5f9", textPrimary: "#0f172a", textSecondary: "#475569", accentPrimary: "#0284c7", glow: "rgba(2,132,199,0.28)", accentSecondary: "#0ea5e9", accentHighlight: "#d97706", border: "rgba(2,132,199,0.28)", court: "linear-gradient(160deg,#0284c7 0%,#0369a1 100%)", light: true }
+      light:   { label: "🤍 クリスタル・白", bgBase: "#f0f7ff", bgSurface: "#e0f2fe", bgCard: "#ffffff", bgPanel: "#f1f5f9", textPrimary: "#0f172a", textSecondary: "#475569", accentPrimary: "#0369a1", glow: "rgba(3,105,161,0.28)", accentSecondary: "#0e7490", accentHighlight: "#a34d08", border: "rgba(3,105,161,0.28)", court: "linear-gradient(160deg,#0369a1 0%,#075985 100%)", light: true },
+      gold:    { label: "🟡 ロイヤル・ゴールド", bgBase: "#0a0a0c", bgSurface: "#121215", bgCard: "#18181d", bgPanel: "#222228", textPrimary: "#fafaf9", textSecondary: "#a8a29e", accentPrimary: "#eab308", glow: "rgba(234,179,8,0.42)", accentSecondary: "#38bdf8", accentHighlight: "#fb923c", border: "rgba(234,179,8,0.30)", court: "linear-gradient(160deg,#3f3f46 0%,#18181b 100%)", light: false },
+      crimson: { label: "🔴 クリムゾン・レッド", bgBase: "#12060a", bgSurface: "#1d0a11", bgCard: "#260d14", bgPanel: "#2f1019", textPrimary: "#fff1f2", textSecondary: "#fda4af", accentPrimary: "#f43f5e", glow: "rgba(244,63,94,0.42)", accentSecondary: "#fb7185", accentHighlight: "#fbbf24", border: "rgba(251,113,133,0.32)", court: "linear-gradient(160deg,#881337 0%,#4c0519 100%)", light: false },
+      mint:    { label: "🌿 ミント・ライト", bgBase: "#f0faf3", bgSurface: "#dff3e4", bgCard: "#ffffff", bgPanel: "#e9f6ec", textPrimary: "#12291c", textSecondary: "#4c6a56", accentPrimary: "#047857", glow: "rgba(4,120,87,0.25)", accentSecondary: "#0f766e", accentHighlight: "#a34d08", border: "rgba(4,120,87,0.30)", court: "linear-gradient(160deg,#047857 0%,#065f46 100%)", light: true }
     };
 
     const AI_CAUSE_PRESCRIPTIONS = {
