@@ -13281,7 +13281,7 @@ function sharePoseResultImage() {
     {
       menuId: 'menu_doubles',
       title: 'ダブルス・前衛型メニュー',
-      referenceLabel: '参考選手：渡辺勇大／東野有紗／保木卓朗',
+      referenceLabel: '参考選手：渡辺勇大／五十嵐有紗（旧姓・東野）／保木卓朗',
       type: 'pack',
       description: '前衛の組み立てと後衛の攻撃を分担する、ダブルスの型を鍛えるメニューです。公開練習やインタビューで確認できた、3対1ノックやレシーブ起点のパターン練習を収録しました。',
       drillIds: ['drill_dbl_handfeed','drill_dbl_3v1','drill_dbl_front_sink','drill_dbl_receive_pattern','drill_dbl_drive_ready']
@@ -13996,7 +13996,7 @@ function sharePoseResultImage() {
       },
       durationMin: 15,
       mode: 'pair',
-      referencePlayers: ['東野有紗'],
+      referencePlayers: ['五十嵐有紗'],
       originType: 'sourced',
       sources: [
         { label: '日刊スポーツ：公開練習の3対1ノック', url: 'https://www.nikkansports.com/m/sports/news/amp/202206030001634.html' }
@@ -14026,7 +14026,7 @@ function sharePoseResultImage() {
       },
       durationMin: 10,
       mode: 'pair',
-      referencePlayers: ['東野有紗'],
+      referencePlayers: ['五十嵐有紗'],
       originType: 'sourced',
       sources: [
         { label: '公開練習レポート：前衛で沈める球', url: 'https://news.yahoo.co.jp/expert/articles/5997b949eed1c01d8fe73c7b2c47c290c4dbbe94' }
@@ -14055,7 +14055,7 @@ function sharePoseResultImage() {
       },
       durationMin: 15,
       mode: 'pair',
-      referencePlayers: ['保木卓朗','東野有紗'],
+      referencePlayers: ['保木卓朗','五十嵐有紗'],
       originType: 'sourced',
       sources: [
         { label: 'J SPORTS：レシーブ起点のパターン練習', url: 'https://news.jsports.co.jp/badminton/article/20190310222001/?p=4' },
@@ -14516,14 +14516,14 @@ function sharePoseResultImage() {
   var btDrillPlayerFilter = 'all';
 
   /* 参考選手・方式フィルタ：referencePlayers の実データをもとに構成する。
-     ダブルス組（渡辺／東野／保木）はメニューの看板どおり1グループにまとめる。
+     ダブルス組（渡辺／保木）は1グループにまとめ、五十嵐有紗は本人のグループに一本化する。
      データに存在しないグループは btDrillPlayerFiltersInData で自動的に除外される。 */
   var BT_DRILL_PLAYER_GROUPS = [
     { key: 'p_axelsen', label: 'アクセルセン', players: ['アクセルセン'] },
     { key: 'p_momota', label: '桃田賢斗', players: ['桃田賢斗'] },
     { key: 'p_yamaguchi', label: '山口茜', players: ['山口茜'] },
     { key: 'p_an', label: 'アン・セヨン', players: ['アン・セヨン'] },
-    { key: 'p_doubles', label: '渡辺勇大・東野有紗・保木卓朗', players: ['渡辺勇大', '東野有紗', '保木卓朗'] },
+    { key: 'p_doubles', label: '渡辺勇大・保木卓朗', players: ['渡辺勇大', '保木卓朗'] },
     { key: 'p_taguchi', label: '田口真彩', players: ['田口真彩'] },
     { key: 'p_igarashi', label: '五十嵐有紗', players: ['五十嵐有紗'] },
     { key: 'p_korea', label: '韓国式', players: ['韓国式（方式）'] },
