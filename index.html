@@ -2764,7 +2764,7 @@
 
                   <div class="metric-val" style="color:var(--accent-highlight);" id="rxValAvgMs">-- ms</div>
 
-                  <div class="metric-peak">目標: 270ms以下</div>
+                  <div class="metric-peak">目標: 平均350ms以下</div>
 
                 </div>
 
@@ -2883,6 +2883,8 @@
                   カメラを起動して<b>「▶️ 初速AI測定スタート」</b>を押すと、待機中の<b>「構えの良さ（ラケット高さ・リストスタンド・膝のゆとり）」</b>と、矢印が出てから一歩目が動くまでの<b>「ミリ秒（ms）」</b>を同時に診断します。
 
                 </div>
+                <div style="font-size:0.78rem; color:#94a3b8; margin-top:6px;">※ 反応msには端末の表示・カメラ・推論の遅延（数十〜100ms程度）が含まれます。絶対値ではなく、同じ端末・同じ条件での記録同士の比較に使ってください。150ms未満の検出はフライング／ノイズとして無効になります。</div>
+
 
               </div>
 
@@ -3296,7 +3298,7 @@
 
                 <div class="bar-label">
 
-                  <span id="bdLabel1">① ラケット位置・上半身フォーム（40%）</span>
+                  <span id="bdLabel1">① 上半身・打点＆肘角度の正確性（40%）</span>
 
                   <span id="bdUpperText">-- / 100</span>
 
@@ -3310,7 +3312,7 @@
 
                 <div class="bar-label">
 
-                  <span id="bdLabel2">② 膝のタメ・スタンス・体幹軸（30%）</span>
+                  <span id="bdLabel2">② 下半身・膝のタメ（30%）</span>
 
                   <span id="bdLowerText">-- / 100</span>
 
@@ -3324,7 +3326,7 @@
 
                 <div class="bar-label">
 
-                  <span id="bdLabel3">③ 静止安定度 / スイング速度（30%）</span>
+                  <span id="bdLabel3">③ 最大スイング速度指数（30%）</span>
 
                   <span id="bdSpeedText">-- / 100</span>
 
@@ -6242,25 +6244,39 @@
 
           if (totalMove > thresh || kneeChange >= 9) {
 
-            const reactionMs = Math.max(115, Math.round(performance.now() - rxState.cueTime));
+            const rawMs = Math.round(performance.now() - rxState.cueTime);
 
             rxState.phase = 'idle';
 
+            if (rawMs < 150) {
 
+              // フライング／検出ノイズ相当（生理的にありえない速さ）は記録せず無効とし、同じ回をやり直す
 
-            const modeSetting = document.getElementById('rxStepPattern').value;
+              const invMain = document.getElementById('reflexBannerMain'), invSub = document.getElementById('reflexBannerSub');
 
-            let detectedType = "抜重ステップ";
+              if (invMain) { invMain.style.color = "#f43f5e"; invMain.textContent = `⚠️ 検出が速すぎます（${rawMs} ms）`; }
 
-            if (modeSetting === 'jump' || (modeSetting === 'auto' && dy < -0.035)) {
+              if (invSub) invSub.textContent = "フライングまたは検出ノイズとして無効にしました。合図を待ってから動き出してください";
 
-              detectedType = "飛び込みステップ";
+              playBeep(220, 120);
+
+              rxState.timerId = setTimeout(scheduleNextReflexRep, 1400);
+
+            } else {
+
+              const modeSetting = document.getElementById('rxStepPattern').value;
+
+              let detectedType = "抜重ステップ";
+
+              if (modeSetting === 'jump' || (modeSetting === 'auto' && dy < -0.035)) {
+
+                detectedType = "飛び込みステップ";
+
+              }
+
+              recordSingleReflexResult(rawMs, detectedType, rxState.baselineHip.stancePt);
 
             }
-
-
-
-            recordSingleReflexResult(reactionMs, detectedType, rxState.baselineHip.stancePt);
 
           }
 
@@ -6362,11 +6378,15 @@
 
 
 
-      let advice = avgMs <= 270
+      let advice = avgMs <= 350
 
-        ? "非常に鋭い初動スピードです！合図の瞬間に抜重して一歩目が出ています。"
+        ? "非常に鋭い初動スピードです！（端末の遅延込みの測定でも好タイムです）合図の瞬間に抜重して一歩目が出ています。"
 
-        : "初動をさらに速くするには、待っている間に膝をロックせず（約140°）、合図の瞬間にフッと重心を抜く抜重を意識しましょう。";
+        : (avgMs <= 500
+
+          ? "まずまずの初動です。待っている間に膝をロックせず（約140°）、合図の瞬間にフッと重心を抜く抜重ができると、さらに縮みます。"
+
+          : "初動をさらに速くするには、待っている間に膝をロックせず（約140°）、合図の瞬間にフッと重心を抜く抜重を意識しましょう。");
 
 
 
@@ -6426,7 +6446,7 @@
 
         focus: "stance", idealShoulder: 55, idealElbow: 105, idealKnee: 140, idealStance: 1.45,
 
-        desc: "🛡️ <b>基本の構え100pt基準:</b> ①ラケット(手首)の高さキープ＆リストスタンド、②膝のゆとり角＆スタンス幅比、③小刻みな上下バウンドのない静止安定度を採点します。"
+        desc: "🛡️ <b>基本の構え100pt基準:</b> ①ラケット(手首)の高さキープ＆リストスタンド（45%）、②膝のゆとり角（30%）、③小刻みな上下バウンドのない静止安定度（25%）を採点します（スタンス幅は採点には含まず、文章アドバイスの参考値です）。"
 
       },
 
@@ -6436,7 +6456,7 @@
 
         focus: "overhead", idealShoulder: 145, idealElbow: 162, idealKnee: 132,
 
-        desc: "🎯 <b>スマッシュ100pt基準:</b> 肩挙上角140°以上（高打点）・インパクト肘伸展155°以上・体幹長正規化スイング速度で採点します。"
+        desc: "🎯 <b>スマッシュ100pt基準:</b> ①上半身（最大肩挙上角・最大肘伸展を理想値と比べる：40%）、②下半身（最深膝角のタメ：30%）、③最大スイング速度指数（30%）で採点します。"
 
       },
 
@@ -6446,7 +6466,7 @@
 
         focus: "overhead", idealShoulder: 148, idealElbow: 165, idealKnee: 130,
 
-        desc: "🎯 <b>ハイクリア100pt基準:</b> 深いテイクバックからの最高打点（肩145°以上）と下半身のタメ・伸び上がりを評価します。"
+        desc: "🎯 <b>ハイクリア100pt基準:</b> 深いテイクバックからの最高打点を、①上半身（最大肩挙上角・最大肘伸展：40%）、②下半身（最深膝角のタメ：30%）、③最大スイング速度指数（30%）で採点します。"
 
       },
 
@@ -6456,7 +6476,7 @@
 
         focus: "overhead", idealShoulder: 138, idealElbow: 148, idealKnee: 136,
 
-        desc: "🎯 <b>ドロップ100pt基準:</b> クリアと同じ高い準備打点（肩135°以上）から体幹軸がブレない減速コントロールを評価します。"
+        desc: "🎯 <b>ドロップ100pt基準:</b> クリアと同じ高い準備打点を、①上半身（最大肩挙上角・最大肘伸展：40%）、②下半身（最深膝角のタメ：30%）、③最大スイング速度指数（30%）で採点します。"
 
       },
 
@@ -6466,7 +6486,7 @@
 
         focus: "lower", idealShoulder: 95, idealElbow: 138, idealKnee: 122,
 
-        desc: "🎯 <b>レシーブ＆ロブ100pt基準:</b> 膝の沈み込み角120°〜132°の深い腰落としと、リストを立てて肘を前に出したラケットワークを評価します。"
+        desc: "🎯 <b>レシーブ＆ロブ100pt基準:</b> ①下半身（最深膝角の沈み込み：基準122°：55%）、②最大スイング速度指数（45%）で採点します。"
 
       },
 
@@ -6476,7 +6496,7 @@
 
         focus: "lower", idealShoulder: 105, idealElbow: 132, idealKnee: 130,
 
-        desc: "🎯 <b>ドライブ＆プッシュ100pt基準:</b> リストスタンドを保ち、肘を体の前に出して（約110°〜135°）コンパクトに弾く初速を評価します。"
+        desc: "🎯 <b>ドライブ＆プッシュ100pt基準:</b> ①下半身（最深膝角の沈み込み：基準130°：55%）、②最大スイング速度指数（45%）で採点します。"
 
       },
 
@@ -6486,7 +6506,7 @@
 
         focus: "lower", idealShoulder: 85, idealElbow: 115, idealKnee: 124,
 
-        desc: "🎯 <b>リアクション［抜重］100pt基準:</b> 瞬間にフッと重心を落とす膝角度（120°〜130°）と直後の初動速度を採点します。"
+        desc: "🎯 <b>リアクション［抜重］100pt基準:</b> ①下半身（最深膝角の沈み込み：基準124°：55%）、②最大速度指数（腰の落下速度＋手首速度：45%）で採点します。"
 
       },
 
@@ -6496,7 +6516,7 @@
 
         focus: "lower", idealShoulder: 90, idealElbow: 120, idealKnee: 120,
 
-        desc: "🎯 <b>リアクション［飛び込み］100pt基準:</b> 両足着地時の股関節・膝の深いタメ（120°前後）と蹴り出し速度を採点します。"
+        desc: "🎯 <b>リアクション［飛び込み］100pt基準:</b> ①下半身（最深膝角のタメ：基準120°：55%）、②最大速度指数（45%）で採点します。"
 
       },
 
@@ -6506,7 +6526,7 @@
 
         focus: "overhead", idealShoulder: 142, idealElbow: 155, idealKnee: 134,
 
-        desc: "🎯 <b>カット100pt基準:</b> スマッシュと見分けがつかない高打点（肩140°以上）とスイング初速で相手を騙せているかを評価します。"
+        desc: "🎯 <b>カット100pt基準:</b> スマッシュと見分けがつかない高い打点を、①上半身（最大肩挙上角・最大肘伸展：40%）、②下半身（最深膝角のタメ：30%）、③最大スイング速度指数（30%）で採点します。"
 
       },
 
@@ -6516,7 +6536,7 @@
 
         focus: "lower", idealShoulder: 92, idealElbow: 145, idealKnee: 118,
 
-        desc: "🎯 <b>クロスヘアピン100pt基準:</b> 深いランジ姿勢（膝115°〜130°）と頭が突っ込まない体幹軸・リストスタンドの安定度を評価します。"
+        desc: "🎯 <b>クロスヘアピン100pt基準:</b> ①下半身（最深膝角の沈み込み：基準118°：55%）、②最大スイング速度指数（45%）で採点します。"
 
       }
 
@@ -6539,6 +6559,8 @@
       coreTiltDeg: 0, confidencePct: 0,
 
       hipYHistory: [],
+      sessionWristTotal: 0, sessionWristNg: 0, sessionMaxCoreTiltDeg: 0,
+
 
       prevWrist: null, prevHipY: null, prevTime: 0,
 
@@ -6553,6 +6575,8 @@
 
 
     let poseSession = { active: false, durationSec: 10, remainingSec: 0, timerId: null, validFrames: 0 };
+    let lastPoseDiagnosisResult = null;
+
 
 
 
@@ -6893,6 +6917,8 @@
       poseSession.active = true;
 
       poseSession.validFrames = 0;
+      lastPoseDiagnosisResult = null;
+
 
 
 
@@ -7208,6 +7234,8 @@
 
           if (poseSession.active) poseSession.validFrames++;
 
+          if (poseSession.active && aiMetrics.coreTiltDeg > aiMetrics.sessionMaxCoreTiltDeg) aiMetrics.sessionMaxCoreTiltDeg = aiMetrics.coreTiltDeg;
+
 
 
           const rawElbow = calcAngle(shoulder, elbow, wrist);
@@ -7261,6 +7289,14 @@
           aiMetrics.wristStandPt = stanceEval.wristStandPt;
 
           aiMetrics.isWristStandOk = stanceEval.isWristStandOk;
+
+          if (poseSession.active) {
+
+            aiMetrics.sessionWristTotal++;
+
+            if (!aiMetrics.isWristStandOk) aiMetrics.sessionWristNg++;
+
+          }
 
 
 
@@ -7999,6 +8035,12 @@
       aiMetrics.maxSpeedPt = 0;
 
       aiMetrics.hipYHistory = [];
+      aiMetrics.sessionWristTotal = 0;
+
+      aiMetrics.sessionWristNg = 0;
+
+      aiMetrics.sessionMaxCoreTiltDeg = 0;
+
 
       aiMetrics.smoothElbow = null;
 
@@ -8042,9 +8084,9 @@
 
         if (stanceGroup) stanceGroup.style.display = 'block';
 
-        document.getElementById('bdLabel1').textContent = "① ラケット高さ＆リストスタンド（40%）";
+        document.getElementById('bdLabel1').textContent = "① ラケット高さキープ＆リストスタンド（45%）";
 
-        document.getElementById('bdLabel2').textContent = "② 膝のゆとり角＆スタンス幅比（35%）";
+        document.getElementById('bdLabel2').textContent = "② 膝のゆとり角（30%）";
 
         document.getElementById('bdLabel3').textContent = "③ 無駄な上下動のない静止安定度（25%）";
 
@@ -8052,11 +8094,23 @@
 
         if (stanceGroup) stanceGroup.style.display = 'none';
 
-        document.getElementById('bdLabel1').textContent = "① 上半身・打点＆肘角度の正確性（40%）";
+        if (model.focus === 'lower') {
 
-        document.getElementById('bdLabel2').textContent = "② 下半身・膝のタメ＆体幹軸安定度（30%）";
+          document.getElementById('bdLabel1').textContent = "① 上半身（採点対象外・参考表示）";
 
-        document.getElementById('bdLabel3').textContent = "③ スイング・抜重の最大初速指数（30%）";
+          document.getElementById('bdLabel2').textContent = "② 下半身・膝のタメ（55%）";
+
+          document.getElementById('bdLabel3').textContent = "③ 最大スイング速度指数（45%）";
+
+        } else {
+
+          document.getElementById('bdLabel1').textContent = "① 上半身・打点＆肘角度の正確性（40%）";
+
+          document.getElementById('bdLabel2').textContent = "② 下半身・膝のタメ（30%）";
+
+          document.getElementById('bdLabel3').textContent = "③ スイングの最大速度指数（30%）";
+
+        }
 
       }
 
@@ -8265,6 +8319,8 @@
       poseSession.remainingSec = dur;
 
       poseSession.validFrames = 0;
+      lastPoseDiagnosisResult = null;
+
 
 
 
@@ -8320,11 +8376,13 @@
 
       if (poseSession.validFrames < 3) {
 
+        lastPoseDiagnosisResult = { ok: false, score: null, shot: null, reason: 'frames' };
+
         document.getElementById('aiSummaryContent').innerHTML = `
 
-          <div style="color:#f43f5e; font-weight:800;">⚠️ 全身の関節が十分に映っていませんでした（有効フレーム不足）</div>
+          <div style="color:#f43f5e; font-weight:800;">⚠️ 測定できませんでした（有効フレーム不足：全身の関節が十分に映っていませんでした）</div>
 
-          <div>頭から足首までが画面内に収まる区間またはカメラ位置で再度測定してみてください。</div>
+          <div>頭から足首までが画面内に収まる区間またはカメラ位置で再度測定してみてください。今回はランク・弱点判定を行っていません。</div>
 
         `;
 
@@ -8519,6 +8577,8 @@
         profileName: (typeof userProfile !== 'undefined' && userProfile && userProfile.name) ? userProfile.name : '',
         dateText: new Date().toLocaleDateString('ja-JP')
       };
+
+      lastPoseDiagnosisResult = { ok: true, score: totalScore, shot: shot, reason: '' };
 
 
     }
@@ -9555,7 +9615,7 @@
       pronation_lack: { shortPin: "🔄 肘を高く引き、前腕の回内で面を返す", title: "前腕のひねり(回外➔回内)不足", coaching: "肘から先を押し出すスイングになっています。構えで肘を高く上げて胸を開き(回外)、当たる瞬間に前腕を内側へひねって(回内)鋭く面を返しましょう。", drillName: "肘上げトップ素振り➔高打点回内打ち", step1: "【Step1】肘を肩より高く上げたトップで一度止まり、回内で一気に振る素振り10回。", step2: "【Step2】山なり手投げシャトルを最高打点で捉え回内だけで弾く。", step3: "【Step3】基礎打ちで打球後に面が自然とその場の下〜外を向くか確認。", fwPreset: "back2", fwLabel: "⬇️ 後衛2点スマッシュ移動", menuMin: 20 },
       excess_bounce:  { shortPin: "👟 待機中は跳ねずに静止し、2cm沈んで抜重", title: "待機中の不要なバウンド癖", coaching: "待っている間に小刻みに跳ねると浮いた瞬間に床を蹴れず一歩目が遅れます。静かに構え、動き出す瞬間にだけフッと膝の力を抜いて2〜3cm沈む「抜重」を使いましょう。", drillName: "静止からの抜重スタート➔左右ノック", step1: "【Step1】静止状態から合図と同時に上へ跳ねず真下に沈んで一歩目を出す練習。", step2: "【Step2】シャトルが離れた瞬間に抜重して左右へ踏み出す手投げノック。", step3: "【Step3】相手のインパクトの瞬間に空中に浮いていないかタイミングを合わせる。", fwPreset: "side2", fwLabel: "↔️ 左右サイドレシーブ", menuMin: 15 },
       lunge_lean:     { shortPin: "🦵 カカト着地で胸を起こし頭を突っ込ませない", title: "ランジでの上体の突っ込み", coaching: "踏み込む時に腰を落とすより先に頭が前へ倒れています。カカトから着地してお尻・太ももで体重を受け止め、胸を起こした姿勢で打ちましょう。", drillName: "ランジ2秒固定➔ネット前＆蹴り戻し", step1: "【Step1】前へ踏み込んだ着地で2秒ピタッと止まり、胸が起きているか確認。", step2: "【Step2】ネット前手投げに対し上体を倒さず捉え、前足1回で中央へ蹴り戻す。", step3: "【Step3】球際でも頭が膝より前に突っ込まないよう意識する。", fwPreset: "diagonal_r", fwLabel: "↗️ 対角線クロス交互", menuMin: 15 },
-      low_contact:    { shortPin: "🎯 左手で狙いを定め、一番高い打点で捉える", title: "打点の低さ＆テイクバック肘下がり", coaching: "打点が下がり頭の後方や横で捉えています。非利き手(左手)を高く上げて目標を定め、ラケット側の肘を耳の横まで引き上げて一番高い打点で捉えましょう。", drillName: "左手ガイド高打点素振り➔ハイキャッチ打ち", step1: "【Step1】左手を斜め上に伸ばし利き腕の肘を肩より高く上げて振る素振り10回。", step2: "【Step2】高めの手投げ球が落ちてくる前に最高打点で捉える連続ノック。", step3: "【Step3】水色の理想打点レーザー(145°前後)の高さで毎回捉える。", fwPreset: "back2", fwLabel: "⬇️ 後衛2点スマッシュ移動", menuMin: 20 },
+      low_contact:    { shortPin: "🎯 左手で狙いを定め、一番高い打点で捉える", title: "打点の低さ＆テイクバック肘下がり", coaching: "打点が下がり頭の後方や横で捉えています。非利き手(左手)を高く上げて目標を定め、ラケット側の肘を耳の横まで引き上げて一番高い打点で捉えましょう。", drillName: "左手ガイド高打点素振り➔ハイキャッチ打ち", step1: "【Step1】左手を斜め上に伸ばし利き腕の肘を肩より高く上げて振る素振り10回。", step2: "【Step2】高めの手投げ球が落ちてくる前に最高打点で捉える連続ノック。", step3: "【Step3】画面の水色レーザー（種目ごとの理想打点）の高さで毎回捉える。", fwPreset: "back2", fwLabel: "⬇️ 後衛2点スマッシュ移動", menuMin: 20 },
       slow_recovery:  { shortPin: "⚡ 着地と同時に前足で床を蹴り素早く中央へ戻る", title: "打球後の蹴り戻し遅れ＆後半の手下がり", coaching: "打った後に居座るか後半にラケットが下がっています。「打つこと」と「前足で床を蹴って戻ること」を1セットにし、戻りもラケットを胸の高さに保ちましょう。", drillName: "着地即キックバック➔前後連続ノック", step1: "【Step1】踏み込み足が着地するタン・タンのリズムで止まらず元の位置へ跳ね返る。", step2: "【Step2】ネット前➔中央帰還➔奥への連続配球で戻りの一歩目を速くする。", step3: "【Step3】30秒連続フットワークで後半も最初と同じラケット高を維持する。", fwPreset: "straight_r", fwLabel: "↕️ 右ストレート前後交互", menuMin: 15 }
     };
 
@@ -9856,7 +9916,7 @@
         if (bg) {
           bg.insertAdjacentHTML('beforeend', `<button class="btn" style="padding:7px 9px;font-size:0.8rem;" onclick="stepVideoFrame(-1)">⏪ -1コマ</button><button class="btn" style="padding:7px 9px;font-size:0.8rem;" onclick="stepVideoFrame(1)">⏩ +1コマ</button><button id="btnVideoLoopToggle" class="btn btn-cyan-outline" style="padding:4px 8px;font-size:0.8rem;" onclick="toggleVideoLoopObserveMode()">🔁 区間ループ: OFF</button><button class="btn btn-amber" style="padding:4px 8px;font-size:0.8rem;" onclick="toggleShuttleSpeedDrawer()">⚡ 球速測定(km/h)</button>`);
         }
-        vc.insertAdjacentHTML('beforeend', `<div id="shuttleSpeedDrawer" style="display:none;margin-top:8px;padding:9px;background:var(--bg-base);border:1px solid var(--accent-highlight);border-radius:10px;"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;"><span style="font-weight:900;font-size:0.78rem;color:var(--accent-highlight);">⚡ 2タップ球速計測（コマ送りで①打点と②到達点を記録）</span><span id="speedResultBadge" class="badge-version" style="background:#06b6d4;color:#020617;">未計測</span></div><div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;align-items:end;"><select id="speedDistPreset" onchange="shuttleSpeedState.distMeters=Number(this.value);computeShuttleSpeedKmh();" style="font-size:0.85rem;padding:6px;"><option value="6.8" selected>💥 スマッシュ:ネット通過(6.8m)</option><option value="9.6">💥 スマッシュ:着弾(9.6m)</option><option value="5.5">⚡ ドライブ:前衛到達(5.5m)</option></select><button class="btn btn-cyan-outline" style="padding:6px;" onclick="markShuttleSpeedPoint(1)">① 打点記録: <b id="speedT1Label">--.--s</b></button><button class="btn btn-emerald" style="padding:6px;" onclick="markShuttleSpeedPoint(2)">② 到達記録: <b id="speedT2Label">--.--s</b></button></div></div>`);
+        vc.insertAdjacentHTML('beforeend', `<div id="shuttleSpeedDrawer" style="display:none;margin-top:8px;padding:9px;background:var(--bg-base);border:1px solid var(--accent-highlight);border-radius:10px;"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;"><span style="font-weight:900;font-size:0.78rem;color:var(--accent-highlight);">⚡ 2タップ球速計測（コマ送りで①打点と②到達点を記録）</span><span id="speedResultBadge" class="badge-version" style="background:#06b6d4;color:#020617;">未計測</span></div><div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;align-items:end;"><select id="speedDistPreset" onchange="shuttleSpeedState.distMeters=Number(this.value);computeShuttleSpeedKmh();" style="font-size:0.85rem;padding:6px;"><option value="6.8" selected>💥 スマッシュ:ネット通過(6.8m)</option><option value="9.6">💥 スマッシュ:着弾(9.6m)</option><option value="5.5">⚡ ドライブ:前衛到達(5.5m)</option></select><button class="btn btn-cyan-outline" style="padding:6px;" onclick="markShuttleSpeedPoint(1)">① 打点記録: <b id="speedT1Label">--.--s</b></button><button class="btn btn-emerald" style="padding:6px;" onclick="markShuttleSpeedPoint(2)">② 到達記録: <b id="speedT2Label">--.--s</b></button></div><div style="font-size:0.78rem;color:var(--text-secondary);margin-top:6px;">※ 通常速度で撮影した動画専用です（スロー撮影の動画では実時間とずれて大きく誤差が出ます）。コマ送りの刻み（約0.033秒）や距離の誤差で、数十km/h程度ずれる目安値として見てください。</div></div>`);
       }
       const aiBox = document.getElementById('aiSummaryContent') ? document.getElementById('aiSummaryContent').parentNode : null;
       if (aiBox && !document.getElementById('permanentDrillCatalogCard')) {
@@ -9903,7 +9963,7 @@
       const dt = t2 - t1, dist = shuttleSpeedState.distMeters || 6.8, avg = Math.round((dist / dt) * 3.6);
       const v0 = Math.min(420, Math.round(avg * (dist <= 6.0 ? 1.48 : (dist <= 7.5 ? 1.62 : 1.85))));
       shuttleSpeedState.lastAvgKmh = avg; shuttleSpeedState.lastV0Kmh = v0;
-      if (b) { b.style.background = '#fbbf24'; b.innerHTML = `⚡ 推定初速: <b>${v0} km/h</b> (平均 ${avg} km/h)`; }
+      if (b) { b.style.background = '#fbbf24'; b.innerHTML = `⚡ 推定初速: <b>${v0} km/h</b> (平均 ${avg} km/h) ※目安`; }
       awardPlayerXP(20);
     }
     function toggleVideoLoopObserveMode() {
@@ -10095,18 +10155,50 @@
       if (fromVideo && videoLoopObserveMode && activeInputType === 'video') {
         const v = document.getElementById('uploadedVideo'); if (v) { v.currentTime = videoTrimState.startSec || 0; v.play().catch(() => {}); }
       }
-      const badgeTxt = document.getElementById('overallScoreBadge').textContent;
-      const m = badgeTxt.match(/(\d+)/);
-      const score = m ? Number(m[1]) : 82;
+      const diag = lastPoseDiagnosisResult;
+      if (!diag || !diag.ok || typeof diag.score !== 'number') {
+        // 測定不成立（有効フレーム不足など）: ランク・弱点処方は出さず、バッジを初期表示に戻す（サマリーには本体の失敗メッセージが表示済み）
+        const badgeEl = document.getElementById('overallScoreBadge');
+        if (badgeEl) badgeEl.textContent = '総合スコア: -- / 100 pt';
+        return;
+      }
+      const score = diag.score;
       const rk = getScoreRankMeta(score);
       document.getElementById('overallScoreBadge').textContent = `${rk.rank}ランク (${score}pt)`;
-      let worstKey = !aiMetrics.isWristStandOk ? 'racket_drop' : (aiMetrics.stabilityPt < 78 ? 'excess_bounce' : (aiMetrics.coreTiltDeg > 13 ? 'lunge_lean' : 'pronation_lack'));
-      const rxPlan = AI_CAUSE_PRESCRIPTIONS[worstKey];
-      renderManualDrillBrowser(worstKey);
+      // 弱点の自動判定: セッション集計（手首NG割合・セッション最大の体幹傾き）と、実測できる打点の低さで判定する。
+      // どの条件にも当てはまらない場合は弱点を断定せず、「弱点なし＋スコア内訳からのテーマ候補」を提示する。
+      const shotKey = diag.shot || document.getElementById('shotTypeSelect').value;
+      const shotModel = SHOT_IDEAL_MODELS[shotKey] || SHOT_IDEAL_MODELS.smash;
+      const wristTotal = aiMetrics.sessionWristTotal || 0;
+      const wristNgRatio = wristTotal >= 5 ? (aiMetrics.sessionWristNg || 0) / wristTotal : 0;
+      let worstKey = null;
+      if (wristTotal >= 5 && wristNgRatio >= 0.3) worstKey = 'racket_drop';
+      else if (shotKey !== 'ready_stance' && aiMetrics.maxShoulderDeg > 0 && aiMetrics.maxShoulderDeg < shotModel.idealShoulder - 15) worstKey = 'low_contact';
+      else if (shotKey === 'ready_stance' && aiMetrics.stabilityPt < 78) worstKey = 'excess_bounce';
+      else if ((aiMetrics.sessionMaxCoreTiltDeg || 0) > 13) worstKey = 'lunge_lean';
+      let themeKey = worstKey;
+      if (!themeKey) {
+        const minKnS = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
+        if (shotKey === 'ready_stance') {
+          const comps = [['racket_drop', aiMetrics.wristStandPt], ['excess_bounce', aiMetrics.stabilityPt], ['lunge_lean', aiMetrics.kneePt]];
+          themeKey = comps.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
+        } else if (shotModel.focus === 'lower') {
+          const lowerBestS = minKnS <= (shotModel.idealKnee + 6) ? 100 : Math.max(40, 100 - (minKnS - shotModel.idealKnee) * 1.8);
+          themeKey = lowerBestS <= aiMetrics.maxSpeedPt ? 'lunge_lean' : 'pronation_lack';
+        } else {
+          const upperBestS = Math.min(100, Math.round(((aiMetrics.maxShoulderDeg / shotModel.idealShoulder) * 60) + ((aiMetrics.maxElbowDeg / shotModel.idealElbow) * 40)));
+          const lowerBestS = minKnS <= (shotModel.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKnS - shotModel.idealKnee) * 1.8);
+          const comps = [['low_contact', upperBestS], ['lunge_lean', lowerBestS], ['pronation_lack', aiMetrics.maxSpeedPt]];
+          themeKey = comps.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
+        }
+      }
+      const rxPlan = AI_CAUSE_PRESCRIPTIONS[themeKey];
+      renderManualDrillBrowser(themeKey);
       const box = document.getElementById('aiSummaryContent');
       if (box) {
-        box.insertAdjacentHTML('afterbegin', `<div style="background:${rk.bg};border:1px solid ${rk.color};padding:8px 11px;border-radius:9px;margin-bottom:8px;font-weight:900;color:${rk.color};font-size:1rem;">🏆 判定：${rk.label}（${score} pt）｜ 最優先テーマ：${rxPlan.title}</div>`);
-        box.insertAdjacentHTML('beforeend', `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;"><button class="btn btn-cyan-outline" style="padding:7px;font-size:0.85rem;" onclick="pinWeaknessToFocusBar('${worstKey}')">📌 意識にピン留め</button><button class="btn btn-emerald" style="padding:7px;font-size:0.85rem;" onclick="jumpToPrescribedFootwork('${rxPlan.fwPreset}',true)">🏃 NEXT: FW練習へ</button><button class="btn btn-amber" style="padding:7px;font-size:0.85rem;" onclick="addPrescriptionToMenuPlan('${worstKey}')">➕ メニューに追加</button></div>`);
+        const themeLine = worstKey ? `最優先テーマ：${rxPlan.title}` : `目立った弱点は検出されませんでした（次に伸ばすテーマ候補：${rxPlan.title} ※弱点の検出ではなくスコア内訳からの提案です）`;
+        box.insertAdjacentHTML('afterbegin', `<div style=\"background:${rk.bg};border:1px solid ${rk.color};padding:8px 11px;border-radius:9px;margin-bottom:8px;font-weight:900;color:${rk.color};font-size:1rem;\">🏆 判定：${rk.label}（${score} pt）｜ ${themeLine}</div>`);
+        box.insertAdjacentHTML('beforeend', `<div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;\"><button class=\"btn btn-cyan-outline\" style=\"padding:7px;font-size:0.85rem;\" onclick=\"pinWeaknessToFocusBar('${themeKey}')\">📌 意識にピン留め</button><button class=\"btn btn-emerald\" style=\"padding:7px;font-size:0.85rem;\" onclick=\"jumpToPrescribedFootwork('${rxPlan.fwPreset}',true)\">🏃 NEXT: FW練習へ</button><button class=\"btn btn-amber\" style=\"padding:7px;font-size:0.85rem;\" onclick=\"addPrescriptionToMenuPlan('${themeKey}')\">➕ メニューに追加</button></div>`);
       }
     };
 
@@ -10935,7 +11027,7 @@
                 🔥 毎日のルーティンチェックでXPゲット
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」か「📋 7.メニュー作成」の画面で、右下の<b>［🔥 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。<br>
+                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」か「📋 8.メニュー作成」の画面で、右下の<b>［🔥 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。<br>
                 <b>② チェックして保存：</b>終わった項目にチェックを入れて保存すると、内容に応じて<b>XP</b>がもらえます。全部達成で<b>ボーナス+30 XP</b>！毎日の積み重ねでレベルアップを目指しましょう。
               </div>
             </div>
@@ -11829,7 +11921,7 @@ function sharePoseResultImage() {
     return false;
   }
 
-  // FABの表示制御: 「1.フットワーク」「7.メニュー作成」タブの時だけ表示し、ドリル/タイマー実行中は隠す。
+  // FABの表示制御: 「1.フットワーク」「8.メニュー作成」タブの時だけ表示し、ドリル/タイマー実行中は隠す。
   // その日のルーティンを全項目チェック済みなら「✅ ルーティン済」表示（緑）に切り替える。
   function refreshRoutineFab(){
     var b=$("#bt-routine-fab"); if(!b) return;
