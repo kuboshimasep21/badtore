@@ -268,6 +268,86 @@
 
 
 
+    .bt-shot-chips {
+
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 2px;
+
+    }
+
+
+
+    .bt-shot-group-label {
+
+      font-size: 0.8rem;
+
+      font-weight: 900;
+
+      color: var(--text-secondary);
+
+      margin-top: 6px;
+
+    }
+
+
+
+    .bt-shot-chip-row {
+
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 6px;
+
+    }
+
+
+
+    .bt-shot-chip {
+
+      min-height: 36px;
+
+      padding: 8px 14px;
+
+      border-radius: 999px;
+
+      border: 1px solid var(--border-subtle);
+
+      background: var(--bg-surface);
+
+      color: var(--text-secondary);
+
+      font-size: 0.8rem;
+
+      font-weight: 800;
+
+      cursor: pointer;
+
+      display: inline-flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+    }
+
+
+
+    .bt-shot-chip.active {
+
+      background: var(--accent-primary);
+
+      color: #020617;
+
+      border-color: var(--accent-primary);
+
+    }
+
+
+
     .badge-version {
 
       background: var(--accent-primary);
@@ -3188,7 +3268,7 @@
 
                 <label>① チェックする種目を選択（動画読込中に変えると即座に自動再診断します）</label>
 
-                <select id="shotTypeSelect" onchange="onShotTypeChanged()">
+                <select id="shotTypeSelect" onchange="onShotTypeChanged()" style="display:none;" aria-hidden="true" tabindex="-1">
 
                   <optgroup label="🛡️ 構え（レディポジション）編">
 
@@ -3227,6 +3307,54 @@
                   </optgroup>
 
                 </select>
+
+                <div id="shotTypeChips" class="bt-shot-chips">
+
+                  <div class="bt-shot-group-label">🛡️ 構え（レディポジション）編</div>
+
+                  <div class="bt-shot-chip-row">
+
+                    <button type="button" class="bt-shot-chip active" data-shot-value="ready_stance" onclick="btSelectShotType('ready_stance')">🛡️ 基本の構え・レディポジション</button>
+
+                  </div>
+
+                  <div class="bt-shot-group-label">🔥 基礎打ち・ストローク編</div>
+
+                  <div class="bt-shot-chip-row">
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="smash" onclick="btSelectShotType('smash')">💥 スマッシュ</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="clear" onclick="btSelectShotType('clear')">🌈 ハイクリア</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="drop" onclick="btSelectShotType('drop')">🪶 ドロップ</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="lob" onclick="btSelectShotType('lob')">🛡️ レシーブ＆ロブ</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="drive" onclick="btSelectShotType('drive')">⚡ ドライブ＆プッシュ</button>
+
+                  </div>
+
+                  <div class="bt-shot-group-label">👟 リアクションステップ編</div>
+
+                  <div class="bt-shot-chip-row">
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="reaction_unweight" onclick="btSelectShotType('reaction_unweight')">👟 リアクション［抜重］</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="reaction_jump" onclick="btSelectShotType('reaction_jump')">🦘 リアクション［飛び込み］</button>
+
+                  </div>
+
+                  <div class="bt-shot-group-label">✨ 応用テクニック編</div>
+
+                  <div class="bt-shot-chip-row">
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="cut_reverse" onclick="btSelectShotType('cut_reverse')">✂️ カット・リバースカット</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="cross_hairpin" onclick="btSelectShotType('cross_hairpin')">🕸️ ヘアピン・クロスヘアピン</button>
+
+                  </div>
+
+                </div>
 
               </div>
 
@@ -7008,6 +7136,40 @@
 
 
 
+    function btSelectShotType(value) {
+
+      const sel = document.getElementById('shotTypeSelect');
+
+      if (!sel) return;
+
+      if (sel.value === value) { btSyncShotChips(); return; }
+
+      sel.value = value;
+
+      btSyncShotChips();
+
+      onShotTypeChanged();
+
+    }
+
+
+
+    function btSyncShotChips() {
+
+      const sel = document.getElementById('shotTypeSelect');
+
+      if (!sel) return;
+
+      document.querySelectorAll('.bt-shot-chip').forEach(chip => {
+
+        chip.classList.toggle('active', chip.getAttribute('data-shot-value') === sel.value);
+
+      });
+
+    }
+
+
+
     function toggleVideoPause() {
 
       const videoEl = getActiveSourceVideoElement();
@@ -8069,6 +8231,8 @@
     function updateShotCriteriaUI() {
 
       const shot = document.getElementById('shotTypeSelect').value;
+
+      if (typeof btSyncShotChips === 'function') btSyncShotChips();
 
       const box = document.getElementById('shotCriteriaDesc');
 
