@@ -212,6 +212,18 @@
 
 
 
+    .bt-sticky-top {
+
+      position: sticky;
+
+      top: 0;
+
+      z-index: 100;
+
+    }
+
+
+
     header {
 
       background: var(--bg-surface);
@@ -219,10 +231,6 @@
       border-bottom: 1px solid var(--border-subtle);
 
       padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px 12px;
-
-      position: sticky;
-
-      top: 0;
 
       z-index: 100;
 
@@ -431,10 +439,6 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
 
       gap: 5px;
-
-      position: sticky;
-
-      top: 45px;
 
       z-index: 95;
 
@@ -2160,6 +2164,8 @@
 
 
 
+  <div class="bt-sticky-top">
+
   <header>
 
     <div class="brand-wrap">
@@ -2209,6 +2215,8 @@
     <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 10.撮影ガイド</button>
 
   </nav>
+
+  </div>
 
 
 
@@ -4211,6 +4219,8 @@
       if (tabId === 'tab-score') renderMatchCourt();
 
       if (tabId === 'tab-profile') renderProfileMembersGrid();
+
+      window.scrollTo(0, 0);
 
     }
 
@@ -10498,23 +10508,52 @@
       return { lv, xp, remXp, title: titles[Math.min(titles.length - 1, Math.floor((lv - 1) / 2))], days: rec.days || [] };
     }
 
+    function btFocusTodayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function btFocusConfirmCarry(n) {
+      return confirm('🎯 前日の意識（未完了）が ' + n + ' 件残っています。今日に引き継ぎますか？\n（キャンセルすると破棄されます）');
+    }
+    function btFocusRolloverIfNeeded(list) {
+      const today = btFocusTodayStr();
+      let changed = false;
+      list.forEach(it => { if (it && !it.date) { it.date = today; changed = true; } });
+      const staleIdx = [];
+      list.forEach((it, i) => { if (it && it.date && it.date < today) staleIdx.push(i); });
+      if (staleIdx.length) {
+        const undone = staleIdx.filter(i => !list[i].done);
+        const carry = undone.length ? btFocusConfirmCarry(undone.length) : false;
+        const keep = new Set(carry ? undone : []);
+        for (let k = staleIdx.length - 1; k >= 0; k--) {
+          const i = staleIdx[k];
+          if (keep.has(i)) { list[i].date = today; }
+          else list.splice(i, 1);
+        }
+        changed = true;
+      }
+      if (changed) { try { localStorage.setItem('badtore_pinned_focus_v102', JSON.stringify(pinnedFocusDB)); } catch (e) {} }
+    }
     function getActivePinnedList() {
       if (!pinnedFocusDB[activeProfileId]) {
+        const today = btFocusTodayStr();
         pinnedFocusDB[activeProfileId] = [
-          { key: 'excess_bounce', text: AI_CAUSE_PRESCRIPTIONS.excess_bounce.shortPin, done: false },
-          { key: 'racket_drop', text: AI_CAUSE_PRESCRIPTIONS.racket_drop.shortPin, done: false }
+          { key: 'excess_bounce', text: AI_CAUSE_PRESCRIPTIONS.excess_bounce.shortPin, done: false, date: today },
+          { key: 'racket_drop', text: AI_CAUSE_PRESCRIPTIONS.racket_drop.shortPin, done: false, date: today }
         ];
       }
-      return pinnedFocusDB[activeProfileId];
+      const list = pinnedFocusDB[activeProfileId];
+      btFocusRolloverIfNeeded(list);
+      return list;
     }
     function savePinnedFocusDB() { localStorage.setItem('badtore_pinned_focus_v102', JSON.stringify(pinnedFocusDB)); renderHeaderLevelAndFocusBarUI(); }
     function pinWeaknessToFocusBar(causeKey, customText) {
       const list = getActivePinnedList(), plan = AI_CAUSE_PRESCRIPTIONS[causeKey];
       const text = customText || (plan ? plan.shortPin : "📌 フォーム重点課題");
       const idx = list.findIndex(x => x.key === causeKey || x.text === text);
-      if (idx >= 0) { list[idx].done = false; savePinnedFocusDB(); playBeep(1150, 90); return; }
+      if (idx >= 0) { list[idx].done = false; list[idx].date = btFocusTodayStr(); savePinnedFocusDB(); playBeep(1150, 90); return; }
       if (list.length >= 3) { const dIdx = list.findIndex(x => x.done); if (dIdx >= 0) list.splice(dIdx, 1); else list.shift(); }
-      list.push({ key: causeKey || ('c_' + Date.now()), text, done: false });
+      list.push({ key: causeKey || ('c_' + Date.now()), text, done: false, date: btFocusTodayStr() });
       savePinnedFocusDB(); awardPlayerXP(10); playBeep(1220, 110);
     }
     function togglePinnedFocusDone(i) {
@@ -10523,6 +10562,29 @@
       savePinnedFocusDB();
     }
     function removePinnedFocusAt(i, e) { if (e) e.stopPropagation(); getActivePinnedList().splice(i, 1); savePinnedFocusDB(); }
+
+    let btFocusAddOpen = false;
+    function btFocusStartAdd() {
+      if (getActivePinnedList().length >= 3) return;
+      btFocusAddOpen = true;
+      renderHeaderLevelAndFocusBarUI();
+      const inp = document.getElementById('btFocusAddInput');
+      if (inp) inp.focus();
+    }
+    function btFocusCancelAdd() { btFocusAddOpen = false; renderHeaderLevelAndFocusBarUI(); }
+    function btFocusCommitAdd() {
+      const inp = document.getElementById('btFocusAddInput');
+      const text = inp ? inp.value.trim() : '';
+      btFocusAddOpen = false;
+      if (!text) { renderHeaderLevelAndFocusBarUI(); return; }
+      const list = getActivePinnedList();
+      if (list.length >= 3) { renderHeaderLevelAndFocusBarUI(); return; }
+      list.push({ key: 'm_' + Date.now(), text, done: false, date: btFocusTodayStr() });
+      savePinnedFocusDB();
+    }
+    function btFocusEscapeHtml(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
     function renderHeaderLevelAndFocusBarUI() {
       const lvInfo = getPlayerLevelInfo(activeProfileId);
@@ -10533,8 +10595,14 @@
       const bar = document.getElementById('globalFocusPinBar');
       if (!bar) return;
       const list = getActivePinnedList();
-      const pills = list.length ? list.map((it, i) => `<div class="focus-pin-pill ${it.done ? 'pin-done' : ''}" onclick="togglePinnedFocusDone(${i})"><span>${it.done ? '✅' : '📌'} ${it.text}</span><span class="pin-del-btn" onclick="removePinnedFocusAt(${i},event)">✕</span></div>`).join('') : `<span style="font-size:0.8rem;color:var(--text-secondary);">AI診断の「📌 ピン留め」を押すと意識ポイント(最大3つ)が常時表示されます</span>`;
-      bar.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;"><span style="font-weight:900;font-size:0.8rem;color:var(--accent-highlight);">🎯 今日の意識 (${list.length}/3):</span><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">${pills}</div></div>`;
+      const pills = list.length ? list.map((it, i) => `<div class="focus-pin-pill ${it.done ? 'pin-done' : ''}" onclick="togglePinnedFocusDone(${i})"><span>${it.done ? '✅' : '📌'} ${btFocusEscapeHtml(it.text)}</span><span class="pin-del-btn" onclick="removePinnedFocusAt(${i},event)">✕</span></div>`).join('') : `<span style="font-size:0.8rem;color:var(--text-secondary);">「＋ 追加」ボタンか、AI診断の「📌 ピン留め」で意識ポイント(最大3つ)を登録できます</span>`;
+      let addUI = '';
+      if (btFocusAddOpen) {
+        addUI = `<span style="display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;"><input id="btFocusAddInput" type="text" maxlength="40" placeholder="今日の意識を入力" style="font-size:0.8rem;padding:5px 8px;border-radius:8px;border:1px solid var(--accent-primary);background:var(--bg-surface);color:var(--text-primary);min-width:150px;" onkeydown="if(event.key==='Enter')btFocusCommitAdd();else if(event.key==='Escape')btFocusCancelAdd();"><button type="button" onclick="btFocusCommitAdd()" style="font-size:0.8rem;font-weight:800;padding:5px 10px;border-radius:8px;border:1px solid var(--accent-primary);background:var(--bg-surface);color:var(--text-primary);cursor:pointer;">追加</button><button type="button" onclick="btFocusCancelAdd()" style="font-size:0.8rem;padding:5px 8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-secondary);cursor:pointer;">✕</button></span>`;
+      } else if (list.length < 3) {
+        addUI = `<button type="button" onclick="btFocusStartAdd()" style="font-size:0.8rem;font-weight:800;padding:4px 10px;border-radius:999px;border:1px dashed var(--accent-primary);background:transparent;color:var(--accent-secondary);cursor:pointer;">＋ 追加</button>`;
+      }
+      bar.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;"><span style="font-weight:900;font-size:0.8rem;color:var(--accent-highlight);">🎯 今日の意識 (${list.length}/3):</span><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">${pills}${addUI}</div></div>`;
     }
 
     const _v103SyncProf = syncActiveProfileToState;
