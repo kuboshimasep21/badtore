@@ -12139,7 +12139,12 @@
 
     let customDrillBankDB = [];
     let workoutTimerState = { running: false, phase: 'work', remSec: 30, workSec: 30, restSec: 15, curSet: 1, totalSets: 3, timerId: null };
-    let selectedGeminiModel = localStorage.getItem('badtore_gemini_model_v104') || 'gemini-2.5-pro';
+    const GEMINI_MODEL_PRIMARY = 'gemini-3.1-pro-preview';
+    const GEMINI_MODEL_FAST = 'gemini-3.8-flash';
+    const GEMINI_MODEL_CHOICES = [GEMINI_MODEL_PRIMARY, GEMINI_MODEL_FAST];
+    function normalizeGeminiModel(v) { return GEMINI_MODEL_CHOICES.includes(v) ? v : GEMINI_MODEL_PRIMARY; }
+    let selectedGeminiModel = normalizeGeminiModel(localStorage.getItem('badtore_gemini_model_v104'));
+    if (localStorage.getItem('badtore_gemini_model_v104') !== selectedGeminiModel) localStorage.setItem('badtore_gemini_model_v104', selectedGeminiModel);
 
     function loadPart3Storage() {
       try {
@@ -12268,11 +12273,11 @@
     }
 
     // =========================================================================
-    // 2. 🧠 AIプロコーチ直結（指定キー自動適用・Proチャット共有・2.5 Pro切替）
+    // 2. 🧠 AIプロコーチ直結（指定キー自動適用・Proチャット共有・モデル切替）
     // =========================================================================
     function getSavedGeminiApiKey() { return (localStorage.getItem('badtore_gemini_api_key_v104') || DEFAULT_EMBEDDED_KEY || "").trim(); }
     function onGeminiModelSelectChanged(v) {
-      selectedGeminiModel = v || 'gemini-2.5-pro'; localStorage.setItem('badtore_gemini_model_v104', selectedGeminiModel);
+      selectedGeminiModel = normalizeGeminiModel(v); localStorage.setItem('badtore_gemini_model_v104', selectedGeminiModel);
       ['poseAiModelSelect', 'menuAiModelSelect'].forEach(id => { const el = document.getElementById(id); if (el) el.value = selectedGeminiModel; });
     }
     function saveGeminiApiKeyFromUI(id) {
@@ -12306,7 +12311,7 @@
     }
 
     async function callGeminiWithFallback(apiKey, parts) {
-      const m1 = selectedGeminiModel || 'gemini-2.5-pro', m2 = m1 === 'gemini-2.5-pro' ? 'gemini-2.5-flash' : 'gemini-2.0-flash';
+      const m1 = normalizeGeminiModel(selectedGeminiModel), m2 = m1 === GEMINI_MODEL_PRIMARY ? GEMINI_MODEL_FAST : GEMINI_MODEL_PRIMARY;
       let lastErr = null;
       for (const m of [m1, m2]) {
         try {
@@ -12358,8 +12363,9 @@
       if (aiBox && !document.getElementById('aiProCoachPoseCard')) {
         const c = document.createElement('div'); c.id = 'aiProCoachPoseCard'; c.className = 'summary-box';
         c.style = 'margin-top:0;border:1px solid var(--accent-secondary);background:var(--bg-panel);';
-        c.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);">🤖 AIプロコーチ深掘り診断（Pro共有 ＆ API直結）</span><span class="badge-version">🟢 キー組込済</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;"><button class="btn btn-amber" style="padding:8px;font-size:0.8rem;" onclick="shareImageAndCarteToProChat()">📲 Proチャットへ画像＋カルテ共有</button><button class="btn btn-emerald" style="padding:8px;font-size:0.8rem;" onclick="requestAIProCoachPoseAnalysis()">🧠 アプリ内でAI深掘り診断</button></div><details style="font-size:0.8rem;color:var(--text-secondary);"><summary style="cursor:pointer;font-weight:800;">🔑 APIキー確認・変更 ＆ モデル切替 ▼</summary><div class="form-grid" style="grid-template-columns:1fr 1.3fr auto;gap:5px;margin-top:5px;"><select id="poseAiModelSelect" onchange="onGeminiModelSelectChanged(this.value)" style="font-size:0.85rem;padding:6px;"><option value="gemini-2.5-pro">🧠 2.5 Pro</option><option value="gemini-2.5-flash">⚡ 2.5 Flash</option></select><input type="text" id="poseGeminiKeyInput" value="${k}" style="font-size:0.85rem;padding:6px;"/><button class="btn btn-cyan-outline" style="padding:5px 8px;" onclick="saveGeminiApiKeyFromUI('poseGeminiKeyInput')">💾保存</button></div></details><div id="aiProCoachPoseResultBox" style="display:none;margin-top:8px;padding:9px;background:var(--bg-base);border-radius:8px;border:1px solid var(--border-subtle);"></div>`;
+        c.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);">🤖 AIプロコーチ深掘り診断（Pro共有 ＆ API直結）</span><span class="badge-version">🟢 キー組込済</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;"><button class="btn btn-amber" style="padding:8px;font-size:0.8rem;" onclick="shareImageAndCarteToProChat()">📲 Proチャットへ画像＋カルテ共有</button><button class="btn btn-emerald" style="padding:8px;font-size:0.8rem;" onclick="requestAIProCoachPoseAnalysis()">🧠 アプリ内でAI深掘り診断</button></div><details style="font-size:0.8rem;color:var(--text-secondary);"><summary style="cursor:pointer;font-weight:800;">🔑 APIキー確認・変更 ＆ モデル切替 ▼</summary><div class="form-grid" style="grid-template-columns:1fr 1.3fr auto;gap:5px;margin-top:5px;"><select id="poseAiModelSelect" onchange="onGeminiModelSelectChanged(this.value)" style="font-size:0.85rem;padding:6px;"><option value="gemini-3.1-pro-preview">🧠 3.1 Pro</option><option value="gemini-3.8-flash">⚡ 3.8 Flash</option></select><input type="text" id="poseGeminiKeyInput" value="${k}" style="font-size:0.85rem;padding:6px;"/><button class="btn btn-cyan-outline" style="padding:5px 8px;" onclick="saveGeminiApiKeyFromUI('poseGeminiKeyInput')">💾保存</button></div></details><div id="aiProCoachPoseResultBox" style="display:none;margin-top:8px;padding:9px;background:var(--bg-base);border-radius:8px;border:1px solid var(--border-subtle);"></div>`;
         aiBox.parentNode.insertBefore(c, aiBox.nextSibling);
+        const ms = c.querySelector('#poseAiModelSelect'); if (ms) ms.value = selectedGeminiModel;
       }
 
       const mc = document.getElementById('menuItemsListContainer');
