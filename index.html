@@ -13307,7 +13307,7 @@ function sharePoseResultImage() {
       title: 'ジャンピングスマッシュ型メニュー',
       referenceLabel: '参考選手：五十嵐有紗（旧姓・東野）',
       type: 'pack',
-      description: '女子が後衛からジャンピングスマッシュを打てることで、ダブルスのフォーメーションが変幻自在になるスタイルです。育成期に指導された「両足でジャンプ」の型と、打った後の復帰を軸に構成しました。習得の段階練習は「ジャンピングスマッシュ習得プログラム」と合わせてどうぞ。',
+      description: '女子が後衛からジャンピングスマッシュを打てることで、ダブルスのフォーメーションが変幻自在になるスタイルです。育成期に指導された「両足でジャンプ」の型と、打った後の復帰を軸に構成しました。習得の段階練習は、同じドリル集にある「ジャンピングスマッシュ習得プログラム」と合わせてどうぞ。',
       drillIds: ['drill_jss_twofoot','drill_jss_followup']
     },
     {
@@ -14314,10 +14314,11 @@ function sharePoseResultImage() {
       dose: {
         standard: '5〜8本×3セットを目安に',
         junior: 'シャドーで両足踏み切りを確認してから、球出しは5本×2セットまで',
-        note: '育成期の指導（両足でジャンプしなさい）が土台とされる型。前提として、習得プログラムのステップ1が安定してから取り組むこと'
+        note: '育成期の指導（両足でジャンプしなさい）が土台とされる型。前提として、ドリル集の『ジャンピングスマッシュ習得プログラム』ステップ1（シャドー）が安定してから取り組むこと'
       },
       durationMin: 15,
       mode: 'pair',
+      relatedMenuId: 'program_jump_smash',
       referencePlayers: ['五十嵐有紗'],
       originType: 'sourced',
       sources: [
@@ -14373,7 +14374,7 @@ function sharePoseResultImage() {
       dose: {
         standard: '5〜8本×3セット（手投げフィードなら3セット×6本）',
         junior: '5本×2セットまで。立ちスマッシュと交互でもよい',
-        note: '前提：ステップ1のシャドーで、着地まで安定していること'
+        note: '前提：この『ジャンピングスマッシュ習得プログラム』のステップ1（シャドー）で、着地まで安定していること'
       },
       durationMin: 15,
       mode: 'pair',
@@ -14405,7 +14406,7 @@ function sharePoseResultImage() {
       dose: {
         standard: '6回×3セットを目安に',
         junior: '4回×2セット。立ちスマッシュでの連結から始めてもよい',
-        note: '回数はアプリ独自の目安。ステップ2が安定してから進むこと'
+        note: '回数はアプリ独自の目安。この『ジャンピングスマッシュ習得プログラム』のステップ2が安定してから進むこと'
       },
       durationMin: 15,
       mode: 'pair',
@@ -14606,7 +14607,7 @@ function sharePoseResultImage() {
       body = visibleDrills.map(btDrillCardHtml).join('');
     }
     if (!body) return '';
-    return '<div class="bt-drill-menu">'
+    return '<div class="bt-drill-menu" id="btDrillMenu-' + menu.menuId + '" data-menu-id="' + menu.menuId + '">'
       + '<div class="bt-drill-menu-head"><span class="bt-drill-menu-title">' + menu.title + '</span>'
       + '<span class="bt-drill-ref">' + menu.referenceLabel + '</span></div>'
       + '<p class="bt-drill-menu-desc">' + menu.description + '</p>'
@@ -14650,6 +14651,12 @@ function sharePoseResultImage() {
       ? '<br><span class="bt-drill-dose-note">' + d.dose.note + '</span>' : '';
     var video = (d.video && d.video.url)
       ? '<div class="bt-drill-src">🎬 参考動画：' + btDrillLinkHtml(d.video.url, d.video.label || '動画を見る') + '</div>' : '';
+    /* 他メニューへの参照（relatedMenuId）があるドリルには、そのメニューを開くジャンプボタンを出す */
+    var openMenu = '';
+    if (d.relatedMenuId) {
+      var rm = btDrillMenuById(d.relatedMenuId);
+      if (rm) openMenu = '<div class="bt-drill-open-menu"><button type="button" class="bt-drill-btn bt-drill-btn-view" onclick="btDrillOpenMenu(\'' + d.relatedMenuId + '\')">📚 『' + rm.title + '』を開く</button></div>';
+    }
     return '<div class="bt-drill-card-head"><span class="bt-drill-name">' + d.name + '</span>'
       + '<span><span class="badge-version">' + d.category + '</span>' + risk + '</span></div>'
       + '<div class="bt-drill-meta">対象：' + (d.level || []).join('・') + '／約' + d.durationMin + '分／' + (BT_DRILL_MODE_LABELS[d.mode] || '') + '</div>'
@@ -14657,6 +14664,7 @@ function sharePoseResultImage() {
       + '<div class="bt-drill-detail-sec">やり方</div>'
       + '<ol class="bt-drill-steps">' + steps + '</ol>'
       + '<div class="bt-drill-dose">目安（通常版）：' + d.dose.standard + '<br>ジュニア版：' + d.dose.junior + doseNote + '</div>'
+      + openMenu
       + ref + origin + video
       + '<div class="bt-drill-src">出典：<br>' + src + '</div>'
       + safety
@@ -14776,6 +14784,29 @@ function sharePoseResultImage() {
     return true;
   }
 
+  /* ドリル詳細から参照先メニュー（例：習得プログラム）へジャンプする。
+     フィルタで対象メニューが非表示になりうるため、フィルタをリセットしてから
+     再描画し、対象セクションへスクロールして一時ハイライトする。 */
+  function btDrillOpenMenu(menuId) {
+    var menu = btDrillMenuById(menuId);
+    if (!menu) return false;
+    btDrillCloseDetail();
+    try { if (typeof switchTab === 'function') switchTab('tab-drills'); } catch (e) {}
+    btDrillFilter = 'all';
+    btDrillPlayerFilter = 'all';
+    renderBtDrillLibrary();
+    setTimeout(function(){
+      var el = document.getElementById('btDrillMenu-' + menuId);
+      if (!el) return;
+      if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (el.classList) {
+        el.classList.add('bt-drill-menu-highlight');
+        setTimeout(function(){ el.classList.remove('bt-drill-menu-highlight'); }, 2000);
+      }
+    }, 250);
+    return true;
+  }
+
   function btDrillAddToMenu(id, btn) {
     var d = btDrillById(id);
     if (!d) return -1;
@@ -14857,6 +14888,8 @@ function sharePoseResultImage() {
       + '.bt-drill-chip{padding:8px 14px;border-radius:999px;border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-secondary);font-size:0.8rem;font-weight:800;cursor:pointer;}'
       + '.bt-drill-chip.active{background:var(--accent-primary);color:#020617;border-color:var(--accent-primary);}'
       + '.bt-drill-menu{margin-bottom:18px;}'
+      + '.bt-drill-menu-highlight{outline:3px solid var(--accent-highlight);outline-offset:4px;border-radius:10px;background:rgba(250,204,21,0.10);}'
+      + '.bt-drill-open-menu{margin:0 0 8px;}'
       + '.bt-drill-menu-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:4px;}'
       + '.bt-drill-menu-title{font-weight:900;font-size:0.95rem;color:var(--accent-primary);}'
       + '.bt-drill-ref{font-size:0.8rem;color:var(--text-secondary);}'
@@ -14951,6 +14984,7 @@ function sharePoseResultImage() {
   window.btDrillSetFilter = btDrillSetFilter;
   window.btDrillSetPlayerFilter = btDrillSetPlayerFilter;
   window.btDrillGoToWorkingMenu = btDrillGoToWorkingMenu;
+  window.btDrillOpenMenu = btDrillOpenMenu;
   window.btDrillHideAddedFeedback = btDrillHideAddedFeedback;
   window.btDrillOpenDetail = btDrillOpenDetail;
   window.btDrillCloseDetail = btDrillCloseDetail;
@@ -14971,6 +15005,7 @@ function sharePoseResultImage() {
     playerFilters: btDrillPlayerFiltersInData,
     matchesFilters: btDrillMatchesFilters,
     goToWorkingMenu: btDrillGoToWorkingMenu,
+    openMenu: btDrillOpenMenu,
     addGuideButton: btDrillAddGuideButton,
     openDetail: btDrillOpenDetail,
     closeDetail: btDrillCloseDetail,
