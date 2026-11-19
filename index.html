@@ -2126,7 +2126,7 @@
 
     <button class="nav-tab" onclick="switchTab('tab-progress')" id="btn-tab-progress">👥 7.みんなの進捗</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 9.撮影ガイド</button>
+    <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 10.撮影ガイド</button>
 
   </nav>
 
@@ -3909,6 +3909,18 @@
     </section>
 
 
+
+    <!-- =========================================================
+
+         TAB 9: 📚 ドリル集（プロ式メニュー）
+
+         中身のカードは badtore-drill-library スクリプトがマウントする
+
+    ========================================================== -->
+
+    <section id="tab-drills" class="tab-panel">
+
+    </section>
 
   </main>
 
@@ -10098,14 +10110,19 @@
       }
     };
 
-    // 📋 TAB 8: メニュー作成（ガイドの前に配置し、ガイドを9番目へ）
+    // 📋 TAB 8: メニュー作成＋📚 TAB 9: ドリル集（ガイドの前に配置し、ガイドを10番目へ）
     function injectMenuPlannerTab() {
       const nav = document.querySelector('.nav-scroller'), guideBtn = document.getElementById('btn-tab-guide');
-      if (guideBtn) guideBtn.textContent = '📖 9.使い方＆撮影';
+      if (guideBtn) guideBtn.textContent = '📖 10.使い方＆撮影';
       if (nav && !document.getElementById('btn-tab-menu')) {
         const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 8.メニュー作成';
         b.onclick = () => switchTab('tab-menu');
         if (guideBtn) nav.insertBefore(b, guideBtn); else nav.appendChild(b);
+      }
+      if (nav && !document.getElementById('btn-tab-drills')) {
+        const db = document.createElement('button'); db.className = 'nav-tab'; db.id = 'btn-tab-drills'; db.textContent = '📚 9.ドリル集';
+        db.onclick = () => switchTab('tab-drills');
+        if (guideBtn) nav.insertBefore(db, guideBtn); else nav.appendChild(db);
       }
       const mc = document.querySelector('.main-container');
       if (mc && !document.getElementById('tab-menu')) {
@@ -10857,7 +10874,7 @@
     }
 
     // =========================================================================
-    // 2. 📖 TAB 9：「使い方＆撮影ガイド」へのアップグレード（一番後ろのタブ）
+    // 2. 📖 TAB 10：「使い方＆撮影ガイド」へのアップグレード（一番後ろのタブ）
     // =========================================================================
     function upgradeGuideTabContent() {
       const guideSec = document.getElementById('tab-guide');
@@ -11498,7 +11515,7 @@ function sharePoseResultImage() {
   var STEPS = [
     { title: '👋 ようこそ、バドトレPROへ！', body: 'バドミントン専用のAI動作解析＆実践トレーニングアプリです。フットワーク・初速・フォーム分析・スコア管理まで、日々の練習をまるごとサポートします。' },
     { title: '🎥 AIフォーム分析の使い方', body: '「3.構え＆骨格AI」タブで動画を読み込むかカメラを起動すると、姿勢を自動で解析してスコアと改善アドバイスを表示します。診断結果は「📸 診断結果を画像でシェア」ボタンから、画像で保存・共有もできます。' },
-    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「6.メンバー管理」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「9.使い方＆撮影」タブにもあります。' }
+    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「6.メンバー管理」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「10.使い方＆撮影」タブにもあります。' }
   ];
   var idx = 0;
   var overlay = null, titleEl = null, bodyEl = null, dotsEl = null, prevBtn = null, nextBtn = null;
@@ -13164,7 +13181,8 @@ function sharePoseResultImage() {
 <script id="badtore-drill-library">
 /* =========================================================================
    📚 ドリル集（プロ式メニュー）Step 1〜3
-   - 配置：メニュー作成タブ（tab-menu）内の一区画としてカードを追加（設計B案）
+   - 配置：独立タブ「📚 9.ドリル集」（tab-drills）にカードをマウント
+     （当初は設計B案でタブ8内の一区画。ブラッシュアップ Step B で独立タブ化）
    - データ：スタイル別メニュー＋ドリルの静的データ（プリセット・読み取り専用）
    - 看板はスタイル名、選手名は「参考選手／参考方式」として小さく表示
    - 角度などの数値を選手名と結びつけない。負荷の目安は「アプリ独自の目安」
@@ -13179,6 +13197,10 @@ function sharePoseResultImage() {
      TikTok／X）のみ。それ以外の出典はリンクにせず出典名のテキスト表示のみとし、
      URL文字列も出さない。判定は btDrillLinkHtml に一元化し、カード・詳細の
      両描画が必ず通る（データが増えても自動で効く）
+   - ブラッシュアップ Step B の範囲：独立タブ化（9番、ガイドは10番へ）＋
+     カード要約化（手順・目安・出典・安全注意は詳細モーダルへ集約）＋
+     参考選手・方式フィルタ（カテゴリとAND条件）＋追加後の
+     「作業中メニューを見る」導線（固定フィードバックバー）
    ========================================================================= */
 (function(){
   'use strict';
@@ -14491,6 +14513,48 @@ function sharePoseResultImage() {
   ];
 
   var btDrillFilter = 'all';
+  var btDrillPlayerFilter = 'all';
+
+  /* 参考選手・方式フィルタ：referencePlayers の実データをもとに構成する。
+     ダブルス組（渡辺／東野／保木）はメニューの看板どおり1グループにまとめる。
+     データに存在しないグループは btDrillPlayerFiltersInData で自動的に除外される。 */
+  var BT_DRILL_PLAYER_GROUPS = [
+    { key: 'p_axelsen', label: 'アクセルセン', players: ['アクセルセン'] },
+    { key: 'p_momota', label: '桃田賢斗', players: ['桃田賢斗'] },
+    { key: 'p_yamaguchi', label: '山口茜', players: ['山口茜'] },
+    { key: 'p_an', label: 'アン・セヨン', players: ['アン・セヨン'] },
+    { key: 'p_doubles', label: '渡辺勇大・東野有紗・保木卓朗', players: ['渡辺勇大', '東野有紗', '保木卓朗'] },
+    { key: 'p_taguchi', label: '田口真彩', players: ['田口真彩'] },
+    { key: 'p_igarashi', label: '五十嵐有紗', players: ['五十嵐有紗'] },
+    { key: 'p_korea', label: '韓国式', players: ['韓国式（方式）'] },
+    { key: 'p_china', label: '中国式', players: ['中国式（方式）'] }
+  ];
+
+  function btDrillPlayerKeyOfPlayer(name) {
+    for (var i = 0; i < BT_DRILL_PLAYER_GROUPS.length; i++) {
+      if (BT_DRILL_PLAYER_GROUPS[i].players.indexOf(name) >= 0) return BT_DRILL_PLAYER_GROUPS[i].key;
+    }
+    return null;
+  }
+
+  function btDrillPlayerFiltersInData() {
+    return BT_DRILL_PLAYER_GROUPS.filter(function(g){
+      return BT_DRILLS.some(function(d){
+        return (d.referencePlayers || []).some(function(p){ return btDrillPlayerKeyOfPlayer(p) === g.key; });
+      });
+    });
+  }
+
+  /* カテゴリと参考選手・方式のAND条件でドリルの表示可否を判定する */
+  function btDrillMatchesFilters(d) {
+    if (!d) return false;
+    if (btDrillFilter !== 'all' && d.category !== btDrillFilter) return false;
+    if (btDrillPlayerFilter !== 'all') {
+      var ok = (d.referencePlayers || []).some(function(p){ return btDrillPlayerKeyOfPlayer(p) === btDrillPlayerFilter; });
+      if (!ok) return false;
+    }
+    return true;
+  }
 
   function btDrillById(id) {
     for (var i = 0; i < BT_DRILLS.length; i++) if (BT_DRILLS[i].id === id) return BT_DRILLS[i];
@@ -14506,27 +14570,14 @@ function sharePoseResultImage() {
     return BT_DRILL_CATEGORIES.filter(function(c){ return seen.indexOf(c) >= 0; });
   }
 
+  /* 一覧カードは要約表示（名前／対象・時間／狙い／ボタンのみ）。
+     手順・目安・出典・安全注意・参考選手の詳細は詳細モーダル（btDrillDetailHtml）に集約する。 */
   function btDrillCardHtml(d) {
-    var src = (d.sources || []).map(btDrillSourceHtml).join(' ／ ');
-    var ref = (d.referencePlayers && d.referencePlayers.length)
-      ? '<div class="bt-drill-src">参考：' + d.referencePlayers.join('・') + '</div>' : '';
-    var origin = (d.originType === 'style-derived')
-      ? '<div class="bt-drill-src">※スタイル分析から構成した一般ドリルです</div>' : '';
-    var safety = d.safetyNote
-      ? '<div class="bt-drill-safety-note">⚠️ ' + d.safetyNote + '</div>' : '';
-    var steps = (d.steps || []).map(function(s){ return '<li>' + s + '</li>'; }).join('');
-    var doseNote = (d.dose && d.dose.note)
-      ? '<br><span class="bt-drill-dose-note">' + d.dose.note + '</span>' : '';
     return '<div class="bt-drill-card">'
       + '<div class="bt-drill-card-head"><span class="bt-drill-name">' + d.name + '</span>'
       + '<span class="badge-version">' + d.category + '</span></div>'
       + '<div class="bt-drill-meta">対象：' + (d.level || []).join('・') + '／約' + d.durationMin + '分／' + (BT_DRILL_MODE_LABELS[d.mode] || '') + '</div>'
       + '<div class="bt-drill-target">🎯 ' + d.target + '</div>'
-      + '<ol class="bt-drill-steps">' + steps + '</ol>'
-      + '<div class="bt-drill-dose">目安（通常版）：' + d.dose.standard + '<br>ジュニア版：' + d.dose.junior + doseNote + '</div>'
-      + ref + origin
-      + '<div class="bt-drill-src">出典：' + src + '</div>'
-      + safety
       + '<div class="bt-drill-card-actions">'
       + '<button type="button" class="bt-drill-btn" onclick="btDrillOpenDetail(\'' + d.id + '\')">📖 詳細を見る</button>'
       + '<button type="button" class="bt-drill-btn bt-drill-btn-add" onclick="btDrillAddToMenu(\'' + d.id + '\', this)">＋ 作業中メニューに追加</button>'
@@ -14535,18 +14586,14 @@ function sharePoseResultImage() {
   }
 
   function btDrillMenuHtml(menu) {
-    var visibleDrills = menu.drillIds.map(btDrillById).filter(function(d){
-      return d && (btDrillFilter === 'all' || d.category === btDrillFilter);
-    });
+    var visibleDrills = menu.drillIds.map(btDrillById).filter(btDrillMatchesFilters);
     if (!visibleDrills.length) return '';
     var body = '';
     if (menu.type === 'program' && menu.programSteps) {
       menu.programSteps.forEach(function(st){
-        var stDrills = st.drillIds.map(btDrillById).filter(function(d){
-          return d && (btDrillFilter === 'all' || d.category === btDrillFilter);
-        });
+        var stDrills = st.drillIds.map(btDrillById).filter(btDrillMatchesFilters);
         if (!st.drillIds.length) {
-          if (btDrillFilter === 'all') {
+          if (btDrillFilter === 'all' && btDrillPlayerFilter === 'all') {
             body += '<div class="bt-drill-step bt-drill-step-soon"><span class="badge-version">' + (st.label || ('ステップ' + st.step)) + '</span> ' + st.title + ' <span class="bt-drill-soon">（準備中）</span></div>';
           }
           return;
@@ -14697,6 +14744,38 @@ function sharePoseResultImage() {
     setTimeout(function(){ btn.innerHTML = orig; btn.disabled = false; }, 1400);
   }
 
+  /* ===== 追加後の導線：固定フィードバックバー＋「作業中メニューを見る」 =====
+     一覧のどこで追加しても画面下部のバーで結果が分かり、そのまま
+     メニュー作成タブの作業中メニューへ移動して確認できる。 */
+  var BT_DRILL_VIEW_BTN_HTML = '<button type="button" class="bt-drill-btn bt-drill-btn-view" onclick="btDrillGoToWorkingMenu()">📋 作業中メニューを見る</button>';
+
+  function btDrillShowAddedFeedback(msg) {
+    var bar = document.getElementById('btDrillAddFeedback');
+    if (bar) {
+      bar.innerHTML = '<span class="bt-drill-feedback-msg">' + msg + '</span>' + BT_DRILL_VIEW_BTN_HTML
+        + '<button type="button" class="bt-drill-btn" onclick="btDrillHideAddedFeedback()">✕</button>';
+      bar.style.display = 'flex';
+    }
+    var st = document.getElementById('btDrillDetailStatus');
+    if (st && btDrillDetailId) st.innerHTML = msg + '<br>' + BT_DRILL_VIEW_BTN_HTML;
+  }
+
+  function btDrillHideAddedFeedback() {
+    var bar = document.getElementById('btDrillAddFeedback');
+    if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
+  }
+
+  function btDrillGoToWorkingMenu() {
+    btDrillCloseDetail();
+    btDrillHideAddedFeedback();
+    try { if (typeof switchTab === 'function') switchTab('tab-menu'); } catch (e) {}
+    setTimeout(function(){
+      var el = document.getElementById('menuItemsListContainer');
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 250);
+    return true;
+  }
+
   function btDrillAddToMenu(id, btn) {
     var d = btDrillById(id);
     if (!d) return -1;
@@ -14704,8 +14783,7 @@ function sharePoseResultImage() {
     if (count < 0) { btDrillFlashButton(btn, '⚠️ 追加できませんでした'); return -1; }
     try { if (typeof playBeep === 'function') playBeep(1120, 90); } catch (e) {}
     btDrillFlashButton(btn, '✅ 追加しました');
-    var st = document.getElementById('btDrillDetailStatus');
-    if (st && btDrillDetailId === id) st.textContent = '✅ 「' + d.name + '」を作業中メニューに追加しました（現在 ' + count + ' 件）。作業中メニューの一覧で確認できます。';
+    btDrillShowAddedFeedback('✅ 「' + d.name + '」を作業中メニューに追加しました（現在 ' + count + ' 件）');
     return count;
   }
 
@@ -14727,6 +14805,7 @@ function sharePoseResultImage() {
     if (!added) { btDrillFlashButton(btn, '⚠️ 追加できませんでした'); return -1; }
     try { if (typeof playBeep === 'function') playBeep(1120, 90); } catch (e) {}
     btDrillFlashButton(btn, '✅ ' + added + '件追加しました');
+    btDrillShowAddedFeedback('✅ 「' + menu.title + '」の全' + added + '件を作業中メニューに追加しました（現在 ' + total + ' 件）');
     return total;
   }
 
@@ -14742,12 +14821,25 @@ function sharePoseResultImage() {
         return '<button type="button" class="' + cls + '" onclick="btDrillSetFilter(\'' + c + '\')">' + label + '</button>';
       }).join('');
     }
+    var pchips = document.getElementById('btDrillPlayerFilters');
+    if (pchips) {
+      var groups = [{ key: 'all', label: 'すべて' }].concat(btDrillPlayerFiltersInData());
+      pchips.innerHTML = groups.map(function(g){
+        var cls = 'bt-drill-chip' + (btDrillPlayerFilter === g.key ? ' active' : '');
+        return '<button type="button" class="' + cls + '" onclick="btDrillSetPlayerFilter(\'' + g.key + '\')">' + g.label + '</button>';
+      }).join('');
+    }
     var html = BT_DRILL_MENUS.map(btDrillMenuHtml).join('');
-    bodyEl.innerHTML = html || '<div class="bt-drill-empty">このカテゴリのドリルは準備中です</div>';
+    bodyEl.innerHTML = html || '<div class="bt-drill-empty">条件に合うドリルがありません。カテゴリや参考選手・方式の絞り込みを変えてみてください</div>';
   }
 
   function btDrillSetFilter(cat) {
     btDrillFilter = cat || 'all';
+    renderBtDrillLibrary();
+  }
+
+  function btDrillSetPlayerFilter(key) {
+    btDrillPlayerFilter = key || 'all';
     renderBtDrillLibrary();
   }
 
@@ -14758,6 +14850,10 @@ function sharePoseResultImage() {
     st.textContent = ''
       + '.bt-drill-safety{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:8px 10px;font-size:0.8rem;color:var(--text-secondary);margin-bottom:10px;}'
       + '.bt-drill-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}'
+      + '.bt-drill-filter-label{font-size:0.8rem;font-weight:900;color:var(--text-secondary);margin:2px 0 4px;}'
+      + '.bt-drill-feedback{position:fixed;left:12px;right:12px;bottom:12px;z-index:9990;background:var(--bg-surface);border:1px solid var(--accent-primary);border-radius:10px;padding:10px 12px;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 8px 24px rgba(0,0,0,0.35);font-size:0.8rem;}'
+      + '.bt-drill-feedback-msg{flex:1;min-width:160px;font-weight:800;}'
+      + '.bt-drill-btn-view{background:var(--accent-secondary);color:#020617;border-color:var(--accent-secondary);}'
       + '.bt-drill-chip{padding:8px 14px;border-radius:999px;border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-secondary);font-size:0.8rem;font-weight:800;cursor:pointer;}'
       + '.bt-drill-chip.active{background:var(--accent-primary);color:#020617;border-color:var(--accent-primary);}'
       + '.bt-drill-menu{margin-bottom:18px;}'
@@ -14772,7 +14868,7 @@ function sharePoseResultImage() {
       + '.bt-drill-card-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;}'
       + '.bt-drill-name{font-weight:900;font-size:0.86rem;}'
       + '.bt-drill-meta{font-size:0.8rem;color:var(--text-secondary);margin-bottom:4px;}'
-      + '.bt-drill-target{font-size:0.78rem;margin-bottom:4px;}'
+      + '.bt-drill-target{font-size:0.8rem;margin-bottom:4px;}'
       + '.bt-drill-steps{margin:4px 0 6px;padding-left:20px;font-size:0.8rem;color:var(--text-secondary);}'
       + '.bt-drill-steps li{margin-bottom:2px;}'
       + '.bt-drill-dose{font-size:0.8rem;background:var(--bg-surface);border-radius:8px;padding:6px 8px;margin-bottom:6px;}'
@@ -14806,23 +14902,56 @@ function sharePoseResultImage() {
     card.innerHTML = ''
       + '<div class="card-header"><div class="card-title"><span>📚 ドリル集（プロ式メニュー）</span></div></div>'
       + '<div class="bt-drill-safety">⚠️ ' + BT_DRILL_SAFETY_COMMON + '</div>'
+      + '<div class="bt-drill-filter-label">カテゴリ</div>'
       + '<div class="bt-drill-filters" id="btDrillFilters"></div>'
-      + '<div id="btDrillLibraryBody"></div>';
+      + '<div class="bt-drill-filter-label">参考選手・方式</div>'
+      + '<div class="bt-drill-filters" id="btDrillPlayerFilters"></div>'
+      + '<div id="btDrillLibraryBody"></div>'
+      + '<div class="bt-drill-feedback" id="btDrillAddFeedback" style="display:none;"></div>';
     sec.appendChild(card);
     renderBtDrillLibrary();
+  }
+
+  /* ガイドタブにドリル集への導線ボタンを追加する（発見しやすさ対策）。
+     ガイド本文は upgradeGuideTabContent が差し替えるため、挿入できるまでリトライし、
+     差し替えで消えた場合もブート期間中なら再挿入する。 */
+  function btDrillAddGuideButton() {
+    if (document.getElementById('btDrillGuideBtn')) return true;
+    var sec = document.getElementById('tab-guide');
+    if (!sec || !sec.querySelectorAll) return false;
+    var btns = sec.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].textContent && btns[i].textContent.indexOf('はじめてガイドを見る') >= 0) {
+        if (!btns[i].parentNode) return false;
+        var b = document.createElement('button');
+        b.className = 'btn btn-cyan-outline';
+        b.id = 'btDrillGuideBtn';
+        b.style.cssText = 'width:100%;padding:10px;margin-bottom:10px;';
+        b.textContent = '📚 ドリル集（プロ式メニュー）はこちら';
+        b.onclick = function(){ if (typeof switchTab === 'function') switchTab('tab-drills'); };
+        btns[i].parentNode.insertBefore(b, btns[i].nextSibling);
+        return true;
+      }
+    }
+    return false;
   }
 
   function btDrillBoot() {
     var tries = 0;
     var iv = setInterval(function(){
       tries++;
-      var sec = document.getElementById('tab-menu');
-      if (sec) { clearInterval(iv); mountBtDrillLibrary(sec); }
-      else if (tries > 40) { clearInterval(iv); }
+      var sec = document.getElementById('tab-drills');
+      if (sec) mountBtDrillLibrary(sec);
+      var guideOk = btDrillAddGuideButton();
+      var mounted = !!document.getElementById('btDrillLibraryCard');
+      if ((mounted && guideOk) || tries > 40) clearInterval(iv);
     }, 250);
   }
 
   window.btDrillSetFilter = btDrillSetFilter;
+  window.btDrillSetPlayerFilter = btDrillSetPlayerFilter;
+  window.btDrillGoToWorkingMenu = btDrillGoToWorkingMenu;
+  window.btDrillHideAddedFeedback = btDrillHideAddedFeedback;
   window.btDrillOpenDetail = btDrillOpenDetail;
   window.btDrillCloseDetail = btDrillCloseDetail;
   window.btDrillAddToMenu = btDrillAddToMenu;
@@ -14837,6 +14966,12 @@ function sharePoseResultImage() {
     setFilter: btDrillSetFilter,
     render: renderBtDrillLibrary,
     getFilter: function(){ return btDrillFilter; },
+    setPlayerFilter: btDrillSetPlayerFilter,
+    getPlayerFilter: function(){ return btDrillPlayerFilter; },
+    playerFilters: btDrillPlayerFiltersInData,
+    matchesFilters: btDrillMatchesFilters,
+    goToWorkingMenu: btDrillGoToWorkingMenu,
+    addGuideButton: btDrillAddGuideButton,
     openDetail: btDrillOpenDetail,
     closeDetail: btDrillCloseDetail,
     getDetailId: function(){ return btDrillDetailId; },
