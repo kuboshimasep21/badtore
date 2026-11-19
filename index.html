@@ -12310,18 +12310,34 @@
       alert("📋 全測定カルテをコピーしました！このままProチャット画面に貼り付けて相談できます。");
     }
 
-    async function callGeminiWithFallback(apiKey, parts) {
-      const m1 = normalizeGeminiModel(selectedGeminiModel), m2 = m1 === GEMINI_MODEL_PRIMARY ? GEMINI_MODEL_FAST : GEMINI_MODEL_PRIMARY;
+    function isGeminiTransientError(e) {
+      if (!e) return false;
+      if (e.status === 429 || e.status === 503) return true;
+      const msg = String((e && e.message) || e || '');
+      return /high demand|overloaded|quota|resource[_\s-]?exhausted|try again later|temporarily/i.test(msg);
+    }
+
+    async function callGeminiWithFallback(apiKey, parts, preferredModel) {
+      const m1 = preferredModel ? normalizeGeminiModel(preferredModel) : normalizeGeminiModel(selectedGeminiModel);
+      const m2 = m1 === GEMINI_MODEL_PRIMARY ? GEMINI_MODEL_FAST : GEMINI_MODEL_PRIMARY;
+      const retryDelays = [2000, 5000];
       let lastErr = null;
       for (const m of [m1, m2]) {
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }] })
-          });
-          const d = await res.json();
-          if (res.ok && d.candidates && d.candidates[0]) return { text: d.candidates[0].content.parts.map(p => p.text || "").join("\n"), usedModel: m };
-          lastErr = new Error((d.error && d.error.message) || `HTTP ${res.status}`);
-        } catch (e) { lastErr = e; }
+        for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+          try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }] })
+            });
+            const d = await res.json();
+            if (res.ok && d.candidates && d.candidates[0]) return { text: d.candidates[0].content.parts.map(p => p.text || "").join("\n"), usedModel: m };
+            lastErr = new Error((d.error && d.error.message) || `HTTP ${res.status}`);
+            lastErr.status = res.status;
+            if (d.error && d.error.status) lastErr.geminiStatus = d.error.status;
+          } catch (e) { lastErr = e; }
+          if (attempt < retryDelays.length && isGeminiTransientError(lastErr)) {
+            await new Promise(r => setTimeout(r, retryDelays[attempt]));
+          } else break;
+        }
       }
       throw lastErr || new Error("APIエラー");
     }
@@ -16546,7 +16562,8 @@ function sharePoseResultImage() {
       });
     });
     if (!count) return Promise.reject(new Error('写真が登録されていません'));
-    return callGeminiWithFallback(getSavedGeminiApiKey(), parts).then(function(res){
+    var fastModel = (typeof GEMINI_MODEL_FAST !== 'undefined') ? GEMINI_MODEL_FAST : 'gemini-3.8-flash';
+    return callGeminiWithFallback(getSavedGeminiApiKey(), parts, fastModel).then(function(res){
       var parsed = btTnParseGeminiJson(res && res.text);
       if (!parsed) throw new Error('読み取り結果を解釈できませんでした');
       return btTnBuildData(parsed);
@@ -16655,7 +16672,14 @@ function sharePoseResultImage() {
         btTnShowEditor();
       }).catch(function(e){
         btTnRender();
-        alert('読み取りに失敗しました：' + (e && e.message) + '\n「✏️ 手入力・修正する」から手で入力もできます。');
+        var rawMsg = (e && e.message) || '不明なエラー';
+        var busy = (typeof isGeminiTransientError === 'function') ? isGeminiTransientError(e)
+          : /high demand|overloaded|quota|resource/i.test(rawMsg);
+        if (busy) {
+          alert('読み取りに失敗しました：GoogleのAIが混雑しています。少し時間をおいて、もう一度お試しください。\n（詳細：' + rawMsg + '）\n「✏️ 手入力・修正する」から手で入力もできます。');
+        } else {
+          alert('読み取りに失敗しました：' + rawMsg + '\n「✏️ 手入力・修正する」から手で入力もできます。');
+        }
       });
     },
     openEditor: function(data){
