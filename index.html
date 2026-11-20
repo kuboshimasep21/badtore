@@ -16246,6 +16246,23 @@ function sharePoseResultImage() {
     ((tn && tn.schedule) || []).forEach(function(s){ if (s.no) map[s.no] = s; });
     return map;
   }
+  /* フィーダー対応（繰り上がりの逆引き）：試合(ri,mi)の side 側スロットへ入る選手は、
+     どの試合の勝者/敗者か。{fri, fmi, wantLoser} を返し、対応がなければ null。
+     btTnMatchPlayers の繰り上がり計算とこの対応を共有し、候補表示と食い違わないようにする */
+  function btTnFeederSource(div, ri, mi, side){
+    var round = div.rounds[ri];
+    if (!round || ri <= 0) return null;
+    var fmi = mi * 2 + (side === 2 ? 1 : 0);
+    if (round.third) {
+      /* 3位決定戦は準決勝の敗者。前ラウンドが決勝（1試合）の場合はそれを飛ばして準決勝から取る */
+      var fri = ri - 1;
+      if (fri > 0 && div.rounds[fri].matches.length < 2) fri = fri - 1;
+      if (fri < 0 || fmi >= div.rounds[fri].matches.length) return null;
+      return { fri: fri, fmi: fmi, wantLoser: true };
+    }
+    if (fmi >= div.rounds[ri - 1].matches.length) return null;
+    return { fri: ri - 1, fmi: fmi, wantLoser: false };
+  }
   /* 実効対戦者：前ラウンド勝者（3位決定戦は敗者）を繰り上げて表示する */
   /* 実効選手：名前・学校名・シードをセットで返す（繰り上がりで一緒に移動させるため） */
   function btTnFeederPlayer(div, ri, mi, wantLoser, base){
@@ -16271,23 +16288,45 @@ function sharePoseResultImage() {
     var round = div.rounds[ri];
     var m = round.matches[mi];
     if (ri === 0) return { p1: m.p1 || '', p2: m.p2 || '', s1: m.s1 || '', s2: m.s2 || '', seed1: m.seed1 || '', seed2: m.seed2 || '' };
-    if (round.third) {
-      /* 3位決定戦は準決勝の敗者同士。前ラウンドが決勝（1試合）の場合はそれを飛ばして準決勝から取る */
-      var fri = ri - 1;
-      if (fri > 0 && div.rounds[fri].matches.length < 2) fri = fri - 1;
-      var t1 = btTnFeederPlayer(div, fri, mi * 2, true, { p: m.p1, s: m.s1, seed: m.seed1 });
-      var t2 = btTnFeederPlayer(div, fri, mi * 2 + 1, true, { p: m.p2, s: m.s2, seed: m.seed2 });
-      return { p1: t1.name, p2: t2.name, s1: t1.school, s2: t2.school, seed1: t1.seed, seed2: t2.seed };
-    }
-    var n1 = btTnFeederPlayer(div, ri - 1, mi * 2, false, { p: m.p1, s: m.s1, seed: m.seed1 });
-    var n2 = btTnFeederPlayer(div, ri - 1, mi * 2 + 1, false, { p: m.p2, s: m.s2, seed: m.seed2 });
-    return { p1: n1.name, p2: n2.name, s1: n1.school, s2: n2.school, seed1: n1.seed, seed2: n2.seed };
+    /* フィーダー対応は btTnFeederSource に一本化（候補表示の逆引きと共有）。
+       対応が無いスロットは、繰り上がり前に入力されていた値をそのまま使う（従来の fallback と等価） */
+    var src1 = btTnFeederSource(div, ri, mi, 1);
+    var src2 = btTnFeederSource(div, ri, mi, 2);
+    var t1 = src1 ? btTnFeederPlayer(div, src1.fri, src1.fmi, src1.wantLoser, { p: m.p1, s: m.s1, seed: m.seed1 })
+      : { name: m.p1 || '', school: m.s1 || '', seed: m.seed1 || '' };
+    var t2 = src2 ? btTnFeederPlayer(div, src2.fri, src2.fmi, src2.wantLoser, { p: m.p2, s: m.s2, seed: m.seed2 })
+      : { name: m.p2 || '', school: m.s2 || '', seed: m.seed2 || '' };
+    return { p1: t1.name, p2: t2.name, s1: t1.school, s2: t2.school, seed1: t1.seed, seed2: t2.seed };
   }
   /* サマリー表示用：学校名があれば「名前（学校）」にする */
   function btTnNameSchool(name, school){
     var n = String(name || ''), s = String(school || '').trim();
     if (!n) return '';
     return s ? n + '（' + s + '）' : n;
+  }
+
+  /* 空きスロットの候補表示（サマリー用）：フィーダー試合から
+     「A（学校）とB（学校）の勝者」／「BS12の勝者」（3位決定戦は「敗者」）を作る。作れなければ '' */
+  function btTnSlotCandidate(div, ri, mi, side){
+    var src = btTnFeederSource(div, ri, mi, side);
+    if (!src) return '';
+    var fm = div.rounds[src.fri].matches[src.fmi];
+    var word = src.wantLoser ? '敗者' : '勝者';
+    var fp = btTnMatchPlayers(div, src.fri, src.fmi);
+    if (fp.p1 && fp.p2) return btTnNameSchool(fp.p1, fp.s1) + 'と' + btTnNameSchool(fp.p2, fp.s2) + 'の' + word;
+    if (fm.no) return fm.no + 'の' + word;
+    return '';
+  }
+  /* 空きスロットの候補表示（対戦表カード用・短い形）：「（BS12の勝者）」。作れなければ '' */
+  function btTnSlotPlaceholder(div, ri, mi, side){
+    var src = btTnFeederSource(div, ri, mi, side);
+    if (!src) return '';
+    var fm = div.rounds[src.fri].matches[src.fmi];
+    var word = src.wantLoser ? '敗者' : '勝者';
+    if (fm.no) return '（' + fm.no + 'の' + word + '）';
+    var fp = btTnMatchPlayers(div, src.fri, src.fmi);
+    if (fp.p1 && fp.p2) return '（' + fp.p1 + 'と' + fp.p2 + 'の' + word + '）';
+    return '';
   }
 
   /* ---------- 成績算出・結果サマリー（純粋関数） ---------- */
@@ -16478,6 +16517,7 @@ function sharePoseResultImage() {
       '.bt-tn-sec-title{font-weight:900;font-size:0.84rem;margin:10px 0 4px;}',
       '.bt-tn-note{font-size:0.74rem;color:var(--text-sub);line-height:1.5;}',
       '.bt-tn-school{display:block;font-size:0.68rem;color:var(--text-sub);line-height:1.25;}',
+      '.bt-tn-candidate{color:var(--text-sub);font-size:0.74rem;}',
       '.bt-tn-seed{display:inline-block;font-size:0.66rem;font-weight:800;color:#92400e;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.55);border-radius:999px;padding:0 6px;margin-left:5px;line-height:1.5;vertical-align:1px;}',
       '.bt-tn-list-row{border:1px solid var(--border-subtle);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:var(--bg-main);cursor:pointer;}',
       '.bt-tn-list-row-cur{border:2px solid var(--accent-primary);background:var(--bg-panel);}'
@@ -16553,9 +16593,11 @@ function sharePoseResultImage() {
           if (!own1 && !own2) return;
           var opp = own1 ? eff.p2 : eff.p1;
           var oppSc = own1 ? eff.s2 : eff.s1;
+          var oppText = opp ? btTnNameSchool(opp, oppSc)
+            : (btTnSlotCandidate(div, ri, mi, own1 ? 2 : 1) || '（対戦相手未定）');
           var sch = smap[m.no];
           lines.push('⭐ ' + btTnEsc(div.label || div.code) + ' ' + btTnEsc(r.name) + ' ' + btTnEsc(m.no || '')
-            + '：vs ' + btTnEsc(opp ? btTnNameSchool(opp, oppSc) : '（対戦相手未定）')
+            + '：vs ' + btTnEsc(oppText)
             + (sch ? '（' + btTnEsc(sch.court || '') + (sch.time ? ' ' + btTnEsc(sch.time) : '') + '）' : ''));
         });
       });
@@ -16583,8 +16625,8 @@ function sharePoseResultImage() {
           var sch = smap[m.no];
           var vs;
           if (w1 && w2) vs = btTnEsc(btTnNameSchool(eff.p1, eff.s1)) + ' vs ' + btTnEsc(btTnNameSchool(eff.p2, eff.s2));
-          else if (w1) vs = btTnEsc(btTnNameSchool(eff.p1, eff.s1)) + ' vs ' + btTnEsc(eff.p2 ? btTnNameSchool(eff.p2, eff.s2) : '（対戦相手未定）');
-          else vs = btTnEsc(btTnNameSchool(eff.p2, eff.s2)) + ' vs ' + btTnEsc(eff.p1 ? btTnNameSchool(eff.p1, eff.s1) : '（対戦相手未定）');
+          else if (w1) vs = btTnEsc(btTnNameSchool(eff.p1, eff.s1)) + ' vs ' + btTnEsc(eff.p2 ? btTnNameSchool(eff.p2, eff.s2) : (btTnSlotCandidate(div, ri, mi, 2) || '（対戦相手未定）'));
+          else vs = btTnEsc(btTnNameSchool(eff.p2, eff.s2)) + ' vs ' + btTnEsc(eff.p1 ? btTnNameSchool(eff.p1, eff.s1) : (btTnSlotCandidate(div, ri, mi, 1) || '（対戦相手未定）'));
           lines.push('👀 ' + btTnEsc(div.label || div.code) + ' ' + btTnEsc(r.name) + ' ' + btTnEsc(m.no || '')
             + '：' + vs
             + (sch ? '（' + btTnEsc(sch.court || '') + (sch.time ? ' ' + btTnEsc(sch.time) : '') + '）' : ''));
@@ -16633,12 +16675,15 @@ function sharePoseResultImage() {
       var dis = nm ? '' : ' disabled';
       var sc = side === 1 ? eff.s1 : eff.s2;
       var sd = side === 1 ? eff.seed1 : eff.seed2;
+      var ph = nm ? '' : btTnSlotPlaceholder(div, ri, mi, side);
       h += '<div style="display:flex;gap:4px;align-items:stretch;">'
         + '<button class="bt-tn-player' + (isWin ? ' bt-tn-player-win' : '') + '" style="flex:1;"' + dis
         + ' onclick="btTn.setWinner(' + di + ',' + ri + ',' + mi + ',' + side + ')">'
         + '<span style="flex:1;min-width:0;">'
         + (sc ? '<span class="bt-tn-school">' + btTnEsc(sc) + '</span>' : '')
-        + '<span>' + btTnEsc(nm || '（未定）') + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? ' 👀' : '') + '</span>'
+        + (nm
+          ? '<span>' + btTnEsc(nm) + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? ' 👀' : '') + '</span>'
+          : (ph ? '<span class="bt-tn-candidate">' + btTnEsc(ph) + '</span>' : '<span>（未定）</span>'))
         + '</span>' + (isWin ? '<span>🏆</span>' : '')
         + '</button>';
       if (nm) {
@@ -16677,7 +16722,7 @@ function sharePoseResultImage() {
         h += '</div>';
       });
       h += '</div>';
-      h += '<div class="bt-tn-note">選手名をタップすると勝者になり、次の試合へ進みます。試合番号をタップすると進行表の情報が出ます。選手名の横の ☆ を押すと注目選手になり、その選手の試合に色がつきます。</div>';
+      h += '<div class="bt-tn-note">選手名をタップすると勝者になり、次の試合へ進みます。試合番号をタップすると進行表の情報が出ます。選手名の横の ☆ を押すと注目選手になり、その選手の試合に色がつきます。「（BS12の勝者）」と出ている枠には、その試合の勝者が入ります。</div>';
     });
     return h;
   }
@@ -17082,6 +17127,9 @@ function sharePoseResultImage() {
     mergeResults: btTnMergeResults,
     scheduleMap: btTnScheduleMap,
     matchPlayers: btTnMatchPlayers,
+    feederSource: btTnFeederSource,
+    slotCandidate: btTnSlotCandidate,
+    slotPlaceholder: btTnSlotPlaceholder,
     nameSchool: btTnNameSchool,
     isOwnName: btTnIsOwnName,
     watchList: btTnWatchList,
