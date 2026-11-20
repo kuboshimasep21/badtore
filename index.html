@@ -16,6 +16,10 @@
 
   <meta name="apple-mobile-web-app-title" content="バドトレPRO" />
 
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
   <meta name="mobile-web-app-capable" content="yes" />
 
   <meta name="theme-color" content="#060b16" />
@@ -3322,6 +3326,10 @@
 
                     <option value="drive">⚡ ドライブ＆プッシュ（リストスタンド・肘の前方保持）</option>
 
+                    <option value="serve_short">🎾 ショートサーブ（低い打点・構えの安定・コンパクトな押し出し）</option>
+
+                    <option value="serve_long">🎾 ロングサーブ（低い打点・大きなスイング・フォロースルー）</option>
+
                   </optgroup>
 
                   <optgroup label="👟 リアクションステップ編">
@@ -3367,6 +3375,10 @@
                     <button type="button" class="bt-shot-chip" data-shot-value="lob" onclick="btSelectShotType('lob')">🛡️ レシーブ＆ロブ</button>
 
                     <button type="button" class="bt-shot-chip" data-shot-value="drive" onclick="btSelectShotType('drive')">⚡ ドライブ＆プッシュ</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="serve_short" onclick="btSelectShotType('serve_short')">🎾 ショートサーブ</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="serve_long" onclick="btSelectShotType('serve_long')">🎾 ロングサーブ</button>
 
                   </div>
 
@@ -6668,6 +6680,26 @@
 
       },
 
+      serve_short: {
+
+        title: "ショートサーブ［基礎打ち］",
+
+        focus: "serve", idealShoulder: 45, idealElbow: 120, idealKnee: 145,
+
+        desc: "🎾 <b>ショートサーブ100pt基準:</b> ショートサーブ（バックハンドが主流）は速さではなくコントロールを採点します。①下半身・構えの安定（最深膝角が基準145°に近いことと、腰のふらつきの少なさを半々で評価：35%）、②打点の低さ（スイングが最速になった瞬間、ラケット側の手首が腰ラインより下にあるか：35%）、③スイングのコントロール（最大速度指数が適正範囲20〜62ptに収まるか。大きく振りすぎると減点：30%）で採点します。ネット際ギリギリを狙うため、コンパクトに押し出す打ち方が高得点の目安です。②はサーブの打点上限（1.15mルール）をカメラ映像から推し量るための目安で、数値基準はすべてアプリ独自の目安です。打点が検出できない場合は①と③を55%・45%に換算して評価し、その旨を結果に表示します。"
+
+      },
+
+      serve_long: {
+
+        title: "ロングサーブ［基礎打ち］",
+
+        focus: "serve_long", idealShoulder: 115, idealElbow: 150, idealKnee: 145,
+
+        desc: "🎾 <b>ロングサーブ100pt基準:</b> ロングサーブ（フォアハンド）は、大きくテイクバックして下から大きな弧を描くスイングを採点します。①下半身・構えの安定（最深膝角が基準145°に近いことと、腰のふらつきの少なさを半々で評価：25%）、②打点の低さ（スイングが最速になった瞬間、ラケット側の手首が腰ラインより下にあるか：30%）、③スイングの大きさ（最大速度指数がロングサーブの適正範囲50〜92ptに収まるか。振りが小さいと減点：25%）、④フォロースルー（打球後、ラケット側の手首が肩ラインより上まで到達したか：20%）で採点します。②はサーブの打点上限（1.15mルール）をカメラ映像から推し量るための目安で、数値基準はすべてアプリ独自の目安です。体重移動そのものはカメラ映像からは測れないため、採点には含めていません。打点が検出できない場合は①と③を50%ずつに換算して評価し、その旨を結果に表示します。"
+
+      },
+
       reaction_unweight: {
 
         title: "リアクション［抜重パターン］",
@@ -7634,6 +7666,24 @@
 
             frameComposite = aiMetrics.wristKeepPt * 0.35 + aiMetrics.wristStandPt * 0.15 + aiMetrics.kneePt * 0.3 + aiMetrics.stabilityPt * 0.2;
 
+          } else if (shotType === 'serve_short') {
+
+            // ショートサーブのベストフレームは「手首が腰より下にあり、適度に動いている」打点付近を優先する
+
+            const serveLowContactPt = Math.max(0, Math.min(100, 100 - Math.max(0, (midHipY - wrist.y) / torsoLength) * BT_SERVE_CONTACT_SLOPE));
+
+            frameComposite = serveLowContactPt * 0.6 + aiMetrics.speedPt * 0.4;
+
+          } else if (shotType === 'serve_long') {
+
+            // ロングサーブのベストフレームは、低い打点と大きなフォロースルー（手首が肩より上）の両方を優先する
+
+            const serveLowContactPt = Math.max(0, Math.min(100, 100 - Math.max(0, (midHipY - wrist.y) / torsoLength) * BT_SERVE_CONTACT_SLOPE));
+
+            const serveFollowHeightPt = Math.max(0, Math.min(100, 50 + ((midShY - wrist.y) / torsoLength) * 100));
+
+            frameComposite = serveLowContactPt * 0.3 + aiMetrics.speedPt * 0.3 + serveFollowHeightPt * 0.4;
+
           } else if (model.focus === 'overhead') {
 
             frameComposite = shoulderDeg * 0.55 + elbowDeg * 0.25 + aiMetrics.speedPt * 0.2;
@@ -8335,6 +8385,8 @@
 
       lastJumpAnalysis = null;
 
+      lastServeAnalysis = null;
+
 
       aiMetrics.smoothElbow = null;
 
@@ -8397,6 +8449,22 @@
           document.getElementById('bdLabel2').textContent = "② 下半身・踏み切り前の膝のタメ（20%）";
 
           document.getElementById('bdLabel3').textContent = "③ スイング速度（20%）＋④ジャンプ要素（30%）※④の詳細は診断結果に表示";
+
+        } else if (shot === 'serve_short') {
+
+          document.getElementById('bdLabel1').textContent = "① 下半身・構えの安定（35%）";
+
+          document.getElementById('bdLabel2').textContent = "② 打点の低さ（35%）※詳細は診断結果に表示";
+
+          document.getElementById('bdLabel3').textContent = "③ スイングのコントロール（30%）";
+
+        } else if (shot === 'serve_long') {
+
+          document.getElementById('bdLabel1').textContent = "① 下半身・構えの安定（25%）";
+
+          document.getElementById('bdLabel2').textContent = "② 打点の低さ（30%）※詳細は診断結果に表示";
+
+          document.getElementById('bdLabel3').textContent = "③ スイングの大きさ（25%）＋④フォロースルー（20%）※④の詳細は診断結果に表示";
 
         } else if (model.focus === 'lower') {
 
@@ -9080,6 +9148,194 @@
 
 
 
+    // ===== 🎾 サーブ解析 =====
+
+    // 打球候補（手首速度ピーク）の瞬間に、ラケット側の手首が腰ラインより下にあるかを測る。
+
+    // サーブの打点上限（1.15mルール）そのものをカメラ映像から測ることはできないため、
+
+    // 「腰ラインより下か」を目安として使う。数値基準はすべてアプリ独自の目安であり、特定選手の基準ではない。
+
+    const BT_SERVE_CONTACT_SLOPE = 220;
+
+    const BT_SERVE_SPEED_BAND_MIN = 20;
+
+    const BT_SERVE_SPEED_BAND_MAX = 62;
+
+    // ロングサーブのスイング適正範囲：ショートより高い帯域（大きく振るのが正しい形のため）
+
+    const BT_SERVE_LONG_SPEED_BAND_MIN = 50;
+
+    const BT_SERVE_LONG_SPEED_BAND_MAX = 92;
+
+    let lastServeAnalysis = null;
+
+    function btAnalyzeServe(samples, peakT) {
+
+      if (!samples || samples.length < 5) return { detected: false, reason: 'few-samples' };
+
+      const isLeftHand = (typeof userProfile !== 'undefined' && userProfile && userProfile.hand === 'left');
+
+      const wristIdx = isLeftHand ? 15 : 16;
+
+      const rows = [];
+
+      for (const s of samples) {
+
+        const lm = s.landmarks;
+
+        if (!lm || !lm[11] || !lm[12] || !lm[23] || !lm[24] || !lm[wristIdx]) continue;
+
+        const midShX = (lm[11].x + lm[12].x) / 2;
+
+        const midShY = (lm[11].y + lm[12].y) / 2;
+
+        const midHipX = (lm[23].x + lm[24].x) / 2;
+
+        const midHipY = (lm[23].y + lm[24].y) / 2;
+
+        const torso = Math.hypot(midShX - midHipX, midShY - midHipY);
+
+        if (!(torso > 0.05)) continue;
+
+        rows.push({ t: s.t, torso: torso, hipY: midHipY, wristY: lm[wristIdx].y, wristVel: Math.max(0, Number(s.wristVel) || 0) });
+
+      }
+
+      if (rows.length < 3) return { detected: false, reason: 'no-landmarks' };
+
+      // 打球候補：打球ウィンドウのピーク時刻に最も近いサンプル。ピーク時刻がなければ手首速度最大のサンプル
+
+      let peak = rows[0];
+
+      if (typeof peakT === 'number' && isFinite(peakT)) {
+
+        for (const r of rows) if (Math.abs(r.t - peakT) < Math.abs(peak.t - peakT)) peak = r;
+
+      } else {
+
+        for (const r of rows) if (r.wristVel > peak.wristVel) peak = r;
+
+      }
+
+      // 腰ライン比：画像座標は下向きが正のため、(腰Y − 手首Y) / 体幹長 が正なら手首は腰より上
+
+      const liftRatio = (peak.hipY - peak.wristY) / peak.torso;
+
+      const contactPt = Math.round(Math.min(100, Math.max(40, 100 - Math.max(0, liftRatio) * BT_SERVE_CONTACT_SLOPE)));
+
+      return { detected: true, contactPt: contactPt, liftRatio: liftRatio, peakT: peak.t };
+
+    }
+
+    // スイングのコントロール：最大速度指数が適正範囲に収まるほど高得点（サーブは速さではなくコントロールで評価する）
+
+    function btServeControlPt(maxSp) {
+
+      if (maxSp >= BT_SERVE_SPEED_BAND_MIN && maxSp <= BT_SERVE_SPEED_BAND_MAX) return 100;
+
+      if (maxSp > BT_SERVE_SPEED_BAND_MAX) return Math.max(40, Math.round(100 - (maxSp - BT_SERVE_SPEED_BAND_MAX) * 1.2));
+
+      return Math.max(55, Math.round(100 - (BT_SERVE_SPEED_BAND_MIN - maxSp) * 0.8));
+
+    }
+
+    // ロングサーブのスイングの大きさ：適正範囲（50〜92pt）に収まるほど高得点。
+
+    // 振りが小さいと高さ・奥行きが出ないため減点し、上限超えは力みによるコントロール低下として緩やかに減点する
+
+    function btServeLongControlPt(maxSp) {
+
+      if (maxSp >= BT_SERVE_LONG_SPEED_BAND_MIN && maxSp <= BT_SERVE_LONG_SPEED_BAND_MAX) return 100;
+
+      if (maxSp > BT_SERVE_LONG_SPEED_BAND_MAX) return Math.max(70, Math.round(100 - (maxSp - BT_SERVE_LONG_SPEED_BAND_MAX) * 0.8));
+
+      return Math.max(40, Math.round(100 - (BT_SERVE_LONG_SPEED_BAND_MIN - maxSp) * 1.2));
+
+    }
+
+    // 🎾 ロングサーブ解析：打点の低さ（btAnalyzeServe と同じ判定）に加えて、
+
+    // 打球ピーク後のフォロースルーで、ラケット側の手首が肩ラインより上まで到達したかを測る。
+
+    // 体重移動そのものはカメラ映像からは測れないため、採点には含めない。数値基準はすべてアプリ独自の目安。
+
+    function btAnalyzeServeLong(samples, peakT) {
+
+      if (!samples || samples.length < 5) return { detected: false, reason: 'few-samples' };
+
+      const isLeftHand = (typeof userProfile !== 'undefined' && userProfile && userProfile.hand === 'left');
+
+      const wristIdx = isLeftHand ? 15 : 16;
+
+      const rows = [];
+
+      for (const s of samples) {
+
+        const lm = s.landmarks;
+
+        if (!lm || !lm[11] || !lm[12] || !lm[23] || !lm[24] || !lm[wristIdx]) continue;
+
+        const midShX = (lm[11].x + lm[12].x) / 2;
+
+        const midShY = (lm[11].y + lm[12].y) / 2;
+
+        const midHipX = (lm[23].x + lm[24].x) / 2;
+
+        const midHipY = (lm[23].y + lm[24].y) / 2;
+
+        const torso = Math.hypot(midShX - midHipX, midShY - midHipY);
+
+        if (!(torso > 0.05)) continue;
+
+        rows.push({ t: s.t, torso: torso, hipY: midHipY, shY: midShY, wristY: lm[wristIdx].y, wristVel: Math.max(0, Number(s.wristVel) || 0) });
+
+      }
+
+      if (rows.length < 3) return { detected: false, reason: 'no-landmarks' };
+
+      // 打球候補：打球ウィンドウのピーク時刻に最も近いサンプル。ピーク時刻がなければ手首速度最大のサンプル
+
+      let peak = rows[0];
+
+      if (typeof peakT === 'number' && isFinite(peakT)) {
+
+        for (const r of rows) if (Math.abs(r.t - peakT) < Math.abs(peak.t - peakT)) peak = r;
+
+      } else {
+
+        for (const r of rows) if (r.wristVel > peak.wristVel) peak = r;
+
+      }
+
+      // 腰ライン比：画像座標は下向きが正のため、(腰Y − 手首Y) / 体幹長 が正なら手首は腰より上
+
+      const liftRatio = (peak.hipY - peak.wristY) / peak.torso;
+
+      const contactPt = Math.round(Math.min(100, Math.max(40, 100 - Math.max(0, liftRatio) * BT_SERVE_CONTACT_SLOPE)));
+
+      // フォロースルー：ピーク後0.9秒以内に、手首が肩ラインより最も上まで到達した位置を見る
+
+      let followRatio = -Infinity;
+
+      for (const r of rows) {
+
+        if (r.t < peak.t || r.t > peak.t + 0.9) continue;
+
+        const fr = (r.shY - r.wristY) / r.torso;
+
+        if (fr > followRatio) followRatio = fr;
+
+      }
+
+      if (!isFinite(followRatio)) followRatio = (peak.shY - peak.wristY) / peak.torso;
+
+      const followPt = Math.round(Math.min(100, Math.max(40, 55 + followRatio * 150)));
+
+      return { detected: true, contactPt: contactPt, liftRatio: liftRatio, followPt: followPt, followRatio: followRatio, peakT: peak.t };
+
+    }
+
     function finishPoseRecording(fromVideoAuto = false) {
 
       clearInterval(poseSession.timerId);
@@ -9153,6 +9409,18 @@
         ? btAnalyzeJumpSmash(poseFrameSamples, lastImpactWindowInfo ? lastImpactWindowInfo.peakT : null)
 
         : null;
+
+      // 🎾 サーブ解析（対象種目のみ。それ以外の種目では lastServeAnalysis は null）
+
+      lastServeAnalysis = (shot === 'serve_short')
+
+        ? btAnalyzeServe(poseFrameSamples, lastImpactWindowInfo ? lastImpactWindowInfo.peakT : null)
+
+        : (shot === 'serve_long')
+
+          ? btAnalyzeServeLong(poseFrameSamples, lastImpactWindowInfo ? lastImpactWindowInfo.peakT : null)
+
+          : null;
 
 
 
@@ -9290,6 +9558,92 @@
 
         }
 
+      } else if (shot === 'serve_short' || shot === 'serve_long') {
+
+        // 🎾 サーブは速さそのものではなく、構えの安定・打点の低さ・種別ごとの打ち方で採点する
+
+        const isLongServe = shot === 'serve_long';
+
+        const kneeServePt = Math.max(30, Math.min(100, 100 - Math.round(Math.abs(minKn - model.idealKnee) * 1.4)));
+
+        const basePt = Math.round(kneeServePt * 0.5 + aiMetrics.stabilityPt * 0.5);
+
+        const controlPt = isLongServe ? btServeLongControlPt(maxSp) : btServeControlPt(maxSp);
+
+        if (lastServeAnalysis && lastServeAnalysis.detected) {
+
+          const sv = lastServeAnalysis;
+
+          if (isLongServe) {
+
+            totalScore = Math.round(basePt * 0.25 + sv.contactPt * 0.30 + controlPt * 0.25 + sv.followPt * 0.20);
+
+            scoreComponents = [basePt, sv.contactPt, controlPt, sv.followPt];
+
+          } else {
+
+            totalScore = Math.round(basePt * 0.35 + sv.contactPt * 0.35 + controlPt * 0.30);
+
+            scoreComponents = [basePt, sv.contactPt, controlPt];
+
+          }
+
+          const liftPct = Math.round(Math.abs(sv.liftRatio) * 100);
+
+          if (sv.contactPt >= 80) goodPoints.push(`打球の瞬間、手首が腰ライン${sv.liftRatio <= 0 ? `より約${liftPct}%（体幹長比）下` : `付近（約${liftPct}%上）`}にあり、低い打点で捉えられています（1.15mルールの目安をクリア）。`);
+
+          else improvePoints.push(`打球の瞬間、手首が腰ラインより約${liftPct}%（体幹長比）上にありました。サーブは腰より低い位置で捉えるのが目安です（1.15mルール）。構えを低くして、体の前・低い位置で打ちましょう。`);
+
+          if (isLongServe) {
+
+            if (sv.followPt >= 80) goodPoints.push(`フォロースルーで手首が肩ラインより約${Math.round(Math.abs(sv.followRatio) * 100)}%（体幹長比）上まで到達し、大きな弧のスイングになっています。`);
+
+            else improvePoints.push(`フォロースルーが小さめでした（手首の到達は肩ライン${sv.followRatio > 0 ? `より約${Math.round(Math.abs(sv.followRatio) * 100)}%上まで` : '付近まで'}）。打った後はラケットを反対の肩へ担ぐように大きく振り切ると、高さと奥行きが出ます。`);
+
+          }
+
+        } else {
+
+          // 打点が検出できない場合：打点要素を0点で押し切らず、残りの要素に換算して評価する
+
+          if (isLongServe) {
+
+            totalScore = Math.round(basePt * 0.5 + controlPt * 0.5);
+
+            scoreComponents = [basePt, controlPt];
+
+            improvePoints.push(`今回は打点とフォロースルーが検出できなかったため、その要素は採点せず、構えの安定とスイングの大きさで評価しました。頭から足首まで全身が映る画角で撮り直すと打点とフォロースルーも採点できます。`);
+
+          } else {
+
+            totalScore = Math.round(basePt * 0.55 + controlPt * 0.45);
+
+            scoreComponents = [basePt, controlPt];
+
+            improvePoints.push(`今回は打点の高さが検出できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しました。頭から足首まで全身が映る画角で撮り直すと打点も採点できます。`);
+
+          }
+
+        }
+
+        if (basePt >= 80) goodPoints.push(`サーブの構えが安定しています（最深膝角 ${minKn}°・安定度 ${aiMetrics.stabilityPt}pt）。打つ直前まで体が静止できています。`);
+
+        else improvePoints.push(`構えの安定が ${basePt}pt でした。膝を軽く緩めて（目安${model.idealKnee}°前後）腰を落とし、打つ直前まで体を静止させるとサーブの精度が上がります。`);
+
+        if (isLongServe) {
+
+          if (controlPt >= 90) goodPoints.push(`スイングの大きさ（最大速度指数 ${maxSp}pt）がロングサーブに適した範囲に収まっています。`);
+
+          else if (maxSp < BT_SERVE_LONG_SPEED_BAND_MIN) improvePoints.push(`最大速度指数が ${maxSp}pt と小さめでした。大きくテイクバックして、下から大きな弧を描くように振ると、高く深いサーブになります。`);
+
+          else improvePoints.push(`最大速度指数が ${maxSp}pt と大きめでした。力みすぎると軌道が安定しません。体重移動で打つ意識にすると、高さと奥行きを保ったままコントロールが安定します。`);
+
+        } else if (controlPt >= 90) goodPoints.push(`スイングの強さ（最大速度指数 ${maxSp}pt）がサーブに適した範囲に収まっており、コントロール重視の打ち方になっています。`);
+
+        else if (maxSp > BT_SERVE_SPEED_BAND_MAX) improvePoints.push(`最大速度指数が ${maxSp}pt と、サーブとしては振りが大きめでした。コンパクトに押し出す意識にすると、ネット際のコントロールが安定します。`);
+
+        else improvePoints.push(`最大速度指数が ${maxSp}pt と小さめでした。もう少しだけ腕の振りを足すと、ネットを越える高さと奥行きが出ます。`);
+
       } else {
 
         const upperBest = Math.min(100, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)));
@@ -9376,6 +9730,36 @@
 
 
 
+      // 🎾 サーブ結果の打点表示（数値基準はアプリ独自の目安である旨を明記）
+
+      let serveHtml = '';
+
+      if (shot === 'serve_short' || shot === 'serve_long') {
+
+        if (lastServeAnalysis && lastServeAnalysis.detected) {
+
+          const sv = lastServeAnalysis;
+
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem;">🎾 <b>打点（アプリ独自の目安）:</b> 打球時の手首は腰ライン${sv.liftRatio <= 0 ? 'より下' : 'より上'}（体幹長比 約${Math.round(Math.abs(sv.liftRatio) * 100)}%）／ 打点スコア ${sv.contactPt}pt（腰より下で捉えるほど高得点＝サーブの打点上限1.15mルールの目安）</div>`;
+
+          if (shot === 'serve_long') {
+
+            serveHtml += `<div style="margin-bottom:5px; font-size:0.85rem;">🎾 <b>フォロースルー（アプリ独自の目安）:</b> 打球後、手首は肩ライン${sv.followRatio > 0 ? `より上（体幹長比 約${Math.round(Math.abs(sv.followRatio) * 100)}%）まで到達` : 'まで到達せず'}／ フォロースルースコア ${sv.followPt}pt（反対の肩へ担ぐように大きく振り切るほど高得点）</div>`;
+
+          }
+
+        } else if (shot === 'serve_long') {
+
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🎾 打点とフォロースルーが検出できませんでした：打球時の手首位置を確認できなかったため、その要素は採点せず、構えの安定とスイングの大きさで評価しています。</div>`;
+
+        } else {
+
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🎾 打点が検出できませんでした：打球時の手首位置を確認できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しています。</div>`;
+
+        }
+
+      }
+
       document.getElementById('aiSummaryContent').innerHTML = `
 
         ${recordBannerHtml}
@@ -9389,6 +9773,8 @@
         ${lastImpactWindowInfo ? `<div style="margin-bottom:5px; font-size:0.85rem;">🎯 打球の瞬間前後で判定しています：スイング速度が最大になった場面を中心に、前${BT_IMPACT_WINDOW_PRE_SEC}秒・後${BT_IMPACT_WINDOW_POST_SEC}秒のフレームだけで集計しました（シャトル拾いなど、打球と無関係な動きは集計から除かれます）。</div>` : ``}
 
         ${jumpHtml}
+
+        ${serveHtml}
 
         <div style="margin-bottom:5px;">
 
@@ -9446,7 +9832,13 @@
 
       if (!personalBestsDB[profileId]) return null;
 
-      return personalBestsDB[profileId][shotType] || null;
+      if (personalBestsDB[profileId][shotType]) return personalBestsDB[profileId][shotType];
+
+      // 旧種別 'serve' の記録は、旧モデルの設計がショート寄りだったため、ショートサーブのベストとして読み替える
+
+      if (shotType === 'serve_short') return personalBestsDB[profileId]['serve'] || null;
+
+      return null;
 
     }
 
@@ -14241,11 +14633,16 @@ function sharePoseResultImage() {
      マイルーティンへ追加（window.__bt_routinesCustom 橋渡し経由。
      id='drill_<ドリルID>' で重複防止、グループとXPはカテゴリ・所要時間・
      負荷からの初期提案を追加時に変更可。高負荷ドリルには注意書きを表示）
+   - サーブ特訓メニュー追加（2026-11-21）：サーブ診断のショート／ロング分割に
+     合わせ、カテゴリ「サーブ」と3ドリルを追加。参考動画は videos 配列で
+     複数本持てるようにし（従来の単一 video とは表示側で両対応）、
+     日本人チャンネルを中心に、実際に開いてタイトル・内容を確認できた
+     動画だけを採用している
    ========================================================================= */
 (function(){
   'use strict';
 
-  var BT_DRILL_CATEGORIES = ['フットワーク','筋力・フィジカル','ノック・多球','守備','前衛・ダブルス','ジャンプ・空中動作','反応・スピード'];
+  var BT_DRILL_CATEGORIES = ['フットワーク','筋力・フィジカル','ノック・多球','守備','前衛・ダブルス','ジャンプ・空中動作','反応・スピード','サーブ'];
   var BT_DRILL_MODE_LABELS = { solo:'一人で可', pair:'ペア・球出し役が必要', gear:'器具が必要' };
   var BT_DRILL_SAFETY_COMMON = '共通注意：着地の質を最優先にしてください。痛みが翌日まで残る場合は量を減らし、強いジャンプ系ドリルの翌日に試合を入れないこと。プログラムは段階を飛ばさず、前のステップが安定してから次へ進んでください。ここでの負荷の数値はアプリ独自の目安です。';
 
@@ -14364,6 +14761,14 @@ function sharePoseResultImage() {
         { step: 4, title: '実戦判断', drillIds: ['drill_js_decision'] },
         { step: 0, label: '補助トレ', title: 'ジャンプ力アップ（筋力・プライオ）※ステップと並行して行う', drillIds: ['drill_js_strength','drill_js_plyo'] }
       ]
+    },
+    {
+      menuId: 'menu_serve',
+      title: 'サーブ特訓メニュー',
+      referenceLabel: '参考方式：サーブ技術の基本（コーチング公開情報）',
+      type: 'pack',
+      description: 'ラリーの中で唯一、自分でコントロールして始められるのがサーブです。ショートサーブの精度、ロングサーブの高さと奥行き、フリックサーブの打ち分けを順番に身につけるメニューです。打点は腰より下（1.15mルール）が前提で、フォームの確認にはAI診断の「ショートサーブ／ロングサーブ」も合わせてどうぞ。',
+      drillIds: ['drill_serve_short_control','drill_serve_long','drill_serve_flick']
     }
   ];
 
@@ -15550,6 +15955,114 @@ function sharePoseResultImage() {
       poseChecks: ['two_foot_takeoff'],
       riskLevel: '高負荷',
       safetyNote: 'ハードなプライオの翌日に試合を入れない（腱には48時間）。膝や足首前面の痛みが1日を超えて残る場合は、まず量を3分の1減らす'
+    },
+    {
+      id: 'drill_serve_short_control',
+      name: 'ショートサーブ・コントロール',
+      menuId: 'menu_serve',
+      category: 'サーブ',
+      level: ['初級','中級'],
+      target: 'バックハンドのショートサーブを、ネット際ギリギリの高さでショートサービスライン付近に安定して落とす',
+      steps: [
+        'ネットに正面を向け、利き足をやや前に出して構える。ラケットは体の前で、肘を肩の高さまで上げ、ヘッドは下向きにする',
+        'シャトルをラケット面に合わせ、わずかに引いてから、親指で押し出すように打つ。スイングはコンパクトに',
+        '相手コートのショートサービスライン付近に的（タオルやシャトルケースなど）を置いて狙う',
+        'ネットの白帯すれすれを通す意識で打ち、浮いてしまったら次の1本で高さを修正する',
+        '10本を1セットとして、的の付近に落ちた本数を数える'
+      ],
+      dose: {
+        standard: '10本×5セット（50本）を目安に、週2〜3回',
+        junior: '10本×3セットから始め、集中が切れたら切り上げる',
+        note: '本数よりも「同じ構え・同じ押し出し」を毎回再現することが目的。打点は腰より下（1.15mルール）を守ること'
+      },
+      durationMin: 15,
+      mode: 'solo',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'ヒカリJPバドミントンTV：ダブルスのバックハンドによるショートサービスの打ち方', url: 'https://www.youtube.com/watch?v=R6YVC3XYAUc' },
+        { label: 'バドミントンアカデミー：レッスンDVD「ショートサービス」ダイジェスト', url: 'https://www.youtube.com/watch?v=OyRXsYHahzY' },
+        { label: 'Swift Badminton：Perfect Badminton Low Serve Every Time', url: 'https://www.youtube.com/watch?v=O4X0LL7t2ys' }
+      ],
+      videos: [
+        { label: 'ダブルスのバックハンドによるショートサービスの打ち方（ヒカリJPバドミントンTV）', url: 'https://www.youtube.com/watch?v=R6YVC3XYAUc' },
+        { label: 'バドミントンアカデミーレッスンDVD～ショートサービス～（バドミントンアカデミー）', url: 'https://www.youtube.com/watch?v=OyRXsYHahzY' },
+        { label: 'Perfect Badminton Low Serve Every Time - BEST METHOD（Swift Badminton）', url: 'https://www.youtube.com/watch?v=O4X0LL7t2ys' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_serve_long',
+      name: 'ロングサーブ・ハイ＆ディープ',
+      menuId: 'menu_serve',
+      category: 'サーブ',
+      level: ['初級','中級'],
+      target: 'フォアハンドのロングサーブを、相手コートの奥深くへ高く上げ、ライン際でほぼ垂直に落とす',
+      steps: [
+        '半身に構え、リストスタンドを保ったまま、肩を後ろへ大きく引いてテイクバックする',
+        'シャトルを手から離すのと同時にスイングを始め、後ろ足から前足へ体重を移しながら、下から大きな弧を描いて振り上げる',
+        '打点は腰より下、体の前で捉える。フォロースルーは反対の肩に担ぐように大きく取る',
+        'バックバウンダリーライン付近に的を置き、シャトルがラインの真上で頂点を迎えて落ちる軌道を確認する',
+        '10本を1セットとして、奥のゾーンに入った本数を数える'
+      ],
+      dose: {
+        standard: '10本×4セット（40本）を目安に、週2〜3回',
+        junior: '10本×3セットから。奥まで届かなくても、力まずスイングの大きさと体重移動を優先する',
+        note: '飛距離の源は体重移動とスイングの大きさ。力んで腕だけで振ると軌道が安定しない'
+      },
+      durationMin: 15,
+      mode: 'solo',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: '【バドミントンロングサービス】初心者でもシングルスで奥まで飛ばす打ち方とコツ（スローモーション解説）', url: 'https://www.youtube.com/watch?v=GQ6sOc_wzrI' },
+        { label: 'Badminton Famly：HIGH SERVE technique in badminton', url: 'https://www.youtube.com/watch?v=-stU4x4w7to' },
+        { label: 'Badminton Professor：How to serve by TSE Bun（元世界トップ30）', url: 'https://www.youtube.com/watch?v=V-U7tS9ww7g' }
+      ],
+      videos: [
+        { label: '【バドミントンロングサービス】を初心者でもシングルスで奥まで飛ばす打ち方とコツ', url: 'https://www.youtube.com/watch?v=GQ6sOc_wzrI' },
+        { label: 'HIGH SERVE technique in badminton（Badminton Famly）', url: 'https://www.youtube.com/watch?v=-stU4x4w7to' },
+        { label: 'Beginner badminton tips - How to serve by TSE Bun（Badminton Professor）', url: 'https://www.youtube.com/watch?v=V-U7tS9ww7g' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_serve_flick',
+      name: 'フリックサーブ（打ち分け）',
+      menuId: 'menu_serve',
+      category: 'サーブ',
+      level: ['中級'],
+      target: 'ショートサーブとまったく同じ構えから、打つ瞬間だけ手首と指のスナップで奥へ打ち分ける',
+      steps: [
+        'まずショートサーブを3本打ち、構えと押し出しのリズムをそろえる',
+        '4本目だけ、打つ瞬間に手首と指を素早く返し、相手の頭上を越える高さで奥のサービスラインへ打つ',
+        '構え・シャトルの位置・引きの大きさはショートサーブと変えない（変えると相手に読まれる）',
+        '相手役がいる場合は、受ける側が「ショートかフリックか」を当てる練習も兼ねられる',
+        '「ショート3本＋フリック1本」を1セットとして繰り返す'
+      ],
+      dose: {
+        standard: '4本×5セット（20本）を目安に、ショートサーブが安定してから取り組む',
+        junior: '4本×3セットから。フリックは全体の2割程度までにとどめる',
+        note: 'フリックは使いすぎると待たれて逆効果。ショートサーブが脅威になっていることが前提の打ち分け'
+      },
+      durationMin: 10,
+      mode: 'solo',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'Badminton Famly：Flick serve step by step - 7 easy tips', url: 'https://www.youtube.com/watch?v=IMF1FIfGDbQ' },
+        { label: 'Badminton Famly：Badminton forehand serve - Low and Flick', url: 'https://www.youtube.com/watch?v=FqO0t5_Tqqg' },
+        { label: 'eHow Sports：Backhand Flick Serve in Badminton', url: 'https://www.youtube.com/watch?v=-xW126a4Uwo' }
+      ],
+      videos: [
+        { label: 'Flick serve step by step - 7 easy tips（Badminton Famly）', url: 'https://www.youtube.com/watch?v=IMF1FIfGDbQ' },
+        { label: 'Badminton forehand serve - Low and Flick（Badminton Famly）', url: 'https://www.youtube.com/watch?v=FqO0t5_Tqqg' },
+        { label: 'Backhand Flick Serve in Badminton（eHow Sports）', url: 'https://www.youtube.com/watch?v=-xW126a4Uwo' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
     }
   ];
 
@@ -15689,8 +16202,12 @@ function sharePoseResultImage() {
     var steps = (d.steps || []).map(function(s){ return '<li>' + s + '</li>'; }).join('');
     var doseNote = (d.dose && d.dose.note)
       ? '<br><span class="bt-drill-dose-note">' + d.dose.note + '</span>' : '';
-    var video = (d.video && d.video.url)
-      ? '<div class="bt-drill-src">🎬 参考動画：' + btDrillLinkHtml(d.video.url, d.video.label || '動画を見る') + '</div>' : '';
+    /* 参考動画：videos 配列（複数本）があれば全本並べ、なければ従来の単一 video を表示する */
+    var videoList = [];
+    if (d.videos && d.videos.length) videoList = d.videos;
+    else if (d.video && d.video.url) videoList = [d.video];
+    var video = videoList.length
+      ? '<div class="bt-drill-src">🎬 参考動画：<br>' + videoList.map(function(v){ return btDrillLinkHtml(v.url, v.label || '動画を見る'); }).join('<br>') + '</div>' : '';
     /* 他メニューへの参照（relatedMenuId）があるドリルには、そのメニューを開くジャンプボタンを出す */
     var openMenu = '';
     if (d.relatedMenuId) {
@@ -15872,7 +16389,8 @@ function sharePoseResultImage() {
     '守備': 'practice',
     '前衛・ダブルス': 'practice',
     'ジャンプ・空中動作': 'strength',
-    '反応・スピード': 'practice'
+    '反応・スピード': 'practice',
+    'サーブ': 'practice'
   };
   var BT_DRILL_ROUTINE_GROUPS_FALLBACK = [
     { key: 'warmup', icon: '🏃', name: 'ウォームアップ' },
