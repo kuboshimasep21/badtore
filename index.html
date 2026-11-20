@@ -16290,6 +16290,156 @@ function sharePoseResultImage() {
     return s ? n + '（' + s + '）' : n;
   }
 
+  /* ---------- 成績算出・結果サマリー（純粋関数） ---------- */
+  /* ラウンド名の分類：表記ゆれ（準々決勝戦など）にも対応する */
+  function btTnRoundKind(round){
+    if (round && round.third) return { kind: 'third' };
+    var n = String((round && round.name) || '').replace(/[\s　]+/g, '');
+    if (/3位/.test(n)) return { kind: 'third' };
+    if (/準々決勝/.test(n)) return { kind: 'qf' };
+    if (/準決勝/.test(n)) return { kind: 'sf' };
+    if (/決勝/.test(n)) return { kind: 'final' };
+    var m = n.match(/(\d+)回戦/);
+    if (m) return { kind: 'round', n: parseInt(m[1], 10) };
+    return { kind: 'other' };
+  }
+  /* 勝ち上がり先のラウンド名（3位決定戦は飛ばす）。なければ '' */
+  function btTnNextRoundName(div, ri){
+    var rounds = (div && div.rounds) || [];
+    for (var i = ri + 1; i < rounds.length; i++) {
+      if (btTnRoundKind(rounds[i]).kind !== 'third') return String(rounds[i].name || '');
+    }
+    return '';
+  }
+  /* 部門内でのプロフィール選手の最高成績ラベル（優勝/準優勝/3位/ベスト4/ベスト8/N回戦敗退）。算出できなければ '' */
+  function btTnBestResultLabel(div, names){
+    names = names || btTnProfileNames();
+    var best = null;
+    function consider(pri, label){ if (label && (!best || pri > best.pri)) best = { pri: pri, label: label }; }
+    ((div && div.rounds) || []).forEach(function(r, ri){
+      var kind = btTnRoundKind(r);
+      (r.matches || []).forEach(function(m, mi){
+        if (!m.winner) return;
+        var eff = btTnMatchPlayers(div, ri, mi);
+        var own1 = btTnIsOwnName(eff.p1, names), own2 = btTnIsOwnName(eff.p2, names);
+        if (!own1 && !own2) return;
+        var won = (own1 && m.winner === 1) || (own2 && m.winner === 2);
+        if (won) {
+          if (kind.kind === 'final') consider(100, '優勝');
+          else if (kind.kind === 'third') consider(80, '3位');
+          else if (kind.kind !== 'other') {
+            var nx = btTnNextRoundName(div, ri);
+            if (nx) consider(10, nx + '進出');
+          }
+        } else {
+          if (kind.kind === 'final') consider(90, '準優勝');
+          else if (kind.kind === 'sf' || kind.kind === 'third') consider(70, 'ベスト4');
+          else if (kind.kind === 'qf') consider(60, 'ベスト8');
+          else if (kind.kind === 'round') consider(40 + Math.min(kind.n, 19), kind.n + '回戦敗退');
+        }
+      });
+    });
+    return best ? best.label : '';
+  }
+  /* 大会一覧の1行サマリー（部門ごとの最高成績／対戦表未登録／結果未入力） */
+  function btTnTournamentResultLine(tn, names){
+    names = names || btTnProfileNames();
+    var divs = (tn && tn.divisions) || [];
+    var hasMatches = false;
+    divs.forEach(function(div){
+      ((div && div.rounds) || []).forEach(function(r){ if ((r.matches || []).length) hasMatches = true; });
+    });
+    if (!divs.length || !hasMatches) return '対戦表未登録';
+    var parts = [];
+    divs.forEach(function(div){
+      var label = btTnBestResultLabel(div, names);
+      if (label) parts.push(String(div.code || div.label || '') + ' ' + label);
+    });
+    return parts.length ? parts.join(' / ') : '結果未入力';
+  }
+  /* 部門の優勝者・準優勝者（決勝の結果から。名前（学校）形式、未決定は ''） */
+  function btTnDivisionChampions(div){
+    var res = { champion: '', runnerUp: '' };
+    ((div && div.rounds) || []).forEach(function(r, ri){
+      if (res.champion) return;
+      if (btTnRoundKind(r).kind !== 'final') return;
+      var m = (r.matches || [])[0];
+      if (!m || !m.winner) return;
+      var eff = btTnMatchPlayers(div, ri, 0);
+      res.champion = m.winner === 1 ? btTnNameSchool(eff.p1, eff.s1) : btTnNameSchool(eff.p2, eff.s2);
+      res.runnerUp = m.winner === 1 ? btTnNameSchool(eff.p2, eff.s2) : btTnNameSchool(eff.p1, eff.s1);
+    });
+    return res;
+  }
+  /* プロフィール選手が出た「結果入力済み」の試合一覧（部門順・ラウンド順） */
+  function btTnOwnResults(tn, names){
+    names = names || btTnProfileNames();
+    var out = [];
+    ((tn && tn.divisions) || []).forEach(function(div){
+      ((div && div.rounds) || []).forEach(function(r, ri){
+        (r.matches || []).forEach(function(m, mi){
+          if (!m.winner) return;
+          var eff = btTnMatchPlayers(div, ri, mi);
+          var own1 = btTnIsOwnName(eff.p1, names), own2 = btTnIsOwnName(eff.p2, names);
+          if (!own1 && !own2) return;
+          var won = (own1 && m.winner === 1) || (own2 && m.winner === 2);
+          out.push({
+            divLabel: div.label || div.code || '',
+            round: r.name || '',
+            opp: own1 ? eff.p2 : eff.p1,
+            oppSchool: own1 ? eff.s2 : eff.s1,
+            score: m.score || '',
+            won: won
+          });
+        });
+      });
+    });
+    return out;
+  }
+  function btTnResultSummaryHtml(tn, names){
+    if (!tn || !tn.divisions || !tn.divisions.length) return '';
+    names = names || btTnProfileNames();
+    var h = '<div class="bt-tn-sec-title">🏆 結果サマリー</div>'
+      + '<div style="border:1px solid var(--border-subtle);border-radius:10px;padding:8px;background:var(--bg-main);">';
+    tn.divisions.forEach(function(div){
+      var c = btTnDivisionChampions(div);
+      h += '<div style="font-size:0.8rem;margin:2px 0;"><b>' + btTnEsc(div.label || div.code || '') + '</b>：優勝 '
+        + btTnEsc(c.champion || '未決定') + '／準優勝 ' + btTnEsc(c.runnerUp || '未決定') + '</div>';
+    });
+    var own = btTnOwnResults(tn, names);
+    if (own.length) {
+      h += '<div style="font-weight:900;font-size:0.8rem;margin-top:6px;">自分の試合の結果</div>';
+      own.forEach(function(o){
+        h += '<div style="font-size:0.8rem;margin-top:2px;">'
+          + btTnEsc(o.divLabel) + ' ' + btTnEsc(o.round) + '：vs '
+          + btTnEsc(o.opp ? btTnNameSchool(o.opp, o.oppSchool) : '（対戦相手未定）')
+          + (o.score ? '　' + btTnEsc(o.score) : '')
+          + '　' + (o.won ? '○勝ち' : '✕負け')
+          + '</div>';
+      });
+    }
+    return h + '</div>';
+  }
+
+  /* ---------- 大会一覧（タップで開く） ---------- */
+  function btTnListHtml(){
+    if (!btTnState.list.length) return '';
+    var names = btTnProfileNames();
+    var h = '<div style="margin:2px 0 6px;">';
+    btTnState.list.forEach(function(t){
+      var cur = t.id === btTnState.currentId;
+      h += '<div class="bt-tn-list-row' + (cur ? ' bt-tn-list-row-cur' : '') + '" onclick="btTn.selectAndScroll(\'' + btTnEsc(t.id) + '\')">'
+        + '<div style="font-weight:900;font-size:0.84rem;">' + (cur ? '📂 ' : '📁 ') + btTnEsc(t.name) + '</div>'
+        + '<div class="bt-tn-note">' + btTnEsc(btTnTournamentResultLine(t, names)) + '</div>'
+        + '</div>';
+    });
+    return h + '</div>';
+  }
+  function btTnRefreshList(){
+    var el = document.getElementById('btTnList');
+    if (el) el.innerHTML = btTnListHtml();
+  }
+
   /* ---------- CSS ---------- */
   function btTnInjectCss(){
     if (document.getElementById('btTnStyle')) return;
@@ -16328,7 +16478,9 @@ function sharePoseResultImage() {
       '.bt-tn-sec-title{font-weight:900;font-size:0.84rem;margin:10px 0 4px;}',
       '.bt-tn-note{font-size:0.74rem;color:var(--text-sub);line-height:1.5;}',
       '.bt-tn-school{display:block;font-size:0.68rem;color:var(--text-sub);line-height:1.25;}',
-      '.bt-tn-seed{display:inline-block;font-size:0.66rem;font-weight:800;color:#92400e;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.55);border-radius:999px;padding:0 6px;margin-left:5px;line-height:1.5;vertical-align:1px;}'
+      '.bt-tn-seed{display:inline-block;font-size:0.66rem;font-weight:800;color:#92400e;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.55);border-radius:999px;padding:0 6px;margin-left:5px;line-height:1.5;vertical-align:1px;}',
+      '.bt-tn-list-row{border:1px solid var(--border-subtle);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:var(--bg-main);cursor:pointer;}',
+      '.bt-tn-list-row-cur{border:2px solid var(--accent-primary);background:var(--bg-panel);}'
     ].join('\n');
     document.head.appendChild(st);
   }
@@ -16338,6 +16490,7 @@ function sharePoseResultImage() {
     return '<div class="card-header"><div class="card-title">🏆 大会資料（対戦表・進行表）</div></div>'
       + '<div class="bt-tn-note">大会の対戦表・進行表の写真を登録できます。写真はこの端末の中だけに保存され、クラウドには送られません。写真から対戦表を読み取る場合は、必ず確認・修正画面で内容を確かめてから確定します。</div>'
       + '<div class="bt-tn-sec-title">📁 大会</div>'
+      + '<div id="btTnList"></div>'
       + '<div class="bt-tn-ed-row">'
       + '<select id="btTnSelect" onchange="btTn.select(this.value)" style="flex:1;min-width:140px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;min-height:34px;"></select>'
       + '<button class="btn btn-rose" onclick="btTn.removeCurrent()">🗑 大会を削除</button>'
@@ -16509,6 +16662,7 @@ function sharePoseResultImage() {
     }
     var h = btTnOwnSummaryHtml(tn, names);
     h += btTnWatchSummaryHtml(tn, names);
+    h += btTnResultSummaryHtml(tn, names);
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">';
     tn.divisions.forEach(function(div, di){
       h += '<button class="bt-tn-chip' + (div.code === btTnState.divCode ? ' bt-tn-chip-on' : '') + '" onclick="btTn.setDivisionByIdx(' + di + ')">' + btTnEsc(div.label || div.code) + '</button>';
@@ -16616,6 +16770,7 @@ function sharePoseResultImage() {
     }).catch(function(){ btTnState.images = { bracket: [], schedule: [] }; });
   }
   function btTnRender(){
+    btTnRefreshList();
     var sel = document.getElementById('btTnSelect');
     if (sel) {
       sel.innerHTML = btTnState.list.map(function(t){
@@ -16629,6 +16784,7 @@ function sharePoseResultImage() {
     var w = document.getElementById('btTnBracketWrap');
     var tn = btTnCurrent();
     if (w && tn) w.innerHTML = btTnBracketHtml(tn);
+    btTnRefreshList();
   }
 
   /* ---------- 画像圧縮 ---------- */
@@ -16705,6 +16861,15 @@ function sharePoseResultImage() {
       btTnState.currentId = id;
       btTnState.divCode = null;
       btTnLoadImages(id).then(btTnRender);
+    },
+    selectAndScroll: function(id){
+      btTnState.currentId = id;
+      btTnState.divCode = null;
+      btTnLoadImages(id).then(function(){
+        btTnRender();
+        var el = document.getElementById('btTnBody');
+        if (el && el.scrollIntoView) setTimeout(function(){ el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30);
+      });
     },
     removeCurrent: function(){
       var tn = btTnCurrent();
@@ -16930,6 +17095,13 @@ function sharePoseResultImage() {
     viewerHtml: btTnViewerHtml,
     thumbsHtml: btTnThumbsHtml,
     ownSummaryHtml: btTnOwnSummaryHtml,
+    roundKind: btTnRoundKind,
+    bestResultLabel: btTnBestResultLabel,
+    tournamentResultLine: btTnTournamentResultLine,
+    divisionChampions: btTnDivisionChampions,
+    ownResults: btTnOwnResults,
+    resultSummaryHtml: btTnResultSummaryHtml,
+    listHtml: btTnListHtml,
     editorHtml: btTnEditorHtml,
     state: btTnState,
     api: btTnApi
