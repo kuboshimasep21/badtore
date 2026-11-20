@@ -16136,15 +16136,87 @@ function sharePoseResultImage() {
     } catch (e) { /* プロフィール未読込時はハイライトなし */ }
     return names;
   }
-  function btTnIsOwnName(name, names){
+  /* 名前が一致したプロフィール名を返す（なければ ''）。部分一致のルールは従来どおり */
+  function btTnMatchProfileName(name, names){
     var n = btTnNormName(name);
-    if (!n) return false;
+    if (!n) return '';
     names = names || btTnProfileNames();
     for (var i = 0; i < names.length; i++) {
       var pn = btTnNormName(names[i]);
-      if (pn && (pn === n || (pn.length >= 2 && n.indexOf(pn) >= 0) || (n.length >= 2 && pn.indexOf(n) >= 0))) return true;
+      if (pn && (pn === n || (pn.length >= 2 && n.indexOf(pn) >= 0) || (n.length >= 2 && pn.indexOf(n) >= 0))) return names[i];
     }
-    return false;
+    return '';
+  }
+  function btTnIsOwnName(name, names){
+    return !!btTnMatchProfileName(name, names);
+  }
+
+  /* ---------- 同名の別人の区別（学校で判定） ---------- */
+  function btTnNormSchool(s){ return String(s || '').replace(/[\s　]+/g, '').trim(); }
+  /* 大会レコードに保存された「プロフィール名（正規化）→ 学校名」の選択マップ */
+  function btTnOwnSchoolMap(tn){
+    return (tn && tn.ownSchoolByName && typeof tn.ownSchoolByName === 'object' && !Array.isArray(tn.ownSchoolByName)) ? tn.ownSchoolByName : {};
+  }
+  function btTnSelectedOwnSchool(tn, profileName){
+    var v = btTnOwnSchoolMap(tn)[btTnNormName(profileName)];
+    return v ? String(v) : '';
+  }
+  /* 自分の選手判定：名前が一致し、学校が選択済みの名前については学校も一致する場合だけ「自分の試合」とする。
+     学校未選択の名前・学校データがない枠は従来どおり名前だけで判定する */
+  function btTnIsOwnPlayer(name, school, tn, names){
+    var matched = btTnMatchProfileName(name, names);
+    if (!matched) return false;
+    var sel = btTnSelectedOwnSchool(tn, matched);
+    if (!sel) return true;
+    var sc = btTnNormSchool(school);
+    if (!sc) return true;
+    return sc === btTnNormSchool(sel);
+  }
+  /* 同名の別人検出：プロフィール名に一致する選手が、異なる学校で複数存在する名前を返す。
+     学校が入っていない選手は区別できないので対象外（従来どおり名前だけで扱う） */
+  function btTnSameNameSchools(tn, names){
+    names = names || btTnProfileNames();
+    var byKey = {};
+    ((tn && tn.divisions) || []).forEach(function(div){
+      ((div && div.rounds) || []).forEach(function(r, ri){
+        ((r && r.matches) || []).forEach(function(m, mi){
+          var eff = btTnMatchPlayers(div, ri, mi);
+          [[eff.p1, eff.s1], [eff.p2, eff.s2]].forEach(function(pair){
+            var matched = btTnMatchProfileName(pair[0], names);
+            if (!matched) return;
+            var key = btTnNormName(matched);
+            if (!byKey[key]) byKey[key] = { name: matched, schools: [] };
+            var sc = String(pair[1] || '').trim();
+            if (sc && byKey[key].schools.indexOf(sc) < 0) byKey[key].schools.push(sc);
+          });
+        });
+      });
+    });
+    var out = [];
+    Object.keys(byKey).forEach(function(k){ if (byKey[k].schools.length >= 2) out.push(byKey[k]); });
+    return out;
+  }
+  /* 同名の別人ありの場合だけ出す、学校の選択UI（自分の試合サマリーの近くに表示） */
+  function btTnOwnSchoolSectionHtml(tn, names){
+    if (!tn) return '';
+    var dups = btTnSameNameSchools(tn, names);
+    if (!dups.length) return '';
+    var h = '<div style="border:1px solid var(--accent-secondary, #f59e0b);border-radius:10px;padding:8px;margin:8px 0;background:var(--bg-panel);">'
+      + '<div style="font-weight:900;font-size:0.82rem;">👤 同名の選手がいます</div>'
+      + '<div class="bt-tn-note">同名の選手が複数いるため、学校を選んでください。選んだ学校の試合だけを「自分の試合」として表示します。</div>';
+    dups.forEach(function(d, di){
+      var sel = btTnSelectedOwnSchool(tn, d.name);
+      h += '<div style="margin-top:6px;"><span style="font-weight:900;font-size:0.82rem;">' + btTnEsc(d.name) + '</span>'
+        + (sel ? '<span class="bt-tn-note">（選択中：' + btTnEsc(sel) + '）</span>' : '')
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">';
+      d.schools.forEach(function(sc, si){
+        var on = sel && btTnNormSchool(sc) === btTnNormSchool(sel);
+        h += '<button class="bt-tn-chip' + (on ? ' bt-tn-chip-on' : '') + '" onclick="btTn.setOwnSchool(' + di + ',' + si + ')">' + btTnEsc(sc) + '</button>';
+      });
+      if (sel) h += '<button class="btn" onclick="btTn.setOwnSchool(' + di + ',-1)">選択を解除</button>';
+      h += '</div></div>';
+    });
+    return h + '</div>';
   }
 
   /* ---------- 注目選手（大会レコードの watch 配列に端末内保存） ---------- */
@@ -16351,7 +16423,7 @@ function sharePoseResultImage() {
     return '';
   }
   /* 部門内でのプロフィール選手の最高成績ラベル（優勝/準優勝/3位/ベスト4/ベスト8/N回戦敗退）。算出できなければ '' */
-  function btTnBestResultLabel(div, names){
+  function btTnBestResultLabel(div, names, tn){
     names = names || btTnProfileNames();
     var best = null;
     function consider(pri, label){ if (label && (!best || pri > best.pri)) best = { pri: pri, label: label }; }
@@ -16360,7 +16432,7 @@ function sharePoseResultImage() {
       (r.matches || []).forEach(function(m, mi){
         if (!m.winner) return;
         var eff = btTnMatchPlayers(div, ri, mi);
-        var own1 = btTnIsOwnName(eff.p1, names), own2 = btTnIsOwnName(eff.p2, names);
+        var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names);
         if (!own1 && !own2) return;
         var won = (own1 && m.winner === 1) || (own2 && m.winner === 2);
         if (won) {
@@ -16391,7 +16463,7 @@ function sharePoseResultImage() {
     if (!divs.length || !hasMatches) return '対戦表未登録';
     var parts = [];
     divs.forEach(function(div){
-      var label = btTnBestResultLabel(div, names);
+      var label = btTnBestResultLabel(div, names, tn);
       if (label) parts.push(String(div.code || div.label || '') + ' ' + label);
     });
     return parts.length ? parts.join(' / ') : '結果未入力';
@@ -16419,7 +16491,7 @@ function sharePoseResultImage() {
         (r.matches || []).forEach(function(m, mi){
           if (!m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
-          var own1 = btTnIsOwnName(eff.p1, names), own2 = btTnIsOwnName(eff.p2, names);
+          var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names);
           if (!own1 && !own2) return;
           var won = (own1 && m.winner === 1) || (own2 && m.winner === 2);
           out.push({
@@ -16590,7 +16662,7 @@ function sharePoseResultImage() {
         (r.matches || []).forEach(function(m, mi){
           if (m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
-          var own1 = btTnIsOwnName(eff.p1, names), own2 = btTnIsOwnName(eff.p2, names);
+          var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names);
           if (!own1 && !own2) return;
           var opp = own1 ? eff.p2 : eff.p1;
           var oppSc = own1 ? eff.s2 : eff.s1;
@@ -16620,7 +16692,7 @@ function sharePoseResultImage() {
         (r.matches || []).forEach(function(m, mi){
           if (m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
-          if (btTnIsOwnName(eff.p1, names) || btTnIsOwnName(eff.p2, names)) return; /* 自分の試合サマリーを優先し、重複させない */
+          if (btTnIsOwnPlayer(eff.p1, eff.s1, tn, names) || btTnIsOwnPlayer(eff.p2, eff.s2, tn, names)) return; /* 自分の試合サマリーを優先し、重複させない */
           var w1 = btTnIsWatchedName(eff.p1, list), w2 = btTnIsWatchedName(eff.p2, list);
           if (!w1 && !w2) return;
           var sch = smap[m.no];
@@ -16657,7 +16729,7 @@ function sharePoseResultImage() {
   function btTnMatchHtml(tn, div, di, ri, mi, names, smap){
     var m = div.rounds[ri].matches[mi];
     var eff = btTnMatchPlayers(div, ri, mi);
-    var own = btTnIsOwnName(eff.p1, names) || btTnIsOwnName(eff.p2, names);
+    var own = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names) || btTnIsOwnPlayer(eff.p2, eff.s2, tn, names);
     var wlist = btTnWatchList(tn);
     var w1 = btTnIsWatchedName(eff.p1, wlist), w2 = btTnIsWatchedName(eff.p2, wlist);
     var watched = w1 || w2;
@@ -16706,7 +16778,8 @@ function sharePoseResultImage() {
     if (!btTnState.divCode || !tn.divisions.some(function(d){ return d.code === btTnState.divCode; })) {
       btTnState.divCode = tn.divisions[0].code;
     }
-    var h = btTnOwnSummaryHtml(tn, names);
+    var h = btTnOwnSchoolSectionHtml(tn, names);
+    h += btTnOwnSummaryHtml(tn, names);
     h += btTnWatchSummaryHtml(tn, names);
     h += btTnResultSummaryHtml(tn, names);
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">';
@@ -16897,7 +16970,7 @@ function sharePoseResultImage() {
       var inp = document.getElementById('btTnNewName');
       var name = inp ? inp.value.trim() : '';
       if (!name) { alert('大会名を入力してください'); return; }
-      var tn = { id: btTnUid(), name: name, createdAt: Date.now(), updatedAt: Date.now(), divisions: [], schedule: [], watch: [] };
+      var tn = { id: btTnUid(), name: name, createdAt: Date.now(), updatedAt: Date.now(), divisions: [], schedule: [], watch: [], ownSchoolByName: {} };
       btTnState.list.unshift(tn);
       btTnState.currentId = tn.id;
       btTnState.divCode = null;
@@ -17076,6 +17149,19 @@ function sharePoseResultImage() {
       tn.watch.splice(idx, 1);
       btTnSaveRecord(tn).then(btTnRender);
     },
+    /* 同名の別人の区別：学校チップの選択（dupIdx は同名一覧の番号、schoolIdx は学校候補の番号、-1 で解除） */
+    setOwnSchool: function(dupIdx, schoolIdx){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      var dups = btTnSameNameSchools(tn);
+      var d = dups[dupIdx];
+      if (!d) return;
+      if (!tn.ownSchoolByName || typeof tn.ownSchoolByName !== 'object' || Array.isArray(tn.ownSchoolByName)) tn.ownSchoolByName = {};
+      var key = btTnNormName(d.name);
+      if (schoolIdx >= 0 && d.schools[schoolIdx]) tn.ownSchoolByName[key] = d.schools[schoolIdx];
+      else delete tn.ownSchoolByName[key];
+      btTnSaveRecord(tn).then(btTnRender);
+    },
     setWinner: function(di, ri, mi, side){
       var tn = btTnCurrent();
       if (!tn) return;
@@ -17142,7 +17228,8 @@ function sharePoseResultImage() {
       updatedAt: tn.updatedAt || 0,
       divisions: btTnClone(tn.divisions || []),
       schedule: btTnClone(tn.schedule || []),
-      watch: btTnClone(Array.isArray(tn.watch) ? tn.watch : [])
+      watch: btTnClone(Array.isArray(tn.watch) ? tn.watch : []),
+      ownSchoolByName: btTnClone(btTnOwnSchoolMap(tn))
     };
   }
   function btTnCloudUpsert(tn){
@@ -17314,6 +17401,10 @@ function sharePoseResultImage() {
     slotPlaceholder: btTnSlotPlaceholder,
     nameSchool: btTnNameSchool,
     isOwnName: btTnIsOwnName,
+    matchProfileName: btTnMatchProfileName,
+    isOwnPlayer: btTnIsOwnPlayer,
+    sameNameSchools: btTnSameNameSchools,
+    ownSchoolSectionHtml: btTnOwnSchoolSectionHtml,
     watchList: btTnWatchList,
     nameParts: btTnNameParts,
     isWatchedName: btTnIsWatchedName,
