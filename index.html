@@ -14638,6 +14638,10 @@ function sharePoseResultImage() {
      複数本持てるようにし（従来の単一 video とは表示側で両対応）、
      日本人チャンネルを中心に、実際に開いてタイトル・内容を確認できた
      動画だけを採用している
+   - 出典と参考動画の重複排除（2026-11-21）：出典のうち参考動画と同一のもの
+     （URL完全一致、YouTube は動画IDでも同一判定）は出典欄に出さず、動画は
+     参考動画側に一本化する。出典が0件になる場合は出典欄ごと出さない。
+     判定・描画は btDrillSourcesHtml に集約（データは書き換えない）
    ========================================================================= */
 (function(){
   'use strict';
@@ -14672,6 +14676,48 @@ function sharePoseResultImage() {
 
   function btDrillSourceHtml(s) {
     return btDrillLinkHtml(s.url, s.label);
+  }
+
+  /* 参考動画の同定：URL完全一致に加え、YouTube は動画IDでも同一と判定する
+     （youtube.com/watch?v= と youtu.be/ の表記揺れに耐えるため） */
+  function btDrillYouTubeId(url) {
+    if (!url || typeof url !== 'string') return null;
+    var m = url.match(/[?&]v=([\w-]{6,})/);
+    if (m && /youtube\.com/i.test(url)) return m[1];
+    m = url.match(/youtu\.be\/([\w-]{6,})/i);
+    if (m) return m[1];
+    m = url.match(/youtube\.com\/(?:embed|shorts|live|v)\/([\w-]{6,})/i);
+    if (m) return m[1];
+    return null;
+  }
+
+  /* ドリルの参考動画リスト：videos 配列（複数本）があればそれ、なければ従来の単一 video */
+  function btDrillVideoList(d) {
+    if (d.videos && d.videos.length) return d.videos;
+    if (d.video && d.video.url) return [d.video];
+    return [];
+  }
+
+  /* 出典HTML：参考動画（video/videos）と同一の出典は出典欄に出さない（動画は参考動画側に一本化）。
+     動画以外の出典（記事・資料・名称のみ）だけを残し、残りがなければ空文字を返す
+     （呼び出し側で出典欄ごと出さない）。出典表示はこの関数に集約する。 */
+  function btDrillSourcesHtml(d) {
+    var urlSet = {}, idSet = {};
+    btDrillVideoList(d).forEach(function(v){
+      if (v && v.url) {
+        urlSet[String(v.url).trim()] = true;
+        var vid = btDrillYouTubeId(v.url);
+        if (vid) idSet[vid] = true;
+      }
+    });
+    var kept = (d.sources || []).filter(function(s){
+      if (!s || !s.url) return true;
+      if (urlSet[String(s.url).trim()]) return false;
+      var sid = btDrillYouTubeId(s.url);
+      if (sid && idSet[sid]) return false;
+      return true;
+    });
+    return kept.map(btDrillSourceHtml).join('<br>');
   }
 
   var BT_DRILL_MENUS = [
@@ -16190,7 +16236,8 @@ function sharePoseResultImage() {
   }
 
   function btDrillDetailHtml(d) {
-    var src = (d.sources || []).map(btDrillSourceHtml).join('<br>');
+    /* 出典：参考動画と重なるものは除く（btDrillSourcesHtml）。残りがなければ出典欄ごと出さない */
+    var src = btDrillSourcesHtml(d);
     var ref = (d.referencePlayers && d.referencePlayers.length)
       ? '<div class="bt-drill-src">参考：' + d.referencePlayers.join('・') + '</div>' : '';
     var origin = (d.originType === 'style-derived')
@@ -16203,9 +16250,7 @@ function sharePoseResultImage() {
     var doseNote = (d.dose && d.dose.note)
       ? '<br><span class="bt-drill-dose-note">' + d.dose.note + '</span>' : '';
     /* 参考動画：videos 配列（複数本）があれば全本並べ、なければ従来の単一 video を表示する */
-    var videoList = [];
-    if (d.videos && d.videos.length) videoList = d.videos;
-    else if (d.video && d.video.url) videoList = [d.video];
+    var videoList = btDrillVideoList(d);
     var video = videoList.length
       ? '<div class="bt-drill-src">🎬 参考動画：<br>' + videoList.map(function(v){ return btDrillLinkHtml(v.url, v.label || '動画を見る'); }).join('<br>') + '</div>' : '';
     /* 他メニューへの参照（relatedMenuId）があるドリルには、そのメニューを開くジャンプボタンを出す */
@@ -16223,7 +16268,7 @@ function sharePoseResultImage() {
       + '<div class="bt-drill-dose">目安（通常版）：' + d.dose.standard + '<br>ジュニア版：' + d.dose.junior + doseNote + '</div>'
       + openMenu
       + ref + origin + video
-      + '<div class="bt-drill-src">出典：<br>' + src + '</div>'
+      + (src ? '<div class="bt-drill-src">出典：<br>' + src + '</div>' : '')
       + safety
       + '<div class="bt-drill-safety-note">⚠️ ' + BT_DRILL_SAFETY_COMMON + '</div>'
       + btDrillRoutineSectionHtml(d)
@@ -16679,6 +16724,9 @@ function sharePoseResultImage() {
     linkAllowed: btDrillLinkAllowed,
     linkHtml: btDrillLinkHtml,
     sourceHtml: btDrillSourceHtml,
+    sourcesHtml: btDrillSourcesHtml,
+    youtubeId: btDrillYouTubeId,
+    videoList: btDrillVideoList,
     addToMenu: btDrillAddToMenu,
     addMenuToMenu: btDrillAddMenuToMenu,
     toMenuItem: btDrillToMenuItem,
