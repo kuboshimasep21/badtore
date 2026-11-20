@@ -3322,6 +3322,8 @@
 
                     <option value="drive">⚡ ドライブ＆プッシュ（リストスタンド・肘の前方保持）</option>
 
+                    <option value="serve">🎾 サーブ（低い打点・構えの安定・スイングのコントロール）</option>
+
                   </optgroup>
 
                   <optgroup label="👟 リアクションステップ編">
@@ -3367,6 +3369,8 @@
                     <button type="button" class="bt-shot-chip" data-shot-value="lob" onclick="btSelectShotType('lob')">🛡️ レシーブ＆ロブ</button>
 
                     <button type="button" class="bt-shot-chip" data-shot-value="drive" onclick="btSelectShotType('drive')">⚡ ドライブ＆プッシュ</button>
+
+                    <button type="button" class="bt-shot-chip" data-shot-value="serve" onclick="btSelectShotType('serve')">🎾 サーブ</button>
 
                   </div>
 
@@ -6668,6 +6672,16 @@
 
       },
 
+      serve: {
+
+        title: "サーブ［基礎打ち］",
+
+        focus: "serve", idealShoulder: 45, idealElbow: 120, idealKnee: 145,
+
+        desc: "🎾 <b>サーブ100pt基準:</b> サーブは速さではなくコントロールを採点します。①下半身・構えの安定（最深膝角が基準145°に近いことと、腰のふらつきの少なさを半々で評価：35%）、②打点の低さ（スイングが最速になった瞬間、ラケット側の手首が腰ラインより下にあるか：35%）、③スイングのコントロール（最大速度指数が適正範囲20〜62ptに収まるか。速すぎる振りは減点：30%）で採点します。②はサーブの打点上限（1.15mルール）をカメラ映像から推し量るための目安で、数値基準はすべてアプリ独自の目安です。打点が検出できない場合は①と③を55%・45%に換算して評価し、その旨を結果に表示します。"
+
+      },
+
       reaction_unweight: {
 
         title: "リアクション［抜重パターン］",
@@ -7634,6 +7648,14 @@
 
             frameComposite = aiMetrics.wristKeepPt * 0.35 + aiMetrics.wristStandPt * 0.15 + aiMetrics.kneePt * 0.3 + aiMetrics.stabilityPt * 0.2;
 
+          } else if (shotType === 'serve') {
+
+            // サーブのベストフレームは「手首が腰より下にあり、適度に動いている」打点付近を優先する
+
+            const serveLowContactPt = Math.max(0, Math.min(100, 100 - Math.max(0, (midHipY - wrist.y) / torsoLength) * BT_SERVE_CONTACT_SLOPE));
+
+            frameComposite = serveLowContactPt * 0.6 + aiMetrics.speedPt * 0.4;
+
           } else if (model.focus === 'overhead') {
 
             frameComposite = shoulderDeg * 0.55 + elbowDeg * 0.25 + aiMetrics.speedPt * 0.2;
@@ -8335,6 +8357,8 @@
 
       lastJumpAnalysis = null;
 
+      lastServeAnalysis = null;
+
 
       aiMetrics.smoothElbow = null;
 
@@ -8397,6 +8421,14 @@
           document.getElementById('bdLabel2').textContent = "② 下半身・踏み切り前の膝のタメ（20%）";
 
           document.getElementById('bdLabel3').textContent = "③ スイング速度（20%）＋④ジャンプ要素（30%）※④の詳細は診断結果に表示";
+
+        } else if (shot === 'serve') {
+
+          document.getElementById('bdLabel1').textContent = "① 下半身・構えの安定（35%）";
+
+          document.getElementById('bdLabel2').textContent = "② 打点の低さ（35%）※詳細は診断結果に表示";
+
+          document.getElementById('bdLabel3').textContent = "③ スイングのコントロール（30%）";
 
         } else if (model.focus === 'lower') {
 
@@ -9080,6 +9112,92 @@
 
 
 
+    // ===== 🎾 サーブ解析 =====
+
+    // 打球候補（手首速度ピーク）の瞬間に、ラケット側の手首が腰ラインより下にあるかを測る。
+
+    // サーブの打点上限（1.15mルール）そのものをカメラ映像から測ることはできないため、
+
+    // 「腰ラインより下か」を目安として使う。数値基準はすべてアプリ独自の目安であり、特定選手の基準ではない。
+
+    const BT_SERVE_CONTACT_SLOPE = 220;
+
+    const BT_SERVE_SPEED_BAND_MIN = 20;
+
+    const BT_SERVE_SPEED_BAND_MAX = 62;
+
+    let lastServeAnalysis = null;
+
+    function btAnalyzeServe(samples, peakT) {
+
+      if (!samples || samples.length < 5) return { detected: false, reason: 'few-samples' };
+
+      const isLeftHand = (typeof userProfile !== 'undefined' && userProfile && userProfile.hand === 'left');
+
+      const wristIdx = isLeftHand ? 15 : 16;
+
+      const rows = [];
+
+      for (const s of samples) {
+
+        const lm = s.landmarks;
+
+        if (!lm || !lm[11] || !lm[12] || !lm[23] || !lm[24] || !lm[wristIdx]) continue;
+
+        const midShX = (lm[11].x + lm[12].x) / 2;
+
+        const midShY = (lm[11].y + lm[12].y) / 2;
+
+        const midHipX = (lm[23].x + lm[24].x) / 2;
+
+        const midHipY = (lm[23].y + lm[24].y) / 2;
+
+        const torso = Math.hypot(midShX - midHipX, midShY - midHipY);
+
+        if (!(torso > 0.05)) continue;
+
+        rows.push({ t: s.t, torso: torso, hipY: midHipY, wristY: lm[wristIdx].y, wristVel: Math.max(0, Number(s.wristVel) || 0) });
+
+      }
+
+      if (rows.length < 3) return { detected: false, reason: 'no-landmarks' };
+
+      // 打球候補：打球ウィンドウのピーク時刻に最も近いサンプル。ピーク時刻がなければ手首速度最大のサンプル
+
+      let peak = rows[0];
+
+      if (typeof peakT === 'number' && isFinite(peakT)) {
+
+        for (const r of rows) if (Math.abs(r.t - peakT) < Math.abs(peak.t - peakT)) peak = r;
+
+      } else {
+
+        for (const r of rows) if (r.wristVel > peak.wristVel) peak = r;
+
+      }
+
+      // 腰ライン比：画像座標は下向きが正のため、(腰Y − 手首Y) / 体幹長 が正なら手首は腰より上
+
+      const liftRatio = (peak.hipY - peak.wristY) / peak.torso;
+
+      const contactPt = Math.round(Math.min(100, Math.max(40, 100 - Math.max(0, liftRatio) * BT_SERVE_CONTACT_SLOPE)));
+
+      return { detected: true, contactPt: contactPt, liftRatio: liftRatio, peakT: peak.t };
+
+    }
+
+    // スイングのコントロール：最大速度指数が適正範囲に収まるほど高得点（サーブは速さではなくコントロールで評価する）
+
+    function btServeControlPt(maxSp) {
+
+      if (maxSp >= BT_SERVE_SPEED_BAND_MIN && maxSp <= BT_SERVE_SPEED_BAND_MAX) return 100;
+
+      if (maxSp > BT_SERVE_SPEED_BAND_MAX) return Math.max(40, Math.round(100 - (maxSp - BT_SERVE_SPEED_BAND_MAX) * 1.2));
+
+      return Math.max(55, Math.round(100 - (BT_SERVE_SPEED_BAND_MIN - maxSp) * 0.8));
+
+    }
+
     function finishPoseRecording(fromVideoAuto = false) {
 
       clearInterval(poseSession.timerId);
@@ -9151,6 +9269,14 @@
       lastJumpAnalysis = (shot === 'jump_smash')
 
         ? btAnalyzeJumpSmash(poseFrameSamples, lastImpactWindowInfo ? lastImpactWindowInfo.peakT : null)
+
+        : null;
+
+      // 🎾 サーブ解析（対象種目のみ。それ以外の種目では lastServeAnalysis は null）
+
+      lastServeAnalysis = (shot === 'serve')
+
+        ? btAnalyzeServe(poseFrameSamples, lastImpactWindowInfo ? lastImpactWindowInfo.peakT : null)
 
         : null;
 
@@ -9290,6 +9416,52 @@
 
         }
 
+      } else if (shot === 'serve') {
+
+        // 🎾 サーブは速さではなく、構えの安定・打点の低さ・スイングのコントロールで採点する
+
+        const kneeServePt = Math.max(30, Math.min(100, 100 - Math.round(Math.abs(minKn - model.idealKnee) * 1.4)));
+
+        const basePt = Math.round(kneeServePt * 0.5 + aiMetrics.stabilityPt * 0.5);
+
+        const controlPt = btServeControlPt(maxSp);
+
+        if (lastServeAnalysis && lastServeAnalysis.detected) {
+
+          const sv = lastServeAnalysis;
+
+          totalScore = Math.round(basePt * 0.35 + sv.contactPt * 0.35 + controlPt * 0.30);
+
+          scoreComponents = [basePt, sv.contactPt, controlPt];
+
+          const liftPct = Math.round(Math.abs(sv.liftRatio) * 100);
+
+          if (sv.contactPt >= 80) goodPoints.push(`打球の瞬間、手首が腰ライン${sv.liftRatio <= 0 ? `より約${liftPct}%（体幹長比）下` : `付近（約${liftPct}%上）`}にあり、低い打点で捉えられています（1.15mルールの目安をクリア）。`);
+
+          else improvePoints.push(`打球の瞬間、手首が腰ラインより約${liftPct}%（体幹長比）上にありました。サーブは腰より低い位置で捉えるのが目安です（1.15mルール）。構えを低くして、体の前・低い位置で押し出しましょう。`);
+
+        } else {
+
+          // 打点が検出できない場合：打点要素を0点で押し切らず、残りの要素を55%・45%に換算して評価する
+
+          totalScore = Math.round(basePt * 0.55 + controlPt * 0.45);
+
+          scoreComponents = [basePt, controlPt];
+
+          improvePoints.push(`今回は打点の高さが検出できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しました。頭から足首まで全身が映る画角で撮り直すと打点も採点できます。`);
+
+        }
+
+        if (basePt >= 80) goodPoints.push(`サーブの構えが安定しています（最深膝角 ${minKn}°・安定度 ${aiMetrics.stabilityPt}pt）。打つ直前まで体が静止できています。`);
+
+        else improvePoints.push(`構えの安定が ${basePt}pt でした。膝を軽く緩めて（目安${model.idealKnee}°前後）腰を落とし、打つ直前まで体を静止させるとサーブの精度が上がります。`);
+
+        if (controlPt >= 90) goodPoints.push(`スイングの強さ（最大速度指数 ${maxSp}pt）がサーブに適した範囲に収まっており、コントロール重視の打ち方になっています。`);
+
+        else if (maxSp > BT_SERVE_SPEED_BAND_MAX) improvePoints.push(`最大速度指数が ${maxSp}pt と、サーブとしては振りが大きめでした。コンパクトに押し出す意識にすると、ネット際のコントロールが安定します。`);
+
+        else improvePoints.push(`最大速度指数が ${maxSp}pt と小さめでした。もう少しだけ腕の振りを足すと、ネットを越える高さと奥行きが出ます。`);
+
       } else {
 
         const upperBest = Math.min(100, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)));
@@ -9376,6 +9548,26 @@
 
 
 
+      // 🎾 サーブ結果の打点表示（数値基準はアプリ独自の目安である旨を明記）
+
+      let serveHtml = '';
+
+      if (shot === 'serve') {
+
+        if (lastServeAnalysis && lastServeAnalysis.detected) {
+
+          const sv = lastServeAnalysis;
+
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem;">🎾 <b>打点（アプリ独自の目安）:</b> 打球時の手首は腰ライン${sv.liftRatio <= 0 ? 'より下' : 'より上'}（体幹長比 約${Math.round(Math.abs(sv.liftRatio) * 100)}%）／ 打点スコア ${sv.contactPt}pt（腰より下で捉えるほど高得点＝サーブの打点上限1.15mルールの目安）</div>`;
+
+        } else {
+
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🎾 打点が検出できませんでした：打球時の手首位置を確認できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しています。</div>`;
+
+        }
+
+      }
+
       document.getElementById('aiSummaryContent').innerHTML = `
 
         ${recordBannerHtml}
@@ -9389,6 +9581,8 @@
         ${lastImpactWindowInfo ? `<div style="margin-bottom:5px; font-size:0.85rem;">🎯 打球の瞬間前後で判定しています：スイング速度が最大になった場面を中心に、前${BT_IMPACT_WINDOW_PRE_SEC}秒・後${BT_IMPACT_WINDOW_POST_SEC}秒のフレームだけで集計しました（シャトル拾いなど、打球と無関係な動きは集計から除かれます）。</div>` : ``}
 
         ${jumpHtml}
+
+        ${serveHtml}
 
         <div style="margin-bottom:5px;">
 
