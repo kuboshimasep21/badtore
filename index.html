@@ -16161,16 +16161,36 @@ function sharePoseResultImage() {
     var v = btTnOwnSchoolMap(tn)[btTnNormName(profileName)];
     return v ? String(v) : '';
   }
-  /* 自分の選手判定：名前が一致し、学校が選択済みの名前については学校も一致する場合だけ「自分の試合」とする。
-     学校未選択の名前・学校データがない枠は従来どおり名前だけで判定する */
-  function btTnIsOwnPlayer(name, school, tn, names){
+  /* 大会レコードに保存された「プロフィール名（正規化）|部門コード → 初戦の出どころ」の選択マップ。
+     同じ学校にも同名がいる場合に、初戦の枠で見分けるために使う */
+  function btTnOwnOriginMap(tn){
+    return (tn && tn.ownOriginByName && typeof tn.ownOriginByName === 'object' && !Array.isArray(tn.ownOriginByName)) ? tn.ownOriginByName : {};
+  }
+  function btTnOriginMapKey(profileName, divCode){
+    return btTnNormName(profileName) + '|' + String(divCode || '');
+  }
+  function btTnSelectedOwnOrigin(tn, profileName, divCode){
+    var v = btTnOwnOriginMap(tn)[btTnOriginMapKey(profileName, divCode)];
+    return (v && typeof v === 'object') ? v : null;
+  }
+  /* 自分の選手判定：名前が一致し、学校が選択済みの名前については学校も一致する場合だけ、
+     初戦（出どころ）が選択済みの名前についてはその出どころから来た選手だけを「自分の試合」とする。
+     未選択の条件・学校データがない枠は従来どおり名前だけで判定する。
+     divCode / origin は btTnMatchPlayers と対になる btTnMatchOrigins の結果を渡す */
+  function btTnIsOwnPlayer(name, school, tn, names, divCode, origin){
     var matched = btTnMatchProfileName(name, names);
     if (!matched) return false;
     var sel = btTnSelectedOwnSchool(tn, matched);
-    if (!sel) return true;
-    var sc = btTnNormSchool(school);
-    if (!sc) return true;
-    return sc === btTnNormSchool(sel);
+    if (sel) {
+      var sc = btTnNormSchool(school);
+      if (sc && sc !== btTnNormSchool(sel)) return false;
+    }
+    var selO = btTnSelectedOwnOrigin(tn, matched, divCode);
+    if (selO) {
+      if (!origin) return false;
+      if (btTnOriginKey(origin) !== btTnOriginKey(selO)) return false;
+    }
+    return true;
   }
   /* 同名の別人検出：プロフィール名に一致する選手が、異なる学校で複数存在する名前を返す。
      学校が入っていない選手は区別できないので対象外（従来どおり名前だけで扱う） */
@@ -16196,14 +16216,68 @@ function sharePoseResultImage() {
     Object.keys(byKey).forEach(function(k){ if (byKey[k].schools.length >= 2) out.push(byKey[k]); });
     return out;
   }
-  /* 同名の別人ありの場合だけ出す、学校の選択UI（自分の試合サマリーの近くに表示） */
+  /* 出どころ候補の表示情報：初戦の試合（試合番号・ラウンド・対戦相手・シード）を親が判別できる形にする */
+  function btTnOriginCandidate(div, origin){
+    var round = div.rounds[origin.ri];
+    var m = round && round.matches[origin.mi];
+    var eff = m ? btTnMatchPlayers(div, origin.ri, origin.mi) : { p1: '', p2: '', s1: '', s2: '', seed1: '', seed2: '' };
+    var is1 = origin.side === 1;
+    return {
+      origin: { div: origin.div, no: origin.no, ri: origin.ri, mi: origin.mi, side: origin.side },
+      no: m ? (m.no || '') : '',
+      round: round ? (round.name || '') : '',
+      opp: is1 ? eff.p2 : eff.p1,
+      oppSchool: is1 ? eff.s2 : eff.s1,
+      seed: is1 ? eff.seed1 : eff.seed2
+    };
+  }
+  function btTnOriginCandidateLabel(divCode, cand){
+    var s = String(divCode || '') + '・' + (cand.no ? ('試合' + cand.no) : (cand.round || '初戦'));
+    s += cand.opp ? ('（対 ' + btTnNameSchool(cand.opp, cand.oppSchool) + '）') : '（対戦相手未定）';
+    if (cand.seed) s += ' ' + cand.seed;
+    return s;
+  }
+  /* 初戦（出どころ）の曖昧さ検出：プロフィール名に一致し、学校フィルタ（選択済みなら）を通過した選手について、
+     出どころが2つ以上ある（名前＋部門）の一覧を返す。同名・同学校の別人を見分けるための材料 */
+  function btTnAmbiguousOrigins(tn, names){
+    names = names || btTnProfileNames();
+    var byKey = {}, order = [];
+    ((tn && tn.divisions) || []).forEach(function(div){
+      ((div && div.rounds) || []).forEach(function(r, ri){
+        ((r && r.matches) || []).forEach(function(m, mi){
+          var eff = btTnMatchPlayers(div, ri, mi);
+          var orgs = btTnMatchOrigins(div, ri, mi);
+          [[eff.p1, eff.s1, orgs.o1], [eff.p2, eff.s2, orgs.o2]].forEach(function(t){
+            if (!btTnNormName(t[0])) return;
+            var matched = btTnMatchProfileName(t[0], names);
+            if (!matched) return;
+            var sel = btTnSelectedOwnSchool(tn, matched);
+            if (sel) {
+              var sc = btTnNormSchool(t[1]);
+              if (sc && sc !== btTnNormSchool(sel)) return;
+            }
+            var key = btTnOriginMapKey(matched, div.code);
+            if (!byKey[key]) { byKey[key] = { name: matched, div: div.code || '', divLabel: div.label || div.code || '', origins: [], seen: {} }; order.push(byKey[key]); }
+            var ok = btTnOriginKey(t[2]);
+            if (!byKey[key].seen[ok]) {
+              byKey[key].seen[ok] = true;
+              byKey[key].origins.push(btTnOriginCandidate(div, t[2]));
+            }
+          });
+        });
+      });
+    });
+    return order.filter(function(e){ return e.origins.length >= 2; });
+  }
+  /* 同名の別人ありの場合だけ出す、学校・初戦の選択UI（自分の試合サマリーの近くに表示） */
   function btTnOwnSchoolSectionHtml(tn, names){
     if (!tn) return '';
     var dups = btTnSameNameSchools(tn, names);
-    if (!dups.length) return '';
+    var amb = btTnAmbiguousOrigins(tn, names);
+    if (!dups.length && !amb.length) return '';
     var h = '<div style="border:1px solid var(--accent-secondary, #f59e0b);border-radius:10px;padding:8px;margin:8px 0;background:var(--bg-panel);">'
       + '<div style="font-weight:900;font-size:0.82rem;">👤 同名の選手がいます</div>'
-      + '<div class="bt-tn-note">同名の選手が複数いるため、学校を選んでください。選んだ学校の試合だけを「自分の試合」として表示します。</div>';
+      + '<div class="bt-tn-note">同名の選手が複数いるため、お子さんの試合を特定してください。選んだ条件に合う試合だけを「自分の試合」として表示します。</div>';
     dups.forEach(function(d, di){
       var sel = btTnSelectedOwnSchool(tn, d.name);
       h += '<div style="margin-top:6px;"><span style="font-weight:900;font-size:0.82rem;">' + btTnEsc(d.name) + '</span>'
@@ -16214,6 +16288,19 @@ function sharePoseResultImage() {
         h += '<button class="bt-tn-chip' + (on ? ' bt-tn-chip-on' : '') + '" onclick="btTn.setOwnSchool(' + di + ',' + si + ')">' + btTnEsc(sc) + '</button>';
       });
       if (sel) h += '<button class="btn" onclick="btTn.setOwnSchool(' + di + ',-1)">選択を解除</button>';
+      h += '</div></div>';
+    });
+    amb.forEach(function(e, ei){
+      var selO = btTnSelectedOwnOrigin(tn, e.name, e.div);
+      h += '<div style="margin-top:6px;"><span style="font-weight:900;font-size:0.82rem;">' + btTnEsc(e.name) + '（' + btTnEsc(e.divLabel) + '）の初戦</span>'
+        + (selO ? '<span class="bt-tn-note">（選択中）</span>' : '')
+        + '<div class="bt-tn-note">名前と学校だけでは見分けられないため、初戦（最初の試合）を選んでください。その初戦から勝ち上がった選手だけを数えます。</div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">';
+      e.origins.forEach(function(cand, ci){
+        var on = selO && btTnOriginKey(selO) === btTnOriginKey(cand.origin);
+        h += '<button class="bt-tn-chip' + (on ? ' bt-tn-chip-on' : '') + '" onclick="btTn.setOwnOrigin(' + ei + ',' + ci + ')">' + btTnEsc(btTnOriginCandidateLabel(e.div, cand)) + '</button>';
+      });
+      if (selO) h += '<button class="btn" onclick="btTn.setOwnOrigin(' + ei + ',-1)">選択を解除</button>';
       h += '</div></div>';
     });
     return h + '</div>';
@@ -16370,6 +16457,33 @@ function sharePoseResultImage() {
       : { name: m.p2 || '', school: m.s2 || '', seed: m.seed2 || '' };
     return { p1: t1.name, p2: t2.name, s1: t1.school, s2: t2.school, seed1: t1.seed, seed2: t2.seed };
   }
+  /* ---------- 出どころ（origin）：選手が最初に名前で載った枠 ----------
+     同名・同学校の別人でも、対戦表の中の「出どころ（初戦の枠）」は必ず違う。
+     初出の枠はその枠自体が origin。勝ち上がりで来た選手はフィーダー側の勝者（3位決定戦は敗者）の
+     origin を引き継ぐ。フィーダー対応は btTnFeederSource を使い、btTnMatchPlayers の繰り上がりと矛盾しない */
+  function btTnOriginKey(o){
+    if (!o) return '';
+    var id = o.no ? ('N' + o.no) : ('I' + o.ri + '-' + o.mi);
+    return String(o.div || '') + '|' + id + '|' + o.side;
+  }
+  function btTnFeederOrigin(div, fri, fmi, wantLoser){
+    var round = div.rounds[fri];
+    var fm = round && round.matches[fmi];
+    if (!fm || !fm.winner) return null;
+    var fo = btTnMatchOrigins(div, fri, fmi);
+    if (fm.winner === 1) return wantLoser ? fo.o2 : fo.o1;
+    return wantLoser ? fo.o1 : fo.o2;
+  }
+  function btTnMatchOrigins(div, ri, mi){
+    var m = div.rounds[ri].matches[mi];
+    function selfOrigin(side){ return { div: div.code || '', no: m.no || '', ri: ri, mi: mi, side: side }; }
+    if (ri === 0) return { o1: selfOrigin(1), o2: selfOrigin(2) };
+    var src1 = btTnFeederSource(div, ri, mi, 1);
+    var src2 = btTnFeederSource(div, ri, mi, 2);
+    var o1 = src1 ? (btTnFeederOrigin(div, src1.fri, src1.fmi, src1.wantLoser) || selfOrigin(1)) : selfOrigin(1);
+    var o2 = src2 ? (btTnFeederOrigin(div, src2.fri, src2.fmi, src2.wantLoser) || selfOrigin(2)) : selfOrigin(2);
+    return { o1: o1, o2: o2 };
+  }
   /* サマリー表示用：学校名があれば「名前（学校）」にする */
   function btTnNameSchool(name, school){
     var n = String(name || ''), s = String(school || '').trim();
@@ -16432,7 +16546,8 @@ function sharePoseResultImage() {
       (r.matches || []).forEach(function(m, mi){
         if (!m.winner) return;
         var eff = btTnMatchPlayers(div, ri, mi);
-        var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names);
+        var orgs = btTnMatchOrigins(div, ri, mi);
+        var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names, div.code, orgs.o1), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names, div.code, orgs.o2);
         if (!own1 && !own2) return;
         var won = (own1 && m.winner === 1) || (own2 && m.winner === 2);
         if (won) {
@@ -16491,7 +16606,8 @@ function sharePoseResultImage() {
         (r.matches || []).forEach(function(m, mi){
           if (!m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
-          var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names);
+          var orgs = btTnMatchOrigins(div, ri, mi);
+          var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names, div.code, orgs.o1), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names, div.code, orgs.o2);
           if (!own1 && !own2) return;
           var won = (own1 && m.winner === 1) || (own2 && m.winner === 2);
           out.push({
@@ -16662,7 +16778,8 @@ function sharePoseResultImage() {
         (r.matches || []).forEach(function(m, mi){
           if (m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
-          var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names);
+          var orgs = btTnMatchOrigins(div, ri, mi);
+          var own1 = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names, div.code, orgs.o1), own2 = btTnIsOwnPlayer(eff.p2, eff.s2, tn, names, div.code, orgs.o2);
           if (!own1 && !own2) return;
           var opp = own1 ? eff.p2 : eff.p1;
           var oppSc = own1 ? eff.s2 : eff.s1;
@@ -16692,7 +16809,8 @@ function sharePoseResultImage() {
         (r.matches || []).forEach(function(m, mi){
           if (m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
-          if (btTnIsOwnPlayer(eff.p1, eff.s1, tn, names) || btTnIsOwnPlayer(eff.p2, eff.s2, tn, names)) return; /* 自分の試合サマリーを優先し、重複させない */
+          var orgs = btTnMatchOrigins(div, ri, mi);
+          if (btTnIsOwnPlayer(eff.p1, eff.s1, tn, names, div.code, orgs.o1) || btTnIsOwnPlayer(eff.p2, eff.s2, tn, names, div.code, orgs.o2)) return; /* 自分の試合サマリーを優先し、重複させない */
           var w1 = btTnIsWatchedName(eff.p1, list), w2 = btTnIsWatchedName(eff.p2, list);
           if (!w1 && !w2) return;
           var sch = smap[m.no];
@@ -16729,7 +16847,8 @@ function sharePoseResultImage() {
   function btTnMatchHtml(tn, div, di, ri, mi, names, smap){
     var m = div.rounds[ri].matches[mi];
     var eff = btTnMatchPlayers(div, ri, mi);
-    var own = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names) || btTnIsOwnPlayer(eff.p2, eff.s2, tn, names);
+    var orgs = btTnMatchOrigins(div, ri, mi);
+    var own = btTnIsOwnPlayer(eff.p1, eff.s1, tn, names, div.code, orgs.o1) || btTnIsOwnPlayer(eff.p2, eff.s2, tn, names, div.code, orgs.o2);
     var wlist = btTnWatchList(tn);
     var w1 = btTnIsWatchedName(eff.p1, wlist), w2 = btTnIsWatchedName(eff.p2, wlist);
     var watched = w1 || w2;
@@ -16970,7 +17089,7 @@ function sharePoseResultImage() {
       var inp = document.getElementById('btTnNewName');
       var name = inp ? inp.value.trim() : '';
       if (!name) { alert('大会名を入力してください'); return; }
-      var tn = { id: btTnUid(), name: name, createdAt: Date.now(), updatedAt: Date.now(), divisions: [], schedule: [], watch: [], ownSchoolByName: {} };
+      var tn = { id: btTnUid(), name: name, createdAt: Date.now(), updatedAt: Date.now(), divisions: [], schedule: [], watch: [], ownSchoolByName: {}, ownOriginByName: {} };
       btTnState.list.unshift(tn);
       btTnState.currentId = tn.id;
       btTnState.divCode = null;
@@ -17162,6 +17281,19 @@ function sharePoseResultImage() {
       else delete tn.ownSchoolByName[key];
       btTnSaveRecord(tn).then(btTnRender);
     },
+    /* 同名・同学校の区別：初戦（出どころ）の選択（ambIdx は曖昧一覧の番号、originIdx は候補の番号、-1 で解除） */
+    setOwnOrigin: function(ambIdx, originIdx){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      var amb = btTnAmbiguousOrigins(tn);
+      var e = amb[ambIdx];
+      if (!e) return;
+      if (!tn.ownOriginByName || typeof tn.ownOriginByName !== 'object' || Array.isArray(tn.ownOriginByName)) tn.ownOriginByName = {};
+      var key = btTnOriginMapKey(e.name, e.div);
+      if (originIdx >= 0 && e.origins[originIdx]) tn.ownOriginByName[key] = btTnClone(e.origins[originIdx].origin);
+      else delete tn.ownOriginByName[key];
+      btTnSaveRecord(tn).then(btTnRender);
+    },
     setWinner: function(di, ri, mi, side){
       var tn = btTnCurrent();
       if (!tn) return;
@@ -17229,7 +17361,8 @@ function sharePoseResultImage() {
       divisions: btTnClone(tn.divisions || []),
       schedule: btTnClone(tn.schedule || []),
       watch: btTnClone(Array.isArray(tn.watch) ? tn.watch : []),
-      ownSchoolByName: btTnClone(btTnOwnSchoolMap(tn))
+      ownSchoolByName: btTnClone(btTnOwnSchoolMap(tn)),
+      ownOriginByName: btTnClone(btTnOwnOriginMap(tn))
     };
   }
   function btTnCloudUpsert(tn){
@@ -17396,6 +17529,11 @@ function sharePoseResultImage() {
     mergeResults: btTnMergeResults,
     scheduleMap: btTnScheduleMap,
     matchPlayers: btTnMatchPlayers,
+    matchOrigins: btTnMatchOrigins,
+    originKey: btTnOriginKey,
+    ambiguousOrigins: btTnAmbiguousOrigins,
+    originCandidateLabel: btTnOriginCandidateLabel,
+    selectedOwnOrigin: btTnSelectedOwnOrigin,
     feederSource: btTnFeederSource,
     slotCandidate: btTnSlotCandidate,
     slotPlaceholder: btTnSlotPlaceholder,
