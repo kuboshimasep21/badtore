@@ -16529,6 +16529,7 @@ function sharePoseResultImage() {
   function btTnCardHtml(){
     return '<div class="card-header"><div class="card-title">🏆 大会資料（対戦表・進行表）</div></div>'
       + '<div class="bt-tn-note">大会の対戦表・進行表の写真を登録できます。写真はこの端末の中だけに保存され、クラウドには送られません。写真から対戦表を読み取る場合は、必ず確認・修正画面で内容を確かめてから確定します。</div>'
+      + '<div class="bt-tn-note" id="btTnSyncStatus"></div>'
       + '<div class="bt-tn-sec-title">📁 大会</div>'
       + '<div id="btTnList"></div>'
       + '<div class="bt-tn-ed-row">'
@@ -16804,7 +16805,9 @@ function sharePoseResultImage() {
   /* ---------- 永続化ヘルパー ---------- */
   function btTnSaveRecord(tn){
     tn.updatedAt = Date.now();
-    return btTnDbPut('tournaments', btTnClone(tn)).catch(function(e){ console.warn('[badtore tournament] save失敗', e); });
+    return btTnDbPut('tournaments', btTnClone(tn)).then(function(){
+      btTnCloudPushSoon(tn);
+    }).catch(function(e){ console.warn('[badtore tournament] save失敗', e); });
   }
   function btTnLoadImages(tnId){
     return btTnDbGetAllByTn(tnId).then(function(rows){
@@ -16922,6 +16925,8 @@ function sharePoseResultImage() {
       if (!confirm('大会「' + tn.name + '」と、その写真・対戦表データをすべて削除します。よろしいですか？')) return;
       var id = tn.id;
       btTnDbDelete('tournaments', id).then(function(){
+        return btTnCloudDelete(id);
+      }).then(function(){
         return btTnDbGetAllByTn(id);
       }).then(function(rows){
         return Promise.all(rows.map(function(r){ return btTnDbDelete('images', r.key); }));
@@ -17094,6 +17099,181 @@ function sharePoseResultImage() {
   };
   window.btTn = btTnApi;
 
+  /* ---------- クラウド同期（対戦表・結果・注目リストのみ／写真は同期しない） ----------
+     - 大会レコードは IndexedDB が正。ログイン中だけ Supabase tournament_data と同期する
+     - 競合解決は updatedAt の last-writer-wins。未ログイン・通信エラー時は静かに端末動作のみ */
+  var BT_TN_SB_URL = 'https://bgmngjwkfcvapcdtkcpx.supabase.co';
+  var BT_TN_SB_KEY = 'sb_publishable_ji-jxS2T-VnXBjvfVkJ8pw_7r-_QOAG';
+  var btTnSb = null;
+  var btTnCloudUser = null;
+  var btTnSyncState = 'local';   // 'local' | 'cloud'
+  var btTnSyncBusy = false;
+  var btTnCloudRetry = 0;
+  var btTnPushTimers = {};
+  var btTnPushPending = {};
+
+  function btTnCloudInit(){
+    if (btTnSb) return btTnSb;
+    if (typeof window !== 'undefined' && window.supabase && window.supabase.createClient) {
+      try { btTnSb = window.supabase.createClient(BT_TN_SB_URL, BT_TN_SB_KEY); } catch (e) { btTnSb = null; }
+    }
+    return btTnSb;
+  }
+  function btTnSetSyncState(s){
+    btTnSyncState = s;
+    btTnRefreshSyncStatus();
+  }
+  function btTnRefreshSyncStatus(){
+    if (typeof document === 'undefined' || !document.getElementById) return;
+    var el = document.getElementById('btTnSyncStatus');
+    if (!el) return;
+    el.textContent = btTnSyncState === 'cloud'
+      ? '☁️ クラウド同期：ログイン中（対戦表・結果のみ同期／写真は端末内のみ）'
+      : '📱 端末のみに保存中（ログインすると対戦表・結果がクラウド同期されます）';
+  }
+  /* 同期ペイロード：写真は大会レコードに含まれない（imagesストア分離）が、
+     明示フィールドのみで構築し、写真データが混入しないことを保証する */
+  function btTnCloudPayload(tn){
+    if (!tn || !tn.id) return null;
+    return {
+      id: tn.id,
+      name: tn.name || '',
+      createdAt: tn.createdAt || 0,
+      updatedAt: tn.updatedAt || 0,
+      divisions: btTnClone(tn.divisions || []),
+      schedule: btTnClone(tn.schedule || []),
+      watch: btTnClone(Array.isArray(tn.watch) ? tn.watch : [])
+    };
+  }
+  function btTnCloudUpsert(tn){
+    if (!btTnSb || !btTnCloudUser || !tn) return Promise.resolve(false);
+    var rec = btTnCloudPayload(tn);
+    if (!rec) return Promise.resolve(false);
+    var row = {
+      user_id: btTnCloudUser.id,
+      tournament_id: rec.id,
+      name: rec.name,
+      data: rec,
+      updated_at: new Date(rec.updatedAt || Date.now()).toISOString()
+    };
+    var p;
+    try { p = btTnSb.from('tournament_data').upsert(row, { onConflict: 'user_id,tournament_id' }); }
+    catch (e) { console.warn('[badtore tournament] クラウド送信失敗', e); return Promise.resolve(false); }
+    return Promise.resolve(p).then(function(res){
+      if (res && res.error) throw res.error;
+      btTnSetSyncState('cloud');
+      return true;
+    }).catch(function(e){ console.warn('[badtore tournament] クラウド送信失敗', e); return false; });
+  }
+  /* 保存が連続してもよいよう、大会ごとに少し待ってから最新状態を送る */
+  function btTnCloudPushSoon(tn){
+    if (!btTnSb || !btTnCloudUser || !tn || !tn.id) return;
+    btTnPushPending[tn.id] = btTnClone(tn);
+    if (btTnPushTimers[tn.id]) clearTimeout(btTnPushTimers[tn.id]);
+    btTnPushTimers[tn.id] = setTimeout(function(){
+      delete btTnPushTimers[tn.id];
+      var rec = btTnPushPending[tn.id];
+      delete btTnPushPending[tn.id];
+      if (rec) btTnCloudUpsert(rec);
+    }, 600);
+  }
+  function btTnCloudDelete(tnId){
+    if (!btTnSb || !btTnCloudUser || !tnId) return Promise.resolve(false);
+    var p;
+    try { p = btTnSb.from('tournament_data').delete().eq('user_id', btTnCloudUser.id).eq('tournament_id', tnId); }
+    catch (e) { console.warn('[badtore tournament] クラウド削除失敗', e); return Promise.resolve(false); }
+    return Promise.resolve(p).then(function(res){
+      if (res && res.error) throw res.error;
+      return true;
+    }).catch(function(e){ console.warn('[badtore tournament] クラウド削除失敗', e); return false; });
+  }
+  /* ローカル一覧とクラウドレコード群のマージ（純粋関数）：
+     クラウドのみ→取り込み(toSave)、両方あり→updatedAt が新しい方
+     （ローカルが新しければ toPush）、ローカルのみ→ toPush。
+     戻り値 { list, toSave, toPush }（list は createdAt 降順） */
+  function btTnMergeCloud(localList, cloudRecs){
+    var localById = {}, cloudById = {};
+    (localList || []).forEach(function(t){ if (t && t.id) localById[t.id] = t; });
+    (cloudRecs || []).forEach(function(t){ if (t && t.id) cloudById[t.id] = t; });
+    var toSave = [], toPush = [], mergedById = {};
+    Object.keys(localById).forEach(function(id){
+      var l = localById[id], c = cloudById[id];
+      if (!c) { mergedById[id] = l; toPush.push(l); }
+      else if ((l.updatedAt || 0) > (c.updatedAt || 0)) { mergedById[id] = l; toPush.push(l); }
+      else if ((c.updatedAt || 0) > (l.updatedAt || 0)) { mergedById[id] = c; toSave.push(c); }
+      else mergedById[id] = l;
+    });
+    Object.keys(cloudById).forEach(function(id){
+      if (!localById[id]) { mergedById[id] = cloudById[id]; toSave.push(cloudById[id]); }
+    });
+    var list = Object.keys(mergedById).map(function(id){ return mergedById[id]; });
+    list.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+    return { list: list, toSave: toSave, toPush: toPush };
+  }
+  function btTnCloudPull(){
+    if (!btTnSb || !btTnCloudUser || btTnSyncBusy) return Promise.resolve(false);
+    btTnSyncBusy = true;
+    var p;
+    try { p = btTnSb.from('tournament_data').select('tournament_id,name,data,updated_at').eq('user_id', btTnCloudUser.id); }
+    catch (e) { btTnSyncBusy = false; console.warn('[badtore tournament] クラウド取得失敗', e); return Promise.resolve(false); }
+    return Promise.resolve(p).then(function(res){
+      if (res && res.error) throw res.error;
+      var rows = (res && res.data) || [];
+      var cloudRecs = [];
+      rows.forEach(function(r){
+        if (!r || !r.data || !r.data.id) return;
+        var rec = r.data;
+        if (!rec.updatedAt) rec.updatedAt = r.updated_at ? (Date.parse(r.updated_at) || 0) : 0;
+        if (!rec.createdAt) rec.createdAt = rec.updatedAt;
+        cloudRecs.push(rec);
+      });
+      var merged = btTnMergeCloud(btTnState.list, cloudRecs);
+      btTnState.list = merged.list;
+      var curExists = merged.list.some(function(t){ return t.id === btTnState.currentId; });
+      if (!curExists) btTnState.currentId = merged.list.length ? merged.list[0].id : null;
+      /* クラウド側が新しいレコードは updatedAt を書き換えずにそのまま端末へ保存する */
+      var saves = merged.toSave.map(function(rec){ return btTnDbPut('tournaments', btTnClone(rec)); });
+      return Promise.all(saves).then(function(){
+        return Promise.all(merged.toPush.map(function(rec){ return btTnCloudUpsert(rec); }));
+      }).then(function(){
+        btTnSetSyncState('cloud');
+        var cur = btTnCurrent();
+        return (cur ? btTnLoadImages(cur.id) : Promise.resolve()).then(function(){
+          btTnRender();
+          return true;
+        });
+      });
+    }).catch(function(e){
+      console.warn('[badtore tournament] クラウド取得失敗', e);
+      return false;
+    }).then(function(v){
+      btTnSyncBusy = false;
+      return v;
+    });
+  }
+  function btTnCloudStart(){
+    var sb = btTnCloudInit();
+    if (!sb) {
+      if (btTnCloudRetry < 10) { btTnCloudRetry++; setTimeout(btTnCloudStart, 500); }
+      return;
+    }
+    try {
+      sb.auth.getSession().then(function(r){
+        var session = (r && r.data) ? r.data.session : null;
+        btTnCloudUser = session ? session.user : null;
+        if (btTnCloudUser) btTnCloudPull();
+        else btTnSetSyncState('local');
+      }).catch(function(){ /* 未ログイン・SDK不調時は端末動作のみ */ });
+      sb.auth.onAuthStateChange(function(event, session){
+        var user = session ? session.user : null;
+        var prevId = btTnCloudUser ? btTnCloudUser.id : null;
+        btTnCloudUser = user;
+        if (user && prevId !== user.id) btTnCloudPull();
+        else if (!user) btTnSetSyncState('local');
+      });
+    } catch (e) { console.warn('[badtore tournament] クラウド初期化失敗', e); }
+  }
+
   /* ---------- 起動 ---------- */
   function btTnBoot(){
     try {
@@ -17105,13 +17285,15 @@ function sharePoseResultImage() {
       card.id = 'btTnCard';
       card.innerHTML = btTnCardHtml();
       sec.appendChild(card);
+      btTnRefreshSyncStatus();
       btTnDbGetAll('tournaments').then(function(rows){
         rows = rows || [];
         rows.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
         btTnState.list = rows;
         btTnState.currentId = rows.length ? rows[0].id : null;
         return btTnState.currentId ? btTnLoadImages(btTnState.currentId) : null;
-      }).then(btTnRender).catch(function(){ btTnRender(); });
+      }).then(btTnRender).catch(function(){ btTnRender(); })
+      .then(function(){ btTnCloudStart(); });
     } catch (e) { console.warn('[badtore tournament] boot失敗', e); }
   }
   if (typeof document !== 'undefined' && document.getElementById) {
@@ -17151,6 +17333,14 @@ function sharePoseResultImage() {
     resultSummaryHtml: btTnResultSummaryHtml,
     listHtml: btTnListHtml,
     editorHtml: btTnEditorHtml,
+    cloudPayload: btTnCloudPayload,
+    cloudMerge: btTnMergeCloud,
+    cloudUpsert: btTnCloudUpsert,
+    cloudDelete: btTnCloudDelete,
+    cloudPull: btTnCloudPull,
+    setCloudClient: function(c){ btTnSb = c; },
+    setCloudUser: function(u){ btTnCloudUser = u; },
+    getSyncState: function(){ return { state: btTnSyncState, user: btTnCloudUser ? btTnCloudUser.id : null, busy: btTnSyncBusy }; },
     state: btTnState,
     api: btTnApi
   };
