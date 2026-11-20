@@ -13175,6 +13175,7 @@ function sharePoseResultImage() {
   var SUPABASE_URL = "https://bgmngjwkfcvapcdtkcpx.supabase.co";
   var SUPABASE_KEY = "sb_publishable_ji-jxS2T-VnXBjvfVkJ8pw_7r-_QOAG";
   var PRICE_LABEL = "月額 ¥500";
+  var BILLING_COMING_SOON = true; // true の間は課金を「近日公開」にし、購入導線（チェックアウト/ポータル）を止める。公開時は false に戻すだけ
   var sb = null;
   var bill = { known: false, loggedIn: false, email: "", isTester: false, subStatus: null, periodEnd: null };
 
@@ -13218,8 +13219,8 @@ function sharePoseResultImage() {
     var sub = document.getElementById("btBillingSubscribeBtn");
     var por = document.getElementById("btBillingPortalBtn");
     var pro = bill.loggedIn && (bill.isTester || bill.subStatus === "active" || bill.subStatus === "trialing");
-    if (sub) sub.style.display = (bill.loggedIn && !pro) ? "" : "none";
-    if (por) por.style.display = (bill.loggedIn && !bill.isTester && (bill.subStatus === "active" || bill.subStatus === "trialing" || bill.subStatus === "past_due")) ? "" : "none";
+    if (sub) sub.style.display = (!BILLING_COMING_SOON && bill.loggedIn && !pro) ? "" : "none";
+    if (por) por.style.display = (!BILLING_COMING_SOON && bill.loggedIn && !bill.isTester && (bill.subStatus === "active" || bill.subStatus === "trialing" || bill.subStatus === "past_due")) ? "" : "none";
   }
 
   async function refresh() {
@@ -13260,6 +13261,7 @@ function sharePoseResultImage() {
     location.href = j.url;
   }
   async function startCheckout() {
+    if (BILLING_COMING_SOON) { setStatus("🚀 Proプランは近日公開予定です。もう少しお待ちください。", false); return; }
     setStatus("決済ページを準備しています…", true);
     try { await callBillingFn("create-checkout"); }
     catch (e) { setStatus("決済機能は現在準備中です。もう少しお待ちください。", false); closeUpgradeModal(); }
@@ -13287,11 +13289,13 @@ function sharePoseResultImage() {
     wrap.innerHTML =
       '<div style="background:#ffffff;color:#0f172a;border-radius:16px;max-width:420px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,0.4);">' +
       '<div style="font-weight:900;font-size:1.05rem;margin-bottom:6px;">AI診断は Pro プランの機能です</div>' +
-      '<div style="font-size:0.85rem;line-height:1.6;color:#334155;">AIプロコーチ深掘り診断と診断結果の共有は、Proプラン（' + PRICE_LABEL + '）でご利用いただけます。トレーニング・記録などの基本機能は無料のまま使えます。</div>' +
-      (loggedIn
-        ? '<button id="btUpgradeBuyBtn" style="width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:#0ea5e9;color:#fff;font-weight:900;font-size:0.95rem;cursor:pointer;">Proに申し込む（' + PRICE_LABEL + '）</button>'
-        : '<button id="btUpgradeLoginBtn" style="width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:#0ea5e9;color:#fff;font-weight:900;font-size:0.95rem;cursor:pointer;">ログインして申し込む</button>') +
-      '<button id="btUpgradeTesterBtn" style="width:100%;margin-top:8px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#0f172a;font-weight:800;font-size:0.85rem;cursor:pointer;">テスターコードをお持ちの方</button>' +
+      (BILLING_COMING_SOON
+        ? '<div style="font-size:0.85rem;line-height:1.6;color:#334155;">AIプロコーチ深掘り診断と診断結果の共有は、Proプランでご利用いただける機能です。<br>🚀 <b>Proプランは近日公開予定です。</b>公開までもう少しお待ちください。トレーニング・記録などの基本機能は無料のまま使えます。</div>'
+        : '<div style="font-size:0.85rem;line-height:1.6;color:#334155;">AIプロコーチ深掘り診断と診断結果の共有は、Proプラン（' + PRICE_LABEL + '）でご利用いただけます。トレーニング・記録などの基本機能は無料のまま使えます。</div>' +
+          (loggedIn
+            ? '<button id="btUpgradeBuyBtn" style="width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:#0ea5e9;color:#fff;font-weight:900;font-size:0.95rem;cursor:pointer;">Proに申し込む（' + PRICE_LABEL + '）</button>'
+            : '<button id="btUpgradeLoginBtn" style="width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:#0ea5e9;color:#fff;font-weight:900;font-size:0.95rem;cursor:pointer;">ログインして申し込む</button>') +
+          '<button id="btUpgradeTesterBtn" style="width:100%;margin-top:8px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#0f172a;font-weight:800;font-size:0.85rem;cursor:pointer;">テスターコードをお持ちの方</button>') +
       '<button id="btUpgradeCloseBtn" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:10px;background:transparent;color:#64748b;font-weight:800;font-size:0.85rem;cursor:pointer;">閉じる</button>' +
       '</div>';
     document.body.appendChild(wrap);
@@ -13343,7 +13347,9 @@ function sharePoseResultImage() {
     card.innerHTML =
       '<h3 style="margin-bottom:6px;">プラン</h3>' +
       '<div style="font-size:0.82rem;">現在のプラン: <b id="btBillingPlan">確認中…</b></div>' +
-      '<div style="font-size:0.76rem;color:var(--text-secondary);margin:4px 0 8px;">Proプラン（' + PRICE_LABEL + '）: AIプロコーチ深掘り診断・診断結果の共有が使えます。基本機能は無料です。</div>' +
+      (BILLING_COMING_SOON
+        ? '<div style="margin:4px 0 8px;"><span style="font-size:0.85rem;">🚀 <b>個人Proプランは近日公開予定です</b></span><br><span style="font-size:0.76rem;color:var(--text-secondary);">AIプロコーチ深掘り診断・診断結果の共有が使えるようになります。基本機能は無料のまま使えます。</span></div>'
+        : '<div style="font-size:0.76rem;color:var(--text-secondary);margin:4px 0 8px;">Proプラン（' + PRICE_LABEL + '）: AIプロコーチ深掘り診断・診断結果の共有が使えます。基本機能は無料です。</div>') +
       '<button class="btn btn-cyan" id="btBillingSubscribeBtn" style="display:none;padding:8px 12px;font-size:0.8rem;">Proに申し込む</button> ' +
       '<button class="btn btn-slate" id="btBillingPortalBtn" style="display:none;padding:8px 12px;font-size:0.8rem;">契約を管理する（解約・カード変更）</button>' +
       '<div id="btBillingStatus" style="font-size:0.78rem;margin-top:6px;min-height:1em;"></div>';
@@ -13382,7 +13388,7 @@ function sharePoseResultImage() {
   }
 
   window.__bt_billing = {
-    state: function () { return { known: bill.known, loggedIn: bill.loggedIn, isTester: bill.isTester, subStatus: bill.subStatus, ownKey: hasOwnKey() }; },
+    state: function () { return { known: bill.known, loggedIn: bill.loggedIn, isTester: bill.isTester, subStatus: bill.subStatus, ownKey: hasOwnKey(), comingSoon: BILLING_COMING_SOON }; },
     isPro: isPro,
     refresh: refresh,
     openUpgradeModal: openUpgradeModal,
