@@ -3600,7 +3600,7 @@
 
           <div class="card-title">🏸 4大ブランド別 ラケット＆ガット診断カルテ</div>
 
-          <span class="badge-version">メンバー＆AI実測連動</span>
+          <span class="badge-version">メンバー設定＆実測連動</span>
 
         </div>
 
@@ -9182,6 +9182,8 @@
 
       let totalScore = 80;
 
+      let scoreComponents = null;
+
       let goodPoints = [];
 
       let improvePoints = [];
@@ -9191,6 +9193,8 @@
       if (shot === 'ready_stance') {
 
         totalScore = Math.round(aiMetrics.wristKeepPt * 0.3 + aiMetrics.wristStandPt * 0.15 + aiMetrics.kneePt * 0.3 + aiMetrics.stabilityPt * 0.25);
+
+        scoreComponents = [aiMetrics.wristKeepPt, aiMetrics.wristStandPt, aiMetrics.kneePt, aiMetrics.stabilityPt];
 
 
 
@@ -9218,6 +9222,8 @@
 
         totalScore = Math.round(lowerBest * 0.55 + maxSp * 0.45);
 
+        scoreComponents = [lowerBest, maxSp];
+
 
 
         if (minKn <= model.idealKnee + 8) goodPoints.push(`下半身の沈み込み（最深膝角 ${minKn}°）が目標基準（${model.idealKnee}°）に達しており、低い重心から安定したラケット面が作れています。`);
@@ -9244,6 +9250,8 @@
 
           totalScore = Math.round(upperBest * 0.30 + lowerBest * 0.20 + maxSp * 0.20 + j.jumpPt * 0.30);
 
+          scoreComponents = [upperBest, lowerBest, maxSp, j.jumpPt];
+
 
 
           if (maxSh >= model.idealShoulder - 5) goodPoints.push(`空中でも最大肩挙上角 ${maxSh}°（肘伸展 ${maxEl}°）と高い打点を保てています。`);
@@ -9268,6 +9276,8 @@
 
           totalScore = Math.round(upperBest * 0.40 + lowerBest * 0.30 + maxSp * 0.30);
 
+          scoreComponents = [upperBest, lowerBest, maxSp];
+
 
 
           if (maxSh >= model.idealShoulder - 5) goodPoints.push(`最大肩挙上角 ${maxSh}°（肘伸展 ${maxEl}°）と理想ターゲットレベルの高い打点でシャトルを捉えられています。`);
@@ -9287,6 +9297,8 @@
         const lowerBest = minKn <= (model.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8);
 
         totalScore = Math.round(upperBest * 0.40 + lowerBest * 0.30 + maxSp * 0.30);
+
+        scoreComponents = [upperBest, lowerBest, maxSp];
 
 
 
@@ -9397,12 +9409,13 @@
         goodPoints: goodPoints.slice(),
         improvePoints: improvePoints.slice(),
         shot: shot,
+        components: scoreComponents,
         maxSh: maxSh, maxEl: maxEl, minKn: minKn, maxSp: maxSp,
         profileName: (typeof userProfile !== 'undefined' && userProfile && userProfile.name) ? userProfile.name : '',
         dateText: new Date().toLocaleDateString('ja-JP')
       };
 
-      lastPoseDiagnosisResult = { ok: true, score: totalScore, shot: shot, reason: '' };
+      lastPoseDiagnosisResult = { ok: true, score: totalScore, shot: shot, reason: '', components: scoreComponents };
 
 
     }
@@ -10095,6 +10108,14 @@
 
       const effectiveSpeed = aiMetrics.maxSpeedPt > 0 ? aiMetrics.maxSpeedPt : (userProfile.power === 'high' ? 88 : userProfile.power === 'low' ? 68 : 78);
 
+      // 速度指数が実測か、未測定時の標準値（パワー設定からの固定値）かを区別して表示する。
+      // 未測定の数値を実測のように見せないため（AI診断レビュー 2026-11-19 §5）。
+      const speedIsMeasured = aiMetrics.maxSpeedPt > 0;
+
+      const speedSentence = speedIsMeasured
+        ? `速度指数（${effectiveSpeed}pt・実測）から最適モデルを提案します。`
+        : `速度指数は未測定のため、パワー設定からの標準値（${effectiveSpeed}pt）で最適モデルを提案します。骨格AIで測定すると実測の速度指数に切り替わります。`;
+
 
 
       summaryBox.innerHTML = `
@@ -10103,7 +10124,7 @@
 
         <div style="font-size:0.8rem; color:#e2e8f0;">
 
-          身長 ${userProfile.height}cm・パワー設定（${userProfile.power}）・スタイル（${userProfile.style}）・AI速度指数（${effectiveSpeed}pt）から最適モデルを提案します。
+          身長 ${userProfile.height}cm・パワー設定（${userProfile.power}）・スタイル（${userProfile.style}）・${speedSentence}
 
         </div>
 
@@ -10565,11 +10586,10 @@
     }
     function getActivePinnedList() {
       if (!pinnedFocusDB[activeProfileId]) {
-        const today = btFocusTodayStr();
-        pinnedFocusDB[activeProfileId] = [
-          { key: 'excess_bounce', text: AI_CAUSE_PRESCRIPTIONS.excess_bounce.shortPin, done: false, date: today },
-          { key: 'racket_drop', text: AI_CAUSE_PRESCRIPTIONS.racket_drop.shortPin, done: false, date: today }
-        ];
+        // 新規プロフィールの初期ピンは空にする。未測定のまま「弱点」系ピンを入れると、
+        // 診断されていない課題が自分の課題に見えてしまうため（AI診断レビュー 2026-11-19 §2）。
+        // 既存プロフィールに保存済みのピンはここでは変更しない。
+        pinnedFocusDB[activeProfileId] = [];
       }
       const list = pinnedFocusDB[activeProfileId];
       btFocusRolloverIfNeeded(list);
@@ -10641,10 +10661,22 @@
       renderHeaderLevelAndFocusBarUI(); renderMiniDotCalendarUI();
     };
 
-    function getScoreRankMeta(s) {
-      if (s >= 88) return { rank: 'S', label: 'Sランク (プロ級)', color: '#fde047', bg: 'rgba(250,204,21,0.18)' };
-      if (s >= 78) return { rank: 'A', label: 'Aランク (優秀)', color: '#34d399', bg: 'rgba(16,185,129,0.18)' };
-      if (s >= 66) return { rank: 'B', label: 'Bランク (あと少し)', color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' };
+    // ランク帯域（2026-11-20 調整）: S>=90 / A>=80 / B>=68 / C<68（旧: S>=88 / A>=78 / B>=66）。
+    // さらに S には内訳の下限条件を課す：スコア内訳（comps）の最小値が 60 未満のときは、
+    // 総合が高くても S にせず A とする（速度指数の飽和だけで S になるのを防ぐ）。
+    // comps が渡されない呼び出し（保存済みベストの表示など）では従来どおり総合点のみで判定する。
+    function getScoreRankMeta(s, comps) {
+      if (s >= 90) {
+        if (Array.isArray(comps)) {
+          const nums = comps.filter(v => typeof v === 'number' && isFinite(v));
+          if (nums.length >= 2 && Math.min.apply(null, nums) < 60) {
+            return { rank: 'A', label: 'Aランク (優秀)', color: '#34d399', bg: 'rgba(16,185,129,0.18)' };
+          }
+        }
+        return { rank: 'S', label: 'Sランク (トップレベル)', color: '#fde047', bg: 'rgba(250,204,21,0.18)' };
+      }
+      if (s >= 80) return { rank: 'A', label: 'Aランク (優秀)', color: '#34d399', bg: 'rgba(16,185,129,0.18)' };
+      if (s >= 68) return { rank: 'B', label: 'Bランク (あと少し)', color: '#38bdf8', bg: 'rgba(56,189,248,0.18)' };
       return { rank: 'C', label: 'Cランク (重点改善)', color: '#fb7185', bg: 'rgba(244,63,94,0.18)' };
     }
 
@@ -11048,7 +11080,7 @@
         return;
       }
       const score = diag.score;
-      const rk = getScoreRankMeta(score);
+      const rk = getScoreRankMeta(score, diag.components);
       document.getElementById('overallScoreBadge').textContent = `${rk.rank}ランク (${score}pt)`;
       // 弱点の自動判定: セッション集計（手首NG割合・セッション最大の体幹傾き）と、実測できる打点の低さで判定する。
       // どの条件にも当てはまらない場合は弱点を断定せず、「弱点なし＋スコア内訳からのテーマ候補」を提示する。
@@ -11120,7 +11152,7 @@
                 <div class="form-group"><label>📂 保存済みマイメニュー呼出</label><div style="display:grid;grid-template-columns:1fr auto;gap:4px;"><select id="savedMenusSelect" onchange="loadSelectedMyMenu(this.value)"></select><button class="btn btn-rose" style="padding:6px 8px;" onclick="deleteSelectedMyMenu()">🗑️</button></div></div>
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                <label class="theme-check-pill"><input type="checkbox" id="chkThemeAIWeak" checked/> 🎯 ピン留め課題・AI弱点</label>
+                <label class="theme-check-pill"><input type="checkbox" id="chkThemeAIWeak" checked/> 🎯 ピン留め課題・重点テーマ</label>
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeUnweight" checked/> 👟 抜重・一歩目＆リズム</label>
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeFootwork" checked/> 🦶 フットワーク＆ランジ軸</label>
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeFeeding" checked/> 🔄 手投げ分解ノック(回内)</label>
@@ -11194,7 +11226,7 @@
 
     function addPrescriptionToMenuPlan(k) {
       const p = AI_CAUSE_PRESCRIPTIONS[k] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
-      currentMenuPlan.items.push({ id: "m_" + Date.now(), cat: "AI処方", name: `3ステップ：『${p.drillName}』`, minutes: p.menuMin || 15, note: p.step1, linkTab: "tab-footwork", fwPreset: p.fwPreset, done: false });
+      currentMenuPlan.items.push({ id: "m_" + Date.now(), cat: "課題別ドリル", name: `3ステップ：『${p.drillName}』`, minutes: p.menuMin || 15, note: p.step1, linkTab: "tab-footwork", fwPreset: p.fwPreset, done: false });
       saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI(); switchTab('tab-menu'); playBeep(1120, 110);
     }
 
@@ -12290,10 +12322,15 @@
     function buildFullTelemetryCarteText() {
       const shot = document.getElementById('shotTypeSelect').value, m = SHOT_IDEAL_MODELS[shot] || SHOT_IDEAL_MODELS.smash;
       const maxSh = aiMetrics.maxShoulderDeg || aiMetrics.shoulderDeg || 0, maxEl = aiMetrics.maxElbowDeg || aiMetrics.elbowDeg || 0;
-      const minKn = aiMetrics.minKneeDeg === 180 ? (aiMetrics.kneeDeg || 145) : aiMetrics.minKneeDeg;
+      // 測定できた数値だけをカルテに載せる。未測定の項目は代用値を入れず「未測定」と明記する
+      // （旧実装は膝が未測定のとき 145° を測定値として送っていた。AI診断レビュー 2026-11-19 §4.1）。
+      // 膝の未測定はセンチネル値 180（初期値）で判定する。肩・肘は 0 を未測定とみなす。
+      const shText = maxSh > 0 ? `${maxSh}°(理想${m.idealShoulder}°)` : '未測定';
+      const elText = maxEl > 0 ? `${maxEl}°` : '未測定';
+      const knText = (typeof aiMetrics.minKneeDeg === 'number' && aiMetrics.minKneeDeg !== 180) ? `${aiMetrics.minKneeDeg}°(理想${m.idealKnee}°)` : '未測定';
       const avgRx = (rxState.resultsMs && rxState.resultsMs.length) ? Math.round(rxState.resultsMs.reduce((a,b)=>a+b,0)/rxState.resultsMs.length) + "ms" : "未測定";
       const spKmh = shuttleSpeedState.lastV0Kmh ? `推定初速 ${shuttleSpeedState.lastV0Kmh}km/h` : "未計測";
-      return `【バドトレPRO 測定カルテ】\n・選手:${userProfile.name}(${userProfile.height}cm/${userProfile.hand==='left'?'左利き':'右利き'})\n・種目:${m.title}\n・最大肩角(打点):${maxSh}°(理想${m.idealShoulder}°), 最大肘角:${maxEl}°, 最深膝角:${minKn}°(理想${m.idealKnee}°), 体幹傾き:${aiMetrics.coreTiltDeg}°, リストスタンド:${aiMetrics.isWristStandOk?'OK':'寝すぎ'}, 静止安定度:${aiMetrics.stabilityPt}pt, 初速:${avgRx}, 球速:${spKmh}\nこのデータと画像から、①崩れの根本原因、②今日意識する1点、③おすすめの自宅筋トレ(回数付き)を指導してください。`;
+      return `【バドトレPRO 測定カルテ】\n・選手:${userProfile.name}(${userProfile.height}cm/${userProfile.hand==='left'?'左利き':'右利き'})\n・種目:${m.title}\n・最大肩角(打点):${shText}, 最大肘角:${elText}, 最深膝角:${knText}, 体幹傾き:${aiMetrics.coreTiltDeg}°, リストスタンド:${aiMetrics.isWristStandOk?'OK':'寝すぎ'}, 静止安定度:${aiMetrics.stabilityPt}pt, 初速:${avgRx}, 球速:${spKmh}\nこのデータと画像から、①崩れの根本原因、②今日意識する1点、③おすすめの自宅筋トレ(回数付き)を指導してください。なお、対象は中学生です。提案（特に自宅筋トレの負荷・回数）は中学生向けに負荷を抑えた内容にしてください。「未測定」の項目は測定できていない前提で、数値を推測して断定しないでください。`;
     }
 
     async function shareImageAndCarteToProChat() {
@@ -12463,7 +12500,7 @@ function sharePoseResultImage() {
     ctx.fillStyle = '#94a3b8'; ctx.font = '700 44px ' + FONT;
     ctx.fillText('/ 100 pt', PAD + scoreW + 24, y + 92);
     if (typeof getScoreRankMeta === 'function') {
-      const rk = getScoreRankMeta(d.score);
+      const rk = getScoreRankMeta(d.score, d.components);
       const unitW = ctx.measureText('/ 100 pt').width;
       ctx.fillStyle = '#fbbf24'; ctx.font = '900 52px ' + FONT;
       ctx.fillText('🏆 ' + rk.rank + 'ランク', PAD + scoreW + 24 + unitW + 40, y + 26);
@@ -12686,7 +12723,7 @@ function sharePoseResultImage() {
   var LS_KEY="bt_v105_routine_"+todayKey();
   function getDone(){ return loadJSON(LS_KEY, {}); }
   function calcXP(done){ var s=0; getRoutines().forEach(function(r){ if(done[r.id]) s+=r.xp; }); return s; }
-  window.__bt_routinesCustom={ get:getRoutines, save:saveRoutines, calcXP:calcXP };
+  window.__bt_routinesCustom={ get:getRoutines, save:saveRoutines, calcXP:calcXP, groups:ROUTINE_GROUPS, xpTiers:XP_TIERS };
 
   function openRoutine(){
     var old=$("#bt-routine-modal"); if(old) old.remove();
@@ -14200,6 +14237,10 @@ function sharePoseResultImage() {
      カード要約化（手順・目安・出典・安全注意は詳細モーダルへ集約）＋
      参考選手・方式フィルタ（カテゴリとAND条件）＋追加後の
      「作業中メニューを見る」導線（固定フィードバックバー）
+   - ルーティン連携（設計ステップ4、2026-11-20）：詳細モーダルから既存の
+     マイルーティンへ追加（window.__bt_routinesCustom 橋渡し経由。
+     id='drill_<ドリルID>' で重複防止、グループとXPはカテゴリ・所要時間・
+     負荷からの初期提案を追加時に変更可。高負荷ドリルには注意書きを表示）
    ========================================================================= */
 (function(){
   'use strict';
@@ -15668,6 +15709,7 @@ function sharePoseResultImage() {
       + '<div class="bt-drill-src">出典：<br>' + src + '</div>'
       + safety
       + '<div class="bt-drill-safety-note">⚠️ ' + BT_DRILL_SAFETY_COMMON + '</div>'
+      + btDrillRoutineSectionHtml(d)
       + '<div class="bt-drill-card-actions">'
       + '<button type="button" class="bt-drill-btn bt-drill-btn-add" onclick="btDrillAddToMenu(\'' + d.id + '\', this)">＋ 作業中メニューに追加</button>'
       + '</div>'
@@ -15817,6 +15859,107 @@ function sharePoseResultImage() {
     return count;
   }
 
+  /* ===== ドリル集 → マイルーティン連携（設計ステップ4） =====
+     追加先は既存のマイルーティン（localStorage 'bt_v105_routines_custom'、4グループ＋
+     XP 3段階）。ルーティン側の橋渡し window.__bt_routinesCustom（get/save/groups/xpTiers）
+     経由で読み書きする。追加項目の id は 'drill_<ドリルID>' で固定し、重複追加を防ぐ。
+     保存時のサニタイズでも id は保持されるため、追加後は通常のカスタム項目と
+     同じようにルーティンの編集画面で編集・削除できる。 */
+  var BT_DRILL_ROUTINE_GROUP_BY_CATEGORY = {
+    'フットワーク': 'practice',
+    '筋力・フィジカル': 'strength',
+    'ノック・多球': 'practice',
+    '守備': 'practice',
+    '前衛・ダブルス': 'practice',
+    'ジャンプ・空中動作': 'strength',
+    '反応・スピード': 'practice'
+  };
+  var BT_DRILL_ROUTINE_GROUPS_FALLBACK = [
+    { key: 'warmup', icon: '🏃', name: 'ウォームアップ' },
+    { key: 'practice', icon: '🏸', name: 'フットワーク・練習' },
+    { key: 'strength', icon: '💪', name: '筋トレ' },
+    { key: 'review', icon: '📝', name: '振り返り' }
+  ];
+
+  function btDrillRoutineBridge() {
+    var b = (typeof window !== 'undefined') ? window.__bt_routinesCustom : null;
+    return (b && typeof b.get === 'function' && typeof b.save === 'function') ? b : null;
+  }
+
+  function btDrillRoutineDefaultGroup(d) {
+    return BT_DRILL_ROUTINE_GROUP_BY_CATEGORY[d.category] || 'practice';
+  }
+
+  /* XPの初期値：所要時間と負荷から、既存の3段階（10/20/30）に寄せる */
+  function btDrillRoutineDefaultXp(d) {
+    var mins = Number(d.durationMin) || 10;
+    if (d.riskLevel === '高負荷') return mins >= 15 ? 30 : 20;
+    if (mins >= 25) return 30;
+    if (mins >= 10) return 20;
+    return 10;
+  }
+
+  function btDrillRoutineSectionHtml(d) {
+    var bridge = btDrillRoutineBridge();
+    var groups = (bridge && bridge.groups && bridge.groups.length) ? bridge.groups : BT_DRILL_ROUTINE_GROUPS_FALLBACK;
+    var tiers = (bridge && bridge.xpTiers && bridge.xpTiers.length) ? bridge.xpTiers : [10, 20, 30];
+    var defGroup = btDrillRoutineDefaultGroup(d);
+    var defXp = btDrillRoutineDefaultXp(d);
+    var gOpts = groups.map(function(g){
+      return '<option value="' + g.key + '"' + (g.key === defGroup ? ' selected' : '') + '>' + g.icon + ' ' + g.name + '</option>';
+    }).join('');
+    var tierLabel = { 10: '軽め', 20: '標準', 30: 'しっかり' };
+    var xOpts = tiers.map(function(t){
+      return '<option value="' + t + '"' + (t === defXp ? ' selected' : '') + '>' + (tierLabel[t] || '') + ' ' + t + 'XP</option>';
+    }).join('');
+    var riskNote = (d.riskLevel === '高負荷')
+      ? '<div class="bt-drill-routine-note">⚠️ 高負荷ドリルです。毎日のルーティンではなく、間隔をあけて取り入れてください。</div>' : '';
+    return '<div class="bt-drill-detail-sec">🔥 マイルーティンに追加</div>'
+      + '<div class="bt-drill-routine-row">'
+      + '<select id="btDrillRoutineGroup" class="bt-drill-select" aria-label="ルーティンのグループ">' + gOpts + '</select>'
+      + '<select id="btDrillRoutineXp" class="bt-drill-select" aria-label="XP">' + xOpts + '</select>'
+      + '<button type="button" class="bt-drill-btn bt-drill-btn-add" onclick="btDrillAddToRoutine(\'' + d.id + '\', this)">🔥 ルーティンに追加</button>'
+      + '</div>'
+      + riskNote
+      + '<div class="bt-drill-add-status" id="btDrillRoutineStatus"></div>';
+  }
+
+  function btDrillAddToRoutine(id, btn) {
+    var d = btDrillById(id);
+    if (!d) return -1;
+    var st = document.getElementById('btDrillRoutineStatus');
+    var bridge = btDrillRoutineBridge();
+    if (!bridge) {
+      if (st) st.textContent = '⚠️ ルーティン機能に接続できませんでした';
+      return -1;
+    }
+    var rid = 'drill_' + d.id;
+    var items = bridge.get() || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i] && items[i].id === rid) {
+        if (st) st.textContent = 'ℹ️ このドリルはすでにルーティンに追加されています（変更はルーティンの編集からできます）';
+        btDrillFlashButton(btn, '追加済みです');
+        return 0;
+      }
+    }
+    var gSel = document.getElementById('btDrillRoutineGroup');
+    var xSel = document.getElementById('btDrillRoutineXp');
+    var group = gSel ? gSel.value : btDrillRoutineDefaultGroup(d);
+    var xp = xSel ? Number(xSel.value) : btDrillRoutineDefaultXp(d);
+    items.push({
+      id: rid,
+      group: group,
+      label: d.name,
+      xp: xp,
+      detail: 'ドリル集より追加｜目安：' + ((d.dose && d.dose.standard) ? d.dose.standard : (d.target || ''))
+    });
+    bridge.save(items);
+    btDrillFlashButton(btn, '✅ 追加しました');
+    if (st) st.textContent = '✅ マイルーティンに追加しました（🔥ルーティンボタンから確認・編集できます）';
+    try { if (typeof playBeep === 'function') playBeep(1120, 90); } catch (e) {}
+    return 1;
+  }
+
   function btDrillMenuById(menuId) {
     for (var i = 0; i < BT_DRILL_MENUS.length; i++) if (BT_DRILL_MENUS[i].menuId === menuId) return BT_DRILL_MENUS[i];
     return null;
@@ -15921,7 +16064,10 @@ function sharePoseResultImage() {
       + '.bt-drill-modal-title{font-weight:900;font-size:0.92rem;color:var(--accent-primary);}'
       + '.bt-drill-detail-sec{font-weight:900;font-size:0.8rem;margin:8px 0 2px;}'
       + '.bt-drill-add-status{font-size:0.8rem;color:var(--accent-highlight);margin-top:6px;}'
-      + '.bt-drill-risk{background:var(--accent-highlight);color:#020617;}';
+      + '.bt-drill-risk{background:var(--accent-highlight);color:#020617;}'
+      + '.bt-drill-routine-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0;}'
+      + '.bt-drill-select{padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-primary);font-size:0.8rem;}'
+      + '.bt-drill-routine-note{font-size:0.8rem;color:var(--accent-highlight);margin-top:2px;}';
     document.head.appendChild(st);
   }
 
@@ -15989,6 +16135,7 @@ function sharePoseResultImage() {
   window.btDrillCloseDetail = btDrillCloseDetail;
   window.btDrillAddToMenu = btDrillAddToMenu;
   window.btDrillAddMenuToMenu = btDrillAddMenuToMenu;
+  window.btDrillAddToRoutine = btDrillAddToRoutine;
   window.__bt_drills = {
     menus: BT_DRILL_MENUS,
     drills: BT_DRILLS,
@@ -16016,7 +16163,11 @@ function sharePoseResultImage() {
     sourceHtml: btDrillSourceHtml,
     addToMenu: btDrillAddToMenu,
     addMenuToMenu: btDrillAddMenuToMenu,
-    toMenuItem: btDrillToMenuItem
+    toMenuItem: btDrillToMenuItem,
+    addToRoutine: btDrillAddToRoutine,
+    routineDefaultGroup: btDrillRoutineDefaultGroup,
+    routineDefaultXp: btDrillRoutineDefaultXp,
+    routineSectionHtml: btDrillRoutineSectionHtml
   };
 
   document.addEventListener('keydown', function(ev){
