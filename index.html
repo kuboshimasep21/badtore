@@ -2284,6 +2284,8 @@
 
             <button class="btn" onclick="testVoiceAudio()">🔊 音声確認</button>
 
+            <button class="btn" id="btnFwRoutine" onclick="if(window.__bt_openRoutine)window.__bt_openRoutine()">🔁 ルーティン</button>
+
           </div>
 
         </div>
@@ -12684,7 +12686,7 @@
                 🔥 毎日のルーティンチェックでXPゲット
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」か「📋 8.メニュー」の画面で、右下の<b>［🔥 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。<br>
+                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」画面の<b>［🔁 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。1つでもチェックすると右下に<b>［🔥 ルーティン］</b>ボタンが出て、進み具合がいつでも見られます。<br>
                 <b>② チェックして保存：</b>終わった項目にチェックを入れて保存すると、内容に応じて<b>XP</b>がもらえます。全部達成で<b>ボーナス+30 XP</b>！毎日の積み重ねでレベルアップを目指しましょう。
               </div>
             </div>
@@ -13631,18 +13633,37 @@ function sharePoseResultImage() {
     return false;
   }
 
-  // FABの表示制御: 「1.フットワーク」「8.メニュー作成」タブの時だけ表示し、ドリル/タイマー実行中は隠す。
-  // その日のルーティンを全項目チェック済みなら「✅ ルーティン済」表示（緑）に切り替える。
+  // FABの表示制御: 「使うときだけ出す」。
+  // ・その日のチェックが0件なら出さない（入口はフットワークタブの［🔁 ルーティン］ボタン）。
+  // ・1件でもチェックしたら「1.フットワーク」「8.メニュー」タブで表示し、ドリル/タイマー実行中は隠す。
+  // ・全項目チェック済みなら「✅ ルーティン済」（緑）を表示するが、最初に表示してから
+  //   FAB_DONE_SHOW_MS 経過したら隠す。表示開始時刻は端末に保存するので、再読み込みしても
+  //   ✅ が出続けることはない。1つでも外すと記録を消し、再び全達成したときにまた短時間だけ表示する。
+  var FAB_DONE_SHOW_MS=10000;
+  function fabDoneKey(){ return "bt_v105_routine_fabdone_"+todayKey(); }
   function refreshRoutineFab(){
     var b=$("#bt-routine-fab"); if(!b) return;
     var panel=document.querySelector(".tab-panel.active");
     var tabId=panel?panel.id:"";
     var tabOk=(tabId==="tab-footwork"||tabId==="tab-menu");
-    b.style.display=(tabOk && !isAnyDrillRunning()) ? "" : "none";
+    var items=getRoutines();
     var done=getDone();
-    var all=getRoutines().every(function(r){ return done[r.id]; });
+    var checked=0; items.forEach(function(r){ if(done[r.id]) checked++; });
+    var all=items.length>0 && checked===items.length;
     if(all){ b.textContent="✅ ルーティン済"; b.style.background="#059669"; }
     else{ b.textContent="🔥 ルーティン"; b.style.background="#f97316"; }
+    var show=false;
+    if(tabOk && !isAnyDrillRunning() && checked>0){
+      if(all){
+        var t0=loadJSON(fabDoneKey(), null);
+        if(t0==null){ t0=Date.now(); saveJSON(fabDoneKey(), t0); }
+        show=(Date.now()-Number(t0))<FAB_DONE_SHOW_MS;
+      }else{
+        try{ localStorage.removeItem(fabDoneKey()); }catch(e){}
+        show=true;
+      }
+    }
+    b.style.display=show?"":"none";
   }
 
   // タブ切替にFAB表示を追随させる（本体の switchTab をラップ）
@@ -17285,7 +17306,7 @@ function sharePoseResultImage() {
     });
     bridge.save(items);
     btDrillFlashButton(btn, '✅ 追加しました');
-    if (st) st.textContent = '✅ マイルーティンに追加しました（🔥ルーティンボタンから確認・編集できます）';
+    if (st) st.textContent = '✅ マイルーティンに追加しました（フットワーク画面の［🔁 ルーティン］から確認・編集できます）';
     try { if (typeof playBeep === 'function') playBeep(1120, 90); } catch (e) {}
     return 1;
   }
