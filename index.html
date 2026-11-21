@@ -2810,7 +2810,7 @@
 
                     <span class="badge-version" id="reflexStanceLiveBadge" style="background:#334155; color:#fff;">🛡️ 構え判定: 待機中</span>
 
-                    <button class="btn btn-cyan-outline" style="padding:7px 10px; font-size:0.8rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面</button>
+                    
 
                   </div>
 
@@ -3038,7 +3038,7 @@
 
           <div class="btn-group">
 
-            <button class="btn" id="btnPoseCamFlip" onclick="switchCameraFacing()">🔄 内/外切替</button>
+            
 
             <label class="btn btn-amber" style="cursor:pointer;">
 
@@ -3048,17 +3048,9 @@
 
             </label>
 
-            <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
+            
 
-            <select id="delayMirrorSelect" onchange="changeDelayMirrorSec(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
-
-              <option value="0" selected>⏪ ディレイ: OFF</option>
-
-              <option value="3">⏪ 3秒遅れ再生</option>
-
-              <option value="5">⏪ 5秒遅れ再生</option>
-
-            </select>
+            
 
           </div>
 
@@ -3066,229 +3058,7 @@
 
 
 
-        <div class="split-grid">
-
-          <div>
-
-            <div class="viewport-wrapper fullscreen-target" id="poseViewport">
-
-              <div class="viewport-header-bar">
-
-                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（カメラ起動 または 動画読込を選択）</span>
-
-                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-
-                  <span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 認識精度: --%</span>
-
-                  <button class="btn btn-cyan-outline" style="padding:7px 10px; font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面 ON/OFF</button>
-
-                </div>
-
-              </div>
-
-
-
-              <div class="viewport-stage">
-
-                <canvas id="outputCanvas" class="viewport-canvas" width="720" height="720" style="display:none;"></canvas>
-
-                <canvas id="drawCanvas" width="720" height="720"></canvas>
-
-
-
-                <div class="center-overlay-banner" id="poseCountdownOverlay">
-
-                  <div class="banner-big-num" id="poseCountdownNum">3</div>
-
-                  <div class="banner-sub-text">10秒精密測定スタートまで</div>
-
-                </div>
-
-
-
-                <div id="posePlaceholder" style="text-align:center; color:var(--text-secondary); padding:18px;">
-
-                  <div style="font-size:2rem; margin-bottom:6px;">🧠🎬</div>
-
-                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカメラ起動不要で即座に動画が表示され自動診断がスタートします！</div>
-
-                  <div style="font-size:0.8rem; margin-top:4px;">リアルタイム撮影時は「📷 AIカメラ起動」を押してください</div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-
-            <!-- 🎬 動画読み込み時のみ自動表示される専用シーク＆区間切り出しパネル -->
-
-            <div class="video-control-panel" id="videoControlPanel">
-
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-
-                <span style="font-weight:900; font-size:0.78rem; color:var(--accent-highlight);">🎬 動画再生 ＆ ラリー区間切り出しコントローラー</span>
-
-                <div class="btn-group">
-
-                  <button class="btn btn-emerald" id="btnVideoPlayPause" style="padding:7px 11px; font-size:0.8rem;" onclick="toggleVideoPause()">⏸️ 一時停止</button>
-
-                  <button class="btn" style="padding:7px 11px; font-size:0.8rem;" onclick="seekUploadedVideoBy(-0.1)">⏪ -0.1秒</button>
-
-                  <button class="btn" style="padding:7px 11px; font-size:0.8rem;" onclick="seekUploadedVideoBy(0.1)">⏩ +0.1秒</button>
-
-                  <select id="videoSpeedSelect" onchange="changeVideoPlaybackSpeed(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
-
-                    <option value="1.0" selected>1.0x (等倍)</option>
-
-                    <option value="0.5">0.5x (スロー)</option>
-
-                    <option value="0.25">0.25x (超スロー)</option>
-
-                  </select>
-
-                </div>
-
-              </div>
-
-
-
-              <!-- 現在再生位置シークバー -->
-
-              <div class="video-seek-row">
-
-                <span style="font-size:0.8rem; color:var(--text-secondary); width:52px;">再生位置</span>
-
-                <input type="range" id="videoSeekSlider" min="0" max="100" step="0.05" value="0" oninput="onVideoSeekSliderInput(this.value)" />
-
-                <span class="time-readout" id="videoTimeLabel">0.0s / 0.0s</span>
-
-              </div>
-
-
-
-              <!-- 開始A〜終了B 区間切り出し設定 -->
-
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.1);">
-
-                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:0.8rem;">
-
-                  <span style="color:var(--text-secondary); font-weight:800;">✂️ 診断区間:</span>
-
-                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="setVideoTrimPoint('start')">📍現在位置を開始(A)に</button>
-
-                  <span id="trimRangeText" style="color:var(--accent-secondary); font-weight:900;">先頭(0.0s) 〜 終了</span>
-
-                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="setVideoTrimPoint('end')">🏁現在位置を終了(B)に</button>
-
-                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="resetVideoTrimRange()">全区間戻す</button>
-
-                </div>
-
-                <button class="btn btn-amber" style="padding:7px 11px; font-size:0.8rem;" onclick="startAutoVideoDiagnosis()">🔄 この区間を再診断</button>
-
-              </div>
-
-              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">⚠️ 診断は通常速度で撮影した動画専用です。スローモーション撮影の動画では、踏み切り・着地・速度・球速など時間を使う判定がずれます（再生速度の変更は診断に影響しません）。</div>
-
-            </div>
-
-
-
-            <div class="metrics-grid">
-
-              <div class="metric-box">
-
-                <div class="metric-title" id="mTitle1">利き腕・肘の角度</div>
-
-                <div class="metric-val" style="color:#34d399;" id="valElbowDeg">-- °</div>
-
-                <div class="metric-peak" id="maxElbowDeg">MAX: --° / 最小: --°</div>
-
-                <div class="metric-score-tag" id="ptElbow">リスト: --</div>
-
-              </div>
-
-              <div class="metric-box">
-
-                <div class="metric-title" id="mTitle2">肩挙上角（打点/構え高）</div>
-
-                <div class="metric-val" style="color:#60a5fa;" id="valShoulderDeg">-- °</div>
-
-                <div class="metric-peak" id="maxShoulderDeg">MAX打点: --°</div>
-
-                <div class="metric-score-tag" id="ptShoulder">評価: -- pt</div>
-
-              </div>
-
-              <div class="metric-box">
-
-                <div class="metric-title" id="mTitle3">膝の角度（タメ/構え）</div>
-
-                <div class="metric-val" style="color:var(--accent-highlight);" id="valKneeDeg">-- °</div>
-
-                <div class="metric-peak" id="maxKneeDeg">最深膝角: --°</div>
-
-                <div class="metric-score-tag" id="ptKnee">下半身: -- pt</div>
-
-              </div>
-
-              <div class="metric-box">
-
-                <div class="metric-title" id="mTitle4">速度指数 / スタンス比</div>
-
-                <div class="metric-val" style="color:#f43f5e;" id="valSpeedPt">-- pt</div>
-
-                <div class="metric-peak" id="maxSpeedPt">足幅比: --倍</div>
-
-                <div class="metric-score-tag" id="coreTiltTag">体幹傾き: --°</div>
-
-              </div>
-
-            </div>
-
-
-
-            <div class="pen-toolbar">
-
-              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-
-                <button id="btnToggleDrawMode" class="btn btn-cyan-outline" style="padding:8px 11px; font-size:0.8rem;" onclick="toggleDrawingLockMode()">
-
-                  ✏️ 線引き: OFF (スクロール優先)
-
-                </button>
-
-                <div class="color-dot active" style="background:#ef4444;" onclick="setPenColor('#ef4444', this)"></div>
-
-                <div class="color-dot" style="background:#f59e0b;" onclick="setPenColor('#f59e0b', this)"></div>
-
-                <div class="color-dot" style="background:#3b82f6;" onclick="setPenColor('#3b82f6', this)"></div>
-
-                <div class="color-dot" style="background:#10b981;" onclick="setPenColor('#10b981', this)"></div>
-
-              </div>
-
-              <div class="btn-group">
-
-                <button class="btn" style="padding:8px 10px; font-size:0.8rem;" onclick="resetMaxMetrics()">🔄 数値リセット</button>
-
-                <button class="btn" style="padding:8px 10px; font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止/再生</button>
-
-                <button class="btn btn-rose" style="padding:8px 10px; font-size:0.8rem;" onclick="clearDrawing()">🗑️ 線消去</button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-
-          <div style="display:flex; flex-direction:column; gap:10px;">
-
-            <div class="card" style="background:var(--bg-panel); margin:0;">
+        <div class="card" style="background:var(--bg-panel); margin:0 0 12px;">
 
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
 
@@ -3450,13 +3220,205 @@
 
 
 
-              <button id="btnStartPoseSession" class="btn btn-amber" style="width:100%; padding:10px; font-size:0.84rem;" onclick="startTimedPoseSession()">
-
-                ▶️ 10秒間 精密測定スタート
-
-              </button>
+              
 
             </div>
+
+        <div class="split-grid">
+
+          <div>
+
+            <div class="viewport-wrapper fullscreen-target" id="poseViewport">
+
+              <div class="viewport-header-bar">
+
+                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（カメラ起動 または 動画読込を選択）</span>
+
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+
+                  <span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 認識精度: --%</span>
+
+                  
+
+                </div>
+
+              </div>
+
+
+
+              <div class="viewport-stage">
+
+                <canvas id="outputCanvas" class="viewport-canvas" width="720" height="720" style="display:none;"></canvas>
+
+                <canvas id="drawCanvas" width="720" height="720"></canvas>
+
+
+
+                <div class="center-overlay-banner" id="poseCountdownOverlay">
+
+                  <div class="banner-big-num" id="poseCountdownNum">3</div>
+
+                  <div class="banner-sub-text">10秒精密測定スタートまで</div>
+
+                </div>
+
+
+
+                <div id="posePlaceholder" style="text-align:center; color:var(--text-secondary); padding:18px;">
+
+                  <div style="font-size:2rem; margin-bottom:6px;">🧠🎬</div>
+
+                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカメラ起動不要で即座に動画が表示され自動診断がスタートします！</div>
+
+                  <div style="font-size:0.8rem; margin-top:4px;">リアルタイム撮影時は「📷 AIカメラ起動」を押してください</div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- 🎬 動画読み込み時のみ自動表示される専用シーク＆区間切り出しパネル -->
+
+            <div class="video-control-panel" id="videoControlPanel">
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+
+                <span style="font-weight:900; font-size:0.78rem; color:var(--accent-highlight);">🎬 動画再生コントローラー</span>
+
+                <div class="btn-group">
+
+                  
+
+                  
+
+                  
+
+                  <select id="videoSpeedSelect" onchange="changeVideoPlaybackSpeed(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
+
+                    <option value="1.0" selected>1.0x (等倍)</option>
+
+                    <option value="0.5">0.5x (スロー)</option>
+
+                    <option value="0.25">0.25x (超スロー)</option>
+
+                  </select>
+
+                </div>
+
+              </div>
+
+
+
+              <!-- 現在再生位置シークバー -->
+
+              <div class="video-seek-row">
+
+                <span style="font-size:0.8rem; color:var(--text-secondary); width:52px;">再生位置</span>
+
+                <input type="range" id="videoSeekSlider" min="0" max="100" step="0.05" value="0" oninput="onVideoSeekSliderInput(this.value)" />
+
+                <span class="time-readout" id="videoTimeLabel">0.0s / 0.0s</span>
+
+              </div>
+
+
+
+              
+
+              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">⚠️ 診断は通常速度で撮影した動画専用です。スローモーション撮影の動画では、踏み切り・着地・速度・球速など時間を使う判定がずれます（再生速度の変更は診断に影響しません）。</div>
+
+            </div>
+
+
+
+            <div class="metrics-grid">
+
+              <div class="metric-box">
+
+                <div class="metric-title" id="mTitle1">利き腕・肘の角度</div>
+
+                <div class="metric-val" style="color:#34d399;" id="valElbowDeg">-- °</div>
+
+                <div class="metric-peak" id="maxElbowDeg">MAX: --° / 最小: --°</div>
+
+                <div class="metric-score-tag" id="ptElbow">リスト: --</div>
+
+              </div>
+
+              <div class="metric-box">
+
+                <div class="metric-title" id="mTitle2">肩挙上角（打点/構え高）</div>
+
+                <div class="metric-val" style="color:#60a5fa;" id="valShoulderDeg">-- °</div>
+
+                <div class="metric-peak" id="maxShoulderDeg">MAX打点: --°</div>
+
+                <div class="metric-score-tag" id="ptShoulder">評価: -- pt</div>
+
+              </div>
+
+              <div class="metric-box">
+
+                <div class="metric-title" id="mTitle3">膝の角度（タメ/構え）</div>
+
+                <div class="metric-val" style="color:var(--accent-highlight);" id="valKneeDeg">-- °</div>
+
+                <div class="metric-peak" id="maxKneeDeg">最深膝角: --°</div>
+
+                <div class="metric-score-tag" id="ptKnee">下半身: -- pt</div>
+
+              </div>
+
+              <div class="metric-box">
+
+                <div class="metric-title" id="mTitle4">速度指数 / スタンス比</div>
+
+                <div class="metric-val" style="color:#f43f5e;" id="valSpeedPt">-- pt</div>
+
+                <div class="metric-peak" id="maxSpeedPt">足幅比: --倍</div>
+
+                <div class="metric-score-tag" id="coreTiltTag">体幹傾き: --°</div>
+
+              </div>
+
+            </div>
+
+
+
+            <div class="pen-toolbar">
+
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+
+                <button id="btnToggleDrawMode" class="btn btn-cyan-outline" style="padding:8px 11px; font-size:0.8rem;" onclick="toggleDrawingLockMode()">
+
+                  ✏️ 線引き: OFF (スクロール優先)
+
+                </button>
+
+                <div class="color-dot active" style="background:#ef4444;" onclick="setPenColor('#ef4444', this)"></div>
+
+                <div class="color-dot" style="background:#f59e0b;" onclick="setPenColor('#f59e0b', this)"></div>
+
+                <div class="color-dot" style="background:#3b82f6;" onclick="setPenColor('#3b82f6', this)"></div>
+
+                <div class="color-dot" style="background:#10b981;" onclick="setPenColor('#10b981', this)"></div>
+
+              </div>
+
+              
+
+            </div>
+
+          </div>
+
+
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+
+            
 
 
 
@@ -3589,6 +3551,40 @@
           </div>
 
         </div>
+
+            <details class="summary-box" style="margin-top:12px;">
+              <summary style="cursor:pointer; font-weight:800; font-size:0.85rem;">⚙️ 詳細設定 ▼</summary>
+              <div style="margin-top:9px; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:800;">🖥️ 表示・再生:</span>
+                  <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
+                  <select id="delayMirrorSelect" onchange="changeDelayMirrorSec(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
+
+              <option value="0" selected>⏪ ディレイ: OFF</option>
+
+              <option value="3">⏪ 3秒遅れ再生</option>
+
+              <option value="5">⏪ 5秒遅れ再生</option>
+
+            </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:0.8rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:9px;">
+                  <span style="color:var(--text-secondary); font-weight:800;">✂️ 診断区間（動画）:</span>
+                  <button class="btn" style="padding:7px 11px; font-size:0.8rem;" onclick="seekUploadedVideoBy(-0.1)">⏪ -0.1秒</button>
+                  <button class="btn" style="padding:7px 11px; font-size:0.8rem;" onclick="seekUploadedVideoBy(0.1)">⏩ +0.1秒</button>
+                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="setVideoTrimPoint('start')">📍現在位置を開始(A)に</button>
+                  <span id="trimRangeText" style="color:var(--accent-secondary); font-weight:900;">先頭(0.0s) 〜 終了</span>
+                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="setVideoTrimPoint('end')">🏁現在位置を終了(B)に</button>
+                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="resetVideoTrimRange()">全区間戻す</button>
+                  <button class="btn btn-amber" style="padding:7px 11px; font-size:0.8rem;" onclick="startAutoVideoDiagnosis()">🔄 この区間を再診断</button>
+                </div>
+                <div class="btn-group" style="border-top:1px solid rgba(255,255,255,0.1); padding-top:9px;">
+                  <button class="btn" style="padding:8px 10px; font-size:0.8rem;" onclick="resetMaxMetrics()">🔄 数値リセット</button>
+                  <button class="btn btn-rose" style="padding:8px 10px; font-size:0.8rem;" onclick="clearDrawing()">🗑️ 線消去</button>
+                </div>
+              </div>
+            </details>
+
 
       </div>
 
@@ -5790,7 +5786,7 @@
 
           videoCtrlPanel.style.display = "block";
 
-          btnStartSession.textContent = "🔄 動画の指定区間(A〜B)を先頭から再診断";
+          if (btnStartSession) btnStartSession.textContent = "🔄 動画の指定区間(A〜B)を先頭から再診断";
 
           const speedRate = document.getElementById('videoSpeedSelect').value;
 
@@ -5808,7 +5804,7 @@
 
           videoCtrlPanel.style.display = "none";
 
-          btnStartSession.textContent = "▶️ 10秒間 カメラ精密測定スタート";
+          if (btnStartSession) btnStartSession.textContent = "▶️ 10秒間 カメラ精密測定スタート";
 
           document.getElementById('poseHudStatus').textContent =
 
@@ -5830,7 +5826,7 @@
 
         videoCtrlPanel.style.display = "none";
 
-        btnStartSession.textContent = "▶️ 10秒間 精密測定スタート";
+        if (btnStartSession) btnStartSession.textContent = "▶️ 10秒間 精密測定スタート";
 
         document.getElementById('posePlaceholder').style.display = "block";
 
@@ -7092,7 +7088,7 @@
 
       upVideo.pause();
 
-      document.getElementById('btnVideoPlayPause').textContent = "▶️ 再生";
+      { const _ppBtn = document.getElementById('btnVideoPlayPause'); if (_ppBtn) _ppBtn.textContent = "▶️ 再生"; }
 
       const nextTime = Math.max(0, Math.min(upVideo.duration || 10, upVideo.currentTime + deltaSec));
 
@@ -7230,15 +7226,15 @@
 
         await upVideo.play();
 
-        document.getElementById('btnVideoPlayPause').textContent = "⏸️ 一時停止";
+        { const _ppBtn = document.getElementById('btnVideoPlayPause'); if (_ppBtn) _ppBtn.textContent = "⏸️ 一時停止"; }
 
       } catch (err) {
 
         // Safari等で自動再生がブロックされた場合は1フレーム解析して案内を表示
 
-        document.getElementById('btnVideoPlayPause').textContent = "▶️ 再生";
+        { const _ppBtn = document.getElementById('btnVideoPlayPause'); if (_ppBtn) _ppBtn.textContent = "▶️ 再生"; }
 
-        document.getElementById('poseHudStatus').textContent = "▶️ 「再生」ボタンを押すと動画診断が始まります";
+        document.getElementById('poseHudStatus').textContent = "▶️ 映像の上のバーにある「⏯️ 一時停止」ボタンで再生すると動画診断が始まります";
 
         await sendSingleFrameToPose(upVideo);
 
@@ -8726,9 +8722,7 @@
 
       const numEl = document.getElementById('poseCountdownNum');
 
-      const btn = document.getElementById('btnStartPoseSession');
-
-      btn.disabled = true;
+      const btn = document.getElementById('btnStartPoseSession'); if (btn) btn.disabled = true;
 
 
 
@@ -9546,7 +9540,7 @@
 
       poseSession.active = false;
 
-      document.getElementById('btnStartPoseSession').disabled = false;
+      { const _bsBtn = document.getElementById('btnStartPoseSession'); if (_bsBtn) _bsBtn.disabled = false; }
 
       document.getElementById('sessionTimerLabel').textContent = fromVideoAuto ? `✅ 動画区間診断完了` : `✅ 10秒精密測定完了`;
 
@@ -11793,7 +11787,7 @@
     function stopTimedPoseSession() {
       clearInterval(poseCountdownTimerId); clearInterval(poseSession.timerId); poseSession.active = false;
       const ov = document.getElementById('poseCountdownOverlay'); if (ov) ov.style.display = "none";
-      document.getElementById('btnStartPoseSession').disabled = false;
+      { const _bsBtn = document.getElementById('btnStartPoseSession'); if (_bsBtn) _bsBtn.disabled = false; }
       document.getElementById('sessionTimerLabel').textContent = "⏹️ 待機中";
     }
 
