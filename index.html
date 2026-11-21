@@ -24,7 +24,7 @@
 
   <meta name="theme-color" content="#060b16" />
 
-  <title>バドトレPRO v10.5.1 - バドミントン専用 AI動作解析＆実践トレーニング</title>
+  <title>バドトレPRO v10.6.0 - バドミントン専用 AI動作解析＆実践トレーニング</title>
 
   <!-- MediaPipe Pose & Drawing Utils -->
 
@@ -2202,7 +2202,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v10.5.1 PRO</span>
+      <span class="badge-version">v10.6.0 PRO</span>
 
     </div>
 
@@ -12035,8 +12035,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.5.1 PRO";
-      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.5.1 PRO";
+      document.title = "バドトレPRO v10.6.0 PRO";
+      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.6.0 PRO";
       initSpeechVoices(); loadMenusAndLogsFromStorage();
       injectV103CoreStylesAndUI(); injectVideoAndDrillExtensions(); injectMenuPlannerTab();
       applyColorTheme(profileThemesMap[activeProfileId] || localStorage.getItem('badtore_last_theme_v102') || 'cyan', false);
@@ -12791,7 +12791,7 @@
 
  
 <!-- =========================================================================
-       🚀 バドトレPRO v10.4.3 [PART 3: UIカラー完全固定 ＆ 指定APIキー組込 ＆ カスタム筋トレ]
+       🚀 バドトレPRO v10.6.0 [PART 3: UIカラー完全固定 ＆ 指定APIキー組込 ＆ カスタム筋トレ]
   ========================================================================= -->
   <script id="badtore-v104-part3">
     const DEFAULT_EMBEDDED_KEY = ["AQ.Ab8RN6LGd9Phj1g", "_GOJoM9jlgJd2c9E1r", "diJFFjXi8_7cQdLJQ"].join("");
@@ -13207,7 +13207,7 @@
       applyColorTheme(saved, false);
 
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.5.1 PRO";
+      if (vb) vb.textContent = "v10.6.0 PRO";
     });
   </script>
 <script id="badtore-brushup-share-20261118">
@@ -13285,7 +13285,7 @@ function sharePoseResultImage() {
     ctx.fillStyle = '#e2e8f0'; ctx.font = '34px ' + FONT;
     impLines.forEach(l => { ctx.fillText(l, PAD, y); y += 50; });
     ctx.fillStyle = '#64748b'; ctx.font = '28px ' + FONT;
-    ctx.fillText('バドトレPRO v10.5.1 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
+    ctx.fillText('バドトレPRO v10.6.0 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
     cv.toBlob(async (blob) => {
       if (!blob) { alert('画像の生成に失敗しました。'); return; }
       const file = new File([blob], 'badtore_result.png', { type: 'image/png' });
@@ -14017,7 +14017,7 @@ function sharePoseResultImage() {
       mountRhythmHumanAnimator();
       mountWorkoutTimerHumanAnimator();
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.5.1 PRO";
+      if (vb) vb.textContent = "v10.6.0 PRO";
     }, 150);
   });
 </script>
@@ -14792,7 +14792,7 @@ function sharePoseResultImage() {
   if (window.__bt_tester_feedback) return; window.__bt_tester_feedback = true;
   var SB_URL = 'https://bgmngjwkfcvapcdtkcpx.supabase.co';
   var SB_KEY = 'sb_publishable_ji-jxS2T-VnXBjvfVkJ8pw_7r-_QOAG';
-  var APP_VERSION = 'v10.5.1';
+  var APP_VERSION = 'v10.6.0';
   var tsb = null, tUser = null, tReg = null, tRegLoaded = false;
 
   function initClient(){
