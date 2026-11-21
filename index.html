@@ -2284,6 +2284,8 @@
 
             <button class="btn" onclick="testVoiceAudio()">🔊 音声確認</button>
 
+            <button class="btn" id="btnFwRoutine" onclick="if(window.__bt_openRoutine)window.__bt_openRoutine()">🔁 ルーティン</button>
+
           </div>
 
         </div>
@@ -4008,6 +4010,30 @@
     ========================================================== -->
 
     <section id="tab-progress" class="tab-panel">
+
+      <div class="card" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px;">
+
+        <span style="font-weight:900;font-size:0.8rem;color:var(--accent-highlight);">🎯 今日の意識</span>
+
+        <span style="font-size:0.8rem;color:var(--text-secondary);flex:1;">登録すると画面の上部に表示されます（最大3つ）</span>
+
+        <button type="button" onclick="btFocusStartAdd()" style="font-size:0.8rem;font-weight:800;padding:4px 10px;border-radius:999px;border:1px dashed var(--accent-primary);background:transparent;color:var(--accent-secondary);cursor:pointer;">＋ 追加</button>
+
+      </div>
+
+      <div class="card" id="btBadgeCard">
+
+        <div class="card-header">
+
+          <div class="card-title">🏅 実績バッジ <span id="btBadgeCount" style="font-size:0.78rem;color:var(--text-secondary);font-weight:700;"></span></div>
+
+        </div>
+
+        <div id="btBadgeNext" style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;">読み込み中…</div>
+
+        <div id="btBadgeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;"></div>
+
+      </div>
 
       <div class="card" id="progressMainCard">
 
@@ -11384,6 +11410,10 @@
       const bar = document.getElementById('globalFocusPinBar');
       if (!bar) return;
       const list = getActivePinnedList();
+      // ピンが1件も無いときはバー自体を表示しない（追加フォームを開いている間だけ例外）。
+      // getActivePinnedList() は日付変更時の引き継ぎ確認も担うため、非表示でも必ずここで呼ぶ。
+      // display:none ならバーの margin も発生しないので、ヘッダー下は詰まって表示される。
+      bar.style.display = (list.length || btFocusAddOpen) ? '' : 'none';
       const pills = list.length ? list.map((it, i) => `<div class="focus-pin-pill ${it.done ? 'pin-done' : ''}" onclick="togglePinnedFocusDone(${i})"><span>${it.done ? '✅' : '📌'} ${btFocusEscapeHtml(it.text)}</span><span class="pin-del-btn" onclick="removePinnedFocusAt(${i},event)">✕</span></div>`).join('') : `<span style="font-size:0.8rem;color:var(--text-secondary);">「＋ 追加」ボタンか、AI診断の「📌 ピン留め」で意識ポイント(最大3つ)を登録できます</span>`;
       let addUI = '';
       if (btFocusAddOpen) {
@@ -12656,7 +12686,7 @@
                 🔥 毎日のルーティンチェックでXPゲット
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」か「📋 8.メニュー」の画面で、右下の<b>［🔥 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。<br>
+                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」画面の<b>［🔁 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。1つでもチェックすると右下に<b>［🔥 ルーティン］</b>ボタンが出て、進み具合がいつでも見られます。<br>
                 <b>② チェックして保存：</b>終わった項目にチェックを入れて保存すると、内容に応じて<b>XP</b>がもらえます。全部達成で<b>ボーナス+30 XP</b>！毎日の積み重ねでレベルアップを目指しましょう。
               </div>
             </div>
@@ -13603,18 +13633,37 @@ function sharePoseResultImage() {
     return false;
   }
 
-  // FABの表示制御: 「1.フットワーク」「8.メニュー作成」タブの時だけ表示し、ドリル/タイマー実行中は隠す。
-  // その日のルーティンを全項目チェック済みなら「✅ ルーティン済」表示（緑）に切り替える。
+  // FABの表示制御: 「使うときだけ出す」。
+  // ・その日のチェックが0件なら出さない（入口はフットワークタブの［🔁 ルーティン］ボタン）。
+  // ・1件でもチェックしたら「1.フットワーク」「8.メニュー」タブで表示し、ドリル/タイマー実行中は隠す。
+  // ・全項目チェック済みなら「✅ ルーティン済」（緑）を表示するが、最初に表示してから
+  //   FAB_DONE_SHOW_MS 経過したら隠す。表示開始時刻は端末に保存するので、再読み込みしても
+  //   ✅ が出続けることはない。1つでも外すと記録を消し、再び全達成したときにまた短時間だけ表示する。
+  var FAB_DONE_SHOW_MS=10000;
+  function fabDoneKey(){ return "bt_v105_routine_fabdone_"+todayKey(); }
   function refreshRoutineFab(){
     var b=$("#bt-routine-fab"); if(!b) return;
     var panel=document.querySelector(".tab-panel.active");
     var tabId=panel?panel.id:"";
     var tabOk=(tabId==="tab-footwork"||tabId==="tab-menu");
-    b.style.display=(tabOk && !isAnyDrillRunning()) ? "" : "none";
+    var items=getRoutines();
     var done=getDone();
-    var all=getRoutines().every(function(r){ return done[r.id]; });
+    var checked=0; items.forEach(function(r){ if(done[r.id]) checked++; });
+    var all=items.length>0 && checked===items.length;
     if(all){ b.textContent="✅ ルーティン済"; b.style.background="#059669"; }
     else{ b.textContent="🔥 ルーティン"; b.style.background="#f97316"; }
+    var show=false;
+    if(tabOk && !isAnyDrillRunning() && checked>0){
+      if(all){
+        var t0=loadJSON(fabDoneKey(), null);
+        if(t0==null){ t0=Date.now(); saveJSON(fabDoneKey(), t0); }
+        show=(Date.now()-Number(t0))<FAB_DONE_SHOW_MS;
+      }else{
+        try{ localStorage.removeItem(fabDoneKey()); }catch(e){}
+        show=true;
+      }
+    }
+    b.style.display=show?"":"none";
   }
 
   // タブ切替にFAB表示を追随させる（本体の switchTab をラップ）
@@ -14984,6 +15033,10 @@ function sharePoseResultImage() {
      複数本持てるようにし（従来の単一 video とは表示側で両対応）、
      日本人チャンネルを中心に、実際に開いてタイトル・内容を確認できた
      動画だけを採用している
+   - 選手テーマ第2弾（2026-11-21）：宮下怜／宮崎友花／奈良岡功大の3メニュー
+     （12ドリル）を追加。全てスタイル分析から構成（style-derived）で、本人の
+     練習処方ではない旨と、数値はアプリ独自の目安である旨を明記した。
+     個別URLが確定できなかった参考動画は、URLなしの名称のみ出典表示とした
    - 出典と参考動画の重複排除（2026-11-21）：出典のうち参考動画と同一のもの
      （URL完全一致、YouTube は動画IDでも同一判定）は出典欄に出さず、動画は
      参考動画側に一本化する。出典が0件になる場合は出典欄ごと出さない。
@@ -15161,6 +15214,30 @@ function sharePoseResultImage() {
       type: 'pack',
       description: 'ラリーの中で唯一、自分でコントロールして始められるのがサーブです。ショートサーブの精度、ロングサーブの高さと奥行き、フリックサーブの打ち分けを順番に身につけるメニューです。打点は腰より下（1.15mルール）が前提で、フォームの確認にはAI診断の「ショートサーブ／ロングサーブ」も合わせてどうぞ。',
       drillIds: ['drill_serve_short_control','drill_serve_long','drill_serve_flick']
+    },
+    {
+      menuId: 'menu_allcourt',
+      title: '攻守一体・オールコート型メニュー',
+      referenceLabel: '参考選手：宮下怜（スタイル分析から構成）',
+      type: 'pack',
+      description: '185cmの長身から打ち下ろす攻撃と、長身でも広い守備範囲を両立させた男子シングルスのスタイルを分析し、一般ドリルとして構成しました。本人の練習メニューそのものではありません（処方レベルの出典が確認できなかったため、明記しています）。「攻めるだけ」「拾うだけ」に偏らないシングルス型を目指します。',
+      drillIds: ['drill_allcourt_attack_knock','drill_allcourt_wide_defense','drill_allcourt_counter_switch','drill_allcourt_smash_shadow']
+    },
+    {
+      menuId: 'menu_feint',
+      title: 'フェイント＆頭脳戦型メニュー',
+      referenceLabel: '参考選手：宮崎友花（スタイル分析から構成）',
+      type: 'pack',
+      description: '打つ直前までコースを隠すフェイントと、同じ球を繰り返して頃合いを見て逆を突く配球の頭脳戦が持ち味の女子シングルスのスタイルを分析し、一般ドリルとして構成しました。本人の練習メニューそのものではありません（処方レベルの出典が確認できなかったため、明記しています）。「速く打つ」より「読ませない」ことを軸にします。',
+      drillIds: ['drill_feint_two_courses','drill_feint_net_tame','drill_feint_bait_switch','drill_feint_counter']
+    },
+    {
+      menuId: 'menu_rally_counter',
+      title: '粘りのラリー＆カウンター型メニュー',
+      referenceLabel: '参考選手：奈良岡功大（スタイル分析から構成）',
+      type: 'pack',
+      description: '長いラリーへ持ち込んで相手の体力を削り、終盤の緩急（チェンジアップ）と決め球で仕留める男子シングルスのスタイルを分析し、一般ドリルとして構成しました。本人の練習メニューそのものではありません（処方レベルの出典が確認できなかったため、明記しています）。ラリーを「耐える」だけでなく「設計する」ことが狙いです。',
+      drillIds: ['drill_rally_long_knock','drill_rally_changeup','drill_rally_patience_finish','drill_rally_finish_accuracy']
     }
   ];
 
@@ -16455,6 +16532,368 @@ function sharePoseResultImage() {
       ],
       link: { type: 'footwork', target: '' },
       poseChecks: []
+    },
+    {
+      id: 'drill_allcourt_attack_knock',
+      name: '高打点アタック・ノック',
+      menuId: 'menu_allcourt',
+      category: 'ノック・多球',
+      level: ['中級'],
+      target: '後衛への高いリフトに対し、体の前・高い位置で捉えて打ち下ろし、打った後はセンターへ戻る流れを身につける',
+      steps: [
+        '球出し役は後衛へ高く深いリフトを続ける',
+        '受ける側はシャトルの下へ早く入り、体の前・高い位置で捉えて打ち下ろす',
+        '打った後は必ずセンターへ戻ってから次を受ける',
+        'コースはストレート／クロスを球出し役が混ぜる'
+      ],
+      dose: {
+        standard: '10本×4セット（休憩60秒）',
+        junior: '8本×3セット（休憩90秒）',
+        note: '高さが出なくなったら本数を減らして質を優先。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['宮下怜'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮下怜のスマッシュ分解（バドミントン解剖／Instagram）', url: 'https://www.instagram.com/reel/DfWxJPTsK4-/' },
+        { label: '第76回インカレ 個人 男子単 決勝｜宮下怜（明治大）vs 山田琉碧（日本体育大）（日本バドミントン協会公式YouTube・約12.3万回再生）' }
+      ],
+      videos: [
+        { label: '宮下怜のスマッシュ分解（バドミントン解剖／Instagram）', url: 'https://www.instagram.com/reel/DfWxJPTsK4-/' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['contact_front']
+    },
+    {
+      id: 'drill_allcourt_wide_defense',
+      name: '四隅ワイドカバー守備',
+      menuId: 'menu_allcourt',
+      category: '守備',
+      level: ['中級'],
+      target: '前・中・後の四隅へランダムに配球されても、低い構えから一歩目を速く出し、拾った後にセンターへ復帰して構え直す',
+      steps: [
+        '球出し役が前・中・後の四隅へランダムに配球する',
+        '受ける側は低い構えから一歩目を速く出し、届く範囲を広く使う',
+        '拾ったらすぐにセンターへ復帰し、ラケットを立てて構え直す',
+        '「拾う→戻る→構える」を1セットとして繰り返す'
+      ],
+      dose: {
+        standard: '20本×3セット',
+        junior: '12本×3セット',
+        note: 'フォームが崩れる速さでは行わない。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['宮下怜'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮下怜選手のレシーブのポイント（小峯和城コーチ／YouTube）', url: 'https://www.youtube.com/watch?v=3bFZgtqt0N4' },
+        { label: '第76回インカレ 個人 男子複 準々決勝｜宮下怜・栁川蓮（明治大）vs 永田拓己・衣川真生（立命館大）（日本バドミントン協会公式YouTube）', url: 'https://www.youtube.com/watch?v=9HoBtFhtTbc' }
+      ],
+      videos: [
+        { label: '宮下怜選手のレシーブのポイント（小峯和城コーチ／YouTube）', url: 'https://www.youtube.com/watch?v=3bFZgtqt0N4' },
+        { label: '第76回インカレ 個人 男子複 準々決勝｜宮下怜・栁川蓮（明治大）vs 永田拓己・衣川真生（立命館大）（日本バドミントン協会公式YouTube）', url: 'https://www.youtube.com/watch?v=9HoBtFhtTbc' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center','lunge_recovery']
+    },
+    {
+      id: 'drill_allcourt_counter_switch',
+      name: '守備→カウンター切替',
+      menuId: 'menu_allcourt',
+      category: '守備',
+      level: ['中級','上級'],
+      target: '速い球を低く強いレシーブで返し、続くネット前の球に前へ詰めて攻めに転じる切り替えを身につける',
+      steps: [
+        '球出し役がスマッシュ気味の速い球→ネット前の順に2球続ける',
+        '1球目は低く強いレシーブで返す',
+        '2球目は前へ詰めてプッシュまたはヘアピンで攻めに転じる',
+        '「守って終わり」にせず、拾った直後の一歩目を前へ出すことを意識する'
+      ],
+      dose: {
+        standard: '2球1組×10組×2セット',
+        junior: '2球1組×6組×2セット',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['宮下怜'],
+      originType: 'style-derived',
+      sources: [
+        { label: '第76回インカレ 個人 男子単 決勝｜宮下怜（明治大）vs 山田琉碧（日本体育大）（日本バドミントン協会公式YouTube・約12.3万回再生）' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center']
+    },
+    {
+      id: 'drill_allcourt_smash_shadow',
+      name: '打ち下ろしシャドー（体の使い方）',
+      menuId: 'menu_allcourt',
+      category: 'ジャンプ・空中動作',
+      level: ['初級','中級'],
+      target: 'タイミングステップから跳び上がって前で捉えるまでの一連の体の使い方を、シャトルなしで安全に固める',
+      steps: [
+        'シャトルなしで「相手の打球に合わせる小さなステップ→脚を引く→膝を曲げて溜める→跳び上がる→前で捉える形→振り抜く→着地して復帰」を一連で行う',
+        '最初は跳ばずに歩幅だけで流れを確認し、慣れてから小さなジャンプを足す',
+        '着地は膝を柔らかく使い、音を立てない'
+      ],
+      dose: {
+        standard: '6回×3セット（完全休養）',
+        junior: '跳躍なしの歩幅版6回×3セット',
+        note: '強いジャンプは上級者のみ・着地の質最優先。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'solo',
+      referencePlayers: ['宮下怜'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮下怜 ジャンプスマッシュ練習（日立情報通信エンジニアリング バドミントン部公式／Instagram）', url: 'https://www.instagram.com/reel/DRT7b3bEpVW/' }
+      ],
+      videos: [
+        { label: '宮下怜 ジャンプスマッシュ練習（日立情報通信エンジニアリング バドミントン部公式／Instagram）', url: 'https://www.instagram.com/reel/DRT7b3bEpVW/' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_feint_two_courses',
+      name: '同じ構えから2コース（後衛）',
+      menuId: 'menu_feint',
+      category: 'ノック・多球',
+      level: ['中級'],
+      target: '毎回まったく同じ構え・同じ入り方から2種のショットを打ち分け、相手にコースを読ませない',
+      steps: [
+        '球出し役は後衛へ安定したリフトを出す',
+        '受ける側は毎回まったく同じ構え・同じ入り方をする',
+        '合図または自分の判断で、ストレートのドロップ／クロスのドロップ／クリアのうち2種だけに絞って打ち分ける',
+        '相手役は「どっちに来るか分からないか」をフィードバックする'
+      ],
+      dose: {
+        standard: '10本×3セット',
+        junior: '8本×3セット',
+        note: 'コースを増やすのは2種が安定してから。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['宮崎友花'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮崎友花のフェイント＆リバーススライス解説（熊本マスターズジャパン2026 準々決勝／YouTube）', url: 'https://www.youtube.com/watch?v=C5Jcq6trQaI' }
+      ],
+      videos: [
+        { label: '宮崎友花のフェイント＆リバーススライス解説（熊本マスターズジャパン2026 準々決勝／YouTube）', url: 'https://www.youtube.com/watch?v=C5Jcq6trQaI' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_feint_net_tame',
+      name: 'ネット前のタメ＆打ち分け',
+      menuId: 'menu_feint',
+      category: '前衛・ダブルス',
+      level: ['中級'],
+      target: 'ネット前で打つ直前まで止める「タメ」を作り、止めた姿勢からヘアピン／クロスヘアピン／プッシュを使い分ける',
+      steps: [
+        'パートナーがネット前へゆるく上げる',
+        '受ける側は早めに入ってラケットを出し、打つ直前まで止める（タメ）',
+        '止めた姿勢からヘアピン／クロスヘアピン／プッシュを使い分ける',
+        '打った後は構えに戻る'
+      ],
+      dose: {
+        standard: '10本×3セット',
+        junior: '8本×2セット',
+        note: 'タメの間にラケットが下がらないことを確認。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['宮崎友花'],
+      originType: 'style-derived',
+      sources: [
+        { label: '代表合宿 宮崎友花vs山口茜 実戦練習（TEAM JAPAN公式YouTube・約22万回再生）', url: 'https://www.youtube.com/watch?v=FxmDESTXNOs' }
+      ],
+      videos: [
+        { label: '代表合宿 宮崎友花vs山口茜 実戦練習（TEAM JAPAN公式YouTube・約22万回再生）', url: 'https://www.youtube.com/watch?v=FxmDESTXNOs' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['front_racket_high','net_contact_height']
+    },
+    {
+      id: 'drill_feint_bait_switch',
+      name: '撒き餌→逆コース パターン',
+      menuId: 'menu_feint',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: '同じコースを続けて相手の重心を寄せ、3球目で逆コースへ打つ配球の組み立てを身につける',
+      steps: [
+        '同じコースへ2球続けて打ち、相手の重心を寄せる',
+        '3球目で逆コースへ打つ',
+        '相手役は本気で読みに行き、読まれたら配球の組み立てを見直す',
+        '前衛版（ネット前）と後衛版（奥）で各1セットずつ行う'
+      ],
+      dose: {
+        standard: '3球1組×8組×2セット',
+        junior: '3球1組×5組×2セット',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['宮崎友花'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮崎友花 vs キアースフェルト（日本マスターズ2026）ファイナルゲームの戦術修正（YouTube）', url: 'https://www.youtube.com/watch?v=00IylsfaZz8' }
+      ],
+      videos: [
+        { label: '宮崎友花 vs キアースフェルト（日本マスターズ2026）ファイナルゲームの戦術修正（YouTube）', url: 'https://www.youtube.com/watch?v=00IylsfaZz8' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_feint_counter',
+      name: '拾ってカウンター',
+      menuId: 'menu_feint',
+      category: '守備',
+      level: ['中級'],
+      target: '左右への強めの攻撃を低く拾い、相手の逆サイドへ切り返して「拾った球で相手を動かす」までを1回とする',
+      steps: [
+        '相手役が左右へ強めの攻撃を打つ',
+        '受ける側は低く拾い、相手の逆サイドへクロスのロブまたはドライブで切り返す',
+        '拾うだけで終わらず「拾った球で相手を動かす」までを1回とする',
+        '後半は疲れた状態でもコースの精度を落とさない'
+      ],
+      dose: {
+        standard: '8本×3セット',
+        junior: '6本×2セット',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['宮崎友花'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮崎友花 vs 林湘緹（熊本マスターズジャパン2026）守備とカウンターのハイライト（YouTube）', url: 'https://www.youtube.com/watch?v=212Z0pAoQfg' }
+      ],
+      videos: [
+        { label: '宮崎友花 vs 林湘緹（熊本マスターズジャパン2026）守備とカウンターのハイライト（YouTube）', url: 'https://www.youtube.com/watch?v=212Z0pAoQfg' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center']
+    },
+    {
+      id: 'drill_rally_long_knock',
+      name: 'ロングラリー継続ノック',
+      menuId: 'menu_rally_counter',
+      category: 'ノック・多球',
+      level: ['初級','中級'],
+      target: '落とさず続けることを目的に、クリアとドロップ中心で相手を奥と前に動かし続けるラリーの土台を作る',
+      steps: [
+        'パートナーと「落とさず続ける」ことを目的にラリーする',
+        'クリアとドロップ中心で、決めにいかず相手を奥と前に動かし続ける',
+        '1ラリーの継続本数を数え、切れたら次のラリーへ',
+        '後半は「相手を動かすコース」を意識し、ただ返すだけにしない'
+      ],
+      dose: {
+        standard: '1ラリー20本以上を目標に10分',
+        junior: '1ラリー12本以上を目標に6分',
+        note: '本数はアプリ独自の目安。スタイル分析から構成した一般ドリル'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['奈良岡功大'],
+      originType: 'style-derived',
+      sources: [
+        { label: '奈良岡功大 vs リー・ジージャ「最強の矛vs盾」分析（バドミントン解剖／Instagram）', url: 'https://www.instagram.com/reel/DfKRcffS5LC/' }
+      ],
+      videos: [
+        { label: '奈良岡功大 vs リー・ジージャ「最強の矛vs盾」分析（バドミントン解剖／Instagram）', url: 'https://www.instagram.com/reel/DfKRcffS5LC/' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_rally_changeup',
+      name: 'チェンジアップ・スマッシュ',
+      menuId: 'menu_rally_counter',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: '全力スマッシュと同じ構え・同じ入り方から、打つ直前に力を抜いて球速と軌道を変え、相手のタイミングを外す',
+      steps: [
+        '球出し役は後衛へリフトを出す',
+        '受ける側は全力スマッシュと同じ構え・同じ入り方をする',
+        '打つ直前に力を抜き、球速を落としたスマッシュ（またはドロップ気味に）落とす',
+        '全力と緩い球をランダムに混ぜ、受ける側の相手役に「読めたか」を言ってもらう'
+      ],
+      dose: {
+        standard: '10本×3セット',
+        junior: '8本×2セット',
+        note: 'フォームが変わってしまう場合は緩い球だけ先に固める。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['奈良岡功大'],
+      originType: 'style-derived',
+      sources: [],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_rally_patience_finish',
+      name: '我慢→決め球パターン',
+      menuId: 'menu_rally_counter',
+      category: 'ノック・多球',
+      level: ['中級'],
+      target: '最初の球は相手を動かすだけに徹し、返球が甘くなった球だけを決めにいく「待つ球／いく球」の判断を身につける',
+      steps: [
+        '最初の3球はクリア／ドロップで相手を動かすだけに徹する',
+        '4球目以降、相手の返球が甘くなった球だけを決めにいく',
+        '甘くないのに決めにいったら、そのラリーはやり直し',
+        '「待つ球」と「いく球」の判断を声に出して確認する'
+      ],
+      dose: {
+        standard: '4球1組×8組×2セット',
+        junior: '3球我慢→決め球、4球1組×5組×2セット',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['奈良岡功大'],
+      originType: 'style-derived',
+      sources: [
+        { label: '世界選手権2026 奈良岡功大の試合ハイライト（BWF公式YouTube／日本バドミントン協会公式SNSで配信）' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_rally_finish_accuracy',
+      name: '終盤フィニッシュ精度',
+      menuId: 'menu_rally_counter',
+      category: 'フットワーク',
+      level: ['中級','上級'],
+      target: 'シャドーフットワークで軽く息を上げた直後でも、甘い球をサイドライン際の的へ正確に決める精度を保つ',
+      steps: [
+        '6コーナーのシャドーフットワークを30秒行い、軽く息を上げる',
+        '直後に球出しの甘い球を2本、サイドライン際の的へ狙って決める',
+        '疲れた状態でのコースのブレを記録する',
+        '的は最初は大きく、慣れたら小さくする'
+      ],
+      dose: {
+        standard: 'シャドー30秒＋決め球2本を1組として5組',
+        junior: 'シャドー20秒＋決め球1本、4組',
+        note: '高負荷のため体調に合わせて減らす。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['奈良岡功大'],
+      originType: 'style-derived',
+      sources: [],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
     }
   ];
 
@@ -16471,6 +16910,9 @@ function sharePoseResultImage() {
     { key: 'p_an', label: 'アン・セヨン', players: ['アン・セヨン'] },
     { key: 'p_doubles', label: '渡辺勇大・保木卓朗', players: ['渡辺勇大', '保木卓朗'] },
     { key: 'p_taguchi', label: '田口真彩', players: ['田口真彩'] },
+    { key: 'p_miyashita', label: '宮下怜', players: ['宮下怜'] },
+    { key: 'p_miyazaki', label: '宮崎友花', players: ['宮崎友花'] },
+    { key: 'p_naraoka', label: '奈良岡功大', players: ['奈良岡功大'] },
     { key: 'p_igarashi', label: '五十嵐有紗', players: ['五十嵐有紗'] },
     { key: 'p_korea', label: '韓国式', players: ['韓国式（方式）'] },
     { key: 'p_china', label: '中国式', players: ['中国式（方式）'] }
@@ -16864,7 +17306,7 @@ function sharePoseResultImage() {
     });
     bridge.save(items);
     btDrillFlashButton(btn, '✅ 追加しました');
-    if (st) st.textContent = '✅ マイルーティンに追加しました（🔥ルーティンボタンから確認・編集できます）';
+    if (st) st.textContent = '✅ マイルーティンに追加しました（フットワーク画面の［🔁 ルーティン］から確認・編集できます）';
     try { if (typeof playBeep === 'function') playBeep(1120, 90); } catch (e) {}
     return 1;
   }
@@ -18637,6 +19079,482 @@ function sharePoseResultImage() {
     api: btTnApi
   };
   console.log('[badtore tournament] loaded');
+})();
+</script>
+
+<script id="badtore-v106-badges">
+/* =========================================================
+   🏅 実績バッジ（v10.6 追加）
+   - 実際に測れる出来事だけに紐づける（診断・自己ベスト・連続日数・
+     ルーティン・大会）。バッジ自体が報酬で、XPは付かない。
+   - 状態は localStorage 'badtore_badges_v106' にプロフィール別保存。
+   - 既存データから数えられる分は初回にまとめて付与（サイレント）。
+     自己ベスト更新回数と、プロフィール帰属できない過去分は
+     カウンタを新規に開始する（本文コメント参照）。
+   ========================================================= */
+(function(){
+  "use strict";
+  if (window.__bt_v106_badges) return; window.__bt_v106_badges = true;
+
+  var BADGE_KEY = 'badtore_badges_v106';
+  var SHOT_TYPES = ['ready_stance','smash','clear','drop','lob','drive','serve_short','serve_long','reaction_unweight','reaction_jump','cut_reverse','cross_hairpin','jump_smash'];
+  var BADGES = [
+    { id:'diag_first',  icon:'🔍', name:'はじめての診断',         cond:'フォーム診断を1回完了する' },
+    { id:'diag_rank_a', icon:'🅰️', name:'Aランク到達',           cond:'診断でAランクを取る' },
+    { id:'diag_rank_s', icon:'🌟', name:'Sランク到達',           cond:'診断でSランクを取る' },
+    { id:'pb_first',    icon:'🏆', name:'自己ベスト初更新',       cond:'自己ベストを初めて記録・更新する' },
+    { id:'pb_10',       icon:'👑', name:'自己ベスト通算10回',     cond:'自己ベスト更新を通算10回する' },
+    { id:'diag_all',    icon:'🎯', name:'全種目制覇',             cond:'13種目すべてのベストを記録する' },
+    { id:'streak_3',    icon:'🔥', name:'3日連続',               cond:'3日連続で練習する' },
+    { id:'streak_7',    icon:'🔥', name:'7日連続',               cond:'7日連続で練習する' },
+    { id:'streak_30',   icon:'🔥', name:'30日連続',              cond:'30日連続で練習する' },
+    { id:'routine_1',   icon:'✅', name:'ルーティン初コンプリート', cond:'1日のルーティンを全部チェックする' },
+    { id:'routine_10',  icon:'💪', name:'ルーティン通算10回',     cond:'ルーティンコンプリートを通算10回する' },
+    { id:'routine_50',  icon:'🏅', name:'ルーティン通算50回',     cond:'ルーティンコンプリートを通算50回する' },
+    { id:'tn_first',    icon:'🏟️', name:'初の大会登録',          cond:'大会を1件登録する' },
+    { id:'tn_win',      icon:'🎉', name:'初の勝利を記録',         cond:'自分の試合で1勝を記録する' }
+  ];
+  var BADGE_BY_ID = {};
+  BADGES.forEach(function(b){ BADGE_BY_ID[b.id] = b; });
+
+  /* ---------- 小物 ---------- */
+  function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function lsGet(k){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; } }
+  function todayStr(){ var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function fmtDate(s){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? (Number(m[2]) + '/' + Number(m[3])) : (s || ''); }
+  function normName(s){ return String(s || '').replace(/[\s　]+/g, '').trim(); }
+
+  /* ---------- アプリ内データへの安全なアクセス（phase1と同じ方式） ---------- */
+  function getProfiles(){
+    try{ if (typeof profilesList !== 'undefined' && Array.isArray(profilesList) && profilesList.length) return profilesList; }catch(e){}
+    var l = lsGet('badtore_profiles_list_v90') || lsGet('badtore_profiles_list_v80') || lsGet('badtore_profiles_list_v75');
+    return Array.isArray(l) ? l : [];
+  }
+  function getActivePid(){
+    try{ if (typeof activeProfileId !== 'undefined' && activeProfileId) return activeProfileId; }catch(e){}
+    try{ return localStorage.getItem('badtore_active_profile_id_v90') || null; }catch(e){ return null; }
+  }
+  function getPB(){
+    try{ if (typeof personalBestsDB !== 'undefined' && personalBestsDB && typeof personalBestsDB === 'object') return personalBestsDB; }catch(e){}
+    return lsGet('badtore_personal_bests_v90') || lsGet('badtore_personal_bests_v80') || lsGet('badtore_personal_bests_v75') || {};
+  }
+  function getXP(){
+    try{ if (typeof playerXpDB !== 'undefined' && playerXpDB && typeof playerXpDB === 'object') return playerXpDB; }catch(e){}
+    return lsGet('badtore_player_xp_v102') || {};
+  }
+  function getLogs(){
+    try{ if (typeof practiceLogsDB !== 'undefined' && Array.isArray(practiceLogsDB)) return practiceLogsDB; }catch(e){}
+    return lsGet('badtore_practice_logs_v100') || [];
+  }
+  function profileOf(pid){
+    var profs = getProfiles(), found = null;
+    profs.forEach(function(p){ if (p && p.id === pid) found = p; });
+    return found;
+  }
+  function rankOf(score, comps){
+    try{ if (typeof getScoreRankMeta === 'function') return getScoreRankMeta(score, comps).rank; }catch(e){}
+    return score >= 90 ? 'S' : score >= 80 ? 'A' : score >= 68 ? 'B' : 'C';
+  }
+
+  /* ---------- 診断ベスト（旧種別 'serve' は serve_short に読み替え） ---------- */
+  function effBests(pid){
+    var pb = getPB()[pid] || {}, out = {};
+    Object.keys(pb).forEach(function(k){
+      var r = pb[k];
+      if (!r || typeof r.score !== 'number') return;
+      var key = (k === 'serve') ? 'serve_short' : k;
+      if (!out[key] || r.score > out[key].score) out[key] = r;
+    });
+    return out;
+  }
+
+  /* ---------- 練習日と連続日数（XPの記録日＋練習ログ。アプリ本体の「累計日数」と同じ定義） ---------- */
+  function practiceDays(pid){
+    var set = {};
+    var xp = getXP()[pid];
+    if (xp && Array.isArray(xp.days)) xp.days.forEach(function(d){ if (d) set[d] = true; });
+    var profs = getProfiles(), prof = profileOf(pid), name = prof ? prof.name : '';
+    var logs = getLogs();
+    var mine = logs.filter(function(l){ return name && l.memberName === name; });
+    if (!mine.length && profs.length && profs[0].id === pid) mine = logs;
+    mine.forEach(function(l){ if (l.isoDate) set[l.isoDate] = true; });
+    return set;
+  }
+  function streakInfo(set){
+    var days = Object.keys(set).sort(), maxRun = 0, run = 0, prev = null;
+    days.forEach(function(d){
+      var t = Date.parse(d);
+      if (prev !== null && t - prev === 86400000) run++; else run = 1;
+      if (run > maxRun) maxRun = run;
+      prev = t;
+    });
+    var cur = 0, d = new Date();
+    function iso(x){ return x.toISOString().slice(0, 10); }
+    if (!set[iso(d)]) d = new Date(d.getTime() - 86400000);
+    while (set[iso(d)]){ cur++; d = new Date(d.getTime() - 86400000); }
+    return { maxRun: maxRun, current: cur, totalDays: days.length };
+  }
+
+  /* ---------- ルーティン（日別キーを走査し、現在の項目リストで全チェック済みの日を数える） ---------- */
+  function routineItems(){
+    try{ if (window.__bt_routinesCustom && typeof window.__bt_routinesCustom.get === 'function') return window.__bt_routinesCustom.get(); }catch(e){}
+    var saved = lsGet('bt_v105_routines_custom');
+    if (Array.isArray(saved) && saved.length) return saved;
+    return [{id:'stretch'},{id:'footwork'},{id:'shadow'},{id:'core'},{id:'jump'},{id:'review'}];
+  }
+  function routineCompletedDates(){
+    var items = routineItems();
+    if (!items.length) return [];
+    var out = [];
+    try{
+      for (var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if (!k || !/^bt_v105_routine_\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+        var done = lsGet(k);
+        if (!done || typeof done !== 'object') continue;
+        var all = true;
+        for (var j = 0; j < items.length; j++){ if (!done[items[j].id]) { all = false; break; } }
+        if (all) out.push(k.slice('bt_v105_routine_'.length));
+      }
+    }catch(e){}
+    return out.sort();
+  }
+
+  /* ---------- 大会（IndexedDB。大会モジュールと同じ作法で開く） ---------- */
+  var tnCache = { at: 0, records: [], loaded: false };
+  function loadTournaments(cb){
+    if (tnCache.loaded && Date.now() - tnCache.at < 15000){ cb(tnCache.records); return; }
+    try{
+      if (typeof indexedDB === 'undefined'){ cb([]); return; }
+      var req = indexedDB.open('badtore_tournament_db', 1);
+      req.onupgradeneeded = function(ev){
+        var db = ev.target.result;
+        if (!db.objectStoreNames.contains('tournaments')) db.createObjectStore('tournaments', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('images')){
+          var st = db.createObjectStore('images', { keyPath: 'key' });
+          st.createIndex('tnId', 'tnId', { unique: false });
+        }
+      };
+      req.onsuccess = function(){
+        var db = req.result;
+        if (!db.objectStoreNames.contains('tournaments')){ tnCache = { at: Date.now(), records: [], loaded: true }; cb([]); try{ db.close(); }catch(e){} return; }
+        var gr = db.transaction('tournaments', 'readonly').objectStore('tournaments').getAll();
+        gr.onsuccess = function(){ tnCache = { at: Date.now(), records: gr.result || [], loaded: true }; cb(tnCache.records); try{ db.close(); }catch(e){} };
+        gr.onerror = function(){ cb(tnCache.records || []); };
+      };
+      req.onerror = function(){ cb(tnCache.records || []); };
+      req.onblocked = function(){ cb(tnCache.records || []); };
+    }catch(e){ cb([]); }
+  }
+  function tnRawWin(tn, name){
+    var n = normName(name);
+    if (!n) return false;
+    function isOwn(raw){
+      var rn = normName(raw);
+      return !!rn && (rn === n || (rn.length >= 2 && n.indexOf(rn) >= 0) || (n.length >= 2 && rn.indexOf(n) >= 0));
+    }
+    var found = false;
+    ((tn && tn.divisions) || []).forEach(function(div){
+      ((div && div.rounds) || []).forEach(function(r){
+        ((r && r.matches) || []).forEach(function(m){
+          if (!m || !m.winner) return;
+          if ((isOwn(m.p1) && m.winner === 1) || (isOwn(m.p2) && m.winner === 2)) found = true;
+        });
+      });
+    });
+    return found;
+  }
+  function tnHasWinFor(pid, records){
+    var prof = profileOf(pid);
+    if (!prof) return false;
+    var name = String(prof.name || '').replace(/\s*\(.*?\)\s*/g, '').trim();
+    if (!name) return false;
+    var hook = null;
+    try{ hook = window.__bt_tournament; }catch(e){}
+    for (var i = 0; i < records.length; i++){
+      var tn = records[i];
+      if (!tn) continue;
+      if (hook && typeof hook.ownResults === 'function'){
+        try{
+          var res = hook.ownResults(tn, [name]) || [];
+          var won = false;
+          res.forEach(function(r){ if (r && r.won) won = true; });
+          if (won) return true;
+          continue;
+        }catch(e){}
+      }
+      if (tnRawWin(tn, name)) return true;
+    }
+    return false;
+  }
+
+  /* ---------- バッジ状態 ---------- */
+  function loadStore(){
+    var s = lsGet(BADGE_KEY);
+    if (!s || typeof s !== 'object') s = {};
+    if (!s.profiles || typeof s.profiles !== 'object') s.profiles = {};
+    if (!s.routineClaimed || typeof s.routineClaimed !== 'object') s.routineClaimed = {};
+    return s;
+  }
+  function saveStore(s){ try{ localStorage.setItem(BADGE_KEY, JSON.stringify(s)); }catch(e){} }
+  function profState(store, pid){
+    if (!store.profiles[pid] || typeof store.profiles[pid] !== 'object')
+      store.profiles[pid] = { unlocked: {}, pbCount: 0, routineCount: 0, seeded: false, seenBests: {} };
+    var st = store.profiles[pid];
+    if (!st.unlocked || typeof st.unlocked !== 'object') st.unlocked = {};
+    if (typeof st.pbCount !== 'number') st.pbCount = 0;
+    if (typeof st.routineCount !== 'number') st.routineCount = 0;
+    if (!st.seenBests || typeof st.seenBests !== 'object') st.seenBests = {};
+    return st;
+  }
+
+  /* 自己ベスト更新カウンタ: seenBests との差分で数える。
+     - スコアが上がった種目は +1（手動保存などフック外の経路も拾う）
+     - 初観測の種目は通常はスナップショットのみ。診断直後（countNew）のときだけ
+       「初めての記録」として +1 する
+     - 下がった／消えた種目は seen を追随させるだけ（数えない） */
+  function updatePbCounter(store, pid, countNew){
+    var st = profState(store, pid), bests = effBests(pid);
+    Object.keys(bests).forEach(function(k){
+      var sc = bests[k].score, seen = st.seenBests[k];
+      if (typeof seen !== 'number'){
+        if (countNew) st.pbCount++;
+        st.seenBests[k] = sc;
+      } else if (sc > seen){
+        st.pbCount++;
+        st.seenBests[k] = sc;
+      } else if (sc < seen){
+        st.seenBests[k] = sc;
+      }
+    });
+    Object.keys(st.seenBests).forEach(function(k){ if (!bests[k]) delete st.seenBests[k]; });
+  }
+
+  /* ルーティンの完了日は端末全体で共有データなので、日付ごとに
+     「その時点でアクティブだったプロフィール」へ1回だけ帰属させる */
+  function updateRoutineClaims(store){
+    var activePid = getActivePid();
+    if (!activePid) return;
+    routineCompletedDates().forEach(function(d){
+      if (!store.routineClaimed[d]){
+        store.routineClaimed[d] = activePid;
+        profState(store, activePid).routineCount++;
+      }
+    });
+  }
+
+  /* ---------- 判定 ---------- */
+  function evaluateProfile(store, pid, tnRecords){
+    var st = profState(store, pid), earned = {};
+    var bests = effBests(pid), shots = Object.keys(bests), bestScore = 0;
+    if (shots.length) earned.diag_first = true;
+    shots.forEach(function(k){
+      var r = bests[k];
+      if (r.score > bestScore) bestScore = r.score;
+      var rk = rankOf(r.score, r.components);
+      if (rk === 'A' || rk === 'S') earned.diag_rank_a = true;
+      if (rk === 'S') earned.diag_rank_s = true;
+    });
+    var typeCount = 0;
+    SHOT_TYPES.forEach(function(t){ if (bests[t]) typeCount++; });
+    if (typeCount >= SHOT_TYPES.length) earned.diag_all = true;
+    var si = streakInfo(practiceDays(pid));
+    if (si.maxRun >= 3) earned.streak_3 = true;
+    if (si.maxRun >= 7) earned.streak_7 = true;
+    if (si.maxRun >= 30) earned.streak_30 = true;
+    if (st.pbCount >= 1) earned.pb_first = true;
+    if (st.pbCount >= 10) earned.pb_10 = true;
+    if (st.routineCount >= 1) earned.routine_1 = true;
+    if (st.routineCount >= 10) earned.routine_10 = true;
+    if (st.routineCount >= 50) earned.routine_50 = true;
+    if (tnRecords){
+      if (tnRecords.length >= 1) earned.tn_first = true;
+      if (tnRecords.length && tnHasWinFor(pid, tnRecords)) earned.tn_win = true;
+    }
+    return { earned: earned, bests: bests, typeCount: typeCount, streak: si, bestScore: bestScore };
+  }
+  function grantNew(store, pid, earned){
+    var st = profState(store, pid), today = todayStr(), news = [];
+    BADGES.forEach(function(b){
+      if (earned[b.id] && !st.unlocked[b.id]){
+        st.unlocked[b.id] = today;
+        news.push(b);
+      }
+    });
+    return news;
+  }
+
+  /* ---------- 獲得ポップアップ（1件ずつ順番に） ---------- */
+  var popupQueue = [], popupShowing = false;
+  function queuePopups(list){
+    (list || []).forEach(function(b){ popupQueue.push(b); });
+    showNextPopup();
+  }
+  function showNextPopup(){
+    if (popupShowing || !popupQueue.length) return;
+    var b = popupQueue.shift();
+    popupShowing = true;
+    var old = document.getElementById('bt-badge-popup');
+    if (old) old.remove();
+    var m = document.createElement('div');
+    m.id = 'bt-badge-popup';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99996;display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = '<div style="background:#fff;color:#111827;border-radius:20px;width:100%;max-width:340px;padding:24px 18px;text-align:center;box-shadow:0 12px 32px rgba(0,0,0,.35)">'
+      + '<div style="font-size:2.6rem;">' + b.icon + '</div>'
+      + '<div style="font-weight:900;font-size:1.05rem;margin-top:6px;">🏅 バッジ獲得！</div>'
+      + '<div style="font-weight:900;font-size:1.15rem;margin-top:8px;">' + esc(b.name) + '</div>'
+      + '<div style="color:#4b5563;font-size:0.85rem;margin-top:4px;">' + esc(b.cond) + '</div>'
+      + '<button id="bt-badge-popup-ok" type="button" style="margin-top:16px;border:0;background:#059669;color:#fff;font-weight:800;border-radius:999px;padding:10px 28px;font-size:0.95rem;cursor:pointer;">やった！</button></div>';
+    document.body.appendChild(m);
+    var ok = document.getElementById('bt-badge-popup-ok');
+    if (ok) ok.addEventListener('click', function(){ m.remove(); popupShowing = false; showNextPopup(); });
+  }
+
+  /* ---------- 次のバッジヒント（達成率が一番高いもの、同率は定義順） ---------- */
+  function nextHint(st, ev){
+    var cands = [];
+    BADGES.forEach(function(b, idx){
+      if (st.unlocked[b.id]) return;
+      var ratio = 0, text = b.cond;
+      if (b.id === 'pb_first'){ ratio = 0; text = '自己ベストの記録・更新まであと1回'; }
+      else if (b.id === 'pb_10'){ ratio = st.pbCount / 10; text = '自己ベスト更新 あと' + Math.max(10 - st.pbCount, 0) + '回'; }
+      else if (b.id === 'routine_1'){ ratio = 0; text = '今日のルーティンを全部チェックしてみよう'; }
+      else if (b.id === 'routine_10'){ ratio = st.routineCount / 10; text = 'ルーティンコンプリート あと' + Math.max(10 - st.routineCount, 0) + '回'; }
+      else if (b.id === 'routine_50'){ ratio = st.routineCount / 50; text = 'ルーティンコンプリート あと' + Math.max(50 - st.routineCount, 0) + '回'; }
+      else if (b.id === 'streak_3' || b.id === 'streak_7' || b.id === 'streak_30'){
+        var t = b.id === 'streak_3' ? 3 : (b.id === 'streak_7' ? 7 : 30);
+        ratio = Math.min(ev.streak.current, t) / t;
+        text = '連続練習 あと' + Math.max(t - ev.streak.current, 0) + '日';
+      }
+      else if (b.id === 'diag_all'){ ratio = ev.typeCount / SHOT_TYPES.length; text = 'ベスト記録 あと' + Math.max(SHOT_TYPES.length - ev.typeCount, 0) + '種目'; }
+      else if (b.id === 'diag_rank_a'){ ratio = ev.bestScore ? Math.min(ev.bestScore, 80) / 80 : 0; text = ev.bestScore ? ('Aランクまで あと' + Math.max(80 - ev.bestScore, 0) + '点') : 'まずは診断で記録を作ろう'; }
+      else if (b.id === 'diag_rank_s'){ ratio = ev.bestScore ? Math.min(ev.bestScore, 90) / 90 : 0; text = ev.bestScore ? ('Sランクまで あと' + Math.max(90 - ev.bestScore, 0) + '点') : 'まずは診断で記録を作ろう'; }
+      cands.push({ b: b, idx: idx, ratio: ratio, text: text });
+    });
+    if (!cands.length) return null;
+    cands.sort(function(a, c){ if (c.ratio !== a.ratio) return c.ratio - a.ratio; return a.idx - c.idx; });
+    return cands[0];
+  }
+
+  /* ---------- 進捗タブの実績カード描画 ---------- */
+  function renderBadges(){
+    var grid = document.getElementById('btBadgeGrid');
+    if (!grid) return;
+    var pid = getActivePid(), profs = getProfiles();
+    var cntEl = document.getElementById('btBadgeCount'), nx = document.getElementById('btBadgeNext');
+    if (!pid || !profs.length){
+      grid.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);">プロフィールがありません</div>';
+      if (nx) nx.textContent = '';
+      return;
+    }
+    var store = loadStore(), st = profState(store, pid);
+    var ev = evaluateProfile(store, pid, tnCache.loaded ? tnCache.records : null);
+    var count = 0;
+    BADGES.forEach(function(b){ if (st.unlocked[b.id]) count++; });
+    if (cntEl) cntEl.textContent = '（' + count + ' / ' + BADGES.length + '）';
+    if (nx){
+      var hint = nextHint(st, ev);
+      nx.innerHTML = hint
+        ? ('次のバッジ： <b>' + hint.b.icon + ' ' + esc(hint.b.name) + '</b>（' + esc(hint.text) + '）')
+        : '🎉 全部のバッジを獲得済みです！';
+    }
+    grid.innerHTML = BADGES.map(function(b){
+      var d = st.unlocked[b.id];
+      if (d){
+        return '<div style="background:var(--bg-panel);border:1px solid var(--accent-primary);border-radius:10px;padding:8px;text-align:center;">'
+          + '<div style="font-size:1.5rem;">' + b.icon + '</div>'
+          + '<div style="font-weight:800;font-size:0.78rem;margin-top:2px;">' + esc(b.name) + '</div>'
+          + '<div style="font-size:0.68rem;color:var(--text-secondary);">' + esc(fmtDate(d)) + ' 獲得</div></div>';
+      }
+      return '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:10px;padding:8px;text-align:center;opacity:0.55;">'
+        + '<div style="font-size:1.5rem;filter:grayscale(1);">' + b.icon + '</div>'
+        + '<div style="font-weight:800;font-size:0.78rem;margin-top:2px;">' + esc(b.name) + '</div>'
+        + '<div style="font-size:0.68rem;color:var(--text-secondary);">' + esc(b.cond) + '</div></div>';
+    }).join('');
+  }
+
+  /* ---------- チェック本体 ---------- */
+  function checkAll(opts){
+    opts = opts || {};
+    var profs = getProfiles();
+    if (!profs.length){ renderBadges(); return; }
+    var store = loadStore();
+    var activePid = getActivePid();
+    var activeWasSeeded = activePid ? profState(store, activePid).seeded : true;
+    updateRoutineClaims(store);
+    var popups = [];
+    profs.forEach(function(p){
+      var pid = p.id, st = profState(store, pid), wasSeeded = st.seeded;
+      updatePbCounter(store, pid, !!opts.fromDiagnosis && pid === activePid);
+      var ev = evaluateProfile(store, pid, null);
+      var news = grantNew(store, pid, ev.earned);
+      if (!wasSeeded) st.seeded = true;
+      else if (pid === activePid) news.forEach(function(b){ popups.push(b); });
+    });
+    saveStore(store);
+    renderBadges();
+    if (popups.length) queuePopups(popups);
+    if (activePid){
+      loadTournaments(function(records){
+        var store2 = loadStore();
+        var ev2 = evaluateProfile(store2, activePid, records || []);
+        var news2 = grantNew(store2, activePid, ev2.earned);
+        saveStore(store2);
+        renderBadges();
+        if (activeWasSeeded && news2.length) queuePopups(news2);
+      });
+    }
+  }
+
+  /* ---------- 既存関数のラップ（診断完了・手動ベスト保存・タブ切替） ---------- */
+  try{
+    if (typeof finishPoseRecording === 'function' && !finishPoseRecording.__btBadgeWrapped){
+      var _fp = finishPoseRecording;
+      var wf = function(){ var r = _fp.apply(this, arguments); setTimeout(function(){ checkAll({ fromDiagnosis: true }); }, 60); return r; };
+      wf.__btBadgeWrapped = true;
+      finishPoseRecording = wf;
+      try{ window.finishPoseRecording = wf; }catch(e){}
+    }
+  }catch(e){}
+  try{
+    if (typeof saveCurrentAsPersonalBest === 'function' && !saveCurrentAsPersonalBest.__btBadgeWrapped){
+      var _sm = saveCurrentAsPersonalBest;
+      var wm = function(){ var r = _sm.apply(this, arguments); setTimeout(function(){ checkAll({ fromDiagnosis: true }); }, 60); return r; };
+      wm.__btBadgeWrapped = true;
+      saveCurrentAsPersonalBest = wm;
+      try{ window.saveCurrentAsPersonalBest = wm; }catch(e){}
+    }
+  }catch(e){}
+  try{
+    if (typeof switchTab === 'function' && !switchTab.__btBadgeWrapped){
+      var _sw = switchTab;
+      var ws = function(tabId){ var r = _sw(tabId); setTimeout(function(){ checkAll({}); }, 80); return r; };
+      ws.__btBadgeWrapped = true;
+      switchTab = ws;
+      try{ window.switchTab = ws; }catch(e){}
+    }
+  }catch(e){}
+
+  /* ---------- 起動 ---------- */
+  function boot(){
+    checkAll({});
+    setTimeout(function(){ checkAll({}); }, 3000);
+    setInterval(function(){ checkAll({}); }, 20000);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) checkAll({}); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 600); });
+  else setTimeout(boot, 600);
+
+  window.btCheckBadges = checkAll;
+  window.btRenderBadges = renderBadges;
+  window.__bt_badges = {
+    defs: BADGES, check: checkAll, render: renderBadges,
+    evaluate: evaluateProfile, loadStore: loadStore, profState: profState,
+    streakInfo: streakInfo, practiceDays: practiceDays,
+    routineCompletedDates: routineCompletedDates, nextHint: nextHint,
+    updatePbCounter: updatePbCounter, effBests: effBests
+  };
+  console.log('[badtore v106 badges] loaded');
 })();
 </script>
 
