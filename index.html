@@ -4009,6 +4009,16 @@
 
     <section id="tab-progress" class="tab-panel">
 
+      <div class="card" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px;">
+
+        <span style="font-weight:900;font-size:0.8rem;color:var(--accent-highlight);">🎯 今日の意識</span>
+
+        <span style="font-size:0.8rem;color:var(--text-secondary);flex:1;">登録すると画面の上部に表示されます（最大3つ）</span>
+
+        <button type="button" onclick="btFocusStartAdd()" style="font-size:0.8rem;font-weight:800;padding:4px 10px;border-radius:999px;border:1px dashed var(--accent-primary);background:transparent;color:var(--accent-secondary);cursor:pointer;">＋ 追加</button>
+
+      </div>
+
       <div class="card" id="progressMainCard">
 
         <div class="card-header">
@@ -11384,6 +11394,10 @@
       const bar = document.getElementById('globalFocusPinBar');
       if (!bar) return;
       const list = getActivePinnedList();
+      // ピンが1件も無いときはバー自体を表示しない（追加フォームを開いている間だけ例外）。
+      // getActivePinnedList() は日付変更時の引き継ぎ確認も担うため、非表示でも必ずここで呼ぶ。
+      // display:none ならバーの margin も発生しないので、ヘッダー下は詰まって表示される。
+      bar.style.display = (list.length || btFocusAddOpen) ? '' : 'none';
       const pills = list.length ? list.map((it, i) => `<div class="focus-pin-pill ${it.done ? 'pin-done' : ''}" onclick="togglePinnedFocusDone(${i})"><span>${it.done ? '✅' : '📌'} ${btFocusEscapeHtml(it.text)}</span><span class="pin-del-btn" onclick="removePinnedFocusAt(${i},event)">✕</span></div>`).join('') : `<span style="font-size:0.8rem;color:var(--text-secondary);">「＋ 追加」ボタンか、AI診断の「📌 ピン留め」で意識ポイント(最大3つ)を登録できます</span>`;
       let addUI = '';
       if (btFocusAddOpen) {
