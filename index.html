@@ -2996,7 +2996,7 @@
 
                 </div>
 
-                <div id="rxSummaryText" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
+                <div id="rxSummaryText" style="font-size:0.8rem; color:var(--text-primary); line-height:1.55;">
 
                   カメラを起動して<b>「▶️ 初速AI測定スタート」</b>を押すと、待機中の<b>「構えの良さ（ラケット高さ・リストスタンド・膝のゆとり）」</b>と、矢印が出てから一歩目が動くまでの<b>「ミリ秒（ms）」</b>を同時に診断します。
 
@@ -3194,6 +3194,8 @@
 
               </div>
 
+              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">⚠️ 診断は通常速度で撮影した動画専用です。スローモーション撮影の動画では、踏み切り・着地・速度・球速など時間を使う判定がずれます（再生速度の変更は診断に影響しません）。</div>
+
             </div>
 
 
@@ -3228,7 +3230,7 @@
 
                 <div class="metric-title" id="mTitle3">膝の角度（タメ/構え）</div>
 
-                <div class="metric-val" style="color:#fbbf24;" id="valKneeDeg">-- °</div>
+                <div class="metric-val" style="color:var(--accent-highlight);" id="valKneeDeg">-- °</div>
 
                 <div class="metric-peak" id="maxKneeDeg">最深膝角: --°</div>
 
@@ -3534,7 +3536,7 @@
 
                 <canvas id="bestMomentCanvas" width="360" height="360"></canvas>
 
-                <div id="bestMomentMetaText" style="font-size:0.8rem; color:#e2e8f0; line-height:1.45;"></div>
+                <div id="bestMomentMetaText" style="font-size:0.8rem; color:var(--text-primary); line-height:1.45;"></div>
 
               </div>
 
@@ -3576,7 +3578,7 @@
 
               <div id="shotCriteriaDesc" style="font-size:0.8rem; margin-bottom:6px; color:var(--text-secondary); line-height:1.45;"></div>
 
-              <div id="aiSummaryContent" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
+              <div id="aiSummaryContent" style="font-size:0.8rem; color:var(--text-primary); line-height:1.55;">
 
                 <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、カメラボタンを押さなくても動画がすぐに画面に表示されて自動解析が始まります。長い動画はシークバーで診断したい区間（開始A〜終了B）を切り出せます。
 
@@ -6082,9 +6084,15 @@
 
           if (!wristIssue) wristIssue = "手首が寝ています(リストを立てて)";
 
-        } else if (wristCockDeg <= 165 || fingerDrop <= 0.04) {
+        } else {
 
-          wristStandPt = 96;
+          // 「崖」をなくすため fingerDrop に応じた連続値にする（監査 C-1）: 0.04以下で96、基準値で58まで直線で落とす
+
+          const spanC = Math.max(0.01, crit.maxFingerDrop - 0.04);
+
+          const ratioC = Math.min(1, Math.max(0, (fingerDrop - 0.04) / spanC));
+
+          wristStandPt = Math.round(96 - ratioC * (96 - 58));
 
         }
 
@@ -6188,7 +6196,7 @@
 
       active: false, phase: 'idle', currentRep: 0, targetReps: 5,
 
-      cueTime: 0, baselineHip: null, baselineKneeDeg: 160,
+      cueTime: 0, baselineHip: null, baselineKneeDeg: 160, smoothKneeDeg: null, kneeConfirm: 0,
 
       resultsMs: [], stepTypes: [], stanceScores: [], bestMs: 9999, timerId: null
 
@@ -6392,13 +6400,21 @@
 
         const kneeDeg = stanceEval.kneeDeg;
 
+        // 膝角は未平滑値だとランドマークの揺れで誤検出するため、指数平滑した値で判定する（監査 B-6）
+
+        rxState.smoothKneeDeg = (typeof rxState.smoothKneeDeg === 'number') ? Math.round(rxState.smoothKneeDeg * 0.5 + kneeDeg * 0.5) : kneeDeg;
+
+        const smoothKneeDeg = rxState.smoothKneeDeg;
+
 
 
         if (rxState.phase === 'ready_wait') {
 
           rxState.baselineHip = { x: hipX, y: hipY, stancePt: stanceEval.totalReadyPt };
 
-          rxState.baselineKneeDeg = kneeDeg;
+          rxState.baselineKneeDeg = smoothKneeDeg;
+
+          rxState.kneeConfirm = 0;
 
         }
 
@@ -6418,11 +6434,15 @@
 
           const totalMove = Math.hypot(dx, dy);
 
-          const kneeChange = Math.abs(rxState.baselineKneeDeg - kneeDeg);
+          const kneeChange = Math.abs(rxState.baselineKneeDeg - smoothKneeDeg);
 
 
 
-          if (totalMove > thresh || kneeChange >= 9) {
+          // 膝トリガ単独では即記録せず、平滑値で2フレーム連続して閾値を超えた場合のみ動きとして扱う（ノイズが最速記録を盗まないため。監査 B-6）
+
+          if (kneeChange >= 9) rxState.kneeConfirm = (rxState.kneeConfirm || 0) + 1; else rxState.kneeConfirm = 0;
+
+          if (totalMove > thresh || rxState.kneeConfirm >= 2) {
 
             const rawMs = Math.round(performance.now() - rxState.cueTime);
 
@@ -6764,7 +6784,7 @@
 
       speedPt: 0, maxSpeedPt: 0,
 
-      stanceRatio: 1.35, stabilityPt: 90, wristKeepPt: 90, wristStandPt: 92, isWristStandOk: true,
+      stanceRatio: 1.35, stabilityPt: null, wristKeepPt: 90, wristStandPt: 92, isWristStandOk: true,
 
       coreTiltDeg: 0, confidencePct: 0,
 
@@ -6786,7 +6806,7 @@
 
 
 
-    let poseSession = { active: false, durationSec: 10, remainingSec: 0, timerId: null, validFrames: 0, startStampMs: 0 };
+    let poseSession = { active: false, durationSec: 10, remainingSec: 0, timerId: null, validFrames: 0, startStampMs: 0, truncated: false };
     let lastPoseDiagnosisResult = null;
 
 
@@ -7162,6 +7182,10 @@
 
       const diagSec = Math.min(15, Math.ceil(clipLen / rate));
 
+      // 解析時間の上限（15秒）で打ち切られる場合は、その旨を結果に表示するため記録する（監査 C-6）
+
+      poseSession.truncated = Math.ceil(clipLen / rate) > 15;
+
       poseSession.durationSec = diagSec;
 
       poseSession.remainingSec = diagSec;
@@ -7170,7 +7194,7 @@
 
       document.getElementById('sessionTimerLabel').textContent = `🔴 動画自動診断中... (${rate}x)`;
 
-      document.getElementById('aiSummaryContent').innerHTML = `🎬 動画（${videoTrimState.startSec.toFixed(1)}s〜${videoTrimState.endSec.toFixed(1)}s）を自動解析しています。完了するとベスト瞬間キャプチャと総合スコアが表示されます...`;
+      document.getElementById('aiSummaryContent').innerHTML = `🎬 動画（${videoTrimState.startSec.toFixed(1)}s〜${videoTrimState.endSec.toFixed(1)}s）を自動解析しています。完了するとベスト瞬間キャプチャと総合スコアが表示されます...<br>⚠️ 通常速度で撮影した動画専用です（スローモーション撮影では、時間を使う判定がずれます）。`;
 
 
 
@@ -7518,11 +7542,23 @@
 
 
 
-          aiMetrics.smoothElbow = aiMetrics.smoothElbow === null ? rawElbow : Math.round(aiMetrics.smoothElbow * 0.35 + rawElbow * 0.65);
+          // 平滑はフレーム数ではなく実時間ベースにする（監査 C-10）: 処理fpsが落ちても同じ効き方になるよう、
 
-          aiMetrics.smoothShoulder = aiMetrics.smoothShoulder === null ? rawShoulder : Math.round(aiMetrics.smoothShoulder * 0.35 + rawShoulder * 0.65);
+          // フレーム間隔 dt から指数平滑の係数を決める（30fps時に従来の 0.65 / 0.6 とほぼ一致する時定数）
 
-          aiMetrics.smoothKnee = aiMetrics.smoothKnee === null ? rawKnee : Math.round(aiMetrics.smoothKnee * 0.4 + rawKnee * 0.6);
+          const smoothDt = (typeof aiMetrics.prevFrameTimeSec === 'number') ? Math.min(0.12, Math.max(0.005, frameTimeSec - aiMetrics.prevFrameTimeSec)) : (1 / 30);
+
+          aiMetrics.prevFrameTimeSec = frameTimeSec;
+
+          const alphaAngle = 1 - Math.exp(-smoothDt / 0.032);
+
+          const alphaKnee = 1 - Math.exp(-smoothDt / 0.036);
+
+          aiMetrics.smoothElbow = aiMetrics.smoothElbow === null ? rawElbow : Math.round(aiMetrics.smoothElbow * (1 - alphaAngle) + rawElbow * alphaAngle);
+
+          aiMetrics.smoothShoulder = aiMetrics.smoothShoulder === null ? rawShoulder : Math.round(aiMetrics.smoothShoulder * (1 - alphaAngle) + rawShoulder * alphaAngle);
+
+          aiMetrics.smoothKnee = aiMetrics.smoothKnee === null ? rawKnee : Math.round(aiMetrics.smoothKnee * (1 - alphaKnee) + rawKnee * alphaKnee);
 
 
 
@@ -7634,7 +7670,7 @@
 
 
 
-                aiMetrics.smoothSpeed = Math.round(aiMetrics.smoothSpeed * 0.4 + rawSpeedPt * 0.6);
+                aiMetrics.smoothSpeed = Math.round(aiMetrics.smoothSpeed * (1 - alphaKnee) + rawSpeedPt * alphaKnee);
 
                 aiMetrics.speedPt = aiMetrics.smoothSpeed;
 
@@ -7664,7 +7700,7 @@
 
           if (shotType === 'ready_stance') {
 
-            frameComposite = aiMetrics.wristKeepPt * 0.35 + aiMetrics.wristStandPt * 0.15 + aiMetrics.kneePt * 0.3 + aiMetrics.stabilityPt * 0.2;
+            frameComposite = aiMetrics.wristKeepPt * 0.35 + aiMetrics.wristStandPt * 0.15 + aiMetrics.kneePt * 0.3 + (typeof aiMetrics.stabilityPt === 'number' ? aiMetrics.stabilityPt : 90) * 0.2;
 
           } else if (shotType === 'serve_short') {
 
@@ -8186,7 +8222,9 @@
 
         const diffKnee = Math.abs(model.idealKnee - kneeDeg);
 
-        aiMetrics.kneePt = Math.max(30, Math.min(100, 100 - Math.round(diffKnee * 1.4)));
+        // 最終採点の下半身式（両側・傾斜1.8・下限40）と共通化する（監査 B-4 / C-5）
+
+        aiMetrics.kneePt = Math.max(40, Math.min(100, 100 - Math.round(diffKnee * 1.8)));
 
         aiMetrics.elbowPt = Math.min(100, Math.max(40, 100 - Math.abs(model.idealElbow - elbowDeg)));
 
@@ -8302,7 +8340,7 @@
 
       if (isStance) {
 
-        document.getElementById('valSpeedPt').textContent = `${aiMetrics.stabilityPt} pt`;
+        document.getElementById('valSpeedPt').textContent = aiMetrics.stabilityPt === null ? '未測定' : `${aiMetrics.stabilityPt} pt`;
 
         document.getElementById('maxSpeedPt').textContent = `足幅比: ${aiMetrics.stanceRatio}倍 (理想1.4倍)`;
 
@@ -8330,29 +8368,59 @@
 
       } else {
 
-        upperVal = Math.min(100, Math.round(((aiMetrics.maxShoulderDeg / 142) * 60) + ((aiMetrics.maxElbowDeg / 155) * 40)));
+        // 内訳バーは最終採点と同じ理想値・同じ式で計算する（監査 B-4）。膝が未測定なら代用値を入れず「未測定」表示にする（監査 B-2）
 
-        const minKn = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
+        const uiModel = SHOT_IDEAL_MODELS[st] || SHOT_IDEAL_MODELS.smash;
 
-        lowerVal = minKn <= 135 ? 100 : Math.max(40, 100 - (minKn - 135) * 2);
+        if (st === 'serve_short' || st === 'serve_long') {
 
-        thirdVal = aiMetrics.maxSpeedPt;
+          const kneeServePtUi = aiMetrics.minKneeDeg === 180 ? null : Math.max(30, Math.min(100, 100 - Math.round(Math.abs(aiMetrics.minKneeDeg - uiModel.idealKnee) * 1.4)));
+
+          const basePartsUi = [];
+
+          if (kneeServePtUi !== null) basePartsUi.push([kneeServePtUi, 0.5]);
+
+          if (typeof aiMetrics.stabilityPt === 'number') basePartsUi.push([aiMetrics.stabilityPt, 0.5]);
+
+          upperVal = basePartsUi.length ? Math.round(basePartsUi.reduce((a, p) => a + p[0] * p[1], 0) / basePartsUi.reduce((a, p) => a + p[1], 0)) : null;
+
+          lowerVal = st === 'serve_long' ? btServeLongControlPt(aiMetrics.maxSpeedPt) : btServeControlPt(aiMetrics.maxSpeedPt);
+
+          thirdVal = aiMetrics.maxSpeedPt;
+
+        } else if (uiModel.focus === 'lower') {
+
+          upperVal = aiMetrics.shoulderPt;
+
+          lowerVal = aiMetrics.minKneeDeg === 180 ? null : Math.max(40, Math.round(100 - Math.abs(aiMetrics.minKneeDeg - uiModel.idealKnee) * 1.8));
+
+          thirdVal = aiMetrics.maxSpeedPt;
+
+        } else {
+
+          upperVal = Math.min(100, Math.round(((aiMetrics.maxShoulderDeg / uiModel.idealShoulder) * 60) + ((aiMetrics.maxElbowDeg / uiModel.idealElbow) * 40)));
+
+          lowerVal = aiMetrics.minKneeDeg === 180 ? null : (aiMetrics.minKneeDeg <= (uiModel.idealKnee + 5) ? 100 : Math.max(40, 100 - (aiMetrics.minKneeDeg - uiModel.idealKnee) * 1.8));
+
+          thirdVal = aiMetrics.maxSpeedPt;
+
+        }
 
       }
 
 
 
-      document.getElementById('bdUpperText').textContent = `${upperVal} / 100`;
+      document.getElementById('bdUpperText').textContent = upperVal === null ? '未測定' : `${upperVal} / 100`;
 
-      document.getElementById('bdUpperBar').style.width = `${upperVal}%`;
+      document.getElementById('bdUpperBar').style.width = `${upperVal === null ? 0 : upperVal}%`;
 
-      document.getElementById('bdLowerText').textContent = `${lowerVal} / 100`;
+      document.getElementById('bdLowerText').textContent = lowerVal === null ? '未測定' : `${lowerVal} / 100`;
 
-      document.getElementById('bdLowerBar').style.width = `${lowerVal}%`;
+      document.getElementById('bdLowerBar').style.width = `${lowerVal === null ? 0 : lowerVal}%`;
 
-      document.getElementById('bdSpeedText').textContent = `${thirdVal} / 100`;
+      document.getElementById('bdSpeedText').textContent = (thirdVal === null || thirdVal === undefined) ? '未測定' : `${thirdVal} / 100`;
 
-      document.getElementById('bdSpeedBar').style.width = `${thirdVal}%`;
+      document.getElementById('bdSpeedBar').style.width = `${thirdVal || 0}%`;
 
     }
 
@@ -8371,6 +8439,14 @@
       aiMetrics.maxSpeedPt = 0;
 
       aiMetrics.hipYHistory = [];
+
+      // 安定度は未測定（null）に戻す。前回値や初期値のまま採点されないようにするため（監査 B-7）
+
+      aiMetrics.stabilityPt = null;
+
+      aiMetrics.prevFrameTimeSec = null;
+
+      aiMetrics.bestFrameRedrawn = false;
       aiMetrics.sessionWristTotal = 0;
 
       aiMetrics.sessionWristNg = 0;
@@ -8560,7 +8636,7 @@
 
               <td>${model.idealShoulder}°</td>
 
-              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.maxSh + '°' : '未記録'}</td>
+              <td style="color:var(--accent-highlight); font-weight:800;">${bestRec ? bestRec.maxSh + '°' : '未記録'}</td>
 
               <td style="color:#38bdf8; font-weight:800;">${curSh}</td>
 
@@ -8572,7 +8648,7 @@
 
               <td>${model.idealElbow}°</td>
 
-              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.maxEl + '°' : '未記録'}</td>
+              <td style="color:var(--accent-highlight); font-weight:800;">${bestRec ? bestRec.maxEl + '°' : '未記録'}</td>
 
               <td style="color:#38bdf8; font-weight:800;">${curEl}</td>
 
@@ -8584,7 +8660,7 @@
 
               <td>${model.idealKnee}°</td>
 
-              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.minKn + '°' : '未記録'}</td>
+              <td style="color:var(--accent-highlight); font-weight:800;">${bestRec ? (bestRec.minKn === null || bestRec.minKn === undefined ? '未測定' : bestRec.minKn + '°') : '未記録'}</td>
 
               <td style="color:#38bdf8; font-weight:800;">${curKn}</td>
 
@@ -8820,17 +8896,17 @@
 
       }
 
-      if (hipCount >= 6) {
+      // 安定度は全体集計（直近20フレーム）と定義を統一する（監査 C-9）: ウィンドウ内でも直近20件で計算する
 
-        const mean = hipSum / hipCount;
+      const recentHip = list.slice(-20).filter(s => typeof s.hipRatio === 'number' && isFinite(s.hipRatio));
+
+      if (recentHip.length >= 6) {
+
+        const mean = recentHip.reduce((a, s) => a + s.hipRatio, 0) / recentHip.length;
 
         let maxDev = 0;
 
-        for (const s of list) {
-
-          if (typeof s.hipRatio === 'number' && isFinite(s.hipRatio)) maxDev = Math.max(maxDev, Math.abs(s.hipRatio - mean));
-
-        }
+        for (const s of recentHip) maxDev = Math.max(maxDev, Math.abs(s.hipRatio - mean));
 
         agg.stabilityPt = Math.min(100, Math.max(40, Math.round(105 - maxDev * 320)));
 
@@ -8885,6 +8961,10 @@
     function btApplyImpactWindow() {
 
       lastImpactWindowInfo = null;
+
+      // 構え（ready_stance）は打球のない種目なのでウィンドウを適用しない（監査 C-9）
+
+      if (document.getElementById('shotTypeSelect').value === 'ready_stance') return { applied: false, reason: 'stance' };
 
       const det = btDetectImpactWindow(poseFrameSamples);
 
@@ -8947,6 +9027,10 @@
         aiMetrics.bestFrameTimeSec = agg.best.t;
 
         aiMetrics.bestSnapshotMeta = { shoulderDeg: agg.best.shoulderDeg, elbowDeg: agg.best.elbowDeg, kneeDeg: agg.best.kneeDeg, speedPt: agg.best.speedPt, wristStandOk: agg.best.wristStandOk };
+
+        // ベストフレームが実写ではなく骨格の描き直しになったことを記録する（カルテで区別を伝えるため。監査 B-5）
+
+        aiMetrics.bestFrameRedrawn = true;
 
         btRedrawBestMomentSkeleton();
 
@@ -9060,11 +9144,73 @@
 
       if (!run) run = validRuns.reduce((a, b) => ((b.end - b.start) > (a.end - a.start) ? b : a));
 
-      // 踏み切り：ラン開始直前に各足首が最後に地面にいたサンプルの時刻差（左右の離地のズレ）
+      // 地面基準の局所化（監査 A-2）: クリップ全体の92パーセンタイルでは、録画中にカメラとの距離が変わると
+
+      // 「遠くで立っているだけ」の区間が滞空と誤認される。対象ランの前後の区間で、ランの体幹長に近い
+
+      // （＝カメラとの距離が近い）サンプルだけから地面を取り直し、ランを再検出する。
+
+      const runTorsoVals = [];
+
+      for (let i = run.start; i <= run.end; i++) runTorsoVals.push(rows[i].torso);
+
+      runTorsoVals.sort((a, b) => a - b);
+
+      const runTorso = runTorsoVals[Math.floor(runTorsoVals.length / 2)];
+
+      const locStartT = rows[run.start].t - 2.5;
+
+      const locEndT = rows[run.end].t + 1.0;
+
+      let locRows = rows.filter(r => r.t >= locStartT && r.t <= locEndT && Math.abs(r.torso - runTorso) <= runTorso * 0.25);
+
+      if (locRows.length < 5) locRows = rows.filter(r => r.t >= locStartT && r.t <= locEndT);
+
+      if (locRows.length >= 5) {
+
+        const lgL = pct92(locRows.map(r => r.yL));
+
+        const lgR = pct92(locRows.map(r => r.yR));
+
+        for (const r of rows) {
+
+          r.liftL = (lgL - r.yL) / r.torso;
+
+          r.liftR = (lgR - r.yR) / r.torso;
+
+          r.air = r.liftL >= BT_JUMP_AIR_LIFT_RATIO && r.liftR >= BT_JUMP_AIR_LIFT_RATIO;
+
+        }
+
+        const runs2 = [];
+
+        let cur2 = null;
+
+        rows.forEach((r, i) => {
+
+          if (r.air) { if (!cur2) cur2 = { start: i, end: i }; else cur2.end = i; }
+
+          else if (cur2) { runs2.push(cur2); cur2 = null; }
+
+        });
+
+        if (cur2) runs2.push(cur2);
+
+        const valid2 = runs2.filter(r => (r.end - r.start + 1) >= 2);
+
+        if (!valid2.length) return { detected: false, reason: 'no-air' };
+
+        run = valid2.find(r => rows[r.start].t <= pkT && pkT <= rows[r.end].t) || valid2.reduce((a, b) => ((b.end - b.start) > (a.end - a.start) ? b : a));
+
+      }
+
+      // 踏み切り：ラン開始直前（1.0秒以内）に各足首が最後に地面にいたサンプルの時刻差（左右の離地のズレ）。探索を直前1.0秒に限らないと、ジャンプと無関係な過去の接地を拾って実在しない大きなズレになる。両足とも範囲内で見つからなければ syncSec=null（測定できず）とし、踏み切りは中立の65ptにする
+
+      const runStartT = rows[run.start].t;
 
       const lastGroundIdx = (key) => {
 
-        for (let i = run.start; i >= 0; i--) { if (rows[i][key] < BT_JUMP_AIR_LIFT_RATIO) return i; }
+        for (let i = run.start; i >= 0; i--) { if (rows[i].t < runStartT - 1.0) break; if (rows[i][key] < BT_JUMP_AIR_LIFT_RATIO) return i; }
 
         return -1;
 
@@ -9076,7 +9222,9 @@
 
       let syncSec = null;
 
-      let takeoffPt = 40;
+      let takeoffPt = 65;
+
+      let twoFoot = null;
 
       if (iL >= 0 && iR >= 0) {
 
@@ -9084,9 +9232,9 @@
 
         takeoffPt = syncSec <= BT_JUMP_SYNC_GOOD_SEC ? 100 : syncSec <= BT_JUMP_SYNC_OK_SEC ? 90 : syncSec <= BT_JUMP_SYNC_LOOSE_SEC ? 65 : 40;
 
-      }
+        twoFoot = syncSec <= BT_JUMP_SYNC_OK_SEC;
 
-      const twoFoot = syncSec !== null && syncSec <= BT_JUMP_SYNC_OK_SEC;
+      }
 
       // 滞空：両足の浮き上がり（小さい方）の最大値で評価する
 
@@ -9114,11 +9262,15 @@
 
       }
 
-      const landKneePt = landKnee === null ? 60 : Math.round(Math.min(100, Math.max(40, 100 - Math.abs(landKnee - BT_JUMP_LAND_KNEE_TARGET) * 1.3)));
+      // 膝データが無い場合はデフォルト値で黙って採点せず、その成分を除外して再配分する（監査 C-2）
+
+      const landKneeDefaulted = landKnee === null;
+
+      const landKneePt = landKneeDefaulted ? null : Math.round(Math.min(100, Math.max(40, 100 - Math.abs(landKnee - BT_JUMP_LAND_KNEE_TARGET) * 1.3)));
 
       const post = rows.filter(r => r.t >= landT && r.t <= landT + 0.8 && typeof r.hipRatio === 'number' && isFinite(r.hipRatio));
 
-      let landStabilityPt = 70;
+      let landStabilityPt = null;
 
       if (post.length >= 4) {
 
@@ -9138,11 +9290,23 @@
 
       const alignPt = Math.round(Math.min(100, Math.max(40, 100 - Math.max(0, alignDiff - 0.04) * 600)));
 
-      const landingPt = Math.round(landKneePt * 0.5 + landStabilityPt * 0.3 + alignPt * 0.2);
+      // 着地は測れた成分だけで採点する（測れなかった成分は除外して再配分。監査 C-2）
+
+      const landParts = [];
+
+      if (landKneePt !== null) landParts.push([landKneePt, 0.5]);
+
+      if (landStabilityPt !== null) landParts.push([landStabilityPt, 0.3]);
+
+      landParts.push([alignPt, 0.2]);
+
+      const landWSum = landParts.reduce((a, p) => a + p[1], 0);
+
+      const landingPt = Math.round(landParts.reduce((a, p) => a + p[0] * p[1], 0) / landWSum);
 
       const jumpPt = Math.round(takeoffPt * 0.35 + airPt * 0.30 + landingPt * 0.35);
 
-      return { detected: true, takeoffPt: takeoffPt, airPt: airPt, landingPt: landingPt, jumpPt: jumpPt, syncSec: syncSec, twoFoot: twoFoot, maxLift: maxLift, airDurSec: airDurSec, landKneeDeg: landKnee, landStabilityPt: landStabilityPt };
+      return { detected: true, takeoffPt: takeoffPt, airPt: airPt, landingPt: landingPt, jumpPt: jumpPt, syncSec: syncSec, twoFoot: twoFoot, maxLift: maxLift, airDurSec: airDurSec, landKneeDeg: landKnee, landStabilityPt: landStabilityPt, landKneeDefaulted: landKneeDefaulted, landStabilityDefaulted: (landStabilityPt === null) };
 
     }
 
@@ -9217,6 +9381,18 @@
         for (const r of rows) if (r.wristVel > peak.wristVel) peak = r;
 
       }
+
+      // 妥当性ゲート（監査 A-1 / C-3）: 打球ウィンドウが適用されなかった場合は、全体から拾った最大速度の瞬間が
+
+      // 準備動作や素振りである可能性を排除できないため、打点は未検出に倒す。ピークの手首速度が打球ウィンドウの
+
+      // 最低ピーク速度（BT_IMPACT_MIN_PEAK_VEL）未満なら、サーブらしいスイング自体が無かったものとして未検出にする
+
+      // （立っているだけの録画で高得点にならないようにするため）。
+
+      if (!(typeof peakT === 'number' && isFinite(peakT))) return { detected: false, reason: 'no-window' };
+
+      if (!(peak.wristVel >= BT_IMPACT_MIN_PEAK_VEL)) return { detected: false, reason: 'no-swing' };
 
       // 腰ライン比：画像座標は下向きが正のため、(腰Y − 手首Y) / 体幹長 が正なら手首は腰より上
 
@@ -9308,6 +9484,18 @@
 
       }
 
+      // 妥当性ゲート（監査 A-1 / C-3）: 打球ウィンドウが適用されなかった場合は、全体から拾った最大速度の瞬間が
+
+      // 準備動作や素振りである可能性を排除できないため、打点は未検出に倒す。ピークの手首速度が打球ウィンドウの
+
+      // 最低ピーク速度（BT_IMPACT_MIN_PEAK_VEL）未満なら、サーブらしいスイング自体が無かったものとして未検出にする
+
+      // （立っているだけの録画で高得点にならないようにするため）。
+
+      if (!(typeof peakT === 'number' && isFinite(peakT))) return { detected: false, reason: 'no-window' };
+
+      if (!(peak.wristVel >= BT_IMPACT_MIN_PEAK_VEL)) return { detected: false, reason: 'no-swing' };
+
       // 腰ライン比：画像座標は下向きが正のため、(腰Y − 手首Y) / 体幹長 が正なら手首は腰より上
 
       const liftRatio = (peak.hipY - peak.wristY) / peak.torso;
@@ -9396,7 +9584,17 @@
 
       const maxEl = aiMetrics.maxElbowDeg;
 
-      const minKn = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
+      // 膝が一度も有効に測れなかった場合（センチネル値180）は代用値を入れず「未測定」として扱い、
+
+      // 膝を使う成分は除外して再配分する（監査 B-2。旧実装は 155° を測定値として採点・保存していた）。
+
+      // 安定度も、再計算されていない場合（null）は未測定として扱う（監査 B-7）。
+
+      const kneeMeasured = aiMetrics.minKneeDeg !== 180;
+
+      const minKn = kneeMeasured ? aiMetrics.minKneeDeg : null;
+
+      const stabilityMeasured = typeof aiMetrics.stabilityPt === 'number' && isFinite(aiMetrics.stabilityPt);
 
       const maxSp = aiMetrics.maxSpeedPt;
 
@@ -9422,6 +9620,26 @@
 
           : null;
 
+      // 🎾 サーブの妥当性ゲート（監査 A-1）: サーブらしいスイング自体が検出できなかった場合は、
+
+      // 立っているだけの録画に点数を付けないよう、測定不成立として扱う（ランク・弱点判定・ベスト保存はしない）
+
+      if ((shot === 'serve_short' || shot === 'serve_long') && lastServeAnalysis && !lastServeAnalysis.detected && lastServeAnalysis.reason === 'no-swing') {
+
+        lastPoseDiagnosisResult = { ok: false, score: null, shot: shot, reason: 'no-swing' };
+
+        document.getElementById('aiSummaryContent').innerHTML = `
+
+          <div style="color:#f43f5e; font-weight:800;">⚠️ サーブの動きが検出できませんでした</div>
+
+          <div>スイングらしい動き（手首の速い動き）が確認できなかったため、今回は採点していません。サーブを打つ場面が入るように撮り直してください。</div>
+
+        `;
+
+        return;
+
+      }
+
 
 
       if (aiMetrics.bestSnapshotMeta) {
@@ -9438,7 +9656,7 @@
 
           <div>・肩挙上角: <b style="color:#38bdf8;">${aiMetrics.bestSnapshotMeta.shoulderDeg}°</b> ｜ 肘伸展: <b style="color:#34d399;">${aiMetrics.bestSnapshotMeta.elbowDeg}°</b></div>
 
-          <div>・膝沈み込み角: <b style="color:#fbbf24;">${aiMetrics.bestSnapshotMeta.kneeDeg}°</b> ｜ 速度指数: <b>${aiMetrics.bestSnapshotMeta.speedPt}pt</b></div>
+          <div>・膝沈み込み角: <b style="color:var(--accent-highlight);">${aiMetrics.bestSnapshotMeta.kneeDeg}°</b> ｜ 速度指数: <b>${aiMetrics.bestSnapshotMeta.speedPt}pt</b></div>
 
           <div>・リストスタンド: <b>${aiMetrics.bestSnapshotMeta.wristStandOk ? '🟢 良好' : '⚠️ 手首寝すぎ'}</b></div>
 
@@ -9460,9 +9678,19 @@
 
       if (shot === 'ready_stance') {
 
-        totalScore = Math.round(aiMetrics.wristKeepPt * 0.3 + aiMetrics.wristStandPt * 0.15 + aiMetrics.kneePt * 0.3 + aiMetrics.stabilityPt * 0.25);
+        // 膝・安定度が未測定の場合はその成分を除外して再配分する（監査 B-2 / B-7）
 
-        scoreComponents = [aiMetrics.wristKeepPt, aiMetrics.wristStandPt, aiMetrics.kneePt, aiMetrics.stabilityPt];
+        const stanceParts = [[aiMetrics.wristKeepPt, 0.3], [aiMetrics.wristStandPt, 0.15]];
+
+        if (kneeMeasured) stanceParts.push([aiMetrics.kneePt, 0.3]);
+
+        if (stabilityMeasured) stanceParts.push([aiMetrics.stabilityPt, 0.25]);
+
+        const stanceWSum = stanceParts.reduce((a, p) => a + p[1], 0);
+
+        totalScore = Math.round(stanceParts.reduce((a, p) => a + p[0] * p[1], 0) / stanceWSum);
+
+        scoreComponents = stanceParts.map(p => p[0]);
 
 
 
@@ -9472,13 +9700,17 @@
 
 
 
-        if (minKn >= 120 && minKn <= 155 && aiMetrics.stanceRatio >= 1.15) goodPoints.push(`膝のゆとり角度（${aiMetrics.kneeDeg}°）とスタンス幅（肩幅の${aiMetrics.stanceRatio}倍）のバランスが良く、どの方向にもすぐ抜重できます。`);
+        if (!kneeMeasured) improvePoints.push(`膝の角度は測定できませんでした。下半身まで映る画角で撮り直すと、膝のゆとりも採点できます。`);
+
+        else if (minKn >= 120 && minKn <= 155 && aiMetrics.stanceRatio >= 1.15) goodPoints.push(`膝のゆとり角度（${aiMetrics.kneeDeg}°）とスタンス幅（肩幅の${aiMetrics.stanceRatio}倍）のバランスが良く、どの方向にもすぐ抜重できます。`);
 
         else improvePoints.push(`膝角度（現在${aiMetrics.kneeDeg}°）または足幅（肩幅の${aiMetrics.stanceRatio}倍）を見直しましょう。足幅を肩幅の約1.4倍に広げ、膝を軽く緩める（約140°）と一歩目が劇的に速くなります。`);
 
 
 
-        if (aiMetrics.stabilityPt >= 82) goodPoints.push(`待機中の小刻みな上下バウンドが少なく（静止安定度 ${aiMetrics.stabilityPt}pt）、目線と体幹軸（傾き${aiMetrics.coreTiltDeg}°）が安定しています。`);
+        if (!stabilityMeasured) improvePoints.push(`静止安定度は測定できませんでした（有効なフレームが少なく、安定度を計算できませんでした）。`);
+
+        else if (aiMetrics.stabilityPt >= 82) goodPoints.push(`待機中の小刻みな上下バウンドが少なく（静止安定度 ${aiMetrics.stabilityPt}pt）、目線と体幹軸（傾き${aiMetrics.coreTiltDeg}°）が安定しています。`);
 
         else improvePoints.push(`待機中に小刻みに上下に跳ねすぎる傾向があります（静止安定度 ${aiMetrics.stabilityPt}pt）。待つときは静かに構え、相手が打つ瞬間にだけスッと抜重しましょう。`);
 
@@ -9486,17 +9718,33 @@
 
       } else if (model.focus === 'lower') {
 
-        const lowerBest = minKn <= (model.idealKnee + 6) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8);
+        // 最終採点も毎フレーム表示と同じ両側式にする（監査 C-5）。膝が未測定の場合は下半身成分を除外し、速度だけで評価する（監査 B-2）
 
-        totalScore = Math.round(lowerBest * 0.55 + maxSp * 0.45);
+        const lowerBest = kneeMeasured ? Math.max(40, Math.round(100 - Math.abs(minKn - model.idealKnee) * 1.8)) : null;
 
-        scoreComponents = [lowerBest, maxSp];
+        if (lowerBest !== null) {
+
+          totalScore = Math.round(lowerBest * 0.55 + maxSp * 0.45);
+
+          scoreComponents = [lowerBest, maxSp];
+
+        } else {
+
+          totalScore = Math.round(maxSp);
+
+          scoreComponents = [maxSp];
+
+        }
 
 
 
-        if (minKn <= model.idealKnee + 8) goodPoints.push(`下半身の沈み込み（最深膝角 ${minKn}°）が目標基準（${model.idealKnee}°）に達しており、低い重心から安定したラケット面が作れています。`);
+        if (!kneeMeasured) improvePoints.push(`膝の沈み込みは測定できませんでした。下半身まで映る画角で撮り直すと採点できます。`);
 
-        else improvePoints.push(`膝の沈み込みが最深 ${minKn}° でした。目標基準（${model.idealKnee}°）のようにあと${minKn - model.idealKnee}°ほど腰を落とすとレシーブやネット前の安定感が向上します。`);
+        else if (Math.abs(minKn - model.idealKnee) <= 8) goodPoints.push(`下半身の沈み込み（最深膝角 ${minKn}°）が目標基準（${model.idealKnee}°）に達しており、低い重心から安定したラケット面が作れています。`);
+
+        else if (minKn > model.idealKnee) improvePoints.push(`膝の沈み込みが最深 ${minKn}° でした。目標基準（${model.idealKnee}°）のようにあと${minKn - model.idealKnee}°ほど腰を落とすとレシーブやネット前の安定感が向上します。`);
+
+        else improvePoints.push(`膝の沈み込みが最深 ${minKn}° と深すぎました。目標基準（${model.idealKnee}°）くらいに浅くすると、次の動きへの移行が速くなります。`);
 
 
 
@@ -9510,15 +9758,21 @@
 
         const upperBest = Math.min(100, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)));
 
-        const lowerBest = minKn <= (model.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8);
+        const lowerBest = kneeMeasured ? (minKn <= (model.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8)) : null;
 
         if (lastJumpAnalysis && lastJumpAnalysis.detected) {
 
           const j = lastJumpAnalysis;
 
-          totalScore = Math.round(upperBest * 0.30 + lowerBest * 0.20 + maxSp * 0.20 + j.jumpPt * 0.30);
+          const jumpParts = [[upperBest, 0.30], [maxSp, 0.20], [j.jumpPt, 0.30]];
 
-          scoreComponents = [upperBest, lowerBest, maxSp, j.jumpPt];
+          if (lowerBest !== null) jumpParts.splice(1, 0, [lowerBest, 0.20]);
+
+          const jumpWSum = jumpParts.reduce((a, p) => a + p[1], 0);
+
+          totalScore = Math.round(jumpParts.reduce((a, p) => a + p[0] * p[1], 0) / jumpWSum);
+
+          scoreComponents = jumpParts.map(p => p[0]);
 
 
 
@@ -9528,9 +9782,9 @@
 
 
 
-          if (j.twoFoot) goodPoints.push(`両足踏み切りがそろっていました（左右の離地のズレ約${j.syncSec !== null ? j.syncSec.toFixed(2) : '--'}秒）。`);
+          if (j.twoFoot === true) goodPoints.push(`両足踏み切りがそろっていました（左右の離地のズレ約${j.syncSec !== null ? j.syncSec.toFixed(2) : '--'}秒）。`);
 
-          else improvePoints.push(`踏み切りの左右のズレが約${j.syncSec !== null ? j.syncSec.toFixed(2) : '--'}秒あり、片足踏み切り寄りでした。両足同時に地面を蹴ると高さと安定感が増します。`);
+          else if (j.syncSec !== null) improvePoints.push(`踏み切りの左右のズレが約${j.syncSec.toFixed(2)}秒あり、片足踏み切り寄りでした。両足同時に地面を蹴ると高さと安定感が増します。`);
 
 
 
@@ -9542,9 +9796,15 @@
 
           // ジャンプ未検出：ジャンプ要素を0点で押し切らず、通常スマッシュと同じ配点で評価する
 
-          totalScore = Math.round(upperBest * 0.40 + lowerBest * 0.30 + maxSp * 0.30);
+          const fbParts = [[upperBest, 0.40], [maxSp, 0.30]];
 
-          scoreComponents = [upperBest, lowerBest, maxSp];
+          if (lowerBest !== null) fbParts.splice(1, 0, [lowerBest, 0.30]);
+
+          const fbWSum = fbParts.reduce((a, p) => a + p[1], 0);
+
+          totalScore = Math.round(fbParts.reduce((a, p) => a + p[0] * p[1], 0) / fbWSum);
+
+          scoreComponents = fbParts.map(p => p[0]);
 
 
 
@@ -9564,9 +9824,17 @@
 
         const isLongServe = shot === 'serve_long';
 
-        const kneeServePt = Math.max(30, Math.min(100, 100 - Math.round(Math.abs(minKn - model.idealKnee) * 1.4)));
+        // 膝・安定度のどちらかが未測定なら、測れた方だけで構え成分を作る（監査 B-2 / B-7）
 
-        const basePt = Math.round(kneeServePt * 0.5 + aiMetrics.stabilityPt * 0.5);
+        const kneeServePt = kneeMeasured ? Math.max(30, Math.min(100, 100 - Math.round(Math.abs(minKn - model.idealKnee) * 1.4))) : null;
+
+        const baseParts = [];
+
+        if (kneeServePt !== null) baseParts.push([kneeServePt, 0.5]);
+
+        if (stabilityMeasured) baseParts.push([aiMetrics.stabilityPt, 0.5]);
+
+        const basePt = baseParts.length ? Math.round(baseParts.reduce((a, p) => a + p[0] * p[1], 0) / baseParts.reduce((a, p) => a + p[1], 0)) : null;
 
         const controlPt = isLongServe ? btServeLongControlPt(maxSp) : btServeControlPt(maxSp);
 
@@ -9576,15 +9844,27 @@
 
           if (isLongServe) {
 
-            totalScore = Math.round(basePt * 0.25 + sv.contactPt * 0.30 + controlPt * 0.25 + sv.followPt * 0.20);
+            const svPartsL = [[sv.contactPt, 0.30], [controlPt, 0.25], [sv.followPt, 0.20]];
 
-            scoreComponents = [basePt, sv.contactPt, controlPt, sv.followPt];
+            if (basePt !== null) svPartsL.unshift([basePt, 0.25]);
+
+            const svWSumL = svPartsL.reduce((a, p) => a + p[1], 0);
+
+            totalScore = Math.round(svPartsL.reduce((a, p) => a + p[0] * p[1], 0) / svWSumL);
+
+            scoreComponents = svPartsL.map(p => p[0]);
 
           } else {
 
-            totalScore = Math.round(basePt * 0.35 + sv.contactPt * 0.35 + controlPt * 0.30);
+            const svPartsS = [[sv.contactPt, 0.35], [controlPt, 0.30]];
 
-            scoreComponents = [basePt, sv.contactPt, controlPt];
+            if (basePt !== null) svPartsS.unshift([basePt, 0.35]);
+
+            const svWSumS = svPartsS.reduce((a, p) => a + p[1], 0);
+
+            totalScore = Math.round(svPartsS.reduce((a, p) => a + p[0] * p[1], 0) / svWSumS);
+
+            scoreComponents = svPartsS.map(p => p[0]);
 
           }
 
@@ -9608,17 +9888,37 @@
 
           if (isLongServe) {
 
-            totalScore = Math.round(basePt * 0.5 + controlPt * 0.5);
+            if (basePt !== null) {
 
-            scoreComponents = [basePt, controlPt];
+              totalScore = Math.round(basePt * 0.5 + controlPt * 0.5);
+
+              scoreComponents = [basePt, controlPt];
+
+            } else {
+
+              totalScore = Math.round(controlPt);
+
+              scoreComponents = [controlPt];
+
+            }
 
             improvePoints.push(`今回は打点とフォロースルーが検出できなかったため、その要素は採点せず、構えの安定とスイングの大きさで評価しました。頭から足首まで全身が映る画角で撮り直すと打点とフォロースルーも採点できます。`);
 
           } else {
 
-            totalScore = Math.round(basePt * 0.55 + controlPt * 0.45);
+            if (basePt !== null) {
 
-            scoreComponents = [basePt, controlPt];
+              totalScore = Math.round(basePt * 0.55 + controlPt * 0.45);
+
+              scoreComponents = [basePt, controlPt];
+
+            } else {
+
+              totalScore = Math.round(controlPt);
+
+              scoreComponents = [controlPt];
+
+            }
 
             improvePoints.push(`今回は打点の高さが検出できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しました。頭から足首まで全身が映る画角で撮り直すと打点も採点できます。`);
 
@@ -9626,7 +9926,9 @@
 
         }
 
-        if (basePt >= 80) goodPoints.push(`サーブの構えが安定しています（最深膝角 ${minKn}°・安定度 ${aiMetrics.stabilityPt}pt）。打つ直前まで体が静止できています。`);
+        if (basePt === null) improvePoints.push(`構えの安定（膝・静止安定度）は測定できませんでした。下半身まで映る画角でもう少し長く測ると採点できます。`);
+
+        else if (basePt >= 80) goodPoints.push(`サーブの構えが安定しています（${kneeMeasured ? `最深膝角 ${minKn}°` : '膝は未測定'}・${stabilityMeasured ? `安定度 ${aiMetrics.stabilityPt}pt` : '安定度は未測定'}）。打つ直前まで体が静止できています。`);
 
         else improvePoints.push(`構えの安定が ${basePt}pt でした。膝を軽く緩めて（目安${model.idealKnee}°前後）腰を落とし、打つ直前まで体を静止させるとサーブの精度が上がります。`);
 
@@ -9648,11 +9950,17 @@
 
         const upperBest = Math.min(100, Math.round(((maxSh / model.idealShoulder) * 60) + ((maxEl / model.idealElbow) * 40)));
 
-        const lowerBest = minKn <= (model.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8);
+        const lowerBest = kneeMeasured ? (minKn <= (model.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKn - model.idealKnee) * 1.8)) : null;
 
-        totalScore = Math.round(upperBest * 0.40 + lowerBest * 0.30 + maxSp * 0.30);
+        const ohParts = [[upperBest, 0.40], [maxSp, 0.30]];
 
-        scoreComponents = [upperBest, lowerBest, maxSp];
+        if (lowerBest !== null) ohParts.splice(1, 0, [lowerBest, 0.30]);
+
+        const ohWSum = ohParts.reduce((a, p) => a + p[1], 0);
+
+        totalScore = Math.round(ohParts.reduce((a, p) => a + p[0] * p[1], 0) / ohWSum);
+
+        scoreComponents = ohParts.map(p => p[0]);
 
 
 
@@ -9686,6 +9994,8 @@
 
           score: totalScore,
 
+          components: scoreComponents,
+
           maxSh, maxEl, minKn, maxSp,
 
           date: new Date().toLocaleDateString('ja-JP'),
@@ -9698,7 +10008,7 @@
 
       } else {
 
-        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:#fde047;">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>！</div>`;
+        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:var(--accent-highlight);">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>！</div>`;
 
       }
 
@@ -9718,11 +10028,11 @@
 
           const j = lastJumpAnalysis;
 
-          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem;">🚀 <b>ジャンプ要素（アプリ独自の目安）:</b> 踏み切り ${j.takeoffPt}pt（${j.twoFoot ? '両足そろって離地' : '片足寄りの踏み切り'}）／ 滞空 ${j.airPt}pt（両足の浮き上がり最大：体幹長の約${Math.round(j.maxLift * 100)}%）／ 着地 ${j.landingPt}pt（膝 ${j.landKneeDeg === null ? '--' : j.landKneeDeg + '°'}・安定度 ${j.landStabilityPt}pt）</div>`;
+          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem;">🚀 <b>ジャンプ要素（アプリ独自の目安）:</b> 踏み切り ${j.takeoffPt}pt（${j.syncSec === null ? '左右の離地タイミングは測定できず' : (j.twoFoot ? '両足そろって離地' : '片足寄りの踏み切り')}）／ 滞空 ${j.airPt}pt（両足の浮き上がり最大：体幹長の約${Math.round(j.maxLift * 100)}%）／ 着地 ${j.landingPt}pt（膝 ${j.landKneeDeg === null ? '--' : j.landKneeDeg + '°'}・安定度 ${j.landStabilityPt === null ? '測定できず' : j.landStabilityPt + 'pt'}）</div>`;
 
         } else {
 
-          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🚀 ジャンプが検出できませんでした：両足の浮き上がり（滞空）を確認できなかったため、ジャンプ要素は採点せず、通常スマッシュと同じ配点で評価しています。</div>`;
+          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:var(--accent-highlight);">🚀 ジャンプが検出できませんでした：両足の浮き上がり（滞空）を確認できなかったため、ジャンプ要素は採点せず、通常スマッシュと同じ配点で評価しています。</div>`;
 
         }
 
@@ -9750,11 +10060,11 @@
 
         } else if (shot === 'serve_long') {
 
-          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🎾 打点とフォロースルーが検出できませんでした：打球時の手首位置を確認できなかったため、その要素は採点せず、構えの安定とスイングの大きさで評価しています。</div>`;
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:var(--accent-highlight);">🎾 打点とフォロースルーが検出できませんでした：打球時の手首位置を確認できなかったため、その要素は採点せず、構えの安定とスイングの大きさで評価しています。</div>`;
 
         } else {
 
-          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🎾 打点が検出できませんでした：打球時の手首位置を確認できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しています。</div>`;
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:var(--accent-highlight);">🎾 打点が検出できませんでした：打球時の手首位置を確認できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しています。</div>`;
 
         }
 
@@ -9771,6 +10081,10 @@
         </div>
 
         ${lastImpactWindowInfo ? `<div style="margin-bottom:5px; font-size:0.85rem;">🎯 打球の瞬間前後で判定しています：スイング速度が最大になった場面を中心に、前${BT_IMPACT_WINDOW_PRE_SEC}秒・後${BT_IMPACT_WINDOW_POST_SEC}秒のフレームだけで集計しました（シャトル拾いなど、打球と無関係な動きは集計から除かれます）。</div>` : ``}
+
+        ${activeInputType === 'video' ? `<div style="margin-bottom:5px; font-size:0.85rem;">⚠️ この診断は通常速度で撮影した動画を前提にしています。スローモーション撮影の動画では、踏み切り・着地・速度など時間を使う判定がずれます。</div>` : ``}
+
+        ${poseSession.truncated ? `<div style="margin-bottom:5px; font-size:0.85rem;">⏱️ 解析時間の上限（15秒）に達したため、動画の後半は解析していません。区間を絞って再診断すると残りの部分も解析できます。</div>` : ``}
 
         ${jumpHtml}
 
@@ -9797,6 +10111,11 @@
         shot: shot,
         components: scoreComponents,
         maxSh: maxSh, maxEl: maxEl, minKn: minKn, maxSp: maxSp,
+        sessionMaxCoreTiltDeg: aiMetrics.sessionMaxCoreTiltDeg || 0,
+        sessionWristTotal: aiMetrics.sessionWristTotal || 0,
+        sessionWristNg: aiMetrics.sessionWristNg || 0,
+        stabilityPt: stabilityMeasured ? aiMetrics.stabilityPt : null,
+        bestFrameRedrawn: !!aiMetrics.bestFrameRedrawn,
         profileName: (typeof userProfile !== 'undefined' && userProfile && userProfile.name) ? userProfile.name : '',
         dateText: new Date().toLocaleDateString('ja-JP')
       };
@@ -9858,33 +10177,51 @@
 
     function saveCurrentAsPersonalBest(manualAlert = false) {
 
-      const shot = document.getElementById('shotTypeSelect').value;
+      // 手動保存は診断完了時の凍結値だけを対象にし、既存ベスト以上のみ保存する（監査 B-8）。
 
-      if (aiMetrics.maxShoulderDeg === 0 && aiMetrics.maxSpeedPt === 0) {
+      // 旧実装は毎フレーム表示用の別式と最終フレーム値で、既存ベストより低くても無条件に上書きしていた。
 
-        alert("まだ測定データがありません。カメラまたは動画で動作を測定してから保存してください！");
+      const diag = lastPoseDiagnosisResult;
+
+      const frozen = window.__badtoreLastDiagnosis;
+
+      if (!diag || !diag.ok || typeof diag.score !== 'number' || !frozen) {
+
+        alert("保存できる診断結果がありません。先に動画またはカメラで診断を完了してください！");
 
         return;
 
       }
 
-      const minKn = aiMetrics.minKneeDeg === 180 ? 145 : aiMetrics.minKneeDeg;
+      const shot = diag.shot || document.getElementById('shotTypeSelect').value;
 
-      const score = Math.min(100, Math.round((aiMetrics.shoulderPt * 0.4) + (aiMetrics.kneePt * 0.3) + (aiMetrics.maxSpeedPt * 0.3)));
+      const score = diag.score;
+
+      const prevBestForManual = getPersonalBestRecord(activeProfileId, shot);
+
+      if (prevBestForManual && score < prevBestForManual.score) {
+
+        if (manualAlert) alert(`現在の自己ベスト（${prevBestForManual.score}pt）より低いため、保存しませんでした。`);
+
+        return;
+
+      }
 
 
 
       savePersonalBestData(activeProfileId, shot, {
 
-        score: score || 85,
+        score: score,
 
-        maxSh: aiMetrics.maxShoulderDeg,
+        components: diag.components || frozen.components || null,
 
-        maxEl: aiMetrics.maxElbowDeg,
+        maxSh: frozen.maxSh,
 
-        minKn: minKn,
+        maxEl: frozen.maxEl,
 
-        maxSp: aiMetrics.maxSpeedPt,
+        minKn: frozen.minKn,
+
+        maxSp: frozen.maxSp,
 
         date: new Date().toLocaleDateString('ja-JP'),
 
@@ -10514,7 +10851,7 @@
 
         <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 ギア＆体格マッチング診断</div>
 
-        <div style="font-size:0.8rem; color:#e2e8f0;">
+        <div style="font-size:0.8rem; color:var(--text-primary);">
 
           身長 ${userProfile.height}cm・パワー設定（${userProfile.power}）・スタイル（${userProfile.style}）・${speedSentence}
 
@@ -10562,7 +10899,7 @@
 
           </div>
 
-          <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.8rem; color:#cbd5e1;">
+          <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.8rem; color:var(--text-secondary);">
 
             <div>⚖️ 規格: <b>${r.weight}</b>（${r.balance}）</div>
 
@@ -11225,7 +11562,7 @@
         if (bg) {
           bg.insertAdjacentHTML('beforeend', `<button class="btn" style="padding:7px 9px;font-size:0.8rem;" onclick="stepVideoFrame(-1)">⏪ -1コマ</button><button class="btn" style="padding:7px 9px;font-size:0.8rem;" onclick="stepVideoFrame(1)">⏩ +1コマ</button><button id="btnVideoLoopToggle" class="btn btn-cyan-outline" style="padding:4px 8px;font-size:0.8rem;" onclick="toggleVideoLoopObserveMode()">🔁 区間ループ: OFF</button><button class="btn btn-amber" style="padding:4px 8px;font-size:0.8rem;" onclick="toggleShuttleSpeedDrawer()">⚡ 球速測定(km/h)</button>`);
         }
-        vc.insertAdjacentHTML('beforeend', `<div id="shuttleSpeedDrawer" style="display:none;margin-top:8px;padding:9px;background:var(--bg-base);border:1px solid var(--accent-highlight);border-radius:10px;"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;"><span style="font-weight:900;font-size:0.78rem;color:var(--accent-highlight);">⚡ 2タップ球速計測（コマ送りで①打点と②到達点を記録）</span><span id="speedResultBadge" class="badge-version" style="background:#06b6d4;color:#020617;">未計測</span></div><div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;align-items:end;"><select id="speedDistPreset" onchange="shuttleSpeedState.distMeters=Number(this.value);computeShuttleSpeedKmh();" style="font-size:0.85rem;padding:6px;"><option value="6.8" selected>💥 スマッシュ:ネット通過(6.8m)</option><option value="9.6">💥 スマッシュ:着弾(9.6m)</option><option value="5.5">⚡ ドライブ:前衛到達(5.5m)</option></select><button class="btn btn-cyan-outline" style="padding:6px;" onclick="markShuttleSpeedPoint(1)">① 打点記録: <b id="speedT1Label">--.--s</b></button><button class="btn btn-emerald" style="padding:6px;" onclick="markShuttleSpeedPoint(2)">② 到達記録: <b id="speedT2Label">--.--s</b></button></div><div style="font-size:0.78rem;color:var(--text-secondary);margin-top:6px;">※ 通常速度で撮影した動画専用です（スロー撮影の動画では実時間とずれて大きく誤差が出ます）。コマ送りの刻み（約0.033秒）や距離の誤差で、数十km/h程度ずれる目安値として見てください。</div></div>`);
+        vc.insertAdjacentHTML('beforeend', `<div id="shuttleSpeedDrawer" style="display:none;margin-top:8px;padding:9px;background:var(--bg-base);border:1px solid var(--accent-highlight);border-radius:10px;"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;"><span style="font-weight:900;font-size:0.78rem;color:var(--accent-highlight);">⚡ 2タップ球速計測（コマ送りで①打点と②到達点を記録）</span><span id="speedResultBadge" class="badge-version" style="background:#06b6d4;color:#020617;">未計測</span></div><div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;align-items:end;"><select id="speedDistPreset" onchange="shuttleSpeedState.distMeters=Number(this.value);computeShuttleSpeedKmh();" style="font-size:0.85rem;padding:6px;"><option value="6.8" selected>💥 スマッシュ:ネット通過(6.8m)</option><option value="9.6">💥 スマッシュ:着弾(9.6m)</option><option value="5.5">⚡ ドライブ:前衛到達(5.5m)</option></select><button class="btn btn-cyan-outline" style="padding:6px;" onclick="markShuttleSpeedPoint(1)">① 打点記録: <b id="speedT1Label">--.--s</b></button><button class="btn btn-emerald" style="padding:6px;" onclick="markShuttleSpeedPoint(2)">② 到達記録: <b id="speedT2Label">--.--s</b></button></div><div style="font-size:0.78rem;color:var(--text-secondary);margin-top:6px;">※ 通常速度で撮影した動画専用です（スロー撮影の動画では実時間とずれて大きく誤差が出ます）。コマ送りの刻み（約0.033秒）や距離の誤差で、数十km/h程度ずれる目安値として見てください。減速補正の係数（×1.48/1.62/1.85）はアプリ独自の目安値で、出典のある校正値ではありません。</div></div>`);
       }
       const aiBox = document.getElementById('aiSummaryContent') ? document.getElementById('aiSummaryContent').parentNode : null;
       if (aiBox && !document.getElementById('permanentDrillCatalogCard')) {
@@ -11272,7 +11609,7 @@
       const dt = t2 - t1, dist = shuttleSpeedState.distMeters || 6.8, avg = Math.round((dist / dt) * 3.6);
       const v0 = Math.min(420, Math.round(avg * (dist <= 6.0 ? 1.48 : (dist <= 7.5 ? 1.62 : 1.85))));
       shuttleSpeedState.lastAvgKmh = avg; shuttleSpeedState.lastV0Kmh = v0;
-      if (b) { b.style.background = '#fbbf24'; b.innerHTML = `⚡ 推定初速: <b>${v0} km/h</b> (平均 ${avg} km/h) ※目安`; }
+      if (b) { b.style.background = '#fbbf24'; b.innerHTML = `⚡ 推定初速: <b>${v0 >= 420 ? '420以上' : v0} km/h</b> (平均 ${avg} km/h) ※目安`; }
       awardPlayerXP(20);
     }
     function toggleVideoLoopObserveMode() {
@@ -11482,22 +11819,31 @@
       const wristNgRatio = wristTotal >= 5 ? (aiMetrics.sessionWristNg || 0) / wristTotal : 0;
       let worstKey = null;
       if (wristTotal >= 5 && wristNgRatio >= 0.3) worstKey = 'racket_drop';
-      else if (shotKey !== 'ready_stance' && aiMetrics.maxShoulderDeg > 0 && aiMetrics.maxShoulderDeg < shotModel.idealShoulder - 15) worstKey = 'low_contact';
-      else if (shotKey === 'ready_stance' && aiMetrics.stabilityPt < 78) worstKey = 'excess_bounce';
+      else if (shotModel.focus === 'overhead' && aiMetrics.maxShoulderDeg > 0 && aiMetrics.maxShoulderDeg < shotModel.idealShoulder - 15) worstKey = 'low_contact';
+      else if (shotKey === 'ready_stance' && typeof aiMetrics.stabilityPt === 'number' && aiMetrics.stabilityPt < 78) worstKey = 'excess_bounce';
       else if ((aiMetrics.sessionMaxCoreTiltDeg || 0) > 13) worstKey = 'lunge_lean';
       let themeKey = worstKey;
       if (!themeKey) {
-        const minKnS = aiMetrics.minKneeDeg === 180 ? 155 : aiMetrics.minKneeDeg;
+        const kneeMeasuredS = aiMetrics.minKneeDeg !== 180;
+        const minKnS = kneeMeasuredS ? aiMetrics.minKneeDeg : null;
         if (shotKey === 'ready_stance') {
-          const comps = [['racket_drop', aiMetrics.wristStandPt], ['excess_bounce', aiMetrics.stabilityPt], ['lunge_lean', aiMetrics.kneePt]];
+          const comps = [['racket_drop', aiMetrics.wristStandPt]];
+          if (typeof aiMetrics.stabilityPt === 'number') comps.push(['excess_bounce', aiMetrics.stabilityPt]);
+          if (kneeMeasuredS) comps.push(['lunge_lean', aiMetrics.kneePt]);
           themeKey = comps.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
         } else if (shotModel.focus === 'lower') {
-          const lowerBestS = minKnS <= (shotModel.idealKnee + 6) ? 100 : Math.max(40, 100 - (minKnS - shotModel.idealKnee) * 1.8);
-          themeKey = lowerBestS <= aiMetrics.maxSpeedPt ? 'lunge_lean' : 'pronation_lack';
+          if (!kneeMeasuredS) themeKey = 'pronation_lack';
+          else {
+            const lowerBestS = Math.max(40, Math.round(100 - Math.abs(minKnS - shotModel.idealKnee) * 1.8));
+            themeKey = lowerBestS <= aiMetrics.maxSpeedPt ? 'lunge_lean' : 'pronation_lack';
+          }
         } else {
           const upperBestS = Math.min(100, Math.round(((aiMetrics.maxShoulderDeg / shotModel.idealShoulder) * 60) + ((aiMetrics.maxElbowDeg / shotModel.idealElbow) * 40)));
-          const lowerBestS = minKnS <= (shotModel.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKnS - shotModel.idealKnee) * 1.8);
-          const comps = [['low_contact', upperBestS], ['lunge_lean', lowerBestS], ['pronation_lack', aiMetrics.maxSpeedPt]];
+          const comps = [['low_contact', upperBestS], ['pronation_lack', aiMetrics.maxSpeedPt]];
+          if (kneeMeasuredS) {
+            const lowerBestS = minKnS <= (shotModel.idealKnee + 5) ? 100 : Math.max(40, 100 - (minKnS - shotModel.idealKnee) * 1.8);
+            comps.splice(1, 0, ['lunge_lean', lowerBestS]);
+          }
           themeKey = comps.reduce((a, b) => (b[1] < a[1] ? b : a))[0];
         }
       }
@@ -12712,17 +13058,43 @@
     }
 
     function buildFullTelemetryCarteText() {
-      const shot = document.getElementById('shotTypeSelect').value, m = SHOT_IDEAL_MODELS[shot] || SHOT_IDEAL_MODELS.smash;
-      const maxSh = aiMetrics.maxShoulderDeg || aiMetrics.shoulderDeg || 0, maxEl = aiMetrics.maxElbowDeg || aiMetrics.elbowDeg || 0;
+      // カルテは診断時点の凍結値（__badtoreLastDiagnosis）から作る（監査 B-5）。現在の aiMetrics を読み直すと、
+
+      // 診断後に動いたり種目を切り替えたりした内容でカルテが作られてしまう。
+
+      const frozen = window.__badtoreLastDiagnosis || null;
+
+      const shot = (frozen && frozen.shot) ? frozen.shot : document.getElementById('shotTypeSelect').value, m = SHOT_IDEAL_MODELS[shot] || SHOT_IDEAL_MODELS.smash;
+      const maxSh = frozen ? frozen.maxSh : (aiMetrics.maxShoulderDeg || aiMetrics.shoulderDeg || 0), maxEl = frozen ? frozen.maxEl : (aiMetrics.maxElbowDeg || aiMetrics.elbowDeg || 0);
+
+      const minKnV = frozen ? frozen.minKn : ((typeof aiMetrics.minKneeDeg === 'number' && aiMetrics.minKneeDeg !== 180) ? aiMetrics.minKneeDeg : null);
       // 測定できた数値だけをカルテに載せる。未測定の項目は代用値を入れず「未測定」と明記する
       // （旧実装は膝が未測定のとき 145° を測定値として送っていた。AI診断レビュー 2026-11-19 §4.1）。
       // 膝の未測定はセンチネル値 180（初期値）で判定する。肩・肘は 0 を未測定とみなす。
       const shText = maxSh > 0 ? `${maxSh}°(理想${m.idealShoulder}°)` : '未測定';
       const elText = maxEl > 0 ? `${maxEl}°` : '未測定';
-      const knText = (typeof aiMetrics.minKneeDeg === 'number' && aiMetrics.minKneeDeg !== 180) ? `${aiMetrics.minKneeDeg}°(理想${m.idealKnee}°)` : '未測定';
-      const avgRx = (rxState.resultsMs && rxState.resultsMs.length) ? Math.round(rxState.resultsMs.reduce((a,b)=>a+b,0)/rxState.resultsMs.length) + "ms" : "未測定";
-      const spKmh = shuttleSpeedState.lastV0Kmh ? `推定初速 ${shuttleSpeedState.lastV0Kmh}km/h` : "未計測";
-      return `【バドトレPRO 測定カルテ】\n・選手:${userProfile.name}(${userProfile.height}cm/${userProfile.hand==='left'?'左利き':'右利き'})\n・種目:${m.title}\n・最大肩角(打点):${shText}, 最大肘角:${elText}, 最深膝角:${knText}, 体幹傾き:${aiMetrics.coreTiltDeg}°, リストスタンド:${aiMetrics.isWristStandOk?'OK':'寝すぎ'}, 静止安定度:${aiMetrics.stabilityPt}pt, 初速:${avgRx}, 球速:${spKmh}\nこのデータと画像から、①崩れの根本原因、②今日意識する1点、③おすすめの自宅筋トレ(回数付き)を指導してください。なお、対象は中学生です。提案（特に自宅筋トレの負荷・回数）は中学生向けに負荷を抑えた内容にしてください。「未測定」の項目は測定できていない前提で、数値を推測して断定しないでください。`;
+      const knText = (typeof minKnV === 'number') ? `${minKnV}°(理想${m.idealKnee}°)` : '未測定';
+
+      // 体幹傾き・リスト・安定度はセッション集計値（最大傾き・NG割合・安定度）を使い、測れていなければ「未測定」に統一する（監査 B-5）
+
+      let tiltText = '未測定', wristText = '未測定', stabText = '未測定';
+
+      if (frozen && frozen.sessionWristTotal > 0) {
+
+        tiltText = `${frozen.sessionMaxCoreTiltDeg}°(セッション最大)`;
+
+        const ngPct = Math.round((frozen.sessionWristNg / frozen.sessionWristTotal) * 100);
+
+        wristText = ngPct >= 30 ? `寝すぎ（NG割合 約${ngPct}%）` : `OK（NG割合 約${ngPct}%）`;
+
+        if (typeof frozen.stabilityPt === 'number') stabText = `${frozen.stabilityPt}pt`;
+
+      }
+
+      const imgNote = (frozen && frozen.bestFrameRedrawn) ? '\n※ 添付画像は、打球ウィンドウ内のベストフレームを骨格で描き直したものです（実写ではありません）。' : '';
+      const avgRx = (rxState.resultsMs && rxState.resultsMs.length) ? Math.round(rxState.resultsMs.reduce((a,b)=>a+b,0)/rxState.resultsMs.length) + "ms（初速タブでの別測定）" : "未測定";
+      const spKmh = shuttleSpeedState.lastV0Kmh ? `推定初速 ${shuttleSpeedState.lastV0Kmh >= 420 ? '420以上' : shuttleSpeedState.lastV0Kmh}km/h（球速ドロワーでの別測定）` : "未計測";
+      return `【バドトレPRO 測定カルテ】\n・選手:${userProfile.name}(${userProfile.height}cm/${userProfile.hand==='left'?'左利き':'右利き'})\n・種目:${m.title}\n・最大肩角(打点):${shText}, 最大肘角:${elText}, 最深膝角:${knText}, 体幹傾き:${tiltText}, リストスタンド:${wristText}, 静止安定度:${stabText}, 初速:${avgRx}, 球速:${spKmh}${imgNote}\nこのデータと画像から、①崩れの根本原因、②今日意識する1点、③おすすめの自宅筋トレ(回数付き)を指導してください。なお、対象は中学生です。提案（特に自宅筋トレの負荷・回数）は中学生向けに負荷を抑えた内容にしてください。「未測定」の項目は測定できていない前提で、数値を推測して断定しないでください。`;
     }
 
     async function shareImageAndCarteToProChat() {
@@ -12786,7 +13158,7 @@
         box.innerHTML = `<div style="font-weight:900;color:var(--accent-primary);margin-bottom:5px;font-size:0.82rem;">🤖 AIプロコーチ診断 (${res.usedModel})</div><div style="font-size:0.8rem;line-height:1.55;">${res.text.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}</div>`;
         awardPlayerXP(25); playBeep(1180, 120);
       } catch (err) {
-        box.innerHTML = `<div style="color:#fbbf24;font-weight:900;font-size:0.8rem;margin-bottom:4px;">💡 内蔵クロス推論（※API応答: ${err.message}）</div><div style="font-size:0.8rem;line-height:1.5;">体幹傾き(${aiMetrics.coreTiltDeg}°)と手首角度(${aiMetrics.isWristStandOk?'OK':'寝すぎ'})の連動を意識し、カカト着地から前足1回で素早く中央へ蹴り戻しましょう。「📲 Proチャットへ一括共有」から直接このProチャットへ貼って相談も可能です。</div>`;
+        box.innerHTML = `<div style="color:var(--accent-highlight);font-weight:900;font-size:0.8rem;margin-bottom:4px;">💡 内蔵クロス推論（※API応答: ${err.message}）</div><div style="font-size:0.8rem;line-height:1.5;">体幹傾き(${aiMetrics.coreTiltDeg}°)と手首角度(${aiMetrics.isWristStandOk?'OK':'寝すぎ'})の連動を意識し、カカト着地から前足1回で素早く中央へ蹴り戻しましょう。「📲 Proチャットへ一括共有」から直接このProチャットへ貼って相談も可能です。</div>`;
       }
     }
 
@@ -12882,8 +13254,8 @@ function sharePoseResultImage() {
     ctx.fillStyle = '#22d3ee'; ctx.font = '700 38px ' + FONT;
     ctx.fillText('AIフォーム診断結果', PAD, y); y += 56;
     ctx.fillStyle = '#94a3b8'; ctx.font = '30px ' + FONT;
-    const sel = document.getElementById('shotTypeSelect');
-    const shotLabel = sel ? sel.options[sel.selectedIndex].textContent : d.shot;
+    // 種目名は診断した時点の凍結値から引く（監査 C-7）。現在の選択を使うと、診断後に切り替えた種目名が入ってしまう
+    const shotLabel = (typeof SHOT_IDEAL_MODELS !== 'undefined' && SHOT_IDEAL_MODELS[d.shot]) ? SHOT_IDEAL_MODELS[d.shot].title : d.shot;
     ctx.fillText(d.dateText + (d.profileName ? ' ｜ ' + d.profileName : ''), PAD, y); y += 44;
     ctx.fillText(shotLabel, PAD, y); y += 66;
     ctx.fillStyle = '#f8fafc'; ctx.font = '900 150px ' + FONT;
@@ -12901,7 +13273,7 @@ function sharePoseResultImage() {
     ctx.fillStyle = '#1e293b'; ctx.fillRect(PAD, y, CW, 120);
     ctx.fillStyle = '#e2e8f0'; ctx.font = '700 32px ' + FONT;
     ctx.fillText('最大肩挙上角: ' + d.maxSh + '°　肘伸展: ' + d.maxEl + '°', PAD + 24, y + 18);
-    ctx.fillText('最深膝角: ' + d.minKn + '°　速度指数: ' + d.maxSp + 'pt', PAD + 24, y + 66);
+    ctx.fillText('最深膝角: ' + (d.minKn === null || d.minKn === undefined ? '未測定' : d.minKn + '°') + '　速度指数: ' + d.maxSp + 'pt', PAD + 24, y + 66);
     y += 120 + 40;
     ctx.fillStyle = '#34d399'; ctx.font = '900 38px ' + FONT;
     ctx.fillText('⭕ 良かった点', PAD, y); y += 56;
@@ -13886,13 +14258,13 @@ function sharePoseResultImage() {
       var r = pb[shot];
       if (!r || typeof r.score !== 'number') return;
       var t = r.date ? Date.parse(String(r.date).replace(/\//g, '-')) : NaN;
-      if (!best) { best = { score: r.score, t: t }; return; }
-      if (isFinite(t) && (!isFinite(best.t) || t > best.t)) best = { score: r.score, t: t };
-      else if (!isFinite(t) && !isFinite(best.t) && r.score > best.score) best = { score: r.score, t: t };
+      if (!best) { best = { score: r.score, t: t, components: r.components || null }; return; }
+      if (isFinite(t) && (!isFinite(best.t) || t > best.t)) best = { score: r.score, t: t, components: r.components || null };
+      else if (!isFinite(t) && !isFinite(best.t) && r.score > best.score) best = { score: r.score, t: t, components: r.components || null };
     });
     var rank = null;
     if (best) {
-      if (typeof getScoreRankMeta === 'function') rank = getScoreRankMeta(best.score).rank;
+      if (typeof getScoreRankMeta === 'function') rank = getScoreRankMeta(best.score, best.components).rank;
       else rank = best.score >= 88 ? 'S' : best.score >= 78 ? 'A' : best.score >= 66 ? 'B' : 'C';
     }
     return {
@@ -14375,7 +14747,7 @@ function sharePoseResultImage() {
         } else {
           shots.forEach(function (shot) {
             var r = pb[shot] || {};
-            var rk = (typeof r.score === 'number' && typeof getScoreRankMeta === 'function') ? getScoreRankMeta(r.score) : null;
+            var rk = (typeof r.score === 'number' && typeof getScoreRankMeta === 'function') ? getScoreRankMeta(r.score, r.components || null) : null;
             html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:7px 9px;font-size:0.8rem;margin-top:5px;">' +
               '<b>' + esc(SHOT_LABELS[shot] || shot) + '</b> — <b>' + (r.score != null ? r.score + '点' : '-') + '</b>' + (rk ? ' <span style="color:' + rk.color + ';font-weight:900;">' + rk.rank + 'ランク</span>' : '') +
               '<br><span style="color:var(--text-secondary);">' + esc(r.date || '-') + ' / 肩 ' + (r.maxSh != null ? r.maxSh + '°' : '-') + ' / 肘 ' + (r.maxEl != null ? r.maxEl + '°' : '-') + ' / 膝 ' + (r.minKn != null ? r.minKn + '°' : '-') + ' / 速度 ' + (r.maxSp != null ? r.maxSp : '-') + '</span></div>';
