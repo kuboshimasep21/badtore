@@ -2996,7 +2996,7 @@
 
                 </div>
 
-                <div id="rxSummaryText" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
+                <div id="rxSummaryText" style="font-size:0.8rem; color:var(--text-primary); line-height:1.55;">
 
                   カメラを起動して<b>「▶️ 初速AI測定スタート」</b>を押すと、待機中の<b>「構えの良さ（ラケット高さ・リストスタンド・膝のゆとり）」</b>と、矢印が出てから一歩目が動くまでの<b>「ミリ秒（ms）」</b>を同時に診断します。
 
@@ -3228,7 +3228,7 @@
 
                 <div class="metric-title" id="mTitle3">膝の角度（タメ/構え）</div>
 
-                <div class="metric-val" style="color:#fbbf24;" id="valKneeDeg">-- °</div>
+                <div class="metric-val" style="color:var(--accent-highlight);" id="valKneeDeg">-- °</div>
 
                 <div class="metric-peak" id="maxKneeDeg">最深膝角: --°</div>
 
@@ -3534,7 +3534,7 @@
 
                 <canvas id="bestMomentCanvas" width="360" height="360"></canvas>
 
-                <div id="bestMomentMetaText" style="font-size:0.8rem; color:#e2e8f0; line-height:1.45;"></div>
+                <div id="bestMomentMetaText" style="font-size:0.8rem; color:var(--text-primary); line-height:1.45;"></div>
 
               </div>
 
@@ -3576,7 +3576,7 @@
 
               <div id="shotCriteriaDesc" style="font-size:0.8rem; margin-bottom:6px; color:var(--text-secondary); line-height:1.45;"></div>
 
-              <div id="aiSummaryContent" style="font-size:0.8rem; color:#e2e8f0; line-height:1.55;">
+              <div id="aiSummaryContent" style="font-size:0.8rem; color:var(--text-primary); line-height:1.55;">
 
                 <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、カメラボタンを押さなくても動画がすぐに画面に表示されて自動解析が始まります。長い動画はシークバーで診断したい区間（開始A〜終了B）を切り出せます。
 
@@ -8560,7 +8560,7 @@
 
               <td>${model.idealShoulder}°</td>
 
-              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.maxSh + '°' : '未記録'}</td>
+              <td style="color:var(--accent-highlight); font-weight:800;">${bestRec ? bestRec.maxSh + '°' : '未記録'}</td>
 
               <td style="color:#38bdf8; font-weight:800;">${curSh}</td>
 
@@ -8572,7 +8572,7 @@
 
               <td>${model.idealElbow}°</td>
 
-              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.maxEl + '°' : '未記録'}</td>
+              <td style="color:var(--accent-highlight); font-weight:800;">${bestRec ? bestRec.maxEl + '°' : '未記録'}</td>
 
               <td style="color:#38bdf8; font-weight:800;">${curEl}</td>
 
@@ -8584,7 +8584,7 @@
 
               <td>${model.idealKnee}°</td>
 
-              <td style="color:#fbbf24; font-weight:800;">${bestRec ? bestRec.minKn + '°' : '未記録'}</td>
+              <td style="color:var(--accent-highlight); font-weight:800;">${bestRec ? bestRec.minKn + '°' : '未記録'}</td>
 
               <td style="color:#38bdf8; font-weight:800;">${curKn}</td>
 
@@ -9060,11 +9060,13 @@
 
       if (!run) run = validRuns.reduce((a, b) => ((b.end - b.start) > (a.end - a.start) ? b : a));
 
-      // 踏み切り：ラン開始直前に各足首が最後に地面にいたサンプルの時刻差（左右の離地のズレ）
+      // 踏み切り：ラン開始直前（1.0秒以内）に各足首が最後に地面にいたサンプルの時刻差（左右の離地のズレ）。探索を直前1.0秒に限らないと、ジャンプと無関係な過去の接地を拾って実在しない大きなズレになる。両足とも範囲内で見つからなければ syncSec=null（測定できず）とし、踏み切りは中立の65ptにする
+
+      const runStartT = rows[run.start].t;
 
       const lastGroundIdx = (key) => {
 
-        for (let i = run.start; i >= 0; i--) { if (rows[i][key] < BT_JUMP_AIR_LIFT_RATIO) return i; }
+        for (let i = run.start; i >= 0; i--) { if (rows[i].t < runStartT - 1.0) break; if (rows[i][key] < BT_JUMP_AIR_LIFT_RATIO) return i; }
 
         return -1;
 
@@ -9076,7 +9078,9 @@
 
       let syncSec = null;
 
-      let takeoffPt = 40;
+      let takeoffPt = 65;
+
+      let twoFoot = null;
 
       if (iL >= 0 && iR >= 0) {
 
@@ -9084,9 +9088,9 @@
 
         takeoffPt = syncSec <= BT_JUMP_SYNC_GOOD_SEC ? 100 : syncSec <= BT_JUMP_SYNC_OK_SEC ? 90 : syncSec <= BT_JUMP_SYNC_LOOSE_SEC ? 65 : 40;
 
-      }
+        twoFoot = syncSec <= BT_JUMP_SYNC_OK_SEC;
 
-      const twoFoot = syncSec !== null && syncSec <= BT_JUMP_SYNC_OK_SEC;
+      }
 
       // 滞空：両足の浮き上がり（小さい方）の最大値で評価する
 
@@ -9438,7 +9442,7 @@
 
           <div>・肩挙上角: <b style="color:#38bdf8;">${aiMetrics.bestSnapshotMeta.shoulderDeg}°</b> ｜ 肘伸展: <b style="color:#34d399;">${aiMetrics.bestSnapshotMeta.elbowDeg}°</b></div>
 
-          <div>・膝沈み込み角: <b style="color:#fbbf24;">${aiMetrics.bestSnapshotMeta.kneeDeg}°</b> ｜ 速度指数: <b>${aiMetrics.bestSnapshotMeta.speedPt}pt</b></div>
+          <div>・膝沈み込み角: <b style="color:var(--accent-highlight);">${aiMetrics.bestSnapshotMeta.kneeDeg}°</b> ｜ 速度指数: <b>${aiMetrics.bestSnapshotMeta.speedPt}pt</b></div>
 
           <div>・リストスタンド: <b>${aiMetrics.bestSnapshotMeta.wristStandOk ? '🟢 良好' : '⚠️ 手首寝すぎ'}</b></div>
 
@@ -9528,9 +9532,9 @@
 
 
 
-          if (j.twoFoot) goodPoints.push(`両足踏み切りがそろっていました（左右の離地のズレ約${j.syncSec !== null ? j.syncSec.toFixed(2) : '--'}秒）。`);
+          if (j.twoFoot === true) goodPoints.push(`両足踏み切りがそろっていました（左右の離地のズレ約${j.syncSec !== null ? j.syncSec.toFixed(2) : '--'}秒）。`);
 
-          else improvePoints.push(`踏み切りの左右のズレが約${j.syncSec !== null ? j.syncSec.toFixed(2) : '--'}秒あり、片足踏み切り寄りでした。両足同時に地面を蹴ると高さと安定感が増します。`);
+          else if (j.syncSec !== null) improvePoints.push(`踏み切りの左右のズレが約${j.syncSec.toFixed(2)}秒あり、片足踏み切り寄りでした。両足同時に地面を蹴ると高さと安定感が増します。`);
 
 
 
@@ -9698,7 +9702,7 @@
 
       } else {
 
-        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:#fde047;">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>！</div>`;
+        recordBannerHtml = `<div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); padding:6px 9px; border-radius:8px; margin-bottom:8px; font-size:0.78rem; color:var(--accent-highlight);">🏆 自己ベスト（${prevBest.score}pt）まであと <b>${prevBest.score - totalScore} pt</b>！</div>`;
 
       }
 
@@ -9718,11 +9722,11 @@
 
           const j = lastJumpAnalysis;
 
-          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem;">🚀 <b>ジャンプ要素（アプリ独自の目安）:</b> 踏み切り ${j.takeoffPt}pt（${j.twoFoot ? '両足そろって離地' : '片足寄りの踏み切り'}）／ 滞空 ${j.airPt}pt（両足の浮き上がり最大：体幹長の約${Math.round(j.maxLift * 100)}%）／ 着地 ${j.landingPt}pt（膝 ${j.landKneeDeg === null ? '--' : j.landKneeDeg + '°'}・安定度 ${j.landStabilityPt}pt）</div>`;
+          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem;">🚀 <b>ジャンプ要素（アプリ独自の目安）:</b> 踏み切り ${j.takeoffPt}pt（${j.syncSec === null ? '左右の離地タイミングは測定できず' : (j.twoFoot ? '両足そろって離地' : '片足寄りの踏み切り')}）／ 滞空 ${j.airPt}pt（両足の浮き上がり最大：体幹長の約${Math.round(j.maxLift * 100)}%）／ 着地 ${j.landingPt}pt（膝 ${j.landKneeDeg === null ? '--' : j.landKneeDeg + '°'}・安定度 ${j.landStabilityPt}pt）</div>`;
 
         } else {
 
-          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🚀 ジャンプが検出できませんでした：両足の浮き上がり（滞空）を確認できなかったため、ジャンプ要素は採点せず、通常スマッシュと同じ配点で評価しています。</div>`;
+          jumpHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:var(--accent-highlight);">🚀 ジャンプが検出できませんでした：両足の浮き上がり（滞空）を確認できなかったため、ジャンプ要素は採点せず、通常スマッシュと同じ配点で評価しています。</div>`;
 
         }
 
@@ -9750,11 +9754,11 @@
 
         } else if (shot === 'serve_long') {
 
-          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🎾 打点とフォロースルーが検出できませんでした：打球時の手首位置を確認できなかったため、その要素は採点せず、構えの安定とスイングの大きさで評価しています。</div>`;
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:var(--accent-highlight);">🎾 打点とフォロースルーが検出できませんでした：打球時の手首位置を確認できなかったため、その要素は採点せず、構えの安定とスイングの大きさで評価しています。</div>`;
 
         } else {
 
-          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:#fbbf24;">🎾 打点が検出できませんでした：打球時の手首位置を確認できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しています。</div>`;
+          serveHtml = `<div style="margin-bottom:5px; font-size:0.85rem; color:var(--accent-highlight);">🎾 打点が検出できませんでした：打球時の手首位置を確認できなかったため、打点要素は採点せず、構えの安定とスイングのコントロールで評価しています。</div>`;
 
         }
 
@@ -10514,7 +10518,7 @@
 
         <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 ギア＆体格マッチング診断</div>
 
-        <div style="font-size:0.8rem; color:#e2e8f0;">
+        <div style="font-size:0.8rem; color:var(--text-primary);">
 
           身長 ${userProfile.height}cm・パワー設定（${userProfile.power}）・スタイル（${userProfile.style}）・${speedSentence}
 
@@ -10562,7 +10566,7 @@
 
           </div>
 
-          <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.8rem; color:#cbd5e1;">
+          <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.8rem; color:var(--text-secondary);">
 
             <div>⚖️ 規格: <b>${r.weight}</b>（${r.balance}）</div>
 
@@ -12786,7 +12790,7 @@
         box.innerHTML = `<div style="font-weight:900;color:var(--accent-primary);margin-bottom:5px;font-size:0.82rem;">🤖 AIプロコーチ診断 (${res.usedModel})</div><div style="font-size:0.8rem;line-height:1.55;">${res.text.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}</div>`;
         awardPlayerXP(25); playBeep(1180, 120);
       } catch (err) {
-        box.innerHTML = `<div style="color:#fbbf24;font-weight:900;font-size:0.8rem;margin-bottom:4px;">💡 内蔵クロス推論（※API応答: ${err.message}）</div><div style="font-size:0.8rem;line-height:1.5;">体幹傾き(${aiMetrics.coreTiltDeg}°)と手首角度(${aiMetrics.isWristStandOk?'OK':'寝すぎ'})の連動を意識し、カカト着地から前足1回で素早く中央へ蹴り戻しましょう。「📲 Proチャットへ一括共有」から直接このProチャットへ貼って相談も可能です。</div>`;
+        box.innerHTML = `<div style="color:var(--accent-highlight);font-weight:900;font-size:0.8rem;margin-bottom:4px;">💡 内蔵クロス推論（※API応答: ${err.message}）</div><div style="font-size:0.8rem;line-height:1.5;">体幹傾き(${aiMetrics.coreTiltDeg}°)と手首角度(${aiMetrics.isWristStandOk?'OK':'寝すぎ'})の連動を意識し、カカト着地から前足1回で素早く中央へ蹴り戻しましょう。「📲 Proチャットへ一括共有」から直接このProチャットへ貼って相談も可能です。</div>`;
       }
     }
 
