@@ -2786,8 +2786,6 @@
 
           <div class="btn-group" style="margin-bottom:10px;">
 
-            <button id="btnReflexCamToggle" class="btn btn-emerald" onclick="toggleLiveCamera('reflex')">📷 初速AIカメラ起動</button>
-
             <button class="btn" onclick="switchCameraFacing()">🔄 内/外カメラ切替</button>
 
             <button id="btnReflexMeasureStart" class="btn btn-amber" onclick="startReflexAISession()">▶️ 初速AI測定スタート</button>
@@ -2812,7 +2810,7 @@
 
                     <span class="badge-version" id="reflexStanceLiveBadge" style="background:#334155; color:#fff;">🛡️ 構え判定: 待機中</span>
 
-                    <button class="btn btn-cyan-outline" style="padding:7px 10px; font-size:0.8rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面</button>
+                    
 
                   </div>
 
@@ -3040,9 +3038,7 @@
 
           <div class="btn-group">
 
-            <button id="btnPoseCamToggle" class="btn btn-emerald" onclick="toggleLiveCamera('pose')">📷 AIカメラ起動</button>
-
-            <button class="btn" id="btnPoseCamFlip" onclick="switchCameraFacing()">🔄 内/外切替</button>
+            
 
             <label class="btn btn-amber" style="cursor:pointer;">
 
@@ -3052,17 +3048,9 @@
 
             </label>
 
-            <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
+            
 
-            <select id="delayMirrorSelect" onchange="changeDelayMirrorSec(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
-
-              <option value="0" selected>⏪ ディレイ: OFF</option>
-
-              <option value="3">⏪ 3秒遅れ再生</option>
-
-              <option value="5">⏪ 5秒遅れ再生</option>
-
-            </select>
+            
 
           </div>
 
@@ -3070,229 +3058,7 @@
 
 
 
-        <div class="split-grid">
-
-          <div>
-
-            <div class="viewport-wrapper fullscreen-target" id="poseViewport">
-
-              <div class="viewport-header-bar">
-
-                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（カメラ起動 または 動画読込を選択）</span>
-
-                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-
-                  <span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 認識精度: --%</span>
-
-                  <button class="btn btn-cyan-outline" style="padding:7px 10px; font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面 ON/OFF</button>
-
-                </div>
-
-              </div>
-
-
-
-              <div class="viewport-stage">
-
-                <canvas id="outputCanvas" class="viewport-canvas" width="720" height="720" style="display:none;"></canvas>
-
-                <canvas id="drawCanvas" width="720" height="720"></canvas>
-
-
-
-                <div class="center-overlay-banner" id="poseCountdownOverlay">
-
-                  <div class="banner-big-num" id="poseCountdownNum">3</div>
-
-                  <div class="banner-sub-text">10秒精密測定スタートまで</div>
-
-                </div>
-
-
-
-                <div id="posePlaceholder" style="text-align:center; color:var(--text-secondary); padding:18px;">
-
-                  <div style="font-size:2rem; margin-bottom:6px;">🧠🎬</div>
-
-                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカメラ起動不要で即座に動画が表示され自動診断がスタートします！</div>
-
-                  <div style="font-size:0.8rem; margin-top:4px;">リアルタイム撮影時は「📷 AIカメラ起動」を押してください</div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-
-            <!-- 🎬 動画読み込み時のみ自動表示される専用シーク＆区間切り出しパネル -->
-
-            <div class="video-control-panel" id="videoControlPanel">
-
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-
-                <span style="font-weight:900; font-size:0.78rem; color:var(--accent-highlight);">🎬 動画再生 ＆ ラリー区間切り出しコントローラー</span>
-
-                <div class="btn-group">
-
-                  <button class="btn btn-emerald" id="btnVideoPlayPause" style="padding:7px 11px; font-size:0.8rem;" onclick="toggleVideoPause()">⏸️ 一時停止</button>
-
-                  <button class="btn" style="padding:7px 11px; font-size:0.8rem;" onclick="seekUploadedVideoBy(-0.1)">⏪ -0.1秒</button>
-
-                  <button class="btn" style="padding:7px 11px; font-size:0.8rem;" onclick="seekUploadedVideoBy(0.1)">⏩ +0.1秒</button>
-
-                  <select id="videoSpeedSelect" onchange="changeVideoPlaybackSpeed(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
-
-                    <option value="1.0" selected>1.0x (等倍)</option>
-
-                    <option value="0.5">0.5x (スロー)</option>
-
-                    <option value="0.25">0.25x (超スロー)</option>
-
-                  </select>
-
-                </div>
-
-              </div>
-
-
-
-              <!-- 現在再生位置シークバー -->
-
-              <div class="video-seek-row">
-
-                <span style="font-size:0.8rem; color:var(--text-secondary); width:52px;">再生位置</span>
-
-                <input type="range" id="videoSeekSlider" min="0" max="100" step="0.05" value="0" oninput="onVideoSeekSliderInput(this.value)" />
-
-                <span class="time-readout" id="videoTimeLabel">0.0s / 0.0s</span>
-
-              </div>
-
-
-
-              <!-- 開始A〜終了B 区間切り出し設定 -->
-
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.1);">
-
-                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:0.8rem;">
-
-                  <span style="color:var(--text-secondary); font-weight:800;">✂️ 診断区間:</span>
-
-                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="setVideoTrimPoint('start')">📍現在位置を開始(A)に</button>
-
-                  <span id="trimRangeText" style="color:var(--accent-secondary); font-weight:900;">先頭(0.0s) 〜 終了</span>
-
-                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="setVideoTrimPoint('end')">🏁現在位置を終了(B)に</button>
-
-                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="resetVideoTrimRange()">全区間戻す</button>
-
-                </div>
-
-                <button class="btn btn-amber" style="padding:7px 11px; font-size:0.8rem;" onclick="startAutoVideoDiagnosis()">🔄 この区間を再診断</button>
-
-              </div>
-
-              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">⚠️ 診断は通常速度で撮影した動画専用です。スローモーション撮影の動画では、踏み切り・着地・速度・球速など時間を使う判定がずれます（再生速度の変更は診断に影響しません）。</div>
-
-            </div>
-
-
-
-            <div class="metrics-grid">
-
-              <div class="metric-box">
-
-                <div class="metric-title" id="mTitle1">利き腕・肘の角度</div>
-
-                <div class="metric-val" style="color:#34d399;" id="valElbowDeg">-- °</div>
-
-                <div class="metric-peak" id="maxElbowDeg">MAX: --° / 最小: --°</div>
-
-                <div class="metric-score-tag" id="ptElbow">リスト: --</div>
-
-              </div>
-
-              <div class="metric-box">
-
-                <div class="metric-title" id="mTitle2">肩挙上角（打点/構え高）</div>
-
-                <div class="metric-val" style="color:#60a5fa;" id="valShoulderDeg">-- °</div>
-
-                <div class="metric-peak" id="maxShoulderDeg">MAX打点: --°</div>
-
-                <div class="metric-score-tag" id="ptShoulder">評価: -- pt</div>
-
-              </div>
-
-              <div class="metric-box">
-
-                <div class="metric-title" id="mTitle3">膝の角度（タメ/構え）</div>
-
-                <div class="metric-val" style="color:var(--accent-highlight);" id="valKneeDeg">-- °</div>
-
-                <div class="metric-peak" id="maxKneeDeg">最深膝角: --°</div>
-
-                <div class="metric-score-tag" id="ptKnee">下半身: -- pt</div>
-
-              </div>
-
-              <div class="metric-box">
-
-                <div class="metric-title" id="mTitle4">速度指数 / スタンス比</div>
-
-                <div class="metric-val" style="color:#f43f5e;" id="valSpeedPt">-- pt</div>
-
-                <div class="metric-peak" id="maxSpeedPt">足幅比: --倍</div>
-
-                <div class="metric-score-tag" id="coreTiltTag">体幹傾き: --°</div>
-
-              </div>
-
-            </div>
-
-
-
-            <div class="pen-toolbar">
-
-              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-
-                <button id="btnToggleDrawMode" class="btn btn-cyan-outline" style="padding:8px 11px; font-size:0.8rem;" onclick="toggleDrawingLockMode()">
-
-                  ✏️ 線引き: OFF (スクロール優先)
-
-                </button>
-
-                <div class="color-dot active" style="background:#ef4444;" onclick="setPenColor('#ef4444', this)"></div>
-
-                <div class="color-dot" style="background:#f59e0b;" onclick="setPenColor('#f59e0b', this)"></div>
-
-                <div class="color-dot" style="background:#3b82f6;" onclick="setPenColor('#3b82f6', this)"></div>
-
-                <div class="color-dot" style="background:#10b981;" onclick="setPenColor('#10b981', this)"></div>
-
-              </div>
-
-              <div class="btn-group">
-
-                <button class="btn" style="padding:8px 10px; font-size:0.8rem;" onclick="resetMaxMetrics()">🔄 数値リセット</button>
-
-                <button class="btn" style="padding:8px 10px; font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止/再生</button>
-
-                <button class="btn btn-rose" style="padding:8px 10px; font-size:0.8rem;" onclick="clearDrawing()">🗑️ 線消去</button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-
-          <div style="display:flex; flex-direction:column; gap:10px;">
-
-            <div class="card" style="background:var(--bg-panel); margin:0;">
+        <div class="card" style="background:var(--bg-panel); margin:0 0 12px;">
 
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
 
@@ -3451,16 +3217,209 @@
                 </select>
 
               </div>
+              <button type="button" id="btnCheckerStartMeasure" class="btn btn-amber" style="width:100%; min-height:44px; font-size:0.95rem; font-weight:900;" onclick="applyQuickPresetPose(document.getElementById('shotTypeSelect').value)">▶ 測定をはじめる</button>
 
 
 
-              <button id="btnStartPoseSession" class="btn btn-amber" style="width:100%; padding:10px; font-size:0.84rem;" onclick="startTimedPoseSession()">
-
-                ▶️ 10秒間 精密測定スタート
-
-              </button>
+              
 
             </div>
+
+        <div class="split-grid">
+
+          <div>
+
+            <div class="viewport-wrapper fullscreen-target" id="poseViewport">
+
+              <div class="viewport-header-bar">
+
+                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（カメラ起動 または 動画読込を選択）</span>
+
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+
+                  <span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 認識精度: --%</span>
+
+                  
+
+                </div>
+
+              </div>
+
+
+
+              <div class="viewport-stage">
+
+                <canvas id="outputCanvas" class="viewport-canvas" width="720" height="720" style="display:none;"></canvas>
+
+                <canvas id="drawCanvas" width="720" height="720"></canvas>
+
+
+
+                <div class="center-overlay-banner" id="poseCountdownOverlay">
+
+                  <div class="banner-big-num" id="poseCountdownNum">3</div>
+
+                  <div class="banner-sub-text">10秒精密測定スタートまで</div>
+
+                </div>
+
+
+
+                <div id="posePlaceholder" style="text-align:center; color:var(--text-secondary); padding:18px;">
+
+                  <div style="font-size:2rem; margin-bottom:6px;">🧠🎬</div>
+
+                  <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカメラ起動不要で即座に動画が表示され自動診断がスタートします！</div>
+
+                  <div style="font-size:0.8rem; margin-top:4px;">リアルタイム撮影時は「📷 AIカメラ起動」を押してください</div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- 🎬 動画読み込み時のみ自動表示される専用シーク＆区間切り出しパネル -->
+
+            <div class="video-control-panel" id="videoControlPanel">
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+
+                <span style="font-weight:900; font-size:0.78rem; color:var(--accent-highlight);">🎬 動画再生コントローラー</span>
+
+                <div class="btn-group">
+
+                  
+
+                  
+
+                  
+
+                  <select id="videoSpeedSelect" onchange="changeVideoPlaybackSpeed(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
+
+                    <option value="1.0" selected>1.0x (等倍)</option>
+
+                    <option value="0.5">0.5x (スロー)</option>
+
+                    <option value="0.25">0.25x (超スロー)</option>
+
+                  </select>
+
+                </div>
+
+              </div>
+
+
+
+              <!-- 現在再生位置シークバー -->
+
+              <div class="video-seek-row">
+
+                <span style="font-size:0.8rem; color:var(--text-secondary); width:52px;">再生位置</span>
+
+                <input type="range" id="videoSeekSlider" min="0" max="100" step="0.05" value="0" oninput="onVideoSeekSliderInput(this.value)" />
+
+                <span class="time-readout" id="videoTimeLabel">0.0s / 0.0s</span>
+
+              </div>
+
+
+
+              
+
+              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:6px;">⚠️ 診断は通常速度で撮影した動画専用です。スローモーション撮影の動画では、踏み切り・着地・速度・球速など時間を使う判定がずれます（再生速度の変更は診断に影響しません）。</div>
+
+            </div>
+
+
+
+            <div class="metrics-grid">
+
+              <div class="metric-box">
+
+                <div class="metric-title" id="mTitle1">利き腕・肘の角度</div>
+
+                <div class="metric-val" style="color:#34d399;" id="valElbowDeg">-- °</div>
+
+                <div class="metric-peak" id="maxElbowDeg">MAX: --° / 最小: --°</div>
+
+                <div class="metric-score-tag" id="ptElbow">リスト: --</div>
+
+              </div>
+
+              <div class="metric-box">
+
+                <div class="metric-title" id="mTitle2">肩挙上角（打点/構え高）</div>
+
+                <div class="metric-val" style="color:#60a5fa;" id="valShoulderDeg">-- °</div>
+
+                <div class="metric-peak" id="maxShoulderDeg">MAX打点: --°</div>
+
+                <div class="metric-score-tag" id="ptShoulder">評価: -- pt</div>
+
+              </div>
+
+              <div class="metric-box">
+
+                <div class="metric-title" id="mTitle3">膝の角度（タメ/構え）</div>
+
+                <div class="metric-val" style="color:var(--accent-highlight);" id="valKneeDeg">-- °</div>
+
+                <div class="metric-peak" id="maxKneeDeg">最深膝角: --°</div>
+
+                <div class="metric-score-tag" id="ptKnee">下半身: -- pt</div>
+
+              </div>
+
+              <div class="metric-box">
+
+                <div class="metric-title" id="mTitle4">速度指数 / スタンス比</div>
+
+                <div class="metric-val" style="color:#f43f5e;" id="valSpeedPt">-- pt</div>
+
+                <div class="metric-peak" id="maxSpeedPt">足幅比: --倍</div>
+
+                <div class="metric-score-tag" id="coreTiltTag">体幹傾き: --°</div>
+
+              </div>
+
+            </div>
+
+
+
+            <div class="pen-toolbar">
+
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+
+                <button id="btnToggleDrawMode" class="btn btn-cyan-outline" style="padding:8px 11px; font-size:0.8rem;" onclick="toggleDrawingLockMode()">
+
+                  ✏️ 線引き: OFF (スクロール優先)
+
+                </button>
+
+                <div class="color-dot active" style="background:#ef4444;" onclick="setPenColor('#ef4444', this)"></div>
+
+                <div class="color-dot" style="background:#f59e0b;" onclick="setPenColor('#f59e0b', this)"></div>
+
+                <div class="color-dot" style="background:#3b82f6;" onclick="setPenColor('#3b82f6', this)"></div>
+
+                <div class="color-dot" style="background:#10b981;" onclick="setPenColor('#10b981', this)"></div>
+
+              </div>
+
+              
+
+            </div>
+
+          </div>
+
+
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+
+            
 
 
 
@@ -3593,6 +3552,40 @@
           </div>
 
         </div>
+
+            <details class="summary-box" style="margin-top:12px;">
+              <summary style="cursor:pointer; font-weight:800; font-size:0.85rem;">⚙️ 詳細設定 ▼</summary>
+              <div style="margin-top:9px; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:800;">🖥️ 表示・再生:</span>
+                  <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
+                  <select id="delayMirrorSelect" onchange="changeDelayMirrorSec(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
+
+              <option value="0" selected>⏪ ディレイ: OFF</option>
+
+              <option value="3">⏪ 3秒遅れ再生</option>
+
+              <option value="5">⏪ 5秒遅れ再生</option>
+
+            </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:0.8rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:9px;">
+                  <span style="color:var(--text-secondary); font-weight:800;">✂️ 診断区間（動画）:</span>
+                  <button class="btn" style="padding:7px 11px; font-size:0.8rem;" onclick="seekUploadedVideoBy(-0.1)">⏪ -0.1秒</button>
+                  <button class="btn" style="padding:7px 11px; font-size:0.8rem;" onclick="seekUploadedVideoBy(0.1)">⏩ +0.1秒</button>
+                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="setVideoTrimPoint('start')">📍現在位置を開始(A)に</button>
+                  <span id="trimRangeText" style="color:var(--accent-secondary); font-weight:900;">先頭(0.0s) 〜 終了</span>
+                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="setVideoTrimPoint('end')">🏁現在位置を終了(B)に</button>
+                  <button class="btn" style="padding:7px 10px; font-size:0.78rem;" onclick="resetVideoTrimRange()">全区間戻す</button>
+                  <button class="btn btn-amber" style="padding:7px 11px; font-size:0.8rem;" onclick="startAutoVideoDiagnosis()">🔄 この区間を再診断</button>
+                </div>
+                <div class="btn-group" style="border-top:1px solid rgba(255,255,255,0.1); padding-top:9px;">
+                  <button class="btn" style="padding:8px 10px; font-size:0.8rem;" onclick="resetMaxMetrics()">🔄 数値リセット</button>
+                  <button class="btn btn-rose" style="padding:8px 10px; font-size:0.8rem;" onclick="clearDrawing()">🗑️ 線消去</button>
+                </div>
+              </div>
+            </details>
+
 
       </div>
 
@@ -5710,9 +5703,9 @@
 
     function updateMediaControlsUI() {
 
-      const btnRx = document.getElementById('btnReflexCamToggle');
+      const btnRx = document.getElementById('btnReflexCamToggleInFs');
 
-      const btnPoseCam = document.getElementById('btnPoseCamToggle');
+      const btnPoseCam = document.getElementById('btnPoseCamToggleInFs');
 
       const btnStartSession = document.getElementById('btnStartPoseSession');
 
@@ -5736,9 +5729,13 @@
 
       if (activeCameraMode === 'reflex' && activeInputType === 'camera') {
 
-        btnRx.textContent = "⏹️ カメラ停止";
+        if (btnRx) {
 
-        btnRx.className = "btn btn-rose";
+          btnRx.textContent = "⏹️ カメラ停止";
+
+          btnRx.className = "btn btn-rose";
+
+        }
 
         rxCanvas.style.display = "block";
 
@@ -5750,9 +5747,13 @@
 
       } else {
 
-        btnRx.textContent = "📷 初速AIカメラ起動";
+        if (btnRx) {
 
-        btnRx.className = "btn btn-emerald";
+          btnRx.textContent = "📷 初速AIカメラ起動";
+
+          btnRx.className = "btn btn-emerald";
+
+        }
 
         rxCanvas.style.display = "none";
 
@@ -5776,13 +5777,17 @@
 
         if (activeInputType === 'video') {
 
-          btnPoseCam.textContent = "📷 カメラモードへ切替";
+          if (btnPoseCam) {
 
-          btnPoseCam.className = "btn btn-emerald";
+            btnPoseCam.textContent = "📷 カメラモードへ切替";
+
+            btnPoseCam.className = "btn btn-emerald";
+
+          }
 
           videoCtrlPanel.style.display = "block";
 
-          btnStartSession.textContent = "🔄 動画の指定区間(A〜B)を先頭から再診断";
+          if (btnStartSession) btnStartSession.textContent = "🔄 動画の指定区間(A〜B)を先頭から再診断";
 
           const speedRate = document.getElementById('videoSpeedSelect').value;
 
@@ -5790,13 +5795,17 @@
 
         } else {
 
-          btnPoseCam.textContent = "⏹️ カメラ停止";
+          if (btnPoseCam) {
 
-          btnPoseCam.className = "btn btn-rose";
+            btnPoseCam.textContent = "⏹️ カメラ停止";
+
+            btnPoseCam.className = "btn btn-rose";
+
+          }
 
           videoCtrlPanel.style.display = "none";
 
-          btnStartSession.textContent = "▶️ 10秒間 カメラ精密測定スタート";
+          if (btnStartSession) btnStartSession.textContent = "▶️ 10秒間 カメラ精密測定スタート";
 
           document.getElementById('poseHudStatus').textContent =
 
@@ -5806,15 +5815,19 @@
 
       } else {
 
-        btnPoseCam.textContent = "📷 AIカメラ起動";
+        if (btnPoseCam) {
 
-        btnPoseCam.className = "btn btn-emerald";
+          btnPoseCam.textContent = "📷 AIカメラ起動";
+
+          btnPoseCam.className = "btn btn-emerald";
+
+        }
 
         poseCanvas.style.display = "none";
 
         videoCtrlPanel.style.display = "none";
 
-        btnStartSession.textContent = "▶️ 10秒間 精密測定スタート";
+        if (btnStartSession) btnStartSession.textContent = "▶️ 10秒間 精密測定スタート";
 
         document.getElementById('posePlaceholder').style.display = "block";
 
@@ -7076,7 +7089,7 @@
 
       upVideo.pause();
 
-      document.getElementById('btnVideoPlayPause').textContent = "▶️ 再生";
+      { const _ppBtn = document.getElementById('btnVideoPlayPause'); if (_ppBtn) _ppBtn.textContent = "▶️ 再生"; }
 
       const nextTime = Math.max(0, Math.min(upVideo.duration || 10, upVideo.currentTime + deltaSec));
 
@@ -7214,15 +7227,15 @@
 
         await upVideo.play();
 
-        document.getElementById('btnVideoPlayPause').textContent = "⏸️ 一時停止";
+        { const _ppBtn = document.getElementById('btnVideoPlayPause'); if (_ppBtn) _ppBtn.textContent = "⏸️ 一時停止"; }
 
       } catch (err) {
 
         // Safari等で自動再生がブロックされた場合は1フレーム解析して案内を表示
 
-        document.getElementById('btnVideoPlayPause').textContent = "▶️ 再生";
+        { const _ppBtn = document.getElementById('btnVideoPlayPause'); if (_ppBtn) _ppBtn.textContent = "▶️ 再生"; }
 
-        document.getElementById('poseHudStatus').textContent = "▶️ 「再生」ボタンを押すと動画診断が始まります";
+        document.getElementById('poseHudStatus').textContent = "▶️ 映像の上のバーにある「⏯️ 一時停止」ボタンで再生すると動画診断が始まります";
 
         await sendSingleFrameToPose(upVideo);
 
@@ -8710,9 +8723,7 @@
 
       const numEl = document.getElementById('poseCountdownNum');
 
-      const btn = document.getElementById('btnStartPoseSession');
-
-      btn.disabled = true;
+      const btn = document.getElementById('btnStartPoseSession'); if (btn) btn.disabled = true;
 
 
 
@@ -9530,7 +9541,7 @@
 
       poseSession.active = false;
 
-      document.getElementById('btnStartPoseSession').disabled = false;
+      { const _bsBtn = document.getElementById('btnStartPoseSession'); if (_bsBtn) _bsBtn.disabled = false; }
 
       document.getElementById('sessionTimerLabel').textContent = fromVideoAuto ? `✅ 動画区間診断完了` : `✅ 10秒精密測定完了`;
 
@@ -11438,21 +11449,6 @@
       return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:900;color:var(--accent-highlight);font-size:0.8rem;">🔊 声の速さ・音色・抜重タメ微調整</span><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="testVoiceAudio()">🔊 音声テスト</button></div><div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;"><div class="form-group"><label>🗣️ 声の速さ</label><select id="${p}VoiceRate" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="0.95">ゆっくり(0.95x)</option><option value="1.05" selected>標準(1.05x)</option><option value="1.25">速め(1.25x)</option></select></div><div class="form-group"><label>🔔 ビープ音</label><select id="${p}BeepTone" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="high" selected>クリア(大)</option><option value="normal">標準</option><option value="low">マイルド</option></select></div><div class="form-group"><label>👟 抜重タメ</label><select id="${p}UnweightMs" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="300">0.30秒</option><option value="420" selected>0.42秒</option><option value="600">0.60秒</option></select></div></div></div>`;
     }
 
-    function applyQuickPresetFootwork(m) {
-      const c = document.getElementById('fwCoursePreset'), i = document.getElementById('fwIntervalSec'), r = document.getElementById('fwRepsPerSet'), cm = document.getElementById('fwCenterCallMode');
-      if (m === 'home_lunge') { if(c) c.value='front2'; if(i) i.value='2.5'; if(r) r.value='time_30'; if(cm) cm.value='center_and_split'; }
-      else if (m === 'court_all6') { if(c) c.value='all6'; if(i) i.value='2.0'; if(r) r.value='time_30'; if(cm) cm.value='center_and_split'; }
-      else { if(c) c.value='side2'; if(i) i.value='2.0'; if(r) r.value='10'; if(cm) cm.value='split_beep'; }
-      applyFwCoursePreset(); startVoiceFootwork(false);
-    }
-    function applyQuickPresetReflex(m) {
-      if (m === 'cam_rx5') { switchReflexSubMode('camera'); if (activeCameraMode !== 'reflex' || activeInputType !== 'camera') toggleLiveCamera('reflex'); else startReflexAISession(); return; }
-      switchReflexSubMode('arrow');
-      const d = document.getElementById('arrowDirSet'), s = document.getElementById('arrowTimingStyle');
-      if (d) d.value = (m === 'arrow_side2') ? 'leftright2' : 'all6';
-      if (s) s.value = 'split_rhythm';
-      startArrowReactionDrill(false);
-    }
     function applyQuickPresetPose(k) {
       const s = document.getElementById('shotTypeSelect'); if (s) { s.value = k; updateShotCriteriaUI(); }
       if (activeCameraMode !== 'pose' || activeInputType === 'idle') toggleLiveCamera('pose'); else startTimedPoseSession();
@@ -11468,10 +11464,6 @@
         .focus-pin-pill { display:inline-flex; align-items:center; gap:6px; background:var(--bg-surface); border:1px solid var(--accent-primary); color:var(--text-primary); padding:3px 9px; border-radius:999px; font-size:0.8rem; font-weight:800; cursor:pointer; }
         .focus-pin-pill.pin-done { opacity:0.6; text-decoration:line-through; }
         .pin-del-btn { font-size:0.78rem; opacity:0.7; padding:2px 6px; }
-        .quick-preset-strip { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:7px; margin-bottom:10px; padding:8px; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:11px; }
-        .quick-preset-btn { background:var(--bg-panel); border:1px solid var(--border-subtle); border-left:4px solid var(--accent-primary); border-radius:8px; padding:7px 10px; text-align:left; color:var(--text-primary); cursor:pointer; }
-        .quick-preset-btn .qp-title { font-weight:900; font-size:0.8rem; color:var(--accent-secondary); display:block; }
-        .quick-preset-btn .qp-sub { font-size:0.78rem; color:var(--text-secondary); display:block; margin-top:2px; }
         #reflexViewport:fullscreen, #reflexViewport.pseudo-fullscreen, #poseViewport:fullscreen, #poseViewport.pseudo-fullscreen { padding:calc(6px + env(safe-area-inset-top,0px)) 8px 8px 8px !important; display:flex !important; flex-direction:column !important; background:#02050b !important; }
         #reflexViewport:fullscreen .viewport-stage, #reflexViewport.pseudo-fullscreen .viewport-stage, #poseViewport:fullscreen .viewport-stage, #poseViewport.pseudo-fullscreen .viewport-stage { flex:1 1 auto !important; width:100% !important; height:100% !important; max-height:none !important; }
         #reflexViewport:fullscreen .viewport-canvas, #reflexViewport.pseudo-fullscreen .viewport-canvas, #poseViewport:fullscreen .viewport-canvas, #poseViewport.pseudo-fullscreen .viewport-canvas { width:100% !important; height:100% !important; max-width:100% !important; max-height:100% !important; object-fit:contain !important; }
@@ -11502,12 +11494,6 @@
       }
 
       // クイック起動ストリップ＆全画面バーの注入
-      const fwCard = document.querySelector('#tab-footwork > .card'), fwGrid = document.querySelector('#tab-footwork .split-grid');
-      if (fwCard && fwGrid && !document.getElementById('fwQuickStrip')) {
-        const d = document.createElement('div'); d.id = 'fwQuickStrip'; d.className = 'quick-preset-strip';
-        d.innerHTML = `<button class="quick-preset-btn" onclick="applyQuickPresetFootwork('home_lunge')"><span class="qp-title">⚡ 🏠 自宅1歩ランジ＆中央帰還</span><span class="qp-sub">前衛2点・2.5秒・30秒連続を即開始</span></button><button class="quick-preset-btn" onclick="applyQuickPresetFootwork('court_all6')"><span class="qp-title">⚡ 🔥 体育館6点ランダム30秒</span><span class="qp-sub">全面6点・2.0秒・帰還合図付き</span></button><button class="quick-preset-btn" onclick="applyQuickPresetFootwork('unweight_side')"><span class="qp-title">⚡ 👟 左右レシーブ抜重10本</span><span class="qp-sub">左右2点・抜重予告音付き</span></button>`;
-        fwCard.insertBefore(d, fwGrid);
-      }
       const cSel = document.getElementById('fwCenterCallMode');
       if (cSel && !cSel.querySelector('option[value="center_and_split"]')) {
         cSel.insertAdjacentHTML('beforeend', `<option value="center_and_split">🎯 センター帰還合図(ピポン)➔抜重予告音(ピッ)</option><option value="center_only">🎯 1球ごとにセンター帰還合図を入れる</option>`);
@@ -11515,12 +11501,6 @@
       const fwSetCard = document.querySelector('#tab-footwork .split-grid > .card');
       if (fwSetCard && !document.getElementById('fwCfgVoiceRate')) fwSetCard.insertAdjacentHTML('beforeend', buildAudioConfigHTML('fwCfg'));
 
-      const rxCard = document.querySelector('#tab-reflex > .card'), subAr = document.getElementById('subPanelArrowDrill');
-      if (rxCard && subAr && !document.getElementById('rxQuickStrip')) {
-        const d = document.createElement('div'); d.id = 'rxQuickStrip'; d.className = 'quick-preset-strip';
-        d.innerHTML = `<button class="quick-preset-btn" onclick="applyQuickPresetReflex('arrow_unweight')"><span class="qp-title">⚡ 🏹 6方向ネオン矢印(抜重)</span><span class="qp-sub">予備音ピッ➔矢印＋声で一歩目</span></button><button class="quick-preset-btn" onclick="applyQuickPresetReflex('arrow_side2')"><span class="qp-title">⚡ ↔️ 左右2方向レシーブ矢印</span><span class="qp-sub">左右の1歩目反応を集中反復</span></button><button class="quick-preset-btn" onclick="applyQuickPresetReflex('cam_rx5')"><span class="qp-title">⚡ 📷 AIカメラ初速測定(5回)</span><span class="qp-sub">反応ミリ秒とバウンド癖を実測</span></button>`;
-        rxCard.insertBefore(d, subAr);
-      }
       const arBtns = document.querySelector('#arrowFullscreenStage .fw-top-bar .btn-group');
       if (arBtns && !document.getElementById('btnArrowPause')) {
         const pb = document.createElement('button'); pb.id = 'btnArrowPause'; pb.className = 'btn'; pb.style = 'padding:5px 9px;'; pb.disabled = true; pb.textContent = '⏸️ 一時停止'; pb.onclick = pauseArrowReactionDrill;
@@ -11531,22 +11511,16 @@
 
       const rxHb = document.querySelector('#reflexViewport .viewport-header-bar');
       if (rxHb) {
-        rxHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="reflexHudStatus">⚪ 待機中</span><span class="badge-version" id="reflexStanceLiveBadge" style="background:#334155;color:#fff;">🛡️ 構え: 待機中</span></div><div class="btn-group"><button id="btnReflexCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('reflex')">📷 カメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button class="btn btn-amber" style="padding:7px 11px;font-size:0.8rem;" onclick="startReflexAISession()">▶️ 測定開始</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopReflexAISession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面</button></div>`;
+        rxHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="reflexHudStatus">⚪ 待機中</span><span class="badge-version" id="reflexStanceLiveBadge" style="background:#334155;color:#fff;">🛡️ 構え: 待機中</span></div><div class="btn-group"><button id="btnReflexCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('reflex')">📷 初速AIカメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button class="btn btn-amber" style="padding:7px 10px;font-size:0.8rem;" onclick="startReflexAISession()">▶️ 測定開始</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopReflexAISession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面</button></div>`;
       }
       const rxStg = document.querySelector('#reflexViewport .viewport-stage');
       if (rxStg && !document.getElementById('rxLiveFloatingHud')) {
         rxStg.insertAdjacentHTML('beforeend', `<div id="rxLiveFloatingHud" class="live-floating-hud"><span id="rxHudRep">進捗: 0/5</span><span style="color:#38bdf8;" id="rxHudLast">直前: --ms</span><span style="color:#fbbf24;" id="rxHudAvg">平均: --ms</span><span style="color:#34d399;" id="rxHudBest">最速: --ms</span></div>`);
       }
 
-      const poseCard = document.querySelector('#tab-pose > .card'), poseGrid = document.querySelector('#tab-pose .split-grid');
-      if (poseCard && poseGrid && !document.getElementById('poseQuickStrip')) {
-        const d = document.createElement('div'); d.id = 'poseQuickStrip'; d.className = 'quick-preset-strip';
-        d.innerHTML = `<button class="quick-preset-btn" onclick="applyQuickPresetPose('ready_stance')"><span class="qp-title">⚡ 🛡️ 基本の構え・手首立て診断</span><span class="qp-sub">ラケット高さ・膝・静止安定度</span></button><button class="quick-preset-btn" onclick="applyQuickPresetPose('smash')"><span class="qp-title">⚡ 💥 スマッシュ・高打点＆回内</span><span class="qp-sub">理想打点レーザー＆回内採点</span></button><button class="quick-preset-btn" onclick="applyQuickPresetPose('cross_hairpin')"><span class="qp-title">⚡ 🕸️ ネット前ランジ＆体幹軸</span><span class="qp-sub">上体の突っ込み防止＆深い膝角</span></button>`;
-        poseCard.insertBefore(d, poseGrid);
-      }
       const poseHb = document.querySelector('#poseViewport .viewport-header-bar');
       if (poseHb) {
-        poseHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span><span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span></div><div class="btn-group"><button id="btnPoseCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('pose')">📷 カメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button id="btnPoseStartInFs" class="btn btn-amber" style="padding:7px 11px;font-size:0.8rem;" onclick="startTimedPoseSession()">▶️ 10秒測定</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopTimedPoseSession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button></div>`;
+        poseHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span><span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span></div><div class="btn-group"><button id="btnPoseCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('pose')">📷 AIカメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button id="btnPoseStartInFs" class="btn btn-amber" style="padding:7px 10px;font-size:0.8rem;" onclick="startTimedPoseSession()">▶️ 10秒測定</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopTimedPoseSession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button></div>`;
       }
       const poseStg = document.querySelector('#poseViewport .viewport-stage');
       if (poseStg && !document.getElementById('poseLiveFloatingHud')) {
@@ -11777,7 +11751,7 @@
     function stopTimedPoseSession() {
       clearInterval(poseCountdownTimerId); clearInterval(poseSession.timerId); poseSession.active = false;
       const ov = document.getElementById('poseCountdownOverlay'); if (ov) ov.style.display = "none";
-      document.getElementById('btnStartPoseSession').disabled = false;
+      { const _bsBtn = document.getElementById('btnStartPoseSession'); if (_bsBtn) _bsBtn.disabled = false; }
       document.getElementById('sessionTimerLabel').textContent = "⏹️ 待機中";
     }
 
