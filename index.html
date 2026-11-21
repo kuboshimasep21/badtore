@@ -2786,8 +2786,6 @@
 
           <div class="btn-group" style="margin-bottom:10px;">
 
-            <button id="btnReflexCamToggle" class="btn btn-emerald" onclick="toggleLiveCamera('reflex')">📷 初速AIカメラ起動</button>
-
             <button class="btn" onclick="switchCameraFacing()">🔄 内/外カメラ切替</button>
 
             <button id="btnReflexMeasureStart" class="btn btn-amber" onclick="startReflexAISession()">▶️ 初速AI測定スタート</button>
@@ -3039,8 +3037,6 @@
           </div>
 
           <div class="btn-group">
-
-            <button id="btnPoseCamToggle" class="btn btn-emerald" onclick="toggleLiveCamera('pose')">📷 AIカメラ起動</button>
 
             <button class="btn" id="btnPoseCamFlip" onclick="switchCameraFacing()">🔄 内/外切替</button>
 
@@ -5710,9 +5706,9 @@
 
     function updateMediaControlsUI() {
 
-      const btnRx = document.getElementById('btnReflexCamToggle');
+      const btnRx = document.getElementById('btnReflexCamToggleInFs');
 
-      const btnPoseCam = document.getElementById('btnPoseCamToggle');
+      const btnPoseCam = document.getElementById('btnPoseCamToggleInFs');
 
       const btnStartSession = document.getElementById('btnStartPoseSession');
 
@@ -5736,9 +5732,13 @@
 
       if (activeCameraMode === 'reflex' && activeInputType === 'camera') {
 
-        btnRx.textContent = "⏹️ カメラ停止";
+        if (btnRx) {
 
-        btnRx.className = "btn btn-rose";
+          btnRx.textContent = "⏹️ カメラ停止";
+
+          btnRx.className = "btn btn-rose";
+
+        }
 
         rxCanvas.style.display = "block";
 
@@ -5750,9 +5750,13 @@
 
       } else {
 
-        btnRx.textContent = "📷 初速AIカメラ起動";
+        if (btnRx) {
 
-        btnRx.className = "btn btn-emerald";
+          btnRx.textContent = "📷 初速AIカメラ起動";
+
+          btnRx.className = "btn btn-emerald";
+
+        }
 
         rxCanvas.style.display = "none";
 
@@ -5776,9 +5780,13 @@
 
         if (activeInputType === 'video') {
 
-          btnPoseCam.textContent = "📷 カメラモードへ切替";
+          if (btnPoseCam) {
 
-          btnPoseCam.className = "btn btn-emerald";
+            btnPoseCam.textContent = "📷 カメラモードへ切替";
+
+            btnPoseCam.className = "btn btn-emerald";
+
+          }
 
           videoCtrlPanel.style.display = "block";
 
@@ -5790,9 +5798,13 @@
 
         } else {
 
-          btnPoseCam.textContent = "⏹️ カメラ停止";
+          if (btnPoseCam) {
 
-          btnPoseCam.className = "btn btn-rose";
+            btnPoseCam.textContent = "⏹️ カメラ停止";
+
+            btnPoseCam.className = "btn btn-rose";
+
+          }
 
           videoCtrlPanel.style.display = "none";
 
@@ -5806,9 +5818,13 @@
 
       } else {
 
-        btnPoseCam.textContent = "📷 AIカメラ起動";
+        if (btnPoseCam) {
 
-        btnPoseCam.className = "btn btn-emerald";
+          btnPoseCam.textContent = "📷 AIカメラ起動";
+
+          btnPoseCam.className = "btn btn-emerald";
+
+        }
 
         poseCanvas.style.display = "none";
 
@@ -11531,7 +11547,7 @@
 
       const rxHb = document.querySelector('#reflexViewport .viewport-header-bar');
       if (rxHb) {
-        rxHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="reflexHudStatus">⚪ 待機中</span><span class="badge-version" id="reflexStanceLiveBadge" style="background:#334155;color:#fff;">🛡️ 構え: 待機中</span></div><div class="btn-group"><button id="btnReflexCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('reflex')">📷 カメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button class="btn btn-amber" style="padding:7px 11px;font-size:0.8rem;" onclick="startReflexAISession()">▶️ 測定開始</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopReflexAISession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面</button></div>`;
+        rxHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="reflexHudStatus">⚪ 待機中</span><span class="badge-version" id="reflexStanceLiveBadge" style="background:#334155;color:#fff;">🛡️ 構え: 待機中</span></div><div class="btn-group"><button id="btnReflexCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('reflex')">📷 初速AIカメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button class="btn btn-amber" style="padding:7px 11px;font-size:0.8rem;" onclick="startReflexAISession()">▶️ 測定開始</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopReflexAISession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('reflexViewport')">⛶ 全画面</button></div>`;
       }
       const rxStg = document.querySelector('#reflexViewport .viewport-stage');
       if (rxStg && !document.getElementById('rxLiveFloatingHud')) {
@@ -11546,7 +11562,7 @@
       }
       const poseHb = document.querySelector('#poseViewport .viewport-header-bar');
       if (poseHb) {
-        poseHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span><span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span></div><div class="btn-group"><button id="btnPoseCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('pose')">📷 カメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button id="btnPoseStartInFs" class="btn btn-amber" style="padding:7px 11px;font-size:0.8rem;" onclick="startTimedPoseSession()">▶️ 10秒測定</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopTimedPoseSession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button></div>`;
+        poseHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span><span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span></div><div class="btn-group"><button id="btnPoseCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('pose')">📷 AIカメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button id="btnPoseStartInFs" class="btn btn-amber" style="padding:7px 11px;font-size:0.8rem;" onclick="startTimedPoseSession()">▶️ 10秒測定</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopTimedPoseSession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button></div>`;
       }
       const poseStg = document.querySelector('#poseViewport .viewport-stage');
       if (poseStg && !document.getElementById('poseLiveFloatingHud')) {
