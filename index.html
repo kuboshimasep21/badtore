@@ -24,7 +24,7 @@
 
   <meta name="theme-color" content="#060b16" />
 
-  <title>バドトレPRO v10.5.1 - バドミントン専用 AI動作解析＆実践トレーニング</title>
+  <title>バドトレPRO v10.6.0 - バドミントン専用 AI動作解析＆実践トレーニング</title>
 
   <!-- MediaPipe Pose & Drawing Utils -->
 
@@ -2202,7 +2202,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v10.5.1 PRO</span>
+      <span class="badge-version">v10.6.0 PRO</span>
 
     </div>
 
@@ -2230,19 +2230,19 @@
 
     <button class="nav-tab active" onclick="switchTab('tab-footwork')" id="btn-tab-footwork">🏃 1.フットワーク</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-reflex')" id="btn-tab-reflex">⚡ 2.初速＆矢印</button>
+    <button class="nav-tab" onclick="switchTab('tab-reflex')" id="btn-tab-reflex">⚡ 2.反応</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-pose')" id="btn-tab-pose">🎥 3.構え＆骨格AI</button>
+    <button class="nav-tab" onclick="switchTab('tab-pose')" id="btn-tab-pose">🎥 3.フォーム診断</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-racket')" id="btn-tab-racket">🏸 4.ラケット診断</button>
+    <button class="nav-tab" onclick="switchTab('tab-racket')" id="btn-tab-racket">🏸 4.ラケット</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-score')" id="btn-tab-score">🧮 5.スコア＆位置</button>
+    <button class="nav-tab" onclick="switchTab('tab-score')" id="btn-tab-score">🧮 5.スコア</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-profile')" id="btn-tab-profile">👤 6.メンバー管理</button>
+    <button class="nav-tab" onclick="switchTab('tab-profile')" id="btn-tab-profile">👤 6.メンバー</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-progress')" id="btn-tab-progress">👥 7.みんなの進捗</button>
+    <button class="nav-tab" onclick="switchTab('tab-progress')" id="btn-tab-progress">👥 7.進捗</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 10.撮影ガイド</button>
+    <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 10.ガイド</button>
 
   </nav>
 
@@ -3772,7 +3772,7 @@
 
           <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:6px;">
 
-            Googleでログインすると、練習記録・自己ベスト・XPがクラウドに自動保存され、別のスマホでも続きが見られます。家族グループを作ると「👥 7.みんなの進捗」で家族の進捗も共有できます。ログインしなくても今まで通り使えます。
+            Googleでログインすると、練習記録・自己ベスト・XPがクラウドに自動保存され、別のスマホでも続きが見られます。家族グループを作ると「👥 7.進捗」で家族の進捗も共有できます。ログインしなくても今まで通り使えます。
 
           </p>
 
@@ -3782,7 +3782,7 @@
 
           <div class="btn-group" style="margin-top:8px;">
 
-            <button class="btn btn-cyan-outline" onclick="switchTab('tab-progress')">👥 みんなの進捗・グループ管理へ</button>
+            <button class="btn btn-cyan-outline" onclick="switchTab('tab-progress')">👥 進捗・グループ管理へ</button>
 
           </div>
 
@@ -4020,7 +4020,7 @@
 
         <div class="card-header">
 
-          <div class="card-title">👥 みんなの進捗（家族グループ）</div>
+          <div class="card-title">👥 進捗（家族グループ）</div>
 
           <div class="btn-group">
 
@@ -4094,7 +4094,7 @@
 
     <!-- =========================================================
 
-         TAB 9: 📚 ドリル集（プロ式メニュー）
+         TAB 9: 📚 ドリル（プロ式メニュー）
 
          中身のカードは badtore-drill-library スクリプトがマウントする
 
@@ -11860,14 +11860,14 @@
     // 📋 TAB 8: メニュー作成＋📚 TAB 9: ドリル集（ガイドの前に配置し、ガイドを10番目へ）
     function injectMenuPlannerTab() {
       const nav = document.querySelector('.nav-scroller'), guideBtn = document.getElementById('btn-tab-guide');
-      if (guideBtn) guideBtn.textContent = '📖 10.使い方＆撮影';
+      if (guideBtn) guideBtn.textContent = '📖 10.ガイド';
       if (nav && !document.getElementById('btn-tab-menu')) {
-        const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 8.メニュー作成';
+        const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 8.メニュー';
         b.onclick = () => switchTab('tab-menu');
         if (guideBtn) nav.insertBefore(b, guideBtn); else nav.appendChild(b);
       }
       if (nav && !document.getElementById('btn-tab-drills')) {
-        const db = document.createElement('button'); db.className = 'nav-tab'; db.id = 'btn-tab-drills'; db.textContent = '📚 9.ドリル集';
+        const db = document.createElement('button'); db.className = 'nav-tab'; db.id = 'btn-tab-drills'; db.textContent = '📚 9.ドリル';
         db.onclick = () => switchTab('tab-drills');
         if (guideBtn) nav.insertBefore(db, guideBtn); else nav.appendChild(db);
       }
@@ -12035,8 +12035,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.5.1 PRO";
-      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.5.1 PRO";
+      document.title = "バドトレPRO v10.6.0 PRO";
+      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.6.0 PRO";
       initSpeechVoices(); loadMenusAndLogsFromStorage();
       injectV103CoreStylesAndUI(); injectVideoAndDrillExtensions(); injectMenuPlannerTab();
       applyColorTheme(profileThemesMap[activeProfileId] || localStorage.getItem('badtore_last_theme_v102') || 'cyan', false);
@@ -12652,8 +12652,8 @@
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
                 <b>① 足元のバネ作り：</b>「🏃 1.フットワーク」➔「🎵 モード②：リズムジャンプ」で50秒間、母趾球で弾む。<br>
-                <b>② 一歩目の抜重反応：</b>「⚡ 2.初速＆矢印」のクイック起動ボタンでネオン矢印または初速カメラ測定。<br>
-                <b>③ 構え・素振り確認：</b>「🎥 3.構え＆骨格AI」でリストスタンドと最高打点レーザーをチェック！
+                <b>② 一歩目の抜重反応：</b>「⚡ 2.反応」のクイック起動ボタンでネオン矢印または初速カメラ測定。<br>
+                <b>③ 構え・素振り確認：</b>「🎥 3.フォーム診断」でリストスタンドと最高打点レーザーをチェック！
               </div>
             </div>
 
@@ -12662,7 +12662,7 @@
                 🏟️ 体育館で練習するとき（1人〜少人数・2.5時間など）
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 時間割を作る：</b>「📋 8.メニュー作成」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ 条件から自動編成］</b>を押します。<br>
+                <b>① 時間割を作る：</b>「📋 8.メニュー」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ 条件から自動編成］</b>を押します。<br>
                 <b>② 黄金順序で練習：</b>いきなり基礎打ちをせず、「抜重・FW矯正 ➔ 手投げ分解ノック ➔ 基礎打ち ➔ 半面パターン」の順で各行の<b>［▶️ 今すぐ開始］</b>を押して進めます。
               </div>
             </div>
@@ -12672,7 +12672,7 @@
                 🎬 動画フォーム診断 ＆ ⚡ スマッシュ球速(km/h)計測
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 動画の即時診断：</b>「🎥 3.構え＆骨格AI」で<b>［📁 動画読込］</b>を選ぶだけで自動採点されます。長い動画は「📍開始(A)〜🏁終了(B)」で切り出せます。<br>
+                <b>① 動画の即時診断：</b>「🎥 3.フォーム診断」で<b>［📁 動画読込］</b>を選ぶだけで自動採点されます。長い動画は「📍開始(A)〜🏁終了(B)」で切り出せます。<br>
                 <b>② 球速(km/h)を測る：</b>動画パネルの<b>［⚡ 球速測定］</b>を押し、<b>［⏪ -1コマ］［⏩ +1コマ］</b>でインパクトの瞬間（①打点記録）とネット通過/着弾（②到達記録）の2箇所を押すだけで推定初速が出ます。
               </div>
             </div>
@@ -12682,7 +12682,7 @@
                 🔥 毎日のルーティンチェックでXPゲット
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」か「📋 8.メニュー作成」の画面で、右下の<b>［🔥 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。<br>
+                <b>① 今日の分をチェック：</b>「🏃 1.フットワーク」か「📋 8.メニュー」の画面で、右下の<b>［🔥 ルーティン］</b>ボタンを押すと、その日の練習チェックが開きます。<br>
                 <b>② チェックして保存：</b>終わった項目にチェックを入れて保存すると、内容に応じて<b>XP</b>がもらえます。全部達成で<b>ボーナス+30 XP</b>！毎日の積み重ねでレベルアップを目指しましょう。
               </div>
             </div>
@@ -12791,7 +12791,7 @@
 
  
 <!-- =========================================================================
-       🚀 バドトレPRO v10.4.3 [PART 3: UIカラー完全固定 ＆ 指定APIキー組込 ＆ カスタム筋トレ]
+       🚀 バドトレPRO v10.6.0 [PART 3: UIカラー完全固定 ＆ 指定APIキー組込 ＆ カスタム筋トレ]
   ========================================================================= -->
   <script id="badtore-v104-part3">
     const DEFAULT_EMBEDDED_KEY = ["AQ.Ab8RN6LGd9Phj1g", "_GOJoM9jlgJd2c9E1r", "diJFFjXi8_7cQdLJQ"].join("");
@@ -13207,7 +13207,7 @@
       applyColorTheme(saved, false);
 
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.5.1 PRO";
+      if (vb) vb.textContent = "v10.6.0 PRO";
     });
   </script>
 <script id="badtore-brushup-share-20261118">
@@ -13285,7 +13285,7 @@ function sharePoseResultImage() {
     ctx.fillStyle = '#e2e8f0'; ctx.font = '34px ' + FONT;
     impLines.forEach(l => { ctx.fillText(l, PAD, y); y += 50; });
     ctx.fillStyle = '#64748b'; ctx.font = '28px ' + FONT;
-    ctx.fillText('バドトレPRO v10.5.1 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
+    ctx.fillText('バドトレPRO v10.6.0 ｜ AI動作解析＆実践トレーニング', PAD, H - PAD - 4);
     cv.toBlob(async (blob) => {
       if (!blob) { alert('画像の生成に失敗しました。'); return; }
       const file = new File([blob], 'badtore_result.png', { type: 'image/png' });
@@ -13314,8 +13314,8 @@ function sharePoseResultImage() {
   var GUIDE_KEY = 'badtore_onboarding_guide_seen_v1';
   var STEPS = [
     { title: '👋 ようこそ、バドトレPROへ！', body: 'バドミントン専用のAI動作解析＆実践トレーニングアプリです。フットワーク・初速・フォーム分析・スコア管理まで、日々の練習をまるごとサポートします。' },
-    { title: '🎥 AIフォーム分析の使い方', body: '「3.構え＆骨格AI」タブで動画を読み込むかカメラを起動すると、姿勢を自動で解析してスコアと改善アドバイスを表示します。診断結果は「📸 診断結果を画像でシェア」ボタンから、画像で保存・共有もできます。' },
-    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「6.メンバー管理」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「10.使い方＆撮影」タブにもあります。' }
+    { title: '🎥 AIフォーム分析の使い方', body: '「3.フォーム診断」タブで動画を読み込むかカメラを起動すると、姿勢を自動で解析してスコアと改善アドバイスを表示します。診断結果は「📸 診断結果を画像でシェア」ボタンから、画像で保存・共有もできます。' },
+    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「6.メンバー」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「10.ガイド」タブにもあります。' }
   ];
   var idx = 0;
   var overlay = null, titleEl = null, bodyEl = null, dotsEl = null, prevBtn = null, nextBtn = null;
@@ -14017,7 +14017,7 @@ function sharePoseResultImage() {
       mountRhythmHumanAnimator();
       mountWorkoutTimerHumanAnimator();
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.5.1 PRO";
+      if (vb) vb.textContent = "v10.6.0 PRO";
     }, 150);
   });
 </script>
@@ -14509,7 +14509,7 @@ function sharePoseResultImage() {
   }
 
   window.cloudCreateGroup = async function () {
-    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「6.メンバー管理」タブの☁️カードから）。'); return; }
+    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「6.メンバー」タブの☁️カードから）。'); return; }
     var input = document.getElementById('cloudGroupNameInput');
     var name = ((input && input.value) || '').trim() || '家族グループ';
     var gid = newUuid();
@@ -14523,7 +14523,7 @@ function sharePoseResultImage() {
   };
 
   window.cloudJoinGroup = async function () {
-    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「6.メンバー管理」タブの☁️カードから）。'); return; }
+    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「6.メンバー」タブの☁️カードから）。'); return; }
     var input = document.getElementById('cloudJoinCodeInput');
     var code = ((input && input.value) || '').trim();
     if (!code) { alert('招待コードを入力してください。'); return; }
@@ -14597,7 +14597,7 @@ function sharePoseResultImage() {
     }
     if (!cloudUser) {
       orderProgressCards(true);
-      var msg = '<div style="font-size:0.78rem;color:var(--text-secondary);">ログインすると家族の進捗が見られます。「6.メンバー管理」タブの「☁️ クラウド保存＆家族グループ共有」カードからGoogleでログインしてください。</div>';
+      var msg = '<div style="font-size:0.78rem;color:var(--text-secondary);">ログインすると家族の進捗が見られます。「6.メンバー」タブの「☁️ クラウド保存＆家族グループ共有」カードからGoogleでログインしてください。</div>';
       pc.innerHTML = msg;
       gc.innerHTML = msg;
       return;
@@ -14792,7 +14792,7 @@ function sharePoseResultImage() {
   if (window.__bt_tester_feedback) return; window.__bt_tester_feedback = true;
   var SB_URL = 'https://bgmngjwkfcvapcdtkcpx.supabase.co';
   var SB_KEY = 'sb_publishable_ji-jxS2T-VnXBjvfVkJ8pw_7r-_QOAG';
-  var APP_VERSION = 'v10.5.1';
+  var APP_VERSION = 'v10.6.0';
   var tsb = null, tUser = null, tReg = null, tRegLoaded = false;
 
   function initClient(){
@@ -14980,8 +14980,8 @@ function sharePoseResultImage() {
 
 <script id="badtore-drill-library">
 /* =========================================================================
-   📚 ドリル集（プロ式メニュー）Step 1〜3
-   - 配置：独立タブ「📚 9.ドリル集」（tab-drills）にカードをマウント
+   📚 ドリル（プロ式メニュー）Step 1〜3
+   - 配置：独立タブ「📚 9.ドリル」（tab-drills）にカードをマウント
      （当初は設計B案でタブ8内の一区画。ブラッシュアップ Step B で独立タブ化）
    - データ：スタイル別メニュー＋ドリルの静的データ（プリセット・読み取り専用）
    - 看板はスタイル名、選手名は「参考選手／参考方式」として小さく表示
@@ -15162,7 +15162,7 @@ function sharePoseResultImage() {
       title: 'ジャンピングスマッシュ型メニュー',
       referenceLabel: '参考選手：五十嵐有紗（旧姓・東野）',
       type: 'pack',
-      description: '女子が後衛からジャンピングスマッシュを打てることで、ダブルスのフォーメーションが変幻自在になるスタイルです。育成期に指導された「両足でジャンプ」の型と、打った後の復帰を軸に構成しました。習得の段階練習は、同じドリル集にある「ジャンピングスマッシュ習得プログラム」と合わせてどうぞ。',
+      description: '女子が後衛からジャンピングスマッシュを打てることで、ダブルスのフォーメーションが変幻自在になるスタイルです。育成期に指導された「両足でジャンプ」の型と、打った後の復帰を軸に構成しました。習得の段階練習は、同じドリルにある「ジャンピングスマッシュ習得プログラム」と合わせてどうぞ。',
       drillIds: ['drill_jss_twofoot','drill_jss_followup']
     },
     {
@@ -16177,7 +16177,7 @@ function sharePoseResultImage() {
       dose: {
         standard: '5〜8本×3セットを目安に',
         junior: 'シャドーで両足踏み切りを確認してから、球出しは5本×2セットまで',
-        note: '育成期の指導（両足でジャンプしなさい）が土台とされる型。前提として、ドリル集の『ジャンピングスマッシュ習得プログラム』ステップ1（シャドー）が安定してから取り組むこと'
+        note: '育成期の指導（両足でジャンプしなさい）が土台とされる型。前提として、ドリルの『ジャンピングスマッシュ習得プログラム』ステップ1（シャドー）が安定してから取り組むこと'
       },
       durationMin: 15,
       mode: 'pair',
@@ -16886,7 +16886,7 @@ function sharePoseResultImage() {
       group: group,
       label: d.name,
       xp: xp,
-      detail: 'ドリル集より追加｜目安：' + ((d.dose && d.dose.standard) ? d.dose.standard : (d.target || ''))
+      detail: 'ドリルより追加｜目安：' + ((d.dose && d.dose.standard) ? d.dose.standard : (d.target || ''))
     });
     bridge.save(items);
     btDrillFlashButton(btn, '✅ 追加しました');
@@ -17013,7 +17013,7 @@ function sharePoseResultImage() {
     card.className = 'card';
     card.id = 'btDrillLibraryCard';
     card.innerHTML = ''
-      + '<div class="card-header"><div class="card-title"><span>📚 ドリル集（プロ式メニュー）</span></div></div>'
+      + '<div class="card-header"><div class="card-title"><span>📚 ドリル（プロ式メニュー）</span></div></div>'
       + '<div class="bt-drill-safety">⚠️ ' + BT_DRILL_SAFETY_COMMON + '</div>'
       + '<div class="bt-drill-filter-label">カテゴリ</div>'
       + '<div class="bt-drill-filters" id="btDrillFilters"></div>'
@@ -17040,7 +17040,7 @@ function sharePoseResultImage() {
         b.className = 'btn btn-cyan-outline';
         b.id = 'btDrillGuideBtn';
         b.style.cssText = 'width:100%;padding:10px;margin-bottom:10px;';
-        b.textContent = '📚 ドリル集（プロ式メニュー）はこちら';
+        b.textContent = '📚 ドリル（プロ式メニュー）はこちら';
         b.onclick = function(){ if (typeof switchTab === 'function') switchTab('tab-drills'); };
         btns[i].parentNode.insertBefore(b, btns[i].nextSibling);
         return true;
