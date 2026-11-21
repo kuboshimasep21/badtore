@@ -4019,6 +4019,20 @@
 
       </div>
 
+      <div class="card" id="btBadgeCard">
+
+        <div class="card-header">
+
+          <div class="card-title">🏅 実績バッジ <span id="btBadgeCount" style="font-size:0.78rem;color:var(--text-secondary);font-weight:700;"></span></div>
+
+        </div>
+
+        <div id="btBadgeNext" style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;">読み込み中…</div>
+
+        <div id="btBadgeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;"></div>
+
+      </div>
+
       <div class="card" id="progressMainCard">
 
         <div class="card-header">
@@ -18651,6 +18665,482 @@ function sharePoseResultImage() {
     api: btTnApi
   };
   console.log('[badtore tournament] loaded');
+})();
+</script>
+
+<script id="badtore-v106-badges">
+/* =========================================================
+   🏅 実績バッジ（v10.6 追加）
+   - 実際に測れる出来事だけに紐づける（診断・自己ベスト・連続日数・
+     ルーティン・大会）。バッジ自体が報酬で、XPは付かない。
+   - 状態は localStorage 'badtore_badges_v106' にプロフィール別保存。
+   - 既存データから数えられる分は初回にまとめて付与（サイレント）。
+     自己ベスト更新回数と、プロフィール帰属できない過去分は
+     カウンタを新規に開始する（本文コメント参照）。
+   ========================================================= */
+(function(){
+  "use strict";
+  if (window.__bt_v106_badges) return; window.__bt_v106_badges = true;
+
+  var BADGE_KEY = 'badtore_badges_v106';
+  var SHOT_TYPES = ['ready_stance','smash','clear','drop','lob','drive','serve_short','serve_long','reaction_unweight','reaction_jump','cut_reverse','cross_hairpin','jump_smash'];
+  var BADGES = [
+    { id:'diag_first',  icon:'🔍', name:'はじめての診断',         cond:'フォーム診断を1回完了する' },
+    { id:'diag_rank_a', icon:'🅰️', name:'Aランク到達',           cond:'診断でAランクを取る' },
+    { id:'diag_rank_s', icon:'🌟', name:'Sランク到達',           cond:'診断でSランクを取る' },
+    { id:'pb_first',    icon:'🏆', name:'自己ベスト初更新',       cond:'自己ベストを初めて記録・更新する' },
+    { id:'pb_10',       icon:'👑', name:'自己ベスト通算10回',     cond:'自己ベスト更新を通算10回する' },
+    { id:'diag_all',    icon:'🎯', name:'全種目制覇',             cond:'13種目すべてのベストを記録する' },
+    { id:'streak_3',    icon:'🔥', name:'3日連続',               cond:'3日連続で練習する' },
+    { id:'streak_7',    icon:'🔥', name:'7日連続',               cond:'7日連続で練習する' },
+    { id:'streak_30',   icon:'🔥', name:'30日連続',              cond:'30日連続で練習する' },
+    { id:'routine_1',   icon:'✅', name:'ルーティン初コンプリート', cond:'1日のルーティンを全部チェックする' },
+    { id:'routine_10',  icon:'💪', name:'ルーティン通算10回',     cond:'ルーティンコンプリートを通算10回する' },
+    { id:'routine_50',  icon:'🏅', name:'ルーティン通算50回',     cond:'ルーティンコンプリートを通算50回する' },
+    { id:'tn_first',    icon:'🏟️', name:'初の大会登録',          cond:'大会を1件登録する' },
+    { id:'tn_win',      icon:'🎉', name:'初の勝利を記録',         cond:'自分の試合で1勝を記録する' }
+  ];
+  var BADGE_BY_ID = {};
+  BADGES.forEach(function(b){ BADGE_BY_ID[b.id] = b; });
+
+  /* ---------- 小物 ---------- */
+  function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function lsGet(k){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; } }
+  function todayStr(){ var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function fmtDate(s){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? (Number(m[2]) + '/' + Number(m[3])) : (s || ''); }
+  function normName(s){ return String(s || '').replace(/[\s　]+/g, '').trim(); }
+
+  /* ---------- アプリ内データへの安全なアクセス（phase1と同じ方式） ---------- */
+  function getProfiles(){
+    try{ if (typeof profilesList !== 'undefined' && Array.isArray(profilesList) && profilesList.length) return profilesList; }catch(e){}
+    var l = lsGet('badtore_profiles_list_v90') || lsGet('badtore_profiles_list_v80') || lsGet('badtore_profiles_list_v75');
+    return Array.isArray(l) ? l : [];
+  }
+  function getActivePid(){
+    try{ if (typeof activeProfileId !== 'undefined' && activeProfileId) return activeProfileId; }catch(e){}
+    try{ return localStorage.getItem('badtore_active_profile_id_v90') || null; }catch(e){ return null; }
+  }
+  function getPB(){
+    try{ if (typeof personalBestsDB !== 'undefined' && personalBestsDB && typeof personalBestsDB === 'object') return personalBestsDB; }catch(e){}
+    return lsGet('badtore_personal_bests_v90') || lsGet('badtore_personal_bests_v80') || lsGet('badtore_personal_bests_v75') || {};
+  }
+  function getXP(){
+    try{ if (typeof playerXpDB !== 'undefined' && playerXpDB && typeof playerXpDB === 'object') return playerXpDB; }catch(e){}
+    return lsGet('badtore_player_xp_v102') || {};
+  }
+  function getLogs(){
+    try{ if (typeof practiceLogsDB !== 'undefined' && Array.isArray(practiceLogsDB)) return practiceLogsDB; }catch(e){}
+    return lsGet('badtore_practice_logs_v100') || [];
+  }
+  function profileOf(pid){
+    var profs = getProfiles(), found = null;
+    profs.forEach(function(p){ if (p && p.id === pid) found = p; });
+    return found;
+  }
+  function rankOf(score, comps){
+    try{ if (typeof getScoreRankMeta === 'function') return getScoreRankMeta(score, comps).rank; }catch(e){}
+    return score >= 90 ? 'S' : score >= 80 ? 'A' : score >= 68 ? 'B' : 'C';
+  }
+
+  /* ---------- 診断ベスト（旧種別 'serve' は serve_short に読み替え） ---------- */
+  function effBests(pid){
+    var pb = getPB()[pid] || {}, out = {};
+    Object.keys(pb).forEach(function(k){
+      var r = pb[k];
+      if (!r || typeof r.score !== 'number') return;
+      var key = (k === 'serve') ? 'serve_short' : k;
+      if (!out[key] || r.score > out[key].score) out[key] = r;
+    });
+    return out;
+  }
+
+  /* ---------- 練習日と連続日数（XPの記録日＋練習ログ。アプリ本体の「累計日数」と同じ定義） ---------- */
+  function practiceDays(pid){
+    var set = {};
+    var xp = getXP()[pid];
+    if (xp && Array.isArray(xp.days)) xp.days.forEach(function(d){ if (d) set[d] = true; });
+    var profs = getProfiles(), prof = profileOf(pid), name = prof ? prof.name : '';
+    var logs = getLogs();
+    var mine = logs.filter(function(l){ return name && l.memberName === name; });
+    if (!mine.length && profs.length && profs[0].id === pid) mine = logs;
+    mine.forEach(function(l){ if (l.isoDate) set[l.isoDate] = true; });
+    return set;
+  }
+  function streakInfo(set){
+    var days = Object.keys(set).sort(), maxRun = 0, run = 0, prev = null;
+    days.forEach(function(d){
+      var t = Date.parse(d);
+      if (prev !== null && t - prev === 86400000) run++; else run = 1;
+      if (run > maxRun) maxRun = run;
+      prev = t;
+    });
+    var cur = 0, d = new Date();
+    function iso(x){ return x.toISOString().slice(0, 10); }
+    if (!set[iso(d)]) d = new Date(d.getTime() - 86400000);
+    while (set[iso(d)]){ cur++; d = new Date(d.getTime() - 86400000); }
+    return { maxRun: maxRun, current: cur, totalDays: days.length };
+  }
+
+  /* ---------- ルーティン（日別キーを走査し、現在の項目リストで全チェック済みの日を数える） ---------- */
+  function routineItems(){
+    try{ if (window.__bt_routinesCustom && typeof window.__bt_routinesCustom.get === 'function') return window.__bt_routinesCustom.get(); }catch(e){}
+    var saved = lsGet('bt_v105_routines_custom');
+    if (Array.isArray(saved) && saved.length) return saved;
+    return [{id:'stretch'},{id:'footwork'},{id:'shadow'},{id:'core'},{id:'jump'},{id:'review'}];
+  }
+  function routineCompletedDates(){
+    var items = routineItems();
+    if (!items.length) return [];
+    var out = [];
+    try{
+      for (var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if (!k || !/^bt_v105_routine_\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+        var done = lsGet(k);
+        if (!done || typeof done !== 'object') continue;
+        var all = true;
+        for (var j = 0; j < items.length; j++){ if (!done[items[j].id]) { all = false; break; } }
+        if (all) out.push(k.slice('bt_v105_routine_'.length));
+      }
+    }catch(e){}
+    return out.sort();
+  }
+
+  /* ---------- 大会（IndexedDB。大会モジュールと同じ作法で開く） ---------- */
+  var tnCache = { at: 0, records: [], loaded: false };
+  function loadTournaments(cb){
+    if (tnCache.loaded && Date.now() - tnCache.at < 15000){ cb(tnCache.records); return; }
+    try{
+      if (typeof indexedDB === 'undefined'){ cb([]); return; }
+      var req = indexedDB.open('badtore_tournament_db', 1);
+      req.onupgradeneeded = function(ev){
+        var db = ev.target.result;
+        if (!db.objectStoreNames.contains('tournaments')) db.createObjectStore('tournaments', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('images')){
+          var st = db.createObjectStore('images', { keyPath: 'key' });
+          st.createIndex('tnId', 'tnId', { unique: false });
+        }
+      };
+      req.onsuccess = function(){
+        var db = req.result;
+        if (!db.objectStoreNames.contains('tournaments')){ tnCache = { at: Date.now(), records: [], loaded: true }; cb([]); try{ db.close(); }catch(e){} return; }
+        var gr = db.transaction('tournaments', 'readonly').objectStore('tournaments').getAll();
+        gr.onsuccess = function(){ tnCache = { at: Date.now(), records: gr.result || [], loaded: true }; cb(tnCache.records); try{ db.close(); }catch(e){} };
+        gr.onerror = function(){ cb(tnCache.records || []); };
+      };
+      req.onerror = function(){ cb(tnCache.records || []); };
+      req.onblocked = function(){ cb(tnCache.records || []); };
+    }catch(e){ cb([]); }
+  }
+  function tnRawWin(tn, name){
+    var n = normName(name);
+    if (!n) return false;
+    function isOwn(raw){
+      var rn = normName(raw);
+      return !!rn && (rn === n || (rn.length >= 2 && n.indexOf(rn) >= 0) || (n.length >= 2 && rn.indexOf(n) >= 0));
+    }
+    var found = false;
+    ((tn && tn.divisions) || []).forEach(function(div){
+      ((div && div.rounds) || []).forEach(function(r){
+        ((r && r.matches) || []).forEach(function(m){
+          if (!m || !m.winner) return;
+          if ((isOwn(m.p1) && m.winner === 1) || (isOwn(m.p2) && m.winner === 2)) found = true;
+        });
+      });
+    });
+    return found;
+  }
+  function tnHasWinFor(pid, records){
+    var prof = profileOf(pid);
+    if (!prof) return false;
+    var name = String(prof.name || '').replace(/\s*\(.*?\)\s*/g, '').trim();
+    if (!name) return false;
+    var hook = null;
+    try{ hook = window.__bt_tournament; }catch(e){}
+    for (var i = 0; i < records.length; i++){
+      var tn = records[i];
+      if (!tn) continue;
+      if (hook && typeof hook.ownResults === 'function'){
+        try{
+          var res = hook.ownResults(tn, [name]) || [];
+          var won = false;
+          res.forEach(function(r){ if (r && r.won) won = true; });
+          if (won) return true;
+          continue;
+        }catch(e){}
+      }
+      if (tnRawWin(tn, name)) return true;
+    }
+    return false;
+  }
+
+  /* ---------- バッジ状態 ---------- */
+  function loadStore(){
+    var s = lsGet(BADGE_KEY);
+    if (!s || typeof s !== 'object') s = {};
+    if (!s.profiles || typeof s.profiles !== 'object') s.profiles = {};
+    if (!s.routineClaimed || typeof s.routineClaimed !== 'object') s.routineClaimed = {};
+    return s;
+  }
+  function saveStore(s){ try{ localStorage.setItem(BADGE_KEY, JSON.stringify(s)); }catch(e){} }
+  function profState(store, pid){
+    if (!store.profiles[pid] || typeof store.profiles[pid] !== 'object')
+      store.profiles[pid] = { unlocked: {}, pbCount: 0, routineCount: 0, seeded: false, seenBests: {} };
+    var st = store.profiles[pid];
+    if (!st.unlocked || typeof st.unlocked !== 'object') st.unlocked = {};
+    if (typeof st.pbCount !== 'number') st.pbCount = 0;
+    if (typeof st.routineCount !== 'number') st.routineCount = 0;
+    if (!st.seenBests || typeof st.seenBests !== 'object') st.seenBests = {};
+    return st;
+  }
+
+  /* 自己ベスト更新カウンタ: seenBests との差分で数える。
+     - スコアが上がった種目は +1（手動保存などフック外の経路も拾う）
+     - 初観測の種目は通常はスナップショットのみ。診断直後（countNew）のときだけ
+       「初めての記録」として +1 する
+     - 下がった／消えた種目は seen を追随させるだけ（数えない） */
+  function updatePbCounter(store, pid, countNew){
+    var st = profState(store, pid), bests = effBests(pid);
+    Object.keys(bests).forEach(function(k){
+      var sc = bests[k].score, seen = st.seenBests[k];
+      if (typeof seen !== 'number'){
+        if (countNew) st.pbCount++;
+        st.seenBests[k] = sc;
+      } else if (sc > seen){
+        st.pbCount++;
+        st.seenBests[k] = sc;
+      } else if (sc < seen){
+        st.seenBests[k] = sc;
+      }
+    });
+    Object.keys(st.seenBests).forEach(function(k){ if (!bests[k]) delete st.seenBests[k]; });
+  }
+
+  /* ルーティンの完了日は端末全体で共有データなので、日付ごとに
+     「その時点でアクティブだったプロフィール」へ1回だけ帰属させる */
+  function updateRoutineClaims(store){
+    var activePid = getActivePid();
+    if (!activePid) return;
+    routineCompletedDates().forEach(function(d){
+      if (!store.routineClaimed[d]){
+        store.routineClaimed[d] = activePid;
+        profState(store, activePid).routineCount++;
+      }
+    });
+  }
+
+  /* ---------- 判定 ---------- */
+  function evaluateProfile(store, pid, tnRecords){
+    var st = profState(store, pid), earned = {};
+    var bests = effBests(pid), shots = Object.keys(bests), bestScore = 0;
+    if (shots.length) earned.diag_first = true;
+    shots.forEach(function(k){
+      var r = bests[k];
+      if (r.score > bestScore) bestScore = r.score;
+      var rk = rankOf(r.score, r.components);
+      if (rk === 'A' || rk === 'S') earned.diag_rank_a = true;
+      if (rk === 'S') earned.diag_rank_s = true;
+    });
+    var typeCount = 0;
+    SHOT_TYPES.forEach(function(t){ if (bests[t]) typeCount++; });
+    if (typeCount >= SHOT_TYPES.length) earned.diag_all = true;
+    var si = streakInfo(practiceDays(pid));
+    if (si.maxRun >= 3) earned.streak_3 = true;
+    if (si.maxRun >= 7) earned.streak_7 = true;
+    if (si.maxRun >= 30) earned.streak_30 = true;
+    if (st.pbCount >= 1) earned.pb_first = true;
+    if (st.pbCount >= 10) earned.pb_10 = true;
+    if (st.routineCount >= 1) earned.routine_1 = true;
+    if (st.routineCount >= 10) earned.routine_10 = true;
+    if (st.routineCount >= 50) earned.routine_50 = true;
+    if (tnRecords){
+      if (tnRecords.length >= 1) earned.tn_first = true;
+      if (tnRecords.length && tnHasWinFor(pid, tnRecords)) earned.tn_win = true;
+    }
+    return { earned: earned, bests: bests, typeCount: typeCount, streak: si, bestScore: bestScore };
+  }
+  function grantNew(store, pid, earned){
+    var st = profState(store, pid), today = todayStr(), news = [];
+    BADGES.forEach(function(b){
+      if (earned[b.id] && !st.unlocked[b.id]){
+        st.unlocked[b.id] = today;
+        news.push(b);
+      }
+    });
+    return news;
+  }
+
+  /* ---------- 獲得ポップアップ（1件ずつ順番に） ---------- */
+  var popupQueue = [], popupShowing = false;
+  function queuePopups(list){
+    (list || []).forEach(function(b){ popupQueue.push(b); });
+    showNextPopup();
+  }
+  function showNextPopup(){
+    if (popupShowing || !popupQueue.length) return;
+    var b = popupQueue.shift();
+    popupShowing = true;
+    var old = document.getElementById('bt-badge-popup');
+    if (old) old.remove();
+    var m = document.createElement('div');
+    m.id = 'bt-badge-popup';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99996;display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = '<div style="background:#fff;color:#111827;border-radius:20px;width:100%;max-width:340px;padding:24px 18px;text-align:center;box-shadow:0 12px 32px rgba(0,0,0,.35)">'
+      + '<div style="font-size:2.6rem;">' + b.icon + '</div>'
+      + '<div style="font-weight:900;font-size:1.05rem;margin-top:6px;">🏅 バッジ獲得！</div>'
+      + '<div style="font-weight:900;font-size:1.15rem;margin-top:8px;">' + esc(b.name) + '</div>'
+      + '<div style="color:#4b5563;font-size:0.85rem;margin-top:4px;">' + esc(b.cond) + '</div>'
+      + '<button id="bt-badge-popup-ok" type="button" style="margin-top:16px;border:0;background:#059669;color:#fff;font-weight:800;border-radius:999px;padding:10px 28px;font-size:0.95rem;cursor:pointer;">やった！</button></div>';
+    document.body.appendChild(m);
+    var ok = document.getElementById('bt-badge-popup-ok');
+    if (ok) ok.addEventListener('click', function(){ m.remove(); popupShowing = false; showNextPopup(); });
+  }
+
+  /* ---------- 次のバッジヒント（達成率が一番高いもの、同率は定義順） ---------- */
+  function nextHint(st, ev){
+    var cands = [];
+    BADGES.forEach(function(b, idx){
+      if (st.unlocked[b.id]) return;
+      var ratio = 0, text = b.cond;
+      if (b.id === 'pb_first'){ ratio = 0; text = '自己ベストの記録・更新まであと1回'; }
+      else if (b.id === 'pb_10'){ ratio = st.pbCount / 10; text = '自己ベスト更新 あと' + Math.max(10 - st.pbCount, 0) + '回'; }
+      else if (b.id === 'routine_1'){ ratio = 0; text = '今日のルーティンを全部チェックしてみよう'; }
+      else if (b.id === 'routine_10'){ ratio = st.routineCount / 10; text = 'ルーティンコンプリート あと' + Math.max(10 - st.routineCount, 0) + '回'; }
+      else if (b.id === 'routine_50'){ ratio = st.routineCount / 50; text = 'ルーティンコンプリート あと' + Math.max(50 - st.routineCount, 0) + '回'; }
+      else if (b.id === 'streak_3' || b.id === 'streak_7' || b.id === 'streak_30'){
+        var t = b.id === 'streak_3' ? 3 : (b.id === 'streak_7' ? 7 : 30);
+        ratio = Math.min(ev.streak.current, t) / t;
+        text = '連続練習 あと' + Math.max(t - ev.streak.current, 0) + '日';
+      }
+      else if (b.id === 'diag_all'){ ratio = ev.typeCount / SHOT_TYPES.length; text = 'ベスト記録 あと' + Math.max(SHOT_TYPES.length - ev.typeCount, 0) + '種目'; }
+      else if (b.id === 'diag_rank_a'){ ratio = ev.bestScore ? Math.min(ev.bestScore, 80) / 80 : 0; text = ev.bestScore ? ('Aランクまで あと' + Math.max(80 - ev.bestScore, 0) + '点') : 'まずは診断で記録を作ろう'; }
+      else if (b.id === 'diag_rank_s'){ ratio = ev.bestScore ? Math.min(ev.bestScore, 90) / 90 : 0; text = ev.bestScore ? ('Sランクまで あと' + Math.max(90 - ev.bestScore, 0) + '点') : 'まずは診断で記録を作ろう'; }
+      cands.push({ b: b, idx: idx, ratio: ratio, text: text });
+    });
+    if (!cands.length) return null;
+    cands.sort(function(a, c){ if (c.ratio !== a.ratio) return c.ratio - a.ratio; return a.idx - c.idx; });
+    return cands[0];
+  }
+
+  /* ---------- 進捗タブの実績カード描画 ---------- */
+  function renderBadges(){
+    var grid = document.getElementById('btBadgeGrid');
+    if (!grid) return;
+    var pid = getActivePid(), profs = getProfiles();
+    var cntEl = document.getElementById('btBadgeCount'), nx = document.getElementById('btBadgeNext');
+    if (!pid || !profs.length){
+      grid.innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);">プロフィールがありません</div>';
+      if (nx) nx.textContent = '';
+      return;
+    }
+    var store = loadStore(), st = profState(store, pid);
+    var ev = evaluateProfile(store, pid, tnCache.loaded ? tnCache.records : null);
+    var count = 0;
+    BADGES.forEach(function(b){ if (st.unlocked[b.id]) count++; });
+    if (cntEl) cntEl.textContent = '（' + count + ' / ' + BADGES.length + '）';
+    if (nx){
+      var hint = nextHint(st, ev);
+      nx.innerHTML = hint
+        ? ('次のバッジ： <b>' + hint.b.icon + ' ' + esc(hint.b.name) + '</b>（' + esc(hint.text) + '）')
+        : '🎉 全部のバッジを獲得済みです！';
+    }
+    grid.innerHTML = BADGES.map(function(b){
+      var d = st.unlocked[b.id];
+      if (d){
+        return '<div style="background:var(--bg-panel);border:1px solid var(--accent-primary);border-radius:10px;padding:8px;text-align:center;">'
+          + '<div style="font-size:1.5rem;">' + b.icon + '</div>'
+          + '<div style="font-weight:800;font-size:0.78rem;margin-top:2px;">' + esc(b.name) + '</div>'
+          + '<div style="font-size:0.68rem;color:var(--text-secondary);">' + esc(fmtDate(d)) + ' 獲得</div></div>';
+      }
+      return '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:10px;padding:8px;text-align:center;opacity:0.55;">'
+        + '<div style="font-size:1.5rem;filter:grayscale(1);">' + b.icon + '</div>'
+        + '<div style="font-weight:800;font-size:0.78rem;margin-top:2px;">' + esc(b.name) + '</div>'
+        + '<div style="font-size:0.68rem;color:var(--text-secondary);">' + esc(b.cond) + '</div></div>';
+    }).join('');
+  }
+
+  /* ---------- チェック本体 ---------- */
+  function checkAll(opts){
+    opts = opts || {};
+    var profs = getProfiles();
+    if (!profs.length){ renderBadges(); return; }
+    var store = loadStore();
+    var activePid = getActivePid();
+    var activeWasSeeded = activePid ? profState(store, activePid).seeded : true;
+    updateRoutineClaims(store);
+    var popups = [];
+    profs.forEach(function(p){
+      var pid = p.id, st = profState(store, pid), wasSeeded = st.seeded;
+      updatePbCounter(store, pid, !!opts.fromDiagnosis && pid === activePid);
+      var ev = evaluateProfile(store, pid, null);
+      var news = grantNew(store, pid, ev.earned);
+      if (!wasSeeded) st.seeded = true;
+      else if (pid === activePid) news.forEach(function(b){ popups.push(b); });
+    });
+    saveStore(store);
+    renderBadges();
+    if (popups.length) queuePopups(popups);
+    if (activePid){
+      loadTournaments(function(records){
+        var store2 = loadStore();
+        var ev2 = evaluateProfile(store2, activePid, records || []);
+        var news2 = grantNew(store2, activePid, ev2.earned);
+        saveStore(store2);
+        renderBadges();
+        if (activeWasSeeded && news2.length) queuePopups(news2);
+      });
+    }
+  }
+
+  /* ---------- 既存関数のラップ（診断完了・手動ベスト保存・タブ切替） ---------- */
+  try{
+    if (typeof finishPoseRecording === 'function' && !finishPoseRecording.__btBadgeWrapped){
+      var _fp = finishPoseRecording;
+      var wf = function(){ var r = _fp.apply(this, arguments); setTimeout(function(){ checkAll({ fromDiagnosis: true }); }, 60); return r; };
+      wf.__btBadgeWrapped = true;
+      finishPoseRecording = wf;
+      try{ window.finishPoseRecording = wf; }catch(e){}
+    }
+  }catch(e){}
+  try{
+    if (typeof saveCurrentAsPersonalBest === 'function' && !saveCurrentAsPersonalBest.__btBadgeWrapped){
+      var _sm = saveCurrentAsPersonalBest;
+      var wm = function(){ var r = _sm.apply(this, arguments); setTimeout(function(){ checkAll({ fromDiagnosis: true }); }, 60); return r; };
+      wm.__btBadgeWrapped = true;
+      saveCurrentAsPersonalBest = wm;
+      try{ window.saveCurrentAsPersonalBest = wm; }catch(e){}
+    }
+  }catch(e){}
+  try{
+    if (typeof switchTab === 'function' && !switchTab.__btBadgeWrapped){
+      var _sw = switchTab;
+      var ws = function(tabId){ var r = _sw(tabId); setTimeout(function(){ checkAll({}); }, 80); return r; };
+      ws.__btBadgeWrapped = true;
+      switchTab = ws;
+      try{ window.switchTab = ws; }catch(e){}
+    }
+  }catch(e){}
+
+  /* ---------- 起動 ---------- */
+  function boot(){
+    checkAll({});
+    setTimeout(function(){ checkAll({}); }, 3000);
+    setInterval(function(){ checkAll({}); }, 20000);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) checkAll({}); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 600); });
+  else setTimeout(boot, 600);
+
+  window.btCheckBadges = checkAll;
+  window.btRenderBadges = renderBadges;
+  window.__bt_badges = {
+    defs: BADGES, check: checkAll, render: renderBadges,
+    evaluate: evaluateProfile, loadStore: loadStore, profState: profState,
+    streakInfo: streakInfo, practiceDays: practiceDays,
+    routineCompletedDates: routineCompletedDates, nextHint: nextHint,
+    updatePbCounter: updatePbCounter, effBests: effBests
+  };
+  console.log('[badtore v106 badges] loaded');
 })();
 </script>
 
