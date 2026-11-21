@@ -15012,6 +15012,10 @@ function sharePoseResultImage() {
      複数本持てるようにし（従来の単一 video とは表示側で両対応）、
      日本人チャンネルを中心に、実際に開いてタイトル・内容を確認できた
      動画だけを採用している
+   - 選手テーマ第2弾（2026-11-21）：宮下怜／宮崎友花／奈良岡功大の3メニュー
+     （12ドリル）を追加。全てスタイル分析から構成（style-derived）で、本人の
+     練習処方ではない旨と、数値はアプリ独自の目安である旨を明記した。
+     個別URLが確定できなかった参考動画は、URLなしの名称のみ出典表示とした
    - 出典と参考動画の重複排除（2026-11-21）：出典のうち参考動画と同一のもの
      （URL完全一致、YouTube は動画IDでも同一判定）は出典欄に出さず、動画は
      参考動画側に一本化する。出典が0件になる場合は出典欄ごと出さない。
@@ -15189,6 +15193,30 @@ function sharePoseResultImage() {
       type: 'pack',
       description: 'ラリーの中で唯一、自分でコントロールして始められるのがサーブです。ショートサーブの精度、ロングサーブの高さと奥行き、フリックサーブの打ち分けを順番に身につけるメニューです。打点は腰より下（1.15mルール）が前提で、フォームの確認にはAI診断の「ショートサーブ／ロングサーブ」も合わせてどうぞ。',
       drillIds: ['drill_serve_short_control','drill_serve_long','drill_serve_flick']
+    },
+    {
+      menuId: 'menu_allcourt',
+      title: '攻守一体・オールコート型メニュー',
+      referenceLabel: '参考選手：宮下怜（スタイル分析から構成）',
+      type: 'pack',
+      description: '185cmの長身から打ち下ろす攻撃と、長身でも広い守備範囲を両立させた男子シングルスのスタイルを分析し、一般ドリルとして構成しました。本人の練習メニューそのものではありません（処方レベルの出典が確認できなかったため、明記しています）。「攻めるだけ」「拾うだけ」に偏らないシングルス型を目指します。',
+      drillIds: ['drill_allcourt_attack_knock','drill_allcourt_wide_defense','drill_allcourt_counter_switch','drill_allcourt_smash_shadow']
+    },
+    {
+      menuId: 'menu_feint',
+      title: 'フェイント＆頭脳戦型メニュー',
+      referenceLabel: '参考選手：宮崎友花（スタイル分析から構成）',
+      type: 'pack',
+      description: '打つ直前までコースを隠すフェイントと、同じ球を繰り返して頃合いを見て逆を突く配球の頭脳戦が持ち味の女子シングルスのスタイルを分析し、一般ドリルとして構成しました。本人の練習メニューそのものではありません（処方レベルの出典が確認できなかったため、明記しています）。「速く打つ」より「読ませない」ことを軸にします。',
+      drillIds: ['drill_feint_two_courses','drill_feint_net_tame','drill_feint_bait_switch','drill_feint_counter']
+    },
+    {
+      menuId: 'menu_rally_counter',
+      title: '粘りのラリー＆カウンター型メニュー',
+      referenceLabel: '参考選手：奈良岡功大（スタイル分析から構成）',
+      type: 'pack',
+      description: '長いラリーへ持ち込んで相手の体力を削り、終盤の緩急（チェンジアップ）と決め球で仕留める男子シングルスのスタイルを分析し、一般ドリルとして構成しました。本人の練習メニューそのものではありません（処方レベルの出典が確認できなかったため、明記しています）。ラリーを「耐える」だけでなく「設計する」ことが狙いです。',
+      drillIds: ['drill_rally_long_knock','drill_rally_changeup','drill_rally_patience_finish','drill_rally_finish_accuracy']
     }
   ];
 
@@ -16483,6 +16511,368 @@ function sharePoseResultImage() {
       ],
       link: { type: 'footwork', target: '' },
       poseChecks: []
+    },
+    {
+      id: 'drill_allcourt_attack_knock',
+      name: '高打点アタック・ノック',
+      menuId: 'menu_allcourt',
+      category: 'ノック・多球',
+      level: ['中級'],
+      target: '後衛への高いリフトに対し、体の前・高い位置で捉えて打ち下ろし、打った後はセンターへ戻る流れを身につける',
+      steps: [
+        '球出し役は後衛へ高く深いリフトを続ける',
+        '受ける側はシャトルの下へ早く入り、体の前・高い位置で捉えて打ち下ろす',
+        '打った後は必ずセンターへ戻ってから次を受ける',
+        'コースはストレート／クロスを球出し役が混ぜる'
+      ],
+      dose: {
+        standard: '10本×4セット（休憩60秒）',
+        junior: '8本×3セット（休憩90秒）',
+        note: '高さが出なくなったら本数を減らして質を優先。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['宮下怜'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮下怜のスマッシュ分解（バドミントン解剖／Instagram）', url: 'https://www.instagram.com/reel/DfWxJPTsK4-/' },
+        { label: '第76回インカレ 個人 男子単 決勝｜宮下怜（明治大）vs 山田琉碧（日本体育大）（日本バドミントン協会公式YouTube・約12.3万回再生）' }
+      ],
+      videos: [
+        { label: '宮下怜のスマッシュ分解（バドミントン解剖／Instagram）', url: 'https://www.instagram.com/reel/DfWxJPTsK4-/' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['contact_front']
+    },
+    {
+      id: 'drill_allcourt_wide_defense',
+      name: '四隅ワイドカバー守備',
+      menuId: 'menu_allcourt',
+      category: '守備',
+      level: ['中級'],
+      target: '前・中・後の四隅へランダムに配球されても、低い構えから一歩目を速く出し、拾った後にセンターへ復帰して構え直す',
+      steps: [
+        '球出し役が前・中・後の四隅へランダムに配球する',
+        '受ける側は低い構えから一歩目を速く出し、届く範囲を広く使う',
+        '拾ったらすぐにセンターへ復帰し、ラケットを立てて構え直す',
+        '「拾う→戻る→構える」を1セットとして繰り返す'
+      ],
+      dose: {
+        standard: '20本×3セット',
+        junior: '12本×3セット',
+        note: 'フォームが崩れる速さでは行わない。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['宮下怜'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮下怜選手のレシーブのポイント（小峯和城コーチ／YouTube）', url: 'https://www.youtube.com/watch?v=3bFZgtqt0N4' },
+        { label: '第76回インカレ 個人 男子複 準々決勝｜宮下怜・栁川蓮（明治大）vs 永田拓己・衣川真生（立命館大）（日本バドミントン協会公式YouTube）', url: 'https://www.youtube.com/watch?v=9HoBtFhtTbc' }
+      ],
+      videos: [
+        { label: '宮下怜選手のレシーブのポイント（小峯和城コーチ／YouTube）', url: 'https://www.youtube.com/watch?v=3bFZgtqt0N4' },
+        { label: '第76回インカレ 個人 男子複 準々決勝｜宮下怜・栁川蓮（明治大）vs 永田拓己・衣川真生（立命館大）（日本バドミントン協会公式YouTube）', url: 'https://www.youtube.com/watch?v=9HoBtFhtTbc' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center','lunge_recovery']
+    },
+    {
+      id: 'drill_allcourt_counter_switch',
+      name: '守備→カウンター切替',
+      menuId: 'menu_allcourt',
+      category: '守備',
+      level: ['中級','上級'],
+      target: '速い球を低く強いレシーブで返し、続くネット前の球に前へ詰めて攻めに転じる切り替えを身につける',
+      steps: [
+        '球出し役がスマッシュ気味の速い球→ネット前の順に2球続ける',
+        '1球目は低く強いレシーブで返す',
+        '2球目は前へ詰めてプッシュまたはヘアピンで攻めに転じる',
+        '「守って終わり」にせず、拾った直後の一歩目を前へ出すことを意識する'
+      ],
+      dose: {
+        standard: '2球1組×10組×2セット',
+        junior: '2球1組×6組×2セット',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['宮下怜'],
+      originType: 'style-derived',
+      sources: [
+        { label: '第76回インカレ 個人 男子単 決勝｜宮下怜（明治大）vs 山田琉碧（日本体育大）（日本バドミントン協会公式YouTube・約12.3万回再生）' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center']
+    },
+    {
+      id: 'drill_allcourt_smash_shadow',
+      name: '打ち下ろしシャドー（体の使い方）',
+      menuId: 'menu_allcourt',
+      category: 'ジャンプ・空中動作',
+      level: ['初級','中級'],
+      target: 'タイミングステップから跳び上がって前で捉えるまでの一連の体の使い方を、シャトルなしで安全に固める',
+      steps: [
+        'シャトルなしで「相手の打球に合わせる小さなステップ→脚を引く→膝を曲げて溜める→跳び上がる→前で捉える形→振り抜く→着地して復帰」を一連で行う',
+        '最初は跳ばずに歩幅だけで流れを確認し、慣れてから小さなジャンプを足す',
+        '着地は膝を柔らかく使い、音を立てない'
+      ],
+      dose: {
+        standard: '6回×3セット（完全休養）',
+        junior: '跳躍なしの歩幅版6回×3セット',
+        note: '強いジャンプは上級者のみ・着地の質最優先。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'solo',
+      referencePlayers: ['宮下怜'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮下怜 ジャンプスマッシュ練習（日立情報通信エンジニアリング バドミントン部公式／Instagram）', url: 'https://www.instagram.com/reel/DRT7b3bEpVW/' }
+      ],
+      videos: [
+        { label: '宮下怜 ジャンプスマッシュ練習（日立情報通信エンジニアリング バドミントン部公式／Instagram）', url: 'https://www.instagram.com/reel/DRT7b3bEpVW/' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_feint_two_courses',
+      name: '同じ構えから2コース（後衛）',
+      menuId: 'menu_feint',
+      category: 'ノック・多球',
+      level: ['中級'],
+      target: '毎回まったく同じ構え・同じ入り方から2種のショットを打ち分け、相手にコースを読ませない',
+      steps: [
+        '球出し役は後衛へ安定したリフトを出す',
+        '受ける側は毎回まったく同じ構え・同じ入り方をする',
+        '合図または自分の判断で、ストレートのドロップ／クロスのドロップ／クリアのうち2種だけに絞って打ち分ける',
+        '相手役は「どっちに来るか分からないか」をフィードバックする'
+      ],
+      dose: {
+        standard: '10本×3セット',
+        junior: '8本×3セット',
+        note: 'コースを増やすのは2種が安定してから。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['宮崎友花'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮崎友花のフェイント＆リバーススライス解説（熊本マスターズジャパン2026 準々決勝／YouTube）', url: 'https://www.youtube.com/watch?v=C5Jcq6trQaI' }
+      ],
+      videos: [
+        { label: '宮崎友花のフェイント＆リバーススライス解説（熊本マスターズジャパン2026 準々決勝／YouTube）', url: 'https://www.youtube.com/watch?v=C5Jcq6trQaI' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_feint_net_tame',
+      name: 'ネット前のタメ＆打ち分け',
+      menuId: 'menu_feint',
+      category: '前衛・ダブルス',
+      level: ['中級'],
+      target: 'ネット前で打つ直前まで止める「タメ」を作り、止めた姿勢からヘアピン／クロスヘアピン／プッシュを使い分ける',
+      steps: [
+        'パートナーがネット前へゆるく上げる',
+        '受ける側は早めに入ってラケットを出し、打つ直前まで止める（タメ）',
+        '止めた姿勢からヘアピン／クロスヘアピン／プッシュを使い分ける',
+        '打った後は構えに戻る'
+      ],
+      dose: {
+        standard: '10本×3セット',
+        junior: '8本×2セット',
+        note: 'タメの間にラケットが下がらないことを確認。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['宮崎友花'],
+      originType: 'style-derived',
+      sources: [
+        { label: '代表合宿 宮崎友花vs山口茜 実戦練習（TEAM JAPAN公式YouTube・約22万回再生）', url: 'https://www.youtube.com/watch?v=FxmDESTXNOs' }
+      ],
+      videos: [
+        { label: '代表合宿 宮崎友花vs山口茜 実戦練習（TEAM JAPAN公式YouTube・約22万回再生）', url: 'https://www.youtube.com/watch?v=FxmDESTXNOs' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['front_racket_high','net_contact_height']
+    },
+    {
+      id: 'drill_feint_bait_switch',
+      name: '撒き餌→逆コース パターン',
+      menuId: 'menu_feint',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: '同じコースを続けて相手の重心を寄せ、3球目で逆コースへ打つ配球の組み立てを身につける',
+      steps: [
+        '同じコースへ2球続けて打ち、相手の重心を寄せる',
+        '3球目で逆コースへ打つ',
+        '相手役は本気で読みに行き、読まれたら配球の組み立てを見直す',
+        '前衛版（ネット前）と後衛版（奥）で各1セットずつ行う'
+      ],
+      dose: {
+        standard: '3球1組×8組×2セット',
+        junior: '3球1組×5組×2セット',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['宮崎友花'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮崎友花 vs キアースフェルト（日本マスターズ2026）ファイナルゲームの戦術修正（YouTube）', url: 'https://www.youtube.com/watch?v=00IylsfaZz8' }
+      ],
+      videos: [
+        { label: '宮崎友花 vs キアースフェルト（日本マスターズ2026）ファイナルゲームの戦術修正（YouTube）', url: 'https://www.youtube.com/watch?v=00IylsfaZz8' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_feint_counter',
+      name: '拾ってカウンター',
+      menuId: 'menu_feint',
+      category: '守備',
+      level: ['中級'],
+      target: '左右への強めの攻撃を低く拾い、相手の逆サイドへ切り返して「拾った球で相手を動かす」までを1回とする',
+      steps: [
+        '相手役が左右へ強めの攻撃を打つ',
+        '受ける側は低く拾い、相手の逆サイドへクロスのロブまたはドライブで切り返す',
+        '拾うだけで終わらず「拾った球で相手を動かす」までを1回とする',
+        '後半は疲れた状態でもコースの精度を落とさない'
+      ],
+      dose: {
+        standard: '8本×3セット',
+        junior: '6本×2セット',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['宮崎友花'],
+      originType: 'style-derived',
+      sources: [
+        { label: '宮崎友花 vs 林湘緹（熊本マスターズジャパン2026）守備とカウンターのハイライト（YouTube）', url: 'https://www.youtube.com/watch?v=212Z0pAoQfg' }
+      ],
+      videos: [
+        { label: '宮崎友花 vs 林湘緹（熊本マスターズジャパン2026）守備とカウンターのハイライト（YouTube）', url: 'https://www.youtube.com/watch?v=212Z0pAoQfg' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['defense_low_center']
+    },
+    {
+      id: 'drill_rally_long_knock',
+      name: 'ロングラリー継続ノック',
+      menuId: 'menu_rally_counter',
+      category: 'ノック・多球',
+      level: ['初級','中級'],
+      target: '落とさず続けることを目的に、クリアとドロップ中心で相手を奥と前に動かし続けるラリーの土台を作る',
+      steps: [
+        'パートナーと「落とさず続ける」ことを目的にラリーする',
+        'クリアとドロップ中心で、決めにいかず相手を奥と前に動かし続ける',
+        '1ラリーの継続本数を数え、切れたら次のラリーへ',
+        '後半は「相手を動かすコース」を意識し、ただ返すだけにしない'
+      ],
+      dose: {
+        standard: '1ラリー20本以上を目標に10分',
+        junior: '1ラリー12本以上を目標に6分',
+        note: '本数はアプリ独自の目安。スタイル分析から構成した一般ドリル'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['奈良岡功大'],
+      originType: 'style-derived',
+      sources: [
+        { label: '奈良岡功大 vs リー・ジージャ「最強の矛vs盾」分析（バドミントン解剖／Instagram）', url: 'https://www.instagram.com/reel/DfKRcffS5LC/' }
+      ],
+      videos: [
+        { label: '奈良岡功大 vs リー・ジージャ「最強の矛vs盾」分析（バドミントン解剖／Instagram）', url: 'https://www.instagram.com/reel/DfKRcffS5LC/' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_rally_changeup',
+      name: 'チェンジアップ・スマッシュ',
+      menuId: 'menu_rally_counter',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: '全力スマッシュと同じ構え・同じ入り方から、打つ直前に力を抜いて球速と軌道を変え、相手のタイミングを外す',
+      steps: [
+        '球出し役は後衛へリフトを出す',
+        '受ける側は全力スマッシュと同じ構え・同じ入り方をする',
+        '打つ直前に力を抜き、球速を落としたスマッシュ（またはドロップ気味に）落とす',
+        '全力と緩い球をランダムに混ぜ、受ける側の相手役に「読めたか」を言ってもらう'
+      ],
+      dose: {
+        standard: '10本×3セット',
+        junior: '8本×2セット',
+        note: 'フォームが変わってしまう場合は緩い球だけ先に固める。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['奈良岡功大'],
+      originType: 'style-derived',
+      sources: [],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_rally_patience_finish',
+      name: '我慢→決め球パターン',
+      menuId: 'menu_rally_counter',
+      category: 'ノック・多球',
+      level: ['中級'],
+      target: '最初の球は相手を動かすだけに徹し、返球が甘くなった球だけを決めにいく「待つ球／いく球」の判断を身につける',
+      steps: [
+        '最初の3球はクリア／ドロップで相手を動かすだけに徹する',
+        '4球目以降、相手の返球が甘くなった球だけを決めにいく',
+        '甘くないのに決めにいったら、そのラリーはやり直し',
+        '「待つ球」と「いく球」の判断を声に出して確認する'
+      ],
+      dose: {
+        standard: '4球1組×8組×2セット',
+        junior: '3球我慢→決め球、4球1組×5組×2セット',
+        note: 'スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: ['奈良岡功大'],
+      originType: 'style-derived',
+      sources: [
+        { label: '世界選手権2026 奈良岡功大の試合ハイライト（BWF公式YouTube／日本バドミントン協会公式SNSで配信）' }
+      ],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
+    },
+    {
+      id: 'drill_rally_finish_accuracy',
+      name: '終盤フィニッシュ精度',
+      menuId: 'menu_rally_counter',
+      category: 'フットワーク',
+      level: ['中級','上級'],
+      target: 'シャドーフットワークで軽く息を上げた直後でも、甘い球をサイドライン際の的へ正確に決める精度を保つ',
+      steps: [
+        '6コーナーのシャドーフットワークを30秒行い、軽く息を上げる',
+        '直後に球出しの甘い球を2本、サイドライン際の的へ狙って決める',
+        '疲れた状態でのコースのブレを記録する',
+        '的は最初は大きく、慣れたら小さくする'
+      ],
+      dose: {
+        standard: 'シャドー30秒＋決め球2本を1組として5組',
+        junior: 'シャドー20秒＋決め球1本、4組',
+        note: '高負荷のため体調に合わせて減らす。スタイル分析から構成した一般ドリル。回数・時間はアプリ独自の目安'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: ['奈良岡功大'],
+      originType: 'style-derived',
+      sources: [],
+      video: null,
+      link: { type: 'footwork', target: '' },
+      poseChecks: []
     }
   ];
 
@@ -16499,6 +16889,9 @@ function sharePoseResultImage() {
     { key: 'p_an', label: 'アン・セヨン', players: ['アン・セヨン'] },
     { key: 'p_doubles', label: '渡辺勇大・保木卓朗', players: ['渡辺勇大', '保木卓朗'] },
     { key: 'p_taguchi', label: '田口真彩', players: ['田口真彩'] },
+    { key: 'p_miyashita', label: '宮下怜', players: ['宮下怜'] },
+    { key: 'p_miyazaki', label: '宮崎友花', players: ['宮崎友花'] },
+    { key: 'p_naraoka', label: '奈良岡功大', players: ['奈良岡功大'] },
     { key: 'p_igarashi', label: '五十嵐有紗', players: ['五十嵐有紗'] },
     { key: 'p_korea', label: '韓国式', players: ['韓国式（方式）'] },
     { key: 'p_china', label: '中国式', players: ['中国式（方式）'] }
