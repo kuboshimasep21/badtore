@@ -11887,15 +11887,21 @@
             <div class="card-header">
               <div class="card-title"><span class="badge-version">少人数・1人対応</span><span>📋 練習メニュー自動編成 ＆ マイメニュー登録・練習記録</span></div>
               <div class="btn-group">
-                <button class="btn btn-emerald" onclick="generateAIMenuByConditions()">✨ 条件から自動編成</button>
-                <button class="btn btn-cyan-outline" onclick="saveCurrentMenuToMyMenus()">💾 マイメニュー保存</button>
+                <button class="btn btn-emerald" id="menuModeCreateBtn" onclick="setMenuTabMode('create')">📋 作る</button>
+                <button class="btn btn-cyan-outline" id="menuModeRecordBtn" onclick="setMenuTabMode('record')">📅 記録</button>
               </div>
             </div>
+            <div id="menuModeCreatePane">
             <div class="card" style="background:var(--bg-panel);margin-bottom:12px;">
+              <div class="form-group" style="margin-bottom:8px;">
+                <label>🤖 AIに相談（自由に入力）</label>
+                <input type="text" id="aiMenuConsultInput" placeholder="例：自宅で足メイン、20分くらい" style="font-size:0.85rem;padding:7px 9px;"/>
+                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">入力すると下のボタンがAI編成になります（空欄なら通常の自動編成）。下の条件と組み合わせてもOKです。</div>
+                <div id="aiMenuConsultStatus" style="font-size:0.8rem;margin-top:4px;"></div>
+              </div>
               <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:8px;">
                 <div class="form-group"><label>① 練習人数・場所</label><select id="aiMenuPlayersMode"><option value="home_1">🏠 1人（自宅・省スペース）</option><option value="gym_1">🏸 1人（体育館コート）</option><option value="gym_2" selected>👥 2人（体育館マンツーマン）</option><option value="gym_3">👥 3人（体育館ローテ・2対1）</option><option value="gym_4">👥 4人以上（パターン＆ゲーム）</option></select></div>
                 <div class="form-group"><label>② 全体の持ち時間（分）</label><div style="display:grid;grid-template-columns:1.3fr 1fr;gap:5px;"><select onchange="document.getElementById('aiMenuTargetMin').value=this.value;updateMenuTimeGaugeUI();"><option value="15">15分(自宅)</option><option value="30">30分</option><option value="60">60分(1時間)</option><option value="90">90分</option><option value="120">120分(2時間)</option><option value="150" selected>150分(2.5時間)</option></select><input type="number" id="aiMenuTargetMin" value="150" min="5" max="360" oninput="updateMenuTimeGaugeUI()"/></div></div>
-                <div class="form-group"><label>📂 保存済みマイメニュー呼出</label><div style="display:grid;grid-template-columns:1fr auto;gap:4px;"><select id="savedMenusSelect" onchange="loadSelectedMyMenu(this.value)"></select><button class="btn btn-rose" style="padding:6px 8px;" onclick="deleteSelectedMyMenu()">🗑️</button></div></div>
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeAIWeak" checked/> 🎯 ピン留め課題・重点テーマ</label>
@@ -11903,10 +11909,9 @@
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeFootwork" checked/> 🦶 フットワーク＆ランジ軸</label>
                 <label class="theme-check-pill"><input type="checkbox" id="chkThemeFeeding" checked/> 🔄 手投げ分解ノック(回内)</label>
               </div>
-              <button class="btn btn-emerald" style="width:100%;padding:9px;" onclick="generateAIMenuByConditions()">✨ この条件で最適メニューを自動編成する</button>
+              <button class="btn btn-emerald" id="menuComposeBtn" style="width:100%;padding:9px;" onclick="composeMenuFromUI()">✨ この条件で編成する</button>
             </div>
-            <div class="split-grid">
-              <div>
+            <div>
                 <div class="breakdown-box" style="margin-top:0;margin-bottom:10px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
                     <input type="text" id="currentMenuTitleInput" value="体育館 2.5時間メニュー" style="font-weight:900;font-size:0.86rem;max-width:300px;padding:5px 8px;" oninput="currentMenuPlan.title=this.value"/>
@@ -11914,8 +11919,16 @@
                   </div>
                   <div class="bar-track"><div class="bar-fill" id="menuTimeGaugeBar" style="width:100%;"></div></div>
                 </div>
+                <div id="aiMenuPlanNote" style="display:none;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:0.8rem;line-height:1.55;"></div>
                 <div id="menuItemsListContainer"></div>
+                <button class="btn btn-cyan-outline" style="width:100%;padding:9px;margin-top:10px;" onclick="saveCurrentMenuToMyMenus()">💾 マイメニュー保存</button>
+                <details id="savedMenusDetails" style="margin-top:10px;">
+                  <summary style="cursor:pointer;font-weight:900;font-size:0.82rem;color:var(--accent-secondary);">📂 保存済みマイメニュー呼出 ▼</summary>
+                  <div style="display:grid;grid-template-columns:1fr auto;gap:4px;margin-top:6px;"><select id="savedMenusSelect" onchange="loadSelectedMyMenu(this.value)"></select><button class="btn btn-rose" style="padding:6px 8px;" onclick="deleteSelectedMyMenu()">🗑️</button></div>
+                </details>
               </div>
+            </div>
+            <div id="menuModeRecordPane" style="display:none;">
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div class="card" style="background:var(--bg-panel);margin:0;padding:10px;">
                   <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:900;font-size:0.8rem;color:var(--accent-secondary);">📅 直近28日間の練習スタンプ</span><span id="calendarStreakBadge" class="badge-version">0日</span></div>
@@ -11936,11 +11949,23 @@
       if (!currentMenuPlan.items || !currentMenuPlan.items.length) generateAIMenuByConditions(false);
       else renderCurrentMenuEditorUI();
       renderSavedMenusSelectUI(); renderPracticeLogsHistoryUI(); renderMiniDotCalendarUI();
+      let savedMenuMode = 'create';
+      try { savedMenuMode = localStorage.getItem('badtore_menu_tab_mode_v106') || 'create'; } catch (e) {}
+      setMenuTabMode(savedMenuMode, false);
     }
 
-    function generateAIMenuByConditions(beep = true) {
-      const pm = document.getElementById('aiMenuPlayersMode') ? document.getElementById('aiMenuPlayersMode').value : 'gym_2';
-      const target = Math.max(5, Number(document.getElementById('aiMenuTargetMin') ? document.getElementById('aiMenuTargetMin').value : 150) || 150);
+    function setMenuTabMode(mode, save = true) {
+      const m = mode === 'record' ? 'record' : 'create';
+      const cp = document.getElementById('menuModeCreatePane'), rp = document.getElementById('menuModeRecordPane');
+      if (cp) cp.style.display = m === 'create' ? '' : 'none';
+      if (rp) rp.style.display = m === 'record' ? '' : 'none';
+      const cb = document.getElementById('menuModeCreateBtn'), rb = document.getElementById('menuModeRecordBtn');
+      if (cb) cb.className = 'btn ' + (m === 'create' ? 'btn-emerald' : 'btn-cyan-outline');
+      if (rb) rb.className = 'btn ' + (m === 'record' ? 'btn-emerald' : 'btn-cyan-outline');
+      if (save) { try { localStorage.setItem('badtore_menu_tab_mode_v106', m); } catch (e) {} }
+    }
+
+    function getMenuComposeTemplates(pm) {
       const pins = getActivePinnedList().filter(p => !p.done);
       const wkKey = (pins.length && AI_CAUSE_PRESCRIPTIONS[pins[0].key]) ? pins[0].key : 'racket_drop';
       const wk = AI_CAUSE_PRESCRIPTIONS[wkKey];
@@ -11962,6 +11987,14 @@
           { cat: "⑥ AI確認＆整理", name: "🎬 フォーム動画撮影（AI区間診断・球速計測）＆クールダウン", note: "終盤のフォームを撮影してAI採点と球速(km/h)を記録する。", linkTab: "tab-pose", fwPreset: "" }
         ]; w = [10, 18, 22, 16, 24, 10];
       }
+      return { tpls, w };
+    }
+
+    function generateAIMenuByConditions(beep = true) {
+      const pm = document.getElementById('aiMenuPlayersMode') ? document.getElementById('aiMenuPlayersMode').value : 'gym_2';
+      const target = Math.max(5, Number(document.getElementById('aiMenuTargetMin') ? document.getElementById('aiMenuTargetMin').value : 150) || 150);
+      const an = document.getElementById('aiMenuPlanNote'); if (an) { an.style.display = 'none'; an.innerHTML = ''; }
+      const { tpls, w } = getMenuComposeTemplates(pm);
       const wSum = w.reduce((a, b) => a + b, 0);
       let mins = w.map(x => Math.max(2, Math.round((x / wSum) * target)));
       mins[mins.length - 2] = Math.max(2, mins[mins.length - 2] + (target - mins.reduce((a, b) => a + b, 0)));
@@ -11970,10 +12003,119 @@
       saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI(); if (beep) playBeep(1040, 100);
     }
 
+    const MENU_COMPOSE_IDS = {
+      home_1: ['home_rhythm', 'home_reaction', 'home_lunge', 'home_pose'],
+      gym: ['gym_warmup', 'gym_fw', 'gym_feeding', 'gym_basics', 'gym_pattern', 'gym_review']
+    };
+    const MENU_PLAYERS_LABELS = { home_1: '1人（自宅・省スペース）', gym_1: '1人（体育館コート）', gym_2: '2人（体育館マンツーマン）', gym_3: '3人（体育館ローテ・2対1）', gym_4: '4人以上（パターン＆ゲーム）' };
+
+    function buildMenuComposeCatalog(pm, target) {
+      const { tpls, w } = getMenuComposeTemplates(pm);
+      const wSum = w.reduce((a, b) => a + b, 0);
+      let mins = w.map(x => Math.max(2, Math.round((x / wSum) * target)));
+      mins[mins.length - 2] = Math.max(2, mins[mins.length - 2] + (target - mins.reduce((a, b) => a + b, 0)));
+      const ids = pm === 'home_1' ? MENU_COMPOSE_IDS.home_1 : MENU_COMPOSE_IDS.gym;
+      const modes = pm === 'home_1' ? ['home_1'] : ['gym_1', 'gym_2', 'gym_3', 'gym_4'];
+      return tpls.map((t, i) => ({ id: ids[i], cat: t.cat, name: t.name, note: t.note, linkTab: t.linkTab, fwPreset: t.fwPreset, minutes: mins[i], modes: modes.slice() }));
+    }
+
+    function menuAiEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    function parseAIConsultPlan(text, catalog, target) {
+      if (!text) return null;
+      const raw = String(text).replace(/```(?:json)?/gi, '');
+      const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+      if (s < 0 || e <= s) return null;
+      let obj = null;
+      try { obj = JSON.parse(raw.slice(s, e + 1)); } catch (err) { return null; }
+      const list = obj && Array.isArray(obj.items) ? obj.items : null;
+      if (!list || !list.length) return null;
+      const byId = {}; catalog.forEach(c => { byId[c.id] = c; });
+      const seen = new Set(), picked = [];
+      list.forEach(en => {
+        if (!en || typeof en.id !== 'string') return;
+        const c = byId[en.id];
+        if (!c || seen.has(c.id)) return;
+        seen.add(c.id);
+        let m = Math.round(Number(en.minutes) || c.minutes);
+        m = Math.min(120, Math.max(3, m));
+        picked.push({ entry: c, minutes: m, reason: String(en.reason || '').slice(0, 120) });
+      });
+      if (!picked.length) return null;
+      let sum = picked.reduce((a, p) => a + p.minutes, 0);
+      if (sum > 0 && sum !== target) {
+        picked.forEach(p => { p.minutes = Math.max(3, Math.round(p.minutes * target / sum)); });
+        sum = picked.reduce((a, p) => a + p.minutes, 0);
+        const diff = target - sum;
+        if (diff !== 0) {
+          const bi = picked.reduce((b, p, i) => p.minutes > picked[b].minutes ? i : b, 0);
+          picked[bi].minutes = Math.max(3, picked[bi].minutes + diff);
+        }
+      }
+      return { picked, note: String((obj && obj.note) || '').slice(0, 200) };
+    }
+
+    function composeMenuFromUI() {
+      const inp = document.getElementById('aiMenuConsultInput');
+      const txt = inp ? (inp.value || '').trim() : '';
+      if (txt) { composeMenuByAIConsult(); return; }
+      const st = document.getElementById('aiMenuConsultStatus'); if (st) st.innerHTML = '';
+      generateAIMenuByConditions(true);
+    }
+
+    async function composeMenuByAIConsult() {
+      const pm = document.getElementById('aiMenuPlayersMode') ? document.getElementById('aiMenuPlayersMode').value : 'gym_2';
+      const target = Math.max(5, Number(document.getElementById('aiMenuTargetMin') ? document.getElementById('aiMenuTargetMin').value : 150) || 150);
+      const reqText = (document.getElementById('aiMenuConsultInput').value || '').trim();
+      const status = document.getElementById('aiMenuConsultStatus');
+      const btn = document.getElementById('menuComposeBtn');
+      const catalog = buildMenuComposeCatalog(pm, target);
+      const themes = [];
+      [['chkThemeAIWeak', 'ピン留め課題・重点テーマ'], ['chkThemeUnweight', '抜重・一歩目＆リズム'], ['chkThemeFootwork', 'フットワーク＆ランジ軸'], ['chkThemeFeeding', '手投げ分解ノック(回内)']].forEach(pair => {
+        const el = document.getElementById(pair[0]);
+        if (el && el.checked) themes.push(pair[1]);
+      });
+      const pins = getActivePinnedList().filter(p => !p.done).map(p => p.text).filter(Boolean);
+      const prompt = [
+        'あなたはバドミントン練習メニューの編成アシスタントです。',
+        'ユーザーの希望：「' + reqText + '」',
+        '条件：人数・場所=' + (MENU_PLAYERS_LABELS[pm] || pm) + '／持ち時間=' + target + '分／重点テーマ=' + (themes.length ? themes.join('、') : '指定なし') + (pins.length ? '／ピン留め課題=' + pins.join('、') : ''),
+        '下のカタログの中からだけ選んで、実施順に並べたメニューを作ってください。カタログにない種目の創作や、数値の創作は禁止です。',
+        '各種目の minutes はカタログの minutes を目安に、合計が ' + target + ' 分に近づくよう調整してください（各種目3〜120分）。',
+        'カタログ（JSON）：',
+        JSON.stringify(catalog.map(c => ({ id: c.id, name: c.name, cat: c.cat, minutes: c.minutes, note: c.note }))),
+        '出力は次のJSONだけにしてください（説明文やコードフェンスは付けない）：',
+        '{"items":[{"id":"カタログのid","minutes":15,"reason":"選んだ理由を一言"}],"note":"全体の狙いを一言"}'
+      ].join('\n');
+      if (btn) { btn.disabled = true; btn.textContent = '🤖 AIが編成中…'; }
+      if (status) status.innerHTML = '<span style="color:var(--accent-secondary);font-weight:800;">⏳ AIがメニューを考えています…</span>';
+      try {
+        const res = await callGeminiWithFallback(getSavedGeminiApiKey(), [{ text: prompt }]);
+        const plan = parseAIConsultPlan(res && res.text, catalog, target);
+        if (!plan) throw new Error('AI応答を解釈できませんでした');
+        currentMenuPlan = { title: (pm === 'home_1' ? '🏠 自宅' : '🏟️ 体育館') + ' ' + target + '分メニュー（AI編成）', targetMin: target, playersMode: pm, items: plan.picked.map((p, i) => ({ id: 'm_' + i, cat: p.entry.cat, name: p.entry.name, minutes: p.minutes, note: p.entry.note, linkTab: p.entry.linkTab, fwPreset: p.entry.fwPreset, done: false })) };
+        const ti = document.getElementById('currentMenuTitleInput'); if (ti) ti.value = currentMenuPlan.title;
+        saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI();
+        const note = document.getElementById('aiMenuPlanNote');
+        if (note) {
+          const lines = plan.picked.map((p, i) => (i + 1) + '. ' + menuAiEsc(p.entry.name) + '：' + menuAiEsc(p.reason || 'バランス配分'));
+          note.innerHTML = '<div style="font-weight:900;color:var(--accent-highlight);margin-bottom:3px;">🤖 AIの編成メモ</div>' + (plan.note ? '<div>' + menuAiEsc(plan.note) + '</div>' : '') + '<div style="color:var(--text-secondary);">' + lines.join('<br>') + '</div>';
+          note.style.display = 'block';
+        }
+        if (status) status.innerHTML = '<span style="color:var(--accent-primary);font-weight:800;">✅ AIが編成しました！気になるところは各行の ±5分 で調整できます</span>';
+        playBeep(1040, 100);
+      } catch (err) {
+        generateAIMenuByConditions(false);
+        if (status) status.innerHTML = '<span style="color:var(--accent-highlight);font-weight:800;">AIが混雑中のため、通常の自動編成で組みました</span>';
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '✨ この条件で編成する'; }
+      }
+    }
+
     function addPrescriptionToMenuPlan(k) {
       const p = AI_CAUSE_PRESCRIPTIONS[k] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
       currentMenuPlan.items.push({ id: "m_" + Date.now(), cat: "課題別ドリル", name: `3ステップ：『${p.drillName}』`, minutes: p.menuMin || 15, note: p.step1, linkTab: "tab-footwork", fwPreset: p.fwPreset, done: false });
-      saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI(); switchTab('tab-menu'); playBeep(1120, 110);
+      saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI(); setMenuTabMode('create', false); switchTab('tab-menu'); playBeep(1120, 110);
     }
 
     function renderCurrentMenuEditorUI() {
@@ -12670,7 +12812,7 @@
                 🏟️ 体育館で練習するとき（1人〜少人数・2.5時間など）
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 時間割を作る：</b>「📋 8.メニュー」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ 条件から自動編成］</b>を押します。<br>
+                <b>① 時間割を作る：</b>「📋 8.メニュー」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ この条件で編成する］</b>を押します。<br>
                 <b>② 黄金順序で練習：</b>いきなり基礎打ちをせず、「抜重・FW矯正 ➔ 手投げ分解ノック ➔ 基礎打ち ➔ 半面パターン」の順で各行の<b>［▶️ 今すぐ開始］</b>を押して進めます。
               </div>
             </div>
@@ -17316,6 +17458,7 @@ function sharePoseResultImage() {
   function btDrillGoToWorkingMenu() {
     btDrillCloseDetail();
     btDrillHideAddedFeedback();
+    try { if (typeof setMenuTabMode === 'function') setMenuTabMode('create', false); } catch (e) {}
     try { if (typeof switchTab === 'function') switchTab('tab-menu'); } catch (e) {}
     setTimeout(function(){
       var el = document.getElementById('menuItemsListContainer');
