@@ -12221,9 +12221,16 @@
       saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI(); setMenuTabMode('create', false); switchTab('tab-menu'); playBeep(1120, 110);
     }
 
+    /* 結果リスト描画の単一定義: フィジカル→コートのグループ見出し（PR #18）と
+       ▲▼並び替え・筋トレタイマー等の操作を統合。項目操作は plan 配列のインデックス基準で、グループは描画上のビュー */
     function renderCurrentMenuEditorUI() {
       const c = document.getElementById('menuItemsListContainer'); if (!c) return;
-      const rowHtml = (it, i) => `<div class="menu-item-row ${it.done ? 'completed-row' : ''}"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:6px;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);"/><span class="badge-version">${it.cat}</span><span style="font-weight:900;font-size:0.82rem;">${it.custom ? menuAiEsc(it.name) : it.name}</span>${it.custom ? '<span style="font-size:0.7rem;font-weight:800;color:var(--accent-highlight);">AI提案</span>' : ''}</div><div style="display:flex;align-items:center;gap:4px;"><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button><span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;">${it.minutes}分</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},5)">+5</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.78rem;" onclick="removeMenuItemAt(${i})">✕</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-secondary);padding-left:22px;"><span>🎯 ${it.custom ? menuAiEsc(it.note) : it.note}</span>${it.linkTab ? `<button class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>` : ''}</div></div>`;
+      const rowHtml = (it, i) => {
+        const btn = it.linkTab === 'workout_timer'
+          ? `<button class="btn btn-amber" style="padding:7px 10px;font-size:0.78rem;" onclick="openWorkoutIntervalTimer(${i})">⏱️ 筋トレタイマー</button>`
+          : (it.linkTab ? `<button class="btn btn-emerald" style="padding:7px 10px;font-size:0.78rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>` : '');
+        return `<div class="menu-item-row ${it.done ? 'completed-row' : ''}"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:6px;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);"/><span class="badge-version">${i + 1}. ${it.cat}</span><span style="font-weight:900;font-size:0.82rem;">${it.custom ? menuAiEsc(it.name) : it.name}</span>${it.custom ? '<span style="font-size:0.7rem;font-weight:800;color:var(--accent-highlight);">AI提案</span>' : ''}</div><div style="display:flex;align-items:center;gap:4px;"><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button><span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;">${it.minutes}分</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},5)">+5</button><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="moveMenuItemOrderPart3(${i},-1)" ${i===0?'disabled':''}>▲</button><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="moveMenuItemOrderPart3(${i},1)" ${i===currentMenuPlan.items.length-1?'disabled':''}>▼</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.78rem;" onclick="removeMenuItemAt(${i})">✕</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-secondary);padding-left:22px;"><span>🎯 ${it.custom ? menuAiEsc(it.note) : it.note}</span>${btn}</div></div>`;
+      };
       const grpHeads = [['phys', 'フィジカル'], ['court', 'コート']];
       let groupedHtml = '', firstGrp = true;
       grpHeads.forEach(([g, label]) => {
@@ -13248,16 +13255,7 @@
       saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI();
     }
 
-    renderCurrentMenuEditorUI = function() {
-      const c = document.getElementById('menuItemsListContainer'); if (!c) return;
-      c.innerHTML = currentMenuPlan.items.map((it, i) => {
-        const btn = it.linkTab === 'workout_timer'
-          ? `<button class="btn btn-amber" style="padding:7px 10px;font-size:0.78rem;" onclick="openWorkoutIntervalTimer(${i})">⏱️ 筋トレタイマー</button>`
-          : (it.linkTab ? `<button class="btn btn-emerald" style="padding:7px 10px;font-size:0.78rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>` : '');
-        return `<div class="menu-item-row ${it.done ? 'completed-row' : ''}"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:6px;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);"/><span class="badge-version">${i + 1}. ${it.cat}</span><span style="font-weight:900;font-size:0.82rem;">${it.custom ? menuAiEsc(it.name) : it.name}</span>${it.custom ? '<span style="font-size:0.7rem;font-weight:800;color:var(--accent-highlight);">AI提案</span>' : ''}</div><div style="display:flex;align-items:center;gap:4px;"><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button><span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;">${it.minutes}分</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},5)">+5</button><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="moveMenuItemOrderPart3(${i},-1)" ${i===0?'disabled':''}>▲</button><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="moveMenuItemOrderPart3(${i},1)" ${i===currentMenuPlan.items.length-1?'disabled':''}>▼</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.78rem;" onclick="removeMenuItemAt(${i})">✕</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-secondary);padding-left:22px;"><span>🎯 ${it.custom ? menuAiEsc(it.note) : it.note}</span>${btn}</div></div>`;
-      }).join('');
-      updateMenuTimeGaugeUI();
-    };
+    /* renderCurrentMenuEditorUI の再定義は削除済み（part1側の単一定義に統合） */
 
     function openWorkoutIntervalTimer(i) {
       const it = currentMenuPlan.items[i] || { name: "筋トレ", workSec: 30, restSec: 15, sets: 3 };
