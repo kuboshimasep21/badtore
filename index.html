@@ -3235,7 +3235,7 @@
 
               <div class="viewport-header-bar">
 
-                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（カメラ起動 または 動画読込を選択）</span>
+                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（動画読込を選択）</span>
 
                 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
 
@@ -3273,7 +3273,7 @@
 
                   <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカメラ起動不要で即座に動画が表示され自動診断がスタートします！</div>
 
-                  <div style="font-size:0.8rem; margin-top:4px;">リアルタイム撮影時は「📷 AIカメラ起動」を押してください</div>
+                  <div style="font-size:0.8rem; margin-top:4px;">撮影はスマホのカメラアプリで撮ってから読み込んでください</div>
 
                 </div>
 
@@ -3541,7 +3541,7 @@
 
               <div id="aiSummaryContent" style="font-size:0.8rem; color:var(--text-primary); line-height:1.55;">
 
-                <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、カメラボタンを押さなくても動画がすぐに画面に表示されて自動解析が始まります。長い動画はシークバーで診断したい区間（開始A〜終了B）を切り出せます。
+                <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、動画がすぐに画面に表示されて自動解析が始まります。長い動画はシークバーで診断したい区間（開始A〜終了B）を切り出せます。
 
               </div>
               <div class="btn-group" style="margin-top:8px;">
@@ -3561,15 +3561,6 @@
                 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                   <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:800;">🖥️ 表示・再生:</span>
                   <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
-                  <select id="delayMirrorSelect" onchange="changeDelayMirrorSec(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
-
-              <option value="0" selected>⏪ ディレイ: OFF</option>
-
-              <option value="3">⏪ 3秒遅れ再生</option>
-
-              <option value="5">⏪ 5秒遅れ再生</option>
-
-            </select>
                 </div>
                 <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:0.8rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:9px;">
                   <span style="color:var(--text-secondary); font-weight:800;">✂️ 診断区間（動画）:</span>
@@ -3609,7 +3600,7 @@
 
           <div class="card-title">🏸 4大ブランド別 ラケット＆ガット診断カルテ</div>
 
-          <span class="badge-version">メンバー設定＆実測連動</span>
+          <span class="badge-version">スタイル・パワー連動</span>
 
         </div>
 
@@ -3795,7 +3786,7 @@
 
           <div class="card-header">
 
-            <div class="card-title">📲 iPhone ⇄ iPad データ引き継ぎ（メンバー＆過去ベスト一括共有）</div>
+            <div class="card-title">📲 iPhone ⇄ iPad データ引き継ぎ（メンバー・ベスト・メニューなど主要データ）</div>
 
             <div class="btn-group">
 
@@ -3935,73 +3926,7 @@
 
     <section id="tab-guide" class="tab-panel">
 
-      <div class="card">
-
-        <div class="card-header">
-
-          <div class="card-title">📖 目的別 ベストなiPad・スマホ設置アングル ＆ フルスクリーン化手順</div>
-
-        </div>
-
-
-
-        <div class="split-grid" style="grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));">
-
-          <div class="diagram-card">
-
-            <div style="font-weight:900; color:#fbbf24; margin-bottom:6px; font-size:0.88rem;">
-
-              🛡️「基本の構え診断」＆「⚡初速AI」➔【正面 2.5〜3.5m】
-
-            </div>
-
-            <p style="font-size:0.8rem; color:var(--text-secondary);">
-
-              正面から全身（頭〜足首）を映すことで、<b>「ラケット（手首）が下がっていないか」「リストスタンドできているか」「足幅（スタンス比）が肩幅の1.3〜1.6倍あるか」「小刻みに跳ねていないか」</b>を正確に診断できます。
-
-            </p>
-
-          </div>
-
-
-
-          <div class="diagram-card">
-
-            <div style="font-weight:900; color:#38bdf8; margin-bottom:6px; font-size:0.88rem;">
-
-              💥「スマッシュ・クリア・ロブ・ヘアピン」➔【斜め後ろ 3〜4m】
-
-            </div>
-
-            <p style="font-size:0.8rem; color:var(--text-secondary);">
-
-              利き腕側の斜め後ろから全身を映すことで、自分の肩・膝から伸びる<b>「🎯理想打点レーザー（水色）」と「🏆過去ベスト線（ゴールド）」</b>が重ならず、スイング軌道アークも綺麗に描画されます。
-
-            </p>
-
-          </div>
-
-
-
-          <div class="diagram-card">
-
-            <div style="font-weight:900; color:#10b981; margin-bottom:6px; font-size:0.88rem;">
-
-              📱 iPad / iPhoneでアドレスバーを消して100%全画面アプリ化する手順
-
-            </div>
-
-            <p style="font-size:0.8rem; color:var(--text-secondary);">
-
-              Safari上部の共有ボタン（四角から上矢印 📤）をタップし、メニューから<b>「ホーム画面に追加」</b>を押してください。ホーム画面に作られた「バドトレPRO」アイコンから開くと、上のURLバーが完全に消えて専用アプリとして広く使えます。
-
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
+      <!-- ガイド本文は upgradeGuideTabContent() が起動時に全量差し替えるため、静的HTMLは置かない（全体監査 2026-11-22 L4） -->
 
     </section>
 
@@ -4245,13 +4170,6 @@
 
 
 
-    function changeUITheme(themeName) {
-
-      document.documentElement.setAttribute('data-theme', themeName);
-
-      localStorage.setItem('badtore_ui_theme_v90', themeName);
-
-    }
 
 
 
@@ -4481,57 +4399,9 @@
 
 
 
-    function playBeep(freq = 880, durationMs = 100) {
-
-      try {
-
-        unlockAudioContext();
-
-        const osc = audioCtx.createOscillator();
-
-        const gain = audioCtx.createGain();
-
-        osc.type = 'sine';
-
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-        gain.gain.setValueAtTime(0.24, audioCtx.currentTime);
-
-        osc.connect(gain);
-
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-
-        osc.stop(audioCtx.currentTime + durationMs / 1000);
-
-      } catch (e) {}
-
-    }
 
 
 
-    function speakText(text, rate = 1.28) {
-
-      if (!('speechSynthesis' in window)) return;
-
-      try {
-
-        window.speechSynthesis.cancel();
-
-        const utter = new SpeechSynthesisUtterance(text);
-
-        utter.lang = 'ja-JP';
-
-        utter.rate = rate;
-
-        utter.pitch = 1.05;
-
-        window.speechSynthesis.speak(utter);
-
-      } catch (e) {}
-
-    }
 
 
 
@@ -4875,153 +4745,6 @@
 
 
 
-    function runNextFootworkCall() {
-
-      if (!fwState.running || fwState.paused) return;
-
-      clearFwHighlights();
-
-
-
-      if (!fwState.isTimeMode && fwState.currentRep >= fwState.repsPerSet) {
-
-        handleFwSetComplete();
-
-        return;
-
-      }
-
-
-
-      const preset = document.getElementById('fwCoursePreset').value;
-
-      const centerMode = document.getElementById('fwCenterCallMode').value;
-
-      let chosenIdx = 0;
-
-
-
-      if (FW_SEQUENCES[preset]) {
-
-        const seq = FW_SEQUENCES[preset];
-
-        chosenIdx = seq[fwState.seqCursor % seq.length];
-
-        fwState.seqCursor++;
-
-      } else {
-
-        let activeIndices = fwEnabledNodes.map((v, i) => v ? i : -1).filter(i => i !== -1);
-
-        if (centerMode === 'no_repeat' && activeIndices.length > 1 && fwState.lastChosenIdx !== -1) {
-
-          activeIndices = activeIndices.filter(i => i !== fwState.lastChosenIdx);
-
-        }
-
-        chosenIdx = activeIndices[Math.floor(Math.random() * activeIndices.length)];
-
-      }
-
-
-
-      const posObj = FW_POSITIONS[chosenIdx];
-
-      const isRepeat = (chosenIdx === fwState.lastChosenIdx);
-
-      fwState.lastChosenIdx = chosenIdx;
-
-
-
-      fwState.currentRep++;
-
-      updateFwHeaderUI();
-
-
-
-      const cellEl = document.getElementById('fw-node-' + chosenIdx);
-
-      const voiceMode = document.getElementById('fwVoiceMode').value;
-
-      const callLabel = document.getElementById('fwCurrentCallLabel');
-
-
-
-      const activateChosenCell = () => {
-
-        if (!fwState.running || fwState.paused) return;
-
-        if (cellEl) cellEl.classList.add('active-call');
-
-        callLabel.textContent = `👉 ${posObj.name}！`;
-
-
-
-        if (voiceMode === 'direction') {
-
-          playBeep(960, 85);
-
-          speakText(posObj.name, 1.3);
-
-        } else if (voiceMode === 'number') {
-
-          playBeep(960, 85);
-
-          speakText(posObj.numName, 1.3);
-
-        } else if (voiceMode === 'beep_only') {
-
-          playBeep(1040, 120);
-
-        }
-
-      };
-
-
-
-      if (isRepeat) {
-
-        setTimeout(activateChosenCell, 120);
-
-      } else {
-
-        activateChosenCell();
-
-      }
-
-
-
-      if (centerMode === 'split_beep') {
-
-        fwState.subTimerId = setTimeout(() => {
-
-          if (!fwState.running || fwState.paused) return;
-
-          clearFwHighlights();
-
-          callLabel.textContent = "👟 抜重！";
-
-          playBeep(540, 65);
-
-        }, Math.max(300, fwState.intervalMs - 360));
-
-      } else {
-
-        fwState.subTimerId = setTimeout(() => {
-
-          if (!fwState.running || fwState.paused) return;
-
-          clearFwHighlights();
-
-        }, Math.max(200, fwState.intervalMs - 140));
-
-      }
-
-
-
-      fwState.timerId = setTimeout(runNextFootworkCall, fwState.intervalMs);
-
-    }
 
 
 
@@ -5259,185 +4982,9 @@
 
 
 
-    function startArrowReactionDrill(goFullscreen = false) {
 
-      unlockAudioContext();
 
-      stopArrowReactionDrill();
 
-      requestAppWakeLock();
-
-
-
-      if (goFullscreen) {
-
-        const stage = document.getElementById('arrowFullscreenStage');
-
-        if (!stage.classList.contains('pseudo-fullscreen')) {
-
-          toggleSmartFullscreen('arrowFullscreenStage');
-
-        }
-
-      }
-
-
-
-      arrowDrillState.totalReps = Number(document.getElementById('arrowTotalReps').value) || 10;
-
-      arrowDrillState.currentRep = 0;
-
-      arrowDrillState.running = true;
-
-
-
-      document.getElementById('arrowDrillBadge').textContent = "🟢 稼働中";
-
-      document.getElementById('arrowDrillProgress').textContent = `0 / ${arrowDrillState.totalReps} 回`;
-
-
-
-      const holder = document.getElementById('giantArrowSvgHolder');
-
-      const txt = document.getElementById('giantArrowText');
-
-
-
-      holder.innerHTML = buildCyberArrowSVG(0, 'ready');
-
-      txt.textContent = "構えて...";
-
-      playBeep(660, 100);
-
-
-
-      arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1200);
-
-    }
-
-
-
-    function runNextArrowReactionRep() {
-
-      if (!arrowDrillState.running) return;
-
-
-
-      const box = document.getElementById('giantArrowBox');
-
-      const holder = document.getElementById('giantArrowSvgHolder');
-
-      const txt = document.getElementById('giantArrowText');
-
-
-
-      if (arrowDrillState.currentRep >= arrowDrillState.totalReps) {
-
-        box.className = "giant-arrow-circle";
-
-        holder.innerHTML = buildCyberArrowSVG(0, 'done');
-
-        txt.textContent = "COMPLETE!";
-
-        document.getElementById('arrowDrillBadge').textContent = "✅ 完了";
-
-        playBeep(1200, 320);
-
-        speakText("リアクション練習完了！お疲れ様でした！");
-
-        arrowDrillState.running = false;
-
-        releaseAppWakeLock();
-
-        return;
-
-      }
-
-
-
-      const timingStyle = document.getElementById('arrowTimingStyle').value;
-
-      const voiceMode = document.getElementById('arrowVoiceMode').value;
-
-      const dirs = getFilteredArrowDirections();
-
-      const chosen = dirs[Math.floor(Math.random() * dirs.length)];
-
-
-
-      let preDelay = 700;
-
-      if (timingStyle === 'split_rhythm') {
-
-        box.className = "giant-arrow-circle unweight-cue";
-
-        holder.innerHTML = buildCyberArrowSVG(0, 'unweight');
-
-        txt.textContent = "抜重・ステップ！";
-
-        playBeep(520, 75);
-
-        preDelay = 420;
-
-      } else if (timingStyle === 'random_feint') {
-
-        box.className = "giant-arrow-circle";
-
-        holder.innerHTML = buildCyberArrowSVG(0, 'ready');
-
-        txt.textContent = "集中...";
-
-        preDelay = 1000 + Math.floor(Math.random() * 1600);
-
-      } else {
-
-        box.className = "giant-arrow-circle";
-
-        holder.innerHTML = buildCyberArrowSVG(0, 'ready');
-
-        txt.textContent = "READY";
-
-        preDelay = 550;
-
-      }
-
-
-
-      arrowDrillState.subTimerId = setTimeout(() => {
-
-        if (!arrowDrillState.running) return;
-
-        arrowDrillState.currentRep++;
-
-        document.getElementById('arrowDrillProgress').textContent =
-
-          `${arrowDrillState.currentRep} / ${arrowDrillState.totalReps} 回`;
-
-
-
-        box.className = "giant-arrow-circle cue-on";
-
-        holder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
-
-        txt.textContent = chosen.name + "！";
-
-
-
-        playBeep(1080, 110);
-
-        if (voiceMode === 'voice_and_beep') {
-
-          speakText(chosen.name, 1.32);
-
-        }
-
-
-
-        arrowDrillState.timerId = setTimeout(runNextArrowReactionRep, 1650);
-
-      }, preDelay);
-
-    }
 
 
 
@@ -5861,7 +5408,7 @@
 
         document.getElementById('posePlaceholder').style.display = "block";
 
-        document.getElementById('poseHudStatus').textContent = "⚪ 待機中（カメラ起動 または 動画読込を選択）";
+        document.getElementById('poseHudStatus').textContent = "⚪ 待機中（動画読込を選択）";
 
       }
 
@@ -6247,139 +5794,9 @@
 
 
 
-    function startReflexAISession() {
 
-      unlockAudioContext();
 
-      if (activeCameraMode !== 'reflex' || activeInputType !== 'camera') {
 
-        alert("先に「📷 初速AIカメラ起動」を押してカメラの前に構えてください！");
-
-        return;
-
-      }
-
-      stopReflexAISession();
-
-
-
-      rxState.targetReps = Number(document.getElementById('rxTargetReps').value) || 5;
-
-      rxState.currentRep = 0;
-
-      rxState.resultsMs = [];
-
-      rxState.stepTypes = [];
-
-      rxState.stanceScores = [];
-
-      rxState.bestMs = 9999;
-
-      rxState.active = true;
-
-
-
-      document.getElementById('rxValProgress').textContent = `0 / ${rxState.targetReps} 回`;
-
-      document.getElementById('rxValLastMs').textContent = `-- ms`;
-
-      document.getElementById('rxValAvgMs').textContent = `-- ms`;
-
-      document.getElementById('rxValScorePt').textContent = `-- pt`;
-
-      document.getElementById('rxSessionBadge').textContent = `🔴 測定中 (全${rxState.targetReps}回)`;
-
-
-
-      scheduleNextReflexRep();
-
-    }
-
-
-
-    function scheduleNextReflexRep() {
-
-      if (!rxState.active) return;
-
-
-
-      if (rxState.currentRep >= rxState.targetReps) {
-
-        finishReflexAISession();
-
-        return;
-
-      }
-
-
-
-      const banner = document.getElementById('reflexBanner');
-
-      const svgHolder = document.getElementById('reflexBannerSvgHolder');
-
-      const mainTxt = document.getElementById('reflexBannerMain');
-
-      const subTxt = document.getElementById('reflexBannerSub');
-
-
-
-      banner.style.display = "flex";
-
-      rxState.phase = 'ready_wait';
-
-      rxState.baselineHip = null;
-
-
-
-      svgHolder.innerHTML = buildCyberArrowSVG(0, 'unweight');
-
-      mainTxt.style.color = "#38bdf8";
-
-      mainTxt.textContent = `第 ${rxState.currentRep + 1} 回：構えて待機...`;
-
-      subTxt.textContent = "ラケットを上げ、リストを立てて矢印を待ってください";
-
-
-
-      const randomWait = 1800 + Math.floor(Math.random() * 1400);
-
-      rxState.timerId = setTimeout(() => {
-
-        if (!rxState.active) return;
-
-        const chosen = FW_POSITIONS[Math.floor(Math.random() * FW_POSITIONS.length)];
-
-        const cueMode = document.getElementById('rxCueMode').value;
-
-
-
-        rxState.phase = 'cue_active';
-
-        rxState.cueTime = performance.now();
-
-
-
-        svgHolder.innerHTML = buildCyberArrowSVG(chosen.angle, 'active');
-
-        mainTxt.style.color = "#fbbf24";
-
-        mainTxt.textContent = `${chosen.name}！`;
-
-        subTxt.textContent = "今すぐ抜重・ステップ！";
-
-
-
-        playBeep(1060, 110);
-
-        if (cueMode === 'voice_dir') {
-
-          speakText(chosen.name, 1.35);
-
-        }
-
-      }, randomWait);
-
-    }
 
 
 
@@ -8719,79 +8136,6 @@
 
 
 
-    function startTimedPoseSession() {
-
-      unlockAudioContext();
-
-      if (activeCameraMode !== 'pose' || activeInputType === 'idle') {
-
-        alert("先に「📷 AIカメラ起動」または「📁 動画読込」を選択してください！");
-
-        return;
-
-      }
-
-
-
-      if (activeInputType === 'video') {
-
-        startAutoVideoDiagnosis();
-
-        return;
-
-      }
-
-
-
-      if (poseSession.active) return;
-
-
-
-      const dur = 10;
-
-      const overlay = document.getElementById('poseCountdownOverlay');
-
-      const numEl = document.getElementById('poseCountdownNum');
-
-      const btn = document.getElementById('btnStartPoseSession'); if (btn) btn.disabled = true;
-
-
-
-      let count = 3;
-
-      overlay.style.display = "flex";
-
-      numEl.textContent = count;
-
-      playBeep(660, 100);
-
-
-
-      const cdInterval = setInterval(() => {
-
-        count--;
-
-        if (count > 0) {
-
-          numEl.textContent = count;
-
-          playBeep(660, 100);
-
-        } else {
-
-          clearInterval(cdInterval);
-
-          overlay.style.display = "none";
-
-          playBeep(1100, 180);
-
-          beginPoseRecording(dur);
-
-        }
-
-      }, 900);
-
-    }
 
 
 
@@ -10296,93 +9640,9 @@
 
 
 
-    function exportAllAppData() {
-
-      const payload = {
-
-        profilesList,
-
-        activeProfileId,
-
-        personalBestsDB
-
-      };
-
-      const encoded = JSON.stringify(payload);
-
-      const area = document.getElementById('dataSyncTextarea');
-
-      area.value = encoded;
-
-      area.select();
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-
-        navigator.clipboard.writeText(encoded).then(() => {
-
-          alert("引き継ぎコードをクリップボードにコピーしました！iPadへ送って貼り付けてください。");
-
-        }).catch(() => {
-
-          alert("下の枠に表示されたコードをコピーしてください。");
-
-        });
-
-      }
-
-    }
 
 
 
-    function importAllAppData() {
-
-      const area = document.getElementById('dataSyncTextarea');
-
-      const raw = area.value.trim();
-
-      if (!raw) {
-
-        alert("引き継ぎコードを枠内に貼り付けてから押してください。");
-
-        return;
-
-      }
-
-      try {
-
-        const parsed = JSON.parse(raw);
-
-        if (parsed.profilesList && Array.isArray(parsed.profilesList)) {
-
-          profilesList = parsed.profilesList;
-
-          activeProfileId = parsed.activeProfileId || profilesList[0].id;
-
-          personalBestsDB = parsed.personalBestsDB || {};
-
-          localStorage.setItem('badtore_profiles_list_v90', JSON.stringify(profilesList));
-
-          localStorage.setItem('badtore_active_profile_id_v90', activeProfileId);
-
-          localStorage.setItem('badtore_personal_bests_v90', JSON.stringify(personalBestsDB));
-
-          syncActiveProfileToState();
-
-          alert("メンバー情報と過去ベスト記録の読み込みが完了しました！");
-
-        } else {
-
-          alert("引き継ぎコードの形式が正しくありません。");
-
-        }
-
-      } catch (e) {
-
-        alert("コードの読み込みに失敗しました。");
-
-      }
-
-    }
 
 
 
@@ -10876,25 +10136,18 @@
 
 
 
-      const effectiveSpeed = aiMetrics.maxSpeedPt > 0 ? aiMetrics.maxSpeedPt : (userProfile.power === 'high' ? 88 : userProfile.power === 'low' ? 68 : 78);
-
-      // 速度指数が実測か、未測定時の標準値（パワー設定からの固定値）かを区別して表示する。
-      // 未測定の数値を実測のように見せないため（AI診断レビュー 2026-11-19 §5）。
-      const speedIsMeasured = aiMetrics.maxSpeedPt > 0;
-
-      const speedSentence = speedIsMeasured
-        ? `速度指数（${effectiveSpeed}pt・実測）から最適モデルを提案します。`
-        : `速度指数は未測定のため、パワー設定からの標準値（${effectiveSpeed}pt）で最適モデルを提案します。骨格AIで測定すると実測の速度指数に切り替わります。`;
+      // マッチ度はスタイルとパワー設定への一致だけで決まる（身長・速度指数は採点に使わない）。
+      // 提案文が実態以上をうたわないよう、理由はこの2要素に限定する（全体監査 2026-11-22 M1）。
 
 
 
       summaryBox.innerHTML = `
 
-        <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 ギア＆体格マッチング診断</div>
+        <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 ギアマッチング診断</div>
 
         <div style="font-size:0.8rem; color:var(--text-primary);">
 
-          身長 ${userProfile.height}cm・パワー設定（${userProfile.power}）・スタイル（${userProfile.style}）・${speedSentence}
+          マッチ度は、あなたのスタイル（${userProfile.style}）とパワー設定（${userProfile.power}）に合うかどうかで決まります。
 
         </div>
 
@@ -11210,6 +10463,19 @@
   
   <script id="badtore-v103-part1">
     let audioCustomSettings = { voiceRate: 1.05, beepTone: 'high', unweightLeadMs: 420, rxKeepMs: 2200, startCountdownSec: 5 };
+    // 音声設定（声の速さ・ビープ音・抜重タメ）は端末に保存し、再読込で復元する（全体監査 2026-11-22 M3）。
+    // rxKeepMs / startCountdownSec は UI のない内部定数のため保存対象に含めない。
+    try {
+      const _savedAudioSettings = JSON.parse(localStorage.getItem('badtore_audio_settings_v106') || 'null');
+      if (_savedAudioSettings) {
+        if (typeof _savedAudioSettings.voiceRate === 'number') audioCustomSettings.voiceRate = _savedAudioSettings.voiceRate;
+        if (typeof _savedAudioSettings.beepTone === 'string') audioCustomSettings.beepTone = _savedAudioSettings.beepTone;
+        if (typeof _savedAudioSettings.unweightLeadMs === 'number') audioCustomSettings.unweightLeadMs = _savedAudioSettings.unweightLeadMs;
+      }
+    } catch (e) {}
+    function saveAudioSettings() {
+      try { localStorage.setItem('badtore_audio_settings_v106', JSON.stringify({ voiceRate: audioCustomSettings.voiceRate, beepTone: audioCustomSettings.beepTone, unweightLeadMs: audioCustomSettings.unweightLeadMs })); } catch (e) {}
+    }
     let videoLoopObserveMode = false, selectedJapaneseVoice = null, fwExtraCenterTimerId = null, poseCountdownTimerId = null;
     let currentThemeKey = 'cyan', profileThemesMap = {}, pinnedFocusDB = {}, playerXpDB = {};
     let shuttleSpeedState = { panelOpen: false, t1Sec: null, t2Sec: null, distMeters: 6.8, lastV0Kmh: null, lastAvgKmh: null };
@@ -11287,27 +10553,6 @@
       } catch (e) {}
     }
 
-    function applyColorTheme(themeKey, saveForProfile = true) {
-      const legacy = { cyber: 'cyan', matte: 'orange', street: 'emerald' };
-      const k = legacy[themeKey] || (UI_COLOR_THEMES[themeKey] ? themeKey : 'cyan');
-      const t = UI_COLOR_THEMES[k]; currentThemeKey = k;
-      const r = document.documentElement.style;
-      r.setProperty('--bg-base', t.bgBase); r.setProperty('--bg-surface', t.bgSurface);
-      r.setProperty('--bg-card', t.bgCard); r.setProperty('--bg-panel', t.bgPanel);
-      r.setProperty('--text-primary', t.textPrimary); r.setProperty('--text-secondary', t.textSecondary);
-      r.setProperty('--accent-primary', t.accentPrimary); r.setProperty('--accent-primary-glow', t.glow);
-      r.setProperty('--accent-secondary', t.accentSecondary); r.setProperty('--accent-highlight', t.accentHighlight);
-      r.setProperty('--border-subtle', t.border); r.setProperty('--court-surface', t.court);
-      document.body.setAttribute('data-theme-mode', t.light ? 'light' : 'dark');
-      const sel = document.getElementById('uiThemeSelect');
-      if (sel && sel.value !== k) sel.value = k;
-      if (saveForProfile && activeProfileId) {
-        profileThemesMap[activeProfileId] = k;
-        localStorage.setItem('badtore_profile_themes_v102', JSON.stringify(profileThemesMap));
-      }
-      localStorage.setItem('badtore_last_theme_v102', k);
-    }
-    changeUITheme = function(name) { applyColorTheme(name, true); };
 
     function awardPlayerXP(amount = 20) {
       if (!activeProfileId) return;
@@ -11471,6 +10716,7 @@
       if (r) audioCustomSettings.voiceRate = Number(r.value) || 1.05;
       if (t) audioCustomSettings.beepTone = t.value || 'high';
       if (l) audioCustomSettings.unweightLeadMs = Number(l.value) || 420;
+      saveAudioSettings();
       ['fwCfg', 'arCfg'].forEach(px => {
         const re = document.getElementById(px + 'VoiceRate'), te = document.getElementById(px + 'BeepTone'), le = document.getElementById(px + 'UnweightMs');
         if (re) re.value = String(audioCustomSettings.voiceRate);
@@ -11480,12 +10726,12 @@
     }
 
     function buildAudioConfigHTML(p) {
-      return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:900;color:var(--accent-highlight);font-size:0.8rem;">🔊 声の速さ・音色・抜重タメ微調整</span><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="testVoiceAudio()">🔊 音声テスト</button></div><div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;"><div class="form-group"><label>🗣️ 声の速さ</label><select id="${p}VoiceRate" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="0.95">ゆっくり(0.95x)</option><option value="1.05" selected>標準(1.05x)</option><option value="1.25">速め(1.25x)</option></select></div><div class="form-group"><label>🔔 ビープ音</label><select id="${p}BeepTone" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="high" selected>クリア(大)</option><option value="normal">標準</option><option value="low">マイルド</option></select></div><div class="form-group"><label>👟 抜重タメ</label><select id="${p}UnweightMs" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="300">0.30秒</option><option value="420" selected>0.42秒</option><option value="600">0.60秒</option></select></div></div></div>`;
+      return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:900;color:var(--accent-highlight);font-size:0.8rem;">🔊 声の速さ・音色・抜重タメ微調整</span><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="testVoiceAudio()">🔊 音声テスト</button></div><div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;"><div class="form-group"><label>🗣️ 声の速さ</label><select id="${p}VoiceRate" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="0.95"${audioCustomSettings.voiceRate === 0.95 ? ' selected' : ''}>ゆっくり(0.95x)</option><option value="1.05"${audioCustomSettings.voiceRate === 1.05 ? ' selected' : ''}>標準(1.05x)</option><option value="1.25"${audioCustomSettings.voiceRate === 1.25 ? ' selected' : ''}>速め(1.25x)</option></select></div><div class="form-group"><label>🔔 ビープ音</label><select id="${p}BeepTone" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="high"${audioCustomSettings.beepTone === 'high' ? ' selected' : ''}>クリア(大)</option><option value="normal"${audioCustomSettings.beepTone === 'normal' ? ' selected' : ''}>標準</option><option value="low"${audioCustomSettings.beepTone === 'low' ? ' selected' : ''}>マイルド</option></select></div><div class="form-group"><label>👟 抜重タメ</label><select id="${p}UnweightMs" onchange="syncAudioSettingsUI('${p}')" style="font-size:0.85rem;padding:6px;"><option value="300"${audioCustomSettings.unweightLeadMs === 300 ? ' selected' : ''}>0.30秒</option><option value="420"${audioCustomSettings.unweightLeadMs === 420 ? ' selected' : ''}>0.42秒</option><option value="600"${audioCustomSettings.unweightLeadMs === 600 ? ' selected' : ''}>0.60秒</option></select></div></div></div>`;
     }
 
     function applyQuickPresetPose(k) {
       const s = document.getElementById('shotTypeSelect'); if (s) { s.value = k; updateShotCriteriaUI(); }
-      if (activeCameraMode !== 'pose' || activeInputType === 'idle') toggleLiveCamera('pose'); else startTimedPoseSession();
+      if (activeInputType === 'video') startTimedPoseSession(); else alert("先に「📁 動画読込」で動画を選んでください！");
     }
 
     function injectV103CoreStylesAndUI() {
@@ -11553,7 +10799,7 @@
 
       const poseHb = document.querySelector('#poseViewport .viewport-header-bar');
       if (poseHb) {
-        poseHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span><span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span></div><div class="btn-group"><button id="btnPoseCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('pose')">📷 AIカメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button id="btnPoseStartInFs" class="btn btn-amber" style="padding:7px 10px;font-size:0.8rem;" onclick="startTimedPoseSession()">▶️ 10秒測定</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopTimedPoseSession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button></div>`;
+        poseHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span><span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span></div><div class="btn-group"><button id="btnPoseStartInFs" class="btn btn-amber" style="padding:7px 10px;font-size:0.8rem;" onclick="startTimedPoseSession()">▶️ 再診断</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopTimedPoseSession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button></div>`;
       }
       const poseStg = document.querySelector('#poseViewport .viewport-stage');
       if (poseStg && !document.getElementById('poseLiveFloatingHud')) {
@@ -11771,7 +11017,7 @@
     // TAB 3: 5秒カウント＆停止対応
     startTimedPoseSession = function() {
       unlockAudioContext();
-      if (activeCameraMode !== 'pose' || activeInputType === 'idle') { alert("先に「📷 カメラ起動」または「📁 動画読込」を選択してください！"); return; }
+      if (activeCameraMode !== 'pose' || activeInputType === 'idle') { alert("先に「📁 動画読込」で動画を選んでください！"); return; }
       if (activeInputType === 'video') { startAutoVideoDiagnosis(); return; }
       stopTimedPoseSession();
       const ov = document.getElementById('poseCountdownOverlay'), num = document.getElementById('poseCountdownNum');
@@ -11865,6 +11111,8 @@
     };
 
     // 📋 TAB 5: メニュー作成＋📚 TAB 6: ドリル集（スコアの後・ラケットの前に並べて配置。ガイドは10番目のまま）
+    // AI相談は販売版（有料キー前提）で復活予定。それまで UI・実行経路とも Coming Soon でゲートする（Phase 2 課金の BILLING_COMING_SOON と同じパターン。本ファイルには課金コードが無いため、この定数が相談ゲートの単一の置き場）
+    const AI_CONSULT_COMING_SOON = true;
     function injectMenuPlannerTab() {
       const nav = document.querySelector('.nav-scroller'), guideBtn = document.getElementById('btn-tab-guide');
       const anchorBtn = document.getElementById('btn-tab-racket') || guideBtn;
@@ -11894,9 +11142,9 @@
             <div id="menuModeCreatePane">
             <div class="card" style="background:var(--bg-panel);margin-bottom:12px;">
               <div class="form-group" style="margin-bottom:8px;">
-                <label>🤖 AIに相談（自由に入力）</label>
-                <input type="text" id="aiMenuConsultInput" placeholder="例：自宅で足メイン、20分くらい" style="font-size:0.85rem;padding:7px 9px;"/>
-                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">入力すると下のボタンがAI編成になります（空欄なら通常の自動編成）。下の条件と組み合わせてもOKです。</div>
+                <label>🤖 AIに相談（自由に入力）${AI_CONSULT_COMING_SOON ? ' <span class="badge-version" style="background:var(--accent-highlight);color:#fff;">Coming Soon</span>' : ''}</label>
+                <input type="text" id="aiMenuConsultInput" placeholder="例：自宅で足メイン、20分くらい" style="font-size:0.85rem;padding:7px 9px;"${AI_CONSULT_COMING_SOON ? ' disabled' : ''}/>
+                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">${AI_CONSULT_COMING_SOON ? 'AI相談は準備中です。今は下の条件で編成できます。' : '入力すると下のボタンがAI編成になります（空欄なら通常の自動編成）。下の条件と組み合わせてもOKです。'}</div>
                 <div id="aiMenuConsultStatus" style="font-size:0.8rem;margin-top:4px;"></div>
               </div>
               <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:8px;">
@@ -12113,6 +11361,7 @@
     // 応答が返らないまま固まる（ハングする）混雑でも「編成中」のまま止まらないよう上限を設ける：
     // 1リクエスト最大60秒でタイムアウト（一時的失敗として再試行）、相談全体は最大150秒で打ち切って通常編成にフォールバックする。
     async function callGeminiForMenuConsult(prompt) {
+      if (AI_CONSULT_COMING_SOON) throw new Error('AI相談は準備中です');
       const fast = (typeof GEMINI_MODEL_FAST !== 'undefined') ? GEMINI_MODEL_FAST : undefined;
       const waits = [20000, 40000];
       const REQ_TIMEOUT_MS = 60000;
@@ -12140,13 +11389,14 @@
 
     function composeMenuFromUI() {
       const inp = document.getElementById('aiMenuConsultInput');
-      const txt = inp ? (inp.value || '').trim() : '';
+      const txt = (!AI_CONSULT_COMING_SOON && inp) ? (inp.value || '').trim() : '';
       if (txt) { composeMenuByAIConsult(); return; }
       const st = document.getElementById('aiMenuConsultStatus'); if (st) st.innerHTML = '';
       generateAIMenuByConditions(true);
     }
 
     async function composeMenuByAIConsult() {
+      if (AI_CONSULT_COMING_SOON) { generateAIMenuByConditions(true); return; }
       const pm = document.getElementById('aiMenuPlayersMode') ? document.getElementById('aiMenuPlayersMode').value : 'gym_2';
       const target = Math.max(5, Number(document.getElementById('aiMenuTargetMin') ? document.getElementById('aiMenuTargetMin').value : 150) || 150);
       const reqText = (document.getElementById('aiMenuConsultInput').value || '').trim();
@@ -13009,7 +12259,7 @@
       const area = document.getElementById('dataSyncTextarea');
       if (area) { area.value = encoded; area.select(); }
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(encoded).then(() => alert("全データ（メンバー・ベスト・ピン留め・Lv・メニュー・練習ログ）をコピーしました！")).catch(() => {});
+        navigator.clipboard.writeText(encoded).then(() => alert("引き継ぎコードをコピーしました！（メンバー・ベスト・保存メニュー・練習ログ・作業中メニュー・テーマ・ピン留め・XP）※マイ種目・バッジ・大会データは含まれません")).catch(() => {});
       }
     };
     importAllAppData = function() {
@@ -13029,7 +12279,7 @@
           localStorage.setItem('badtore_active_profile_id_v90', activeProfileId);
           localStorage.setItem('badtore_personal_bests_v90', JSON.stringify(personalBestsDB));
           syncActiveProfileToState(); renderSavedMenusSelectUI(); renderCurrentMenuEditorUI(); renderPracticeLogsHistoryUI(); renderMiniDotCalendarUI();
-          alert("全データの同期が完了しました！");
+          alert("引き継ぎデータの読み込みが完了しました！");
         }
       } catch (e) { alert("コードの形式が正しくありません。"); }
     };
@@ -13292,12 +12542,12 @@
     function getSavedGeminiApiKey() { return (localStorage.getItem('badtore_gemini_api_key_v104') || DEFAULT_EMBEDDED_KEY || "").trim(); }
     function onGeminiModelSelectChanged(v) {
       selectedGeminiModel = normalizeGeminiModel(v); localStorage.setItem('badtore_gemini_model_v104', selectedGeminiModel);
-      ['poseAiModelSelect', 'menuAiModelSelect'].forEach(id => { const el = document.getElementById(id); if (el) el.value = selectedGeminiModel; });
+      ['poseAiModelSelect'].forEach(id => { const el = document.getElementById(id); if (el) el.value = selectedGeminiModel; });
     }
     function saveGeminiApiKeyFromUI(id) {
       const el = document.getElementById(id), val = el ? el.value.trim() : "";
       if (val) localStorage.setItem('badtore_gemini_api_key_v104', val);
-      ['poseGeminiKeyInput', 'menuGeminiKeyInput'].forEach(k => { const inp = document.getElementById(k); if (inp && val) inp.value = val; });
+      ['poseGeminiKeyInput'].forEach(k => { const inp = document.getElementById(k); if (inp && val) inp.value = val; });
       playBeep(1150, 100); alert("🔑 APIキーを保存しました！");
     }
 
@@ -13363,7 +12613,7 @@
       return /high demand|overloaded|quota|resource[_\s-]?exhausted|try again later|temporarily/i.test(msg);
     }
 
-    // timeoutMs / deadlineMs は任意指定（AIメニュー相談専用）。未指定の呼び出しでは従来どおりタイムアウトなしで動作する。
+    // timeoutMs / deadlineMs は任意指定（AIメニュー相談・深掘り診断が使用）。未指定の呼び出しでは従来どおりタイムアウトなしで動作する。
     // timeoutMs を渡すと各リクエストに AbortController の制限時間を付け、時間切れは一時的失敗（混雑扱い）として再試行する。
     // deadlineMs（絶対時刻）を渡すと、その時刻を過ぎたら新たな試行を開始せず、待機も残り時間で打ち切る。
     async function callGeminiWithFallback(apiKey, parts, preferredModel, timeoutMs, deadlineMs) {
@@ -13415,10 +12665,44 @@
       throw lastErr || new Error("APIエラー");
     }
 
+    // 深掘り診断専用の呼び出し：応答が速いモデルを先に使い、混雑（429/503）時は少し待って再試行する。
+    // ※ PRIMARY（gemini-3.1-pro-preview）は無料枠の1日上限が0で常時429になるため、深掘りでもFASTを優先する（相談・大会読み取りと同じ順序）。
+    // 応答が返らないまま固まる（ハングする）混雑でも「分析中」のまま止まらないよう上限を設ける：
+    // 1リクエスト最大90秒でタイムアウト（一時的失敗として再試行）、診断全体は最大240秒で打ち切って内蔵クロス推論にフォールバックする。
+    // 深掘りは長文カルテ＋画像を送り長文の分析が返るため、相談（60秒/150秒）より長めに取る。
+    async function callGeminiForProCoach(parts) {
+      const fast = (typeof GEMINI_MODEL_FAST !== 'undefined') ? GEMINI_MODEL_FAST : undefined;
+      const waits = [20000, 40000];
+      const REQ_TIMEOUT_MS = 90000;
+      const TOTAL_MS = 240000;
+      const deadline = Date.now() + TOTAL_MS;
+      let lastErr = null;
+      for (let round = 0; round <= waits.length; round++) {
+        const remain = deadline - Date.now();
+        if (remain <= 0) break;
+        try {
+          return await callGeminiWithFallback(getSavedGeminiApiKey(), parts, fast, Math.min(REQ_TIMEOUT_MS, remain), deadline);
+        } catch (e) {
+          lastErr = e;
+          const transient = (typeof isGeminiTransientError === 'function') ? isGeminiTransientError(e) : !!(e && (e.status === 429 || e.status === 503));
+          if (round >= waits.length || !transient) break;
+          const remain2 = deadline - Date.now();
+          if (remain2 <= 0) break;
+          const box = document.getElementById('aiProCoachPoseResultBox');
+          if (box) box.innerHTML = `<div style="color:var(--accent-secondary);font-weight:900;font-size:0.8rem;">⏳ AIが混雑しています…少し待って再試行します（${round + 1}回目）</div>`;
+          await new Promise(r => setTimeout(r, Math.min(waits[round], remain2)));
+        }
+      }
+      throw lastErr || new Error('AI応答を取得できませんでした');
+    }
+
     async function requestAIProCoachPoseAnalysis() {
       const box = document.getElementById('aiProCoachPoseResultBox'); if (!box) return;
+      const btn = document.querySelector('button[onclick="requestAIProCoachPoseAnalysis()"]');
+      const fastLabel = (typeof GEMINI_MODEL_FAST !== 'undefined') ? GEMINI_MODEL_FAST : 'gemini-3.8-flash';
       box.style.display = 'block';
-      box.innerHTML = `<div style="color:var(--accent-secondary);font-weight:900;font-size:0.8rem;">⏳ AIプロコーチ (${selectedGeminiModel}) が分析中...</div>`;
+      box.innerHTML = `<div style="color:var(--accent-secondary);font-weight:900;font-size:0.8rem;">⏳ AIプロコーチ (${fastLabel}) が分析中...</div>`;
+      if (btn) btn.disabled = true;
       try {
         const parts = [{ text: buildFullTelemetryCarteText() }];
         const c = document.getElementById('bestMomentCanvas');
@@ -13426,25 +12710,16 @@
           const b64 = c.toDataURL('image/jpeg', 0.78).split(',')[1];
           if (b64) parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
         }
-        const res = await callGeminiWithFallback(getSavedGeminiApiKey(), parts);
+        const res = await callGeminiForProCoach(parts);
         box.innerHTML = `<div style="font-weight:900;color:var(--accent-primary);margin-bottom:5px;font-size:0.82rem;">🤖 AIプロコーチ診断 (${res.usedModel})</div><div style="font-size:0.8rem;line-height:1.55;">${res.text.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}</div>`;
         awardPlayerXP(25); playBeep(1180, 120);
       } catch (err) {
         box.innerHTML = `<div style="color:var(--accent-highlight);font-weight:900;font-size:0.8rem;margin-bottom:4px;">💡 内蔵クロス推論（※API応答: ${err.message}）</div><div style="font-size:0.8rem;line-height:1.5;">体幹傾き(${aiMetrics.coreTiltDeg}°)と手首角度(${aiMetrics.isWristStandOk?'OK':'寝すぎ'})の連動を意識し、カカト着地から前足1回で素早く中央へ蹴り戻しましょう。「📲 Proチャットへ一括共有」から直接このProチャットへ貼って相談も可能です。</div>`;
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
-    async function requestAIProCoachCustomMenu() {
-      const req = (document.getElementById('aiCoachMenuPromptInput').value || "").trim() || "カーフレイズと股関節の筋トレを入れた自宅メニュー";
-      const st = document.getElementById('aiCoachMenuStatus');
-      generateAIMenuByConditions(false);
-      if (req.includes('カーフ') || req.includes('足首') || req.includes('バネ')) addPresetWorkoutToMenu(0, false);
-      if (req.includes('スクワット') || req.includes('下半身') || req.includes('筋トレ')) addPresetWorkoutToMenu(1, false);
-      if (req.includes('股関節') || req.includes('膝') || req.includes('ニーイン')) addPresetWorkoutToMenu(3, false);
-      if (req.includes('体幹') || req.includes('プランク')) addPresetWorkoutToMenu(4, false);
-      if (st) st.innerHTML = `<span style="color:var(--accent-primary);font-weight:800;">✅「${req}」に合わせて筋トレ＆メニューを時間割に編成しました！</span>`;
-      playBeep(1120, 100);
-    }
 
     function injectPart3PanelsUI() {
       const k = getSavedGeminiApiKey();
@@ -13461,7 +12736,7 @@
       if (mc && !document.getElementById('customWorkoutBuilderCard')) {
         const chips = WORKOUT_PRESETS.map((w, i) => `<button class="btn btn-cyan-outline" style="padding:8px 10px;font-size:0.8rem;" onclick="addPresetWorkoutToMenu(${i},false)">➕ ${w.cat}：${w.name.split('（')[0]} (${w.minutes}分)</button>`).join('');
         const d = document.createElement('div'); d.id = 'customWorkoutBuilderCard';
-        d.innerHTML = `<div id="workoutTimerDrawer" class="card" style="display:none;background:var(--bg-panel);border:2px solid var(--accent-highlight);margin-top:10px;padding:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);" id="wtTitle">💪 筋トレタイマー</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="stopWorkoutIntervalTimer();document.getElementById('workoutTimerDrawer').style.display='none';">✕ 閉じる</button></div><div id="wtClockText" style="font-size:1.1rem;font-weight:900;text-align:center;padding:7px;background:var(--bg-base);border-radius:8px;margin-bottom:6px;">待機中</div><div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px;"><div class="form-group"><label>🔥 秒数</label><input type="number" id="wtWorkInput" value="30" style="padding:5px;"/></div><div class="form-group"><label>☕ 休憩</label><input type="number" id="wtRestInput" value="15" style="padding:5px;"/></div><div class="form-group"><label>🔢 セット</label><input type="number" id="wtSetsInput" value="3" style="padding:5px;"/></div></div><div class="btn-group"><button class="btn btn-emerald" style="flex:1;padding:7px;" onclick="startWorkoutIntervalTimer()">▶️ 開始</button><button class="btn btn-rose" style="padding:7px 12px;" onclick="stopWorkoutIntervalTimer()">⏹️ 停止</button></div></div><div class="card" style="background:var(--bg-surface);margin-top:10px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:6px;">💪 1. 筋トレ種目をワンタップで組み込む</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${chips}</div><div style="font-weight:900;font-size:0.8rem;color:var(--accent-secondary);margin-bottom:4px;">⭐ マイ種目ストック:</div><div id="customDrillBankHolder" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding:5px;background:var(--bg-base);border-radius:8px;"></div><div style="font-weight:900;font-size:0.8rem;color:var(--accent-primary);margin-bottom:5px;padding-top:6px;border-top:1px solid var(--border-subtle);">✏️ 2. 自作メニュー（筋トレ・実技）を自由に追加</div><div class="form-grid" style="grid-template-columns:1fr 1.6fr 0.7fr;gap:5px;margin-bottom:5px;"><select id="customItemCat" style="font-size:0.85rem;padding:5px;"><option value="💪 筋トレ">💪 筋トレ</option><option value="🦵 下半身">🦵 下半身</option><option value="🎵 リズム">🎵 リズム</option><option value="🏸 ノック">🏸 ノック</option></select><input type="text" id="customItemName" placeholder="種目名（例：カーフレイズ30回）" style="font-size:0.85rem;padding:5px 7px;"/><input type="number" id="customItemMin" value="10" style="font-size:0.85rem;padding:5px 7px;"/></div><div class="form-grid" style="grid-template-columns:1.5fr 1fr;gap:5px;margin-bottom:6px;"><input type="text" id="customItemNote" placeholder="意識ポイント・回数" style="font-size:0.85rem;padding:5px 7px;"/><select id="customItemLink" style="font-size:0.85rem;padding:6px;"><option value="workout_timer" selected>⏱️ 筋トレタイマー連動</option><option value="tab-footwork">🏃 6点FW連動</option><option value="rhythm">🎵 リズム連動</option><option value="tab-pose">🎥 骨格AI連動</option></select></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"><button class="btn btn-emerald" style="padding:7px;" onclick="addFreeCustomItemToMenu(false)">➕ メニューに追加</button><button class="btn btn-amber" style="padding:7px;" onclick="addFreeCustomItemToMenu(true)">⭐ マイ種目にも保存</button></div></div><div class="card" style="background:var(--bg-panel);border:1px solid var(--accent-secondary);margin-top:8px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:5px;">🤖 3. 筋トレ希望を伝えて編成</div><div style="display:grid;grid-template-columns:1fr auto;gap:5px;"><input type="text" id="aiCoachMenuPromptInput" placeholder="例：カーフレイズと股関節を入れて自宅30分にして" style="font-size:0.85rem;padding:6px 8px;"/><button class="btn btn-emerald" onclick="requestAIProCoachCustomMenu()">🤖 編成</button></div><div id="aiCoachMenuStatus" style="font-size:0.8rem;margin-top:4px;"></div></div>`;
+        d.innerHTML = `<div id="workoutTimerDrawer" class="card" style="display:none;background:var(--bg-panel);border:2px solid var(--accent-highlight);margin-top:10px;padding:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:900;font-size:0.84rem;color:var(--accent-highlight);" id="wtTitle">💪 筋トレタイマー</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="stopWorkoutIntervalTimer();document.getElementById('workoutTimerDrawer').style.display='none';">✕ 閉じる</button></div><div id="wtClockText" style="font-size:1.1rem;font-weight:900;text-align:center;padding:7px;background:var(--bg-base);border-radius:8px;margin-bottom:6px;">待機中</div><div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px;"><div class="form-group"><label>🔥 秒数</label><input type="number" id="wtWorkInput" value="30" style="padding:5px;"/></div><div class="form-group"><label>☕ 休憩</label><input type="number" id="wtRestInput" value="15" style="padding:5px;"/></div><div class="form-group"><label>🔢 セット</label><input type="number" id="wtSetsInput" value="3" style="padding:5px;"/></div></div><div class="btn-group"><button class="btn btn-emerald" style="flex:1;padding:7px;" onclick="startWorkoutIntervalTimer()">▶️ 開始</button><button class="btn btn-rose" style="padding:7px 12px;" onclick="stopWorkoutIntervalTimer()">⏹️ 停止</button></div></div><div class="card" style="background:var(--bg-surface);margin-top:10px;margin-bottom:0;padding:10px;"><div style="font-weight:900;font-size:0.82rem;color:var(--accent-highlight);margin-bottom:6px;">💪 1. 筋トレ種目をワンタップで組み込む</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${chips}</div><div style="font-weight:900;font-size:0.8rem;color:var(--accent-secondary);margin-bottom:4px;">⭐ マイ種目ストック:</div><div id="customDrillBankHolder" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;padding:5px;background:var(--bg-base);border-radius:8px;"></div><div style="font-weight:900;font-size:0.8rem;color:var(--accent-primary);margin-bottom:5px;padding-top:6px;border-top:1px solid var(--border-subtle);">✏️ 2. 自作メニュー（筋トレ・実技）を自由に追加</div><div class="form-grid" style="grid-template-columns:1fr 1.6fr 0.7fr;gap:5px;margin-bottom:5px;"><select id="customItemCat" style="font-size:0.85rem;padding:5px;"><option value="💪 筋トレ">💪 筋トレ</option><option value="🦵 下半身">🦵 下半身</option><option value="🎵 リズム">🎵 リズム</option><option value="🏸 ノック">🏸 ノック</option></select><input type="text" id="customItemName" placeholder="種目名（例：カーフレイズ30回）" style="font-size:0.85rem;padding:5px 7px;"/><input type="number" id="customItemMin" value="10" style="font-size:0.85rem;padding:5px 7px;"/></div><div class="form-grid" style="grid-template-columns:1.5fr 1fr;gap:5px;margin-bottom:6px;"><input type="text" id="customItemNote" placeholder="意識ポイント・回数" style="font-size:0.85rem;padding:5px 7px;"/><select id="customItemLink" style="font-size:0.85rem;padding:6px;"><option value="workout_timer" selected>⏱️ 筋トレタイマー連動</option><option value="tab-footwork">🏃 6点FW連動</option><option value="rhythm">🎵 リズム連動</option><option value="tab-pose">🎥 骨格AI連動</option></select></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"><button class="btn btn-emerald" style="padding:7px;" onclick="addFreeCustomItemToMenu(false)">➕ メニューに追加</button><button class="btn btn-amber" style="padding:7px;" onclick="addFreeCustomItemToMenu(true)">⭐ マイ種目にも保存</button></div></div>`;
         mc.parentNode.appendChild(d);
       }
       renderCustomDrillBankChips();
@@ -14414,7 +13689,6 @@ function sharePoseResultImage() {
   var SB_URL = 'https://bgmngjwkfcvapcdtkcpx.supabase.co';
   var SB_KEY = 'sb_publishable_ji-jxS2T-VnXBjvfVkJ8pw_7r-_QOAG';
   var META_KEY = 'badtore_cloud_meta_v1';
-  var BACKUP_KEY = 'badtore_cloud_backup_v1';
 
   // 同期対象の localStorage キー → 論理データ種別
   var SYNC_KEYS = {
@@ -14436,7 +13710,10 @@ function sharePoseResultImage() {
   var SHOT_LABELS = {
     ready_stance: '🛡️ 基本の構え', smash: '💥 スマッシュ', clear: '🌈 ハイクリア',
     drive: '💨 ドライブ', drop: '🎯 ドロップ', net: '🕸️ ネット', serve: '🎾 サーブ',
-    receive: '🧲 レシーブ', push: '👉 プッシュ', lob: '🚀 ロブ'
+    receive: '🧲 レシーブ', push: '👉 プッシュ', lob: '🚀 ロブ',
+    jump_smash: '🚀 ジャンピングスマッシュ', serve_short: '🎾 ショートサーブ', serve_long: '🎾 ロングサーブ',
+    cross_hairpin: '🕸️ クロスヘアピン', cut_reverse: '✂️ カット', reaction_unweight: '⚡ リアクション（抜重）',
+    reaction_jump: '⚡ リアクション（飛び込み）'
   };
 
   var sb = null;
@@ -14569,12 +13846,8 @@ function sharePoseResultImage() {
 
   /* ---------- アップロード ---------- */
   function backupLocalOnce(meta) {
-    if (meta.backupDone) return;
-    try {
-      var snap = {};
-      Object.keys(SYNC_KEYS).forEach(function (k) { var v = rawGet(k); if (v !== null) snap[k] = v; });
-      rawSet(BACKUP_KEY, JSON.stringify({ at: new Date().toISOString(), data: snap }));
-    } catch (e) {}
+    // badtore_cloud_backup_v1 は読む場所のない「書くだけ」のスナップショットだったため廃止（全体監査 2026-11-22 L5）。
+    // 既存端末に残っている保存データは消さない。
     meta.backupDone = true;
     saveMeta(meta);
   }
