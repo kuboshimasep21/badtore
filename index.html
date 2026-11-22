@@ -18643,7 +18643,6 @@ function sharePoseResultImage() {
     var h = btTnOwnSchoolSectionHtml(tn, names);
     h += btTnOwnSummaryHtml(tn, names);
     h += btTnWatchSummaryHtml(tn, names);
-    h += btTnResultSummaryHtml(tn, names);
     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">';
     tn.divisions.forEach(function(div, di){
       h += '<button class="bt-tn-chip' + (div.code === btTnState.divCode ? ' bt-tn-chip-on' : '') + '" onclick="btTn.setDivisionByIdx(' + di + ')">' + btTnEsc(div.label || div.code) + '</button>';
@@ -18662,6 +18661,8 @@ function sharePoseResultImage() {
       h += '</div>';
       h += '<div class="bt-tn-note">試合カードをタップすると大きく表示され、勝者の登録・スコア入力・スコアボード連携ができます。☆ を押すと注目選手になり、その選手の試合に色がつきます。「（BS12の勝者）」と出ている枠には、その試合の勝者が入ります。</div>';
     });
+    /* 結果サマリーは対戦表（学校フィルタ時はその試合リスト）の下に表示する */
+    h += btTnResultSummaryHtml(tn, names);
     return h;
   }
 
