@@ -13354,7 +13354,7 @@
       return /high demand|overloaded|quota|resource[_\s-]?exhausted|try again later|temporarily/i.test(msg);
     }
 
-    // timeoutMs / deadlineMs は任意指定（AIメニュー相談専用）。未指定の呼び出しでは従来どおりタイムアウトなしで動作する。
+    // timeoutMs / deadlineMs は任意指定（AIメニュー相談・深掘り診断が使用）。未指定の呼び出しでは従来どおりタイムアウトなしで動作する。
     // timeoutMs を渡すと各リクエストに AbortController の制限時間を付け、時間切れは一時的失敗（混雑扱い）として再試行する。
     // deadlineMs（絶対時刻）を渡すと、その時刻を過ぎたら新たな試行を開始せず、待機も残り時間で打ち切る。
     async function callGeminiWithFallback(apiKey, parts, preferredModel, timeoutMs, deadlineMs) {
@@ -13406,10 +13406,44 @@
       throw lastErr || new Error("APIエラー");
     }
 
+    // 深掘り診断専用の呼び出し：応答が速いモデルを先に使い、混雑（429/503）時は少し待って再試行する。
+    // ※ PRIMARY（gemini-3.1-pro-preview）は無料枠の1日上限が0で常時429になるため、深掘りでもFASTを優先する（相談・大会読み取りと同じ順序）。
+    // 応答が返らないまま固まる（ハングする）混雑でも「分析中」のまま止まらないよう上限を設ける：
+    // 1リクエスト最大90秒でタイムアウト（一時的失敗として再試行）、診断全体は最大240秒で打ち切って内蔵クロス推論にフォールバックする。
+    // 深掘りは長文カルテ＋画像を送り長文の分析が返るため、相談（60秒/150秒）より長めに取る。
+    async function callGeminiForProCoach(parts) {
+      const fast = (typeof GEMINI_MODEL_FAST !== 'undefined') ? GEMINI_MODEL_FAST : undefined;
+      const waits = [20000, 40000];
+      const REQ_TIMEOUT_MS = 90000;
+      const TOTAL_MS = 240000;
+      const deadline = Date.now() + TOTAL_MS;
+      let lastErr = null;
+      for (let round = 0; round <= waits.length; round++) {
+        const remain = deadline - Date.now();
+        if (remain <= 0) break;
+        try {
+          return await callGeminiWithFallback(getSavedGeminiApiKey(), parts, fast, Math.min(REQ_TIMEOUT_MS, remain), deadline);
+        } catch (e) {
+          lastErr = e;
+          const transient = (typeof isGeminiTransientError === 'function') ? isGeminiTransientError(e) : !!(e && (e.status === 429 || e.status === 503));
+          if (round >= waits.length || !transient) break;
+          const remain2 = deadline - Date.now();
+          if (remain2 <= 0) break;
+          const box = document.getElementById('aiProCoachPoseResultBox');
+          if (box) box.innerHTML = `<div style="color:var(--accent-secondary);font-weight:900;font-size:0.8rem;">⏳ AIが混雑しています…少し待って再試行します（${round + 1}回目）</div>`;
+          await new Promise(r => setTimeout(r, Math.min(waits[round], remain2)));
+        }
+      }
+      throw lastErr || new Error('AI応答を取得できませんでした');
+    }
+
     async function requestAIProCoachPoseAnalysis() {
       const box = document.getElementById('aiProCoachPoseResultBox'); if (!box) return;
+      const btn = document.querySelector('button[onclick="requestAIProCoachPoseAnalysis()"]');
+      const fastLabel = (typeof GEMINI_MODEL_FAST !== 'undefined') ? GEMINI_MODEL_FAST : 'gemini-3.8-flash';
       box.style.display = 'block';
-      box.innerHTML = `<div style="color:var(--accent-secondary);font-weight:900;font-size:0.8rem;">⏳ AIプロコーチ (${selectedGeminiModel}) が分析中...</div>`;
+      box.innerHTML = `<div style="color:var(--accent-secondary);font-weight:900;font-size:0.8rem;">⏳ AIプロコーチ (${fastLabel}) が分析中...</div>`;
+      if (btn) btn.disabled = true;
       try {
         const parts = [{ text: buildFullTelemetryCarteText() }];
         const c = document.getElementById('bestMomentCanvas');
@@ -13417,11 +13451,13 @@
           const b64 = c.toDataURL('image/jpeg', 0.78).split(',')[1];
           if (b64) parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
         }
-        const res = await callGeminiWithFallback(getSavedGeminiApiKey(), parts);
+        const res = await callGeminiForProCoach(parts);
         box.innerHTML = `<div style="font-weight:900;color:var(--accent-primary);margin-bottom:5px;font-size:0.82rem;">🤖 AIプロコーチ診断 (${res.usedModel})</div><div style="font-size:0.8rem;line-height:1.55;">${res.text.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}</div>`;
         awardPlayerXP(25); playBeep(1180, 120);
       } catch (err) {
         box.innerHTML = `<div style="color:var(--accent-highlight);font-weight:900;font-size:0.8rem;margin-bottom:4px;">💡 内蔵クロス推論（※API応答: ${err.message}）</div><div style="font-size:0.8rem;line-height:1.5;">体幹傾き(${aiMetrics.coreTiltDeg}°)と手首角度(${aiMetrics.isWristStandOk?'OK':'寝すぎ'})の連動を意識し、カカト着地から前足1回で素早く中央へ蹴り戻しましょう。「📲 Proチャットへ一括共有」から直接このProチャットへ貼って相談も可能です。</div>`;
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
