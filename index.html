@@ -17856,7 +17856,7 @@ function sharePoseResultImage() {
       (Array.isArray(d.matches) ? d.matches : []).forEach(function(m){
         if (!m) return;
         var rn = String(m.round || '1回戦').trim() || '1回戦';
-        if (!byName[rn]) { byName[rn] = { name: rn, third: /3位/.test(rn), matches: [] }; order.push(byName[rn]); }
+        if (!byName[rn]) { byName[rn] = { name: rn, third: /3位|３位|三位/.test(rn), matches: [] }; order.push(byName[rn]); }
         byName[rn].matches.push({
           no: String(m.no || '').trim(),
           p1: String(m.p1 || '').trim(),
@@ -17927,7 +17927,7 @@ function sharePoseResultImage() {
     var pri = btTnRoundPrevIdx(div, ri);
     if (pri < 0) return null;
     var fmi = mi * 2 + (side === 2 ? 1 : 0);
-    if (round.third) {
+    if (btTnIsThirdRound(round)) {
       /* 3位決定戦は準決勝の敗者。前ラウンドが決勝（1試合）の場合はそれを飛ばして準決勝から取る */
       var fri = pri;
       var ppri = btTnRoundPrevIdx(div, fri);
@@ -18032,17 +18032,35 @@ function sharePoseResultImage() {
   }
 
   /* ---------- 成績算出・結果サマリー（純粋関数） ---------- */
+  /* 漢数字→数値（一〜九・十・十一〜十九・二十など）。変換できなければ null */
+  function btTnKanjiNum(tok){
+    var d = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+    if (!tok) return null;
+    if (/^\d+$/.test(tok)) return parseInt(tok, 10);
+    if (tok === '十') return 10;
+    var m = tok.match(/^([一二三四五六七八九])?十([一二三四五六七八九])?$/);
+    if (m) return (m[1] ? d[m[1]] : 1) * 10 + (m[2] ? d[m[2]] : 0);
+    return (tok.length === 1 && d[tok] !== undefined) ? d[tok] : null;
+  }
+  /* 3位決定戦の判定：保存済みフラグ（third）に加え、名前の表記ゆれ（3位／３位／三位）でも判定する。
+     漢字表記で読み取られた大会データはフラグが立っていないため、名前からの判定が要る */
+  function btTnIsThirdRound(round){
+    if (!round) return false;
+    if (round.third) return true;
+    var n = String(round.name || '').replace(/[\s　]+/g, '');
+    return /3位/.test(n) || /３位/.test(n) || /三位/.test(n);
+  }
   /* ラウンドの進行順（小さいほど早い試合）。保存順がどうであれ、対戦表の並びと勝ち上がりの接続はこの順で決める。
-     表記ゆれ（全角数字・第N回戦・初戦・予選）に対応。判定できないラベルは null */
+     表記ゆれ（全角数字・漢数字・第N回戦・初戦・予選）に対応。判定できないラベルは null */
   function btTnRoundOrdinal(round){
     var n = String((round && round.name) || '').replace(/[\s　]+/g, '')
       .replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
-    if ((round && round.third) || /3位/.test(n)) return 600;
+    if (btTnIsThirdRound(round)) return 600;
     if (/準々決勝/.test(n)) return 300;
     if (/準決勝/.test(n)) return 400;
     if (/決勝/.test(n)) return 500;
-    var m = n.match(/(\d+)回戦/);
-    if (m) return parseInt(m[1], 10) * 10;
+    var m = n.match(/([0-9]+|[一二三四五六七八九十]+)回戦/);
+    if (m) { var v = btTnKanjiNum(m[1]); if (v !== null) return v * 10; }
     if (/予選/.test(n)) return 4;
     if (/初戦/.test(n)) return 5;
     return null;
@@ -18074,14 +18092,14 @@ function sharePoseResultImage() {
   }
   /* ラウンド名の分類：表記ゆれ（準々決勝戦など）にも対応する */
   function btTnRoundKind(round){
-    if (round && round.third) return { kind: 'third' };
-    var n = String((round && round.name) || '').replace(/[\s　]+/g, '');
-    if (/3位/.test(n)) return { kind: 'third' };
+    if (btTnIsThirdRound(round)) return { kind: 'third' };
+    var n = String((round && round.name) || '').replace(/[\s　]+/g, '')
+      .replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
     if (/準々決勝/.test(n)) return { kind: 'qf' };
     if (/準決勝/.test(n)) return { kind: 'sf' };
     if (/決勝/.test(n)) return { kind: 'final' };
-    var m = n.match(/(\d+)回戦/);
-    if (m) return { kind: 'round', n: parseInt(m[1], 10) };
+    var m = n.match(/([0-9]+|[一二三四五六七八九十]+)回戦/);
+    if (m) { var v = btTnKanjiNum(m[1]); if (v !== null) return { kind: 'round', n: v }; }
     return { kind: 'other' };
   }
   /* 勝ち上がり先のラウンド名（3位決定戦は飛ばす）。なければ '' */
@@ -18247,8 +18265,7 @@ function sharePoseResultImage() {
       '.bt-tn-ed-row{display:flex;gap:5px;align-items:center;margin:4px 0;flex-wrap:wrap;}',
       '.bt-tn-ed-row input{background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;font-size:0.8rem;min-height:32px;}',
       '.bt-tn-bracket{display:flex;gap:5px;overflow-x:auto;padding:6px 2px;}',
-      '.bt-tn-round{flex:1 1 0;min-width:88px;}',
-      '.bt-tn-bracket-fit .bt-tn-round{min-width:0;}',
+      '.bt-tn-round{flex:1 1 0;min-width:138px;}',
       '.bt-tn-round-title{font-weight:900;font-size:0.72rem;color:var(--accent-primary);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.bt-tn-match{border:1px solid var(--border-subtle);border-radius:10px;padding:5px;margin-bottom:6px;background:var(--bg-main);cursor:pointer;}',
       '.bt-tn-match-own{border:2px solid var(--accent-primary);background:var(--bg-panel);box-shadow:0 0 0 2px var(--accent-primary) inset;}',
@@ -18258,11 +18275,15 @@ function sharePoseResultImage() {
       '.bt-tn-watch-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid #f59e0b;background:rgba(245,158,11,.15);color:var(--text-main);border-radius:999px;padding:5px 10px;font-size:0.8rem;margin:0 6px 6px 0;}',
       '.bt-tn-watch-chip button{background:transparent;border:none;color:inherit;cursor:pointer;font-size:0.85rem;line-height:1;padding:0;}',
       '.bt-tn-match-no{font-size:0.66rem;font-weight:800;color:var(--accent-secondary);}',
-      '.bt-tn-player{display:flex;justify-content:space-between;align-items:center;gap:3px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:7px;padding:3px 4px;margin:2px 0;color:var(--text-main);font-size:0.72rem;min-height:26px;}',
-      '.bt-tn-player-win{border-color:var(--accent-primary);font-weight:900;background:var(--bg-panel);}',
+      '.bt-tn-player{display:flex;justify-content:space-between;align-items:center;gap:3px;width:100%;text-align:left;background:transparent;border:none;border-radius:7px;padding:3px 4px;margin:2px 0;color:var(--text-main);font-size:0.72rem;min-height:26px;}',
+      '.bt-tn-player-win{font-weight:900;}',
       '.bt-tn-pname{display:block;white-space:nowrap;min-width:0;}',
       '.bt-tn-pname-long{font-size:0.62rem;}',
-      '.bt-tn-match .bt-tn-star{min-width:27px;min-height:27px;font-size:0.78rem;margin:1px 0;padding:0 2px;}',
+      '.bt-tn-player-win .bt-tn-pname{color:var(--accent-primary);}',
+      '.bt-tn-match .bt-tn-star{width:24px;height:24px;min-width:24px;min-height:24px;font-size:0.9rem;line-height:1;margin:0;padding:0;border:none;background:transparent;border-radius:0;align-self:center;flex:0 0 auto;}',
+      '.bt-tn-match .bt-tn-star-on{background:transparent;border:none;}',
+      '.bt-tn-match .bt-tn-pname{white-space:nowrap;}',
+      '.bt-tn-match .bt-tn-school{white-space:nowrap;}',
       '.bt-tn-cscore{font-size:0.68rem;color:var(--text-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}',
       '.bt-tn-dplayer{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:var(--bg-main);border:1px solid var(--border-subtle);border-radius:10px;padding:10px;margin:6px 0;color:var(--text-main);font-size:1.1rem;cursor:pointer;min-height:56px;}',
       '.bt-tn-dplayer-win{border-color:var(--accent-primary);font-weight:900;background:var(--bg-panel);box-shadow:0 0 0 1px var(--accent-primary) inset;}',
@@ -18459,19 +18480,18 @@ function sharePoseResultImage() {
       var sc = side === 1 ? eff.s1 : eff.s2;
       var sd = side === 1 ? eff.seed1 : eff.seed2;
       var ph = nm ? '' : btTnSlotPlaceholder(div, ri, mi, side);
-      h += '<div style="display:flex;gap:3px;align-items:stretch;">'
-        + '<div class="bt-tn-player' + (isWin ? ' bt-tn-player-win' : '') + '" style="flex:1;min-width:0;">'
+      h += '<div style="display:flex;gap:3px;align-items:center;">'
         + '<span style="flex:1;min-width:0;">'
-        + (sc ? '<span class="bt-tn-school' + (String(sc).length >= 8 ? ' bt-tn-school-long' : '') + '">' + btTnEsc(sc) + '</span>' : '')
+        + (sc ? '<span class="bt-tn-school' + (String(sc).length > 10 ? ' bt-tn-school-long' : '') + '">' + btTnEsc(sc) + '</span>' : '')
+        + '</span>'
+        + (nm ? '<button class="bt-tn-star' + (isW ? ' bt-tn-star-on' : '') + '" onclick="event.stopPropagation();btTn.toggleWatch(' + di + ',' + ri + ',' + mi + ',' + side + ')" aria-label="注目選手の登録・解除" title="注目選手の登録・解除">' + (isW ? '⭐' : '☆') + '</button>' : '')
+        + '</div>'
+        + '<div class="bt-tn-player' + (isWin ? ' bt-tn-player-win' : '') + '">'
         + (nm
-          ? '<span style="display:flex;align-items:center;min-width:0;"><span style="flex:1;min-width:0;">' + String(nm).split('・').map(function(part){ var pn = part.trim(); return '<span class="bt-tn-pname' + (pn.length >= 6 ? ' bt-tn-pname-long' : '') + '">' + btTnEsc(pn) + '</span>'; }).join('') + '</span>' + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? '<span style="flex:0 0 auto;"> 👀</span>' : '') + '</span>'
-          : (ph ? '<span class="bt-tn-candidate">' + btTnEsc(ph) + '</span>' : '<span>（未定）</span>'))
-        + '</span>' + (isWin ? '<span style="flex:0 0 auto;">🏆</span>' : '')
+          ? '<span style="display:flex;align-items:center;min-width:0;"><span style="flex:1;min-width:0;">' + String(nm).split('・').map(function(part){ var pn = part.trim(); return '<span class="bt-tn-pname' + (pn.length > 10 ? ' bt-tn-pname-long' : '') + '">' + btTnEsc(pn) + '</span>'; }).join('') + '</span>' + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + '</span>'
+          : (ph ? '<span class="bt-tn-candidate">' + btTnEsc(ph) + '</span>' : '<span class="bt-tn-candidate">（未定）</span>'))
+        + (isWin ? '<span style="flex:0 0 auto;">🏆</span>' : '')
         + '</div>';
-      if (nm) {
-        h += '<button class="bt-tn-star' + (isW ? ' bt-tn-star-on' : '') + '" onclick="event.stopPropagation();btTn.toggleWatch(' + di + ',' + ri + ',' + mi + ',' + side + ')" aria-label="注目選手の登録・解除" title="注目選手の登録・解除">' + (isW ? '⭐' : '☆') + '</button>';
-      }
-      h += '</div>';
     });
     if (m.score) h += '<div class="bt-tn-cscore">' + btTnEsc(m.score) + '</div>';
     return h + '</div>';
@@ -18632,7 +18652,7 @@ function sharePoseResultImage() {
     h += btTnSchoolSectionHtml(tn, names, smap);
     if (!btTnState.schoolFilter) tn.divisions.forEach(function(div, di){
       if (div.code !== btTnState.divCode) return;
-      h += '<div class="bt-tn-bracket' + (div.rounds.length === 5 ? ' bt-tn-bracket-fit' : '') + '">';
+      h += '<div class="bt-tn-bracket">';
       btTnSortedRoundIdx(div).forEach(function(ri){
         var r = div.rounds[ri];
         h += '<div class="bt-tn-round"><div class="bt-tn-round-title">' + btTnEsc(r.name) + '</div>';
