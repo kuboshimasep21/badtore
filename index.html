@@ -17620,7 +17620,8 @@ function sharePoseResultImage() {
     images: { bracket: [], schedule: [] },  // 現在の大会の画像 {imgId, kind, dataUrl}
     divCode: null,       // 表示中の部門コード
     editDraft: null,     // 確認・修正画面のドラフト
-    viewer: null         // {kind, imgId, zoom}
+    viewer: null,        // {kind, imgId, zoom}
+    photosOpen: false    // 予備写真セクションの開閉状態（再描画で閉じないよう保持）
   };
   function btTnCurrent(){
     for (var i = 0; i < btTnState.list.length; i++) if (btTnState.list[i].id === btTnState.currentId) return btTnState.list[i];
@@ -18244,13 +18245,6 @@ function sharePoseResultImage() {
     var tn = btTnCurrent();
     if (!tn) return '<div class="bt-tn-note" style="margin-top:10px;">大会がまだ登録されていません。上の「新しい大会名」に名前を入れて「＋ 大会を追加」を押してください。</div>';
     var h = '';
-    /* 写真エリア */
-    h += '<div class="bt-tn-sec-title">🖼 対戦表の写真</div>'
-      + btTnThumbsHtml('bracket')
-      + '<label class="btn btn-cyan-outline" style="display:inline-block;cursor:pointer;">📷 対戦表の写真を追加<input type="file" accept="image/*" multiple style="display:none;" onchange="btTn.photoSelected(\'bracket\', this)"></label>'
-      + '<div class="bt-tn-sec-title">🕐 進行表の写真</div>'
-      + btTnThumbsHtml('schedule')
-      + '<label class="btn btn-cyan-outline" style="display:inline-block;cursor:pointer;">📷 進行表の写真を追加<input type="file" accept="image/*" multiple style="display:none;" onchange="btTn.photoSelected(\'schedule\', this)"></label>';
     /* 読み取り・編集 */
     h += '<div class="bt-tn-sec-title">📖 対戦表データ</div>'
       + '<div class="bt-tn-ed-row">'
@@ -18262,6 +18256,27 @@ function sharePoseResultImage() {
     h += btTnWatchSectionHtml(tn);
     /* トーナメント表 */
     h += '<div id="btTnBracketWrap">' + btTnBracketHtml(tn) + '</div>';
+    /* 予備：読み取り元の写真（一番下に格下げ・既定は閉じた状態） */
+    h += btTnPhotosBackupHtml();
+    return h;
+  }
+
+  /* 読み取り元の写真は予備として詳細の一番下に折りたたみ表示する。
+     写真データ（IndexedDB）には一切触れず、表示位置と開閉だけを変える。 */
+  function btTnPhotosBackupHtml(){
+    var b = (btTnState.images.bracket || []).length;
+    var s = (btTnState.images.schedule || []).length;
+    var h = '<details class="summary-box" style="margin-top:14px;"' + (btTnState.photosOpen ? ' open' : '') + ' ontoggle="btTn.photosToggle(this)">'
+      + '<summary style="cursor:pointer; font-weight:800; font-size:0.85rem;">📷 予備：読み取り元の写真（' + (b + s) + '枚） ▼</summary>'
+      + '<div style="margin-top:9px;">'
+      + '<div class="bt-tn-note">読み取りに使った元の写真です。通常は開く必要はありません。写真はこの端末の中だけに保存されます。</div>'
+      + '<div class="bt-tn-sec-title">🖼 対戦表の写真</div>'
+      + btTnThumbsHtml('bracket')
+      + '<label class="btn btn-cyan-outline" style="display:inline-block;cursor:pointer;">📷 対戦表の写真を追加<input type="file" accept="image/*" multiple style="display:none;" onchange="btTn.photoSelected(\'bracket\', this)"></label>'
+      + '<div class="bt-tn-sec-title">🕐 進行表の写真</div>'
+      + btTnThumbsHtml('schedule')
+      + '<label class="btn btn-cyan-outline" style="display:inline-block;cursor:pointer;">📷 進行表の写真を追加<input type="file" accept="image/*" multiple style="display:none;" onchange="btTn.photoSelected(\'schedule\', this)"></label>'
+      + '</div></details>';
     return h;
   }
 
@@ -18603,6 +18618,7 @@ function sharePoseResultImage() {
       btTnState.list.unshift(tn);
       btTnState.currentId = tn.id;
       btTnState.divCode = null;
+      btTnState.photosOpen = false;
       btTnState.images = { bracket: [], schedule: [] };
       if (inp) inp.value = '';
       btTnSaveRecord(tn).then(btTnRender);
@@ -18610,11 +18626,13 @@ function sharePoseResultImage() {
     select: function(id){
       btTnState.currentId = id;
       btTnState.divCode = null;
+      btTnState.photosOpen = false;
       btTnLoadImages(id).then(btTnRender);
     },
     selectAndScroll: function(id){
       btTnState.currentId = id;
       btTnState.divCode = null;
+      btTnState.photosOpen = false;
       btTnLoadImages(id).then(function(){
         btTnRender();
         var el = document.getElementById('btTnBody');
@@ -18636,9 +18654,11 @@ function sharePoseResultImage() {
         btTnState.list = btTnState.list.filter(function(t){ return t.id !== id; });
         btTnState.currentId = btTnState.list.length ? btTnState.list[0].id : null;
         btTnState.divCode = null;
+        btTnState.photosOpen = false;
         return btTnState.currentId ? btTnLoadImages(btTnState.currentId) : null;
       }).then(btTnRender).catch(function(){ btTnRender(); });
     },
+    photosToggle: function(el){ btTnState.photosOpen = !!(el && el.open); },
     photoSelected: function(kind, input){
       var tn = btTnCurrent();
       if (!tn || !input.files || !input.files.length) return;
@@ -18696,7 +18716,7 @@ function sharePoseResultImage() {
       var tn = btTnCurrent();
       if (!tn) return;
       if (!btTnState.images.bracket.length && !btTnState.images.schedule.length) {
-        alert('先に写真を登録してください'); return;
+        alert('先に写真を登録してください。下の方の「📷 予備：読み取り元の写真」を開くと写真を追加できます'); return;
       }
       var body = document.getElementById('btTnBody');
       if (body) body.innerHTML = '<div class="bt-tn-note" style="margin-top:10px;">⏳ 写真を読み取っています…（少し時間がかかります）</div>';
