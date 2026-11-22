@@ -11999,7 +11999,8 @@
       const wSum = w.reduce((a, b) => a + b, 0);
       let mins = w.map(x => Math.max(2, Math.round((x / wSum) * target)));
       mins[mins.length - 2] = Math.max(2, mins[mins.length - 2] + (target - mins.reduce((a, b) => a + b, 0)));
-      currentMenuPlan = { title: `${pm === 'home_1' ? '🏠 自宅' : '🏟️ 体育館'} ${target}分メニュー`, targetMin: target, playersMode: pm, items: tpls.map((t, i) => ({ id: "m_" + i, cat: t.cat, name: t.name, minutes: mins[i], note: t.note, linkTab: t.linkTab, fwPreset: t.fwPreset, done: false })) };
+      const grpIds = pm === 'home_1' ? MENU_COMPOSE_IDS.home_1 : MENU_COMPOSE_IDS.gym;
+      currentMenuPlan = { title: `${pm === 'home_1' ? '🏠 自宅' : '🏟️ 体育館'} ${target}分メニュー`, targetMin: target, playersMode: pm, items: tpls.map((t, i) => ({ id: "m_" + i, cat: t.cat, name: t.name, minutes: mins[i], note: t.note, linkTab: t.linkTab, fwPreset: t.fwPreset, grp: MENU_COMPOSE_GROUP[grpIds[i]] || 'phys', done: false })) };
       const ti = document.getElementById('currentMenuTitleInput'); if (ti) ti.value = currentMenuPlan.title;
       saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI(); if (beep) playBeep(1040, 100);
     }
@@ -12008,6 +12009,17 @@
       home_1: ['home_rhythm', 'home_reaction', 'home_lunge', 'home_pose'],
       gym: ['gym_warmup', 'gym_fw', 'gym_feeding', 'gym_basics', 'gym_pattern', 'gym_review']
     };
+    /* 編成種目の内部グループ（phys=フィジカル系／court=コート系）。結果リストの見出し分け専用で、種目ごとのタグ表示はしない */
+    const MENU_COMPOSE_GROUP = {
+      home_rhythm: 'phys', home_reaction: 'phys', home_lunge: 'phys', home_pose: 'phys',
+      gym_warmup: 'phys', gym_fw: 'phys', gym_feeding: 'court', gym_basics: 'court', gym_pattern: 'court', gym_review: 'court'
+    };
+    function menuItemGroup(it) {
+      if (it && (it.grp === 'phys' || it.grp === 'court')) return it.grp;
+      const s = ((it && it.cat) || '') + ' ' + ((it && it.name) || '');
+      if (/ノック|基礎打ち|パターン|ゲーム|動画撮影|球速/.test(s)) return 'court';
+      return 'phys';
+    }
     const MENU_PLAYERS_LABELS = { home_1: '1人（自宅・省スペース）', gym_1: '1人（体育館コート）', gym_2: '2人（体育館マンツーマン）', gym_3: '3人（体育館ローテ・2対1）', gym_4: '4人以上（パターン＆ゲーム）' };
 
     function buildMenuComposeCatalog(pm, target) {
@@ -12017,7 +12029,7 @@
       mins[mins.length - 2] = Math.max(2, mins[mins.length - 2] + (target - mins.reduce((a, b) => a + b, 0)));
       const ids = pm === 'home_1' ? MENU_COMPOSE_IDS.home_1 : MENU_COMPOSE_IDS.gym;
       const modes = pm === 'home_1' ? ['home_1'] : ['gym_1', 'gym_2', 'gym_3', 'gym_4'];
-      return tpls.map((t, i) => ({ id: ids[i], cat: t.cat, name: t.name, note: t.note, linkTab: t.linkTab, fwPreset: t.fwPreset, minutes: mins[i], modes: modes.slice() }));
+      return tpls.map((t, i) => ({ id: ids[i], cat: t.cat, name: t.name, note: t.note, linkTab: t.linkTab, fwPreset: t.fwPreset, grp: MENU_COMPOSE_GROUP[ids[i]] || 'phys', minutes: mins[i], modes: modes.slice() }));
     }
 
     function menuAiEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -12082,9 +12094,10 @@
         'ユーザーの希望：「' + reqText + '」',
         '条件：人数・場所=' + (MENU_PLAYERS_LABELS[pm] || pm) + '／持ち時間=' + target + '分／重点テーマ=' + (themes.length ? themes.join('、') : '指定なし') + (pins.length ? '／ピン留め課題=' + pins.join('、') : ''),
         '下のカタログの中からだけ選んで、実施順に並べたメニューを作ってください。カタログにない種目の創作や、数値の創作は禁止です。',
+        '各カタログ項目の grp は種目グループ（phys=フィジカル系、court=コート系）です。場所が自宅・省スペースなら phys 中心に、体育館なら court 中心に寄せてください。ただしユーザーの自由入力の希望が優先です。',
         '各種目の minutes はカタログの minutes を目安に、合計が ' + target + ' 分に近づくよう調整してください（各種目3〜120分）。',
         'カタログ（JSON）：',
-        JSON.stringify(catalog.map(c => ({ id: c.id, name: c.name, cat: c.cat, minutes: c.minutes, note: c.note }))),
+        JSON.stringify(catalog.map(c => ({ id: c.id, name: c.name, cat: c.cat, grp: c.grp, minutes: c.minutes, note: c.note }))),
         '出力は次のJSONだけにしてください（説明文やコードフェンスは付けない）：',
         '{"items":[{"id":"カタログのid","minutes":15,"reason":"選んだ理由を一言"}],"note":"全体の狙いを一言"}'
       ].join('\n');
@@ -12094,7 +12107,7 @@
         const res = await callGeminiWithFallback(getSavedGeminiApiKey(), [{ text: prompt }]);
         const plan = parseAIConsultPlan(res && res.text, catalog, target);
         if (!plan) throw new Error('AI応答を解釈できませんでした');
-        currentMenuPlan = { title: (pm === 'home_1' ? '🏠 自宅' : '🏟️ 体育館') + ' ' + target + '分メニュー（AI編成）', targetMin: target, playersMode: pm, items: plan.picked.map((p, i) => ({ id: 'm_' + i, cat: p.entry.cat, name: p.entry.name, minutes: p.minutes, note: p.entry.note, linkTab: p.entry.linkTab, fwPreset: p.entry.fwPreset, done: false })) };
+        currentMenuPlan = { title: (pm === 'home_1' ? '🏠 自宅' : '🏟️ 体育館') + ' ' + target + '分メニュー（AI編成）', targetMin: target, playersMode: pm, items: plan.picked.map((p, i) => ({ id: 'm_' + i, cat: p.entry.cat, name: p.entry.name, minutes: p.minutes, note: p.entry.note, linkTab: p.entry.linkTab, fwPreset: p.entry.fwPreset, grp: p.entry.grp || 'phys', done: false })) };
         const ti = document.getElementById('currentMenuTitleInput'); if (ti) ti.value = currentMenuPlan.title;
         saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI();
         const note = document.getElementById('aiMenuPlanNote');
@@ -12115,13 +12128,23 @@
 
     function addPrescriptionToMenuPlan(k) {
       const p = AI_CAUSE_PRESCRIPTIONS[k] || AI_CAUSE_PRESCRIPTIONS.racket_drop;
-      currentMenuPlan.items.push({ id: "m_" + Date.now(), cat: "課題別ドリル", name: `3ステップ：『${p.drillName}』`, minutes: p.menuMin || 15, note: p.step1, linkTab: "tab-footwork", fwPreset: p.fwPreset, done: false });
+      currentMenuPlan.items.push({ id: "m_" + Date.now(), cat: "課題別ドリル", name: `3ステップ：『${p.drillName}』`, minutes: p.menuMin || 15, note: p.step1, linkTab: "tab-footwork", fwPreset: p.fwPreset, grp: "phys", done: false });
       saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI(); setMenuTabMode('create', false); switchTab('tab-menu'); playBeep(1120, 110);
     }
 
     function renderCurrentMenuEditorUI() {
       const c = document.getElementById('menuItemsListContainer'); if (!c) return;
-      c.innerHTML = currentMenuPlan.items.map((it, i) => `<div class="menu-item-row ${it.done ? 'completed-row' : ''}"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:6px;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);"/><span class="badge-version">${it.cat}</span><span style="font-weight:900;font-size:0.82rem;">${it.name}</span></div><div style="display:flex;align-items:center;gap:4px;"><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button><span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;">${it.minutes}分</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},5)">+5</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.78rem;" onclick="removeMenuItemAt(${i})">✕</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-secondary);padding-left:22px;"><span>🎯 ${it.note}</span>${it.linkTab ? `<button class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>` : ''}</div></div>`).join('');
+      const rowHtml = (it, i) => `<div class="menu-item-row ${it.done ? 'completed-row' : ''}"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:6px;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);"/><span class="badge-version">${it.cat}</span><span style="font-weight:900;font-size:0.82rem;">${it.name}</span></div><div style="display:flex;align-items:center;gap:4px;"><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button><span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;">${it.minutes}分</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},5)">+5</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.78rem;" onclick="removeMenuItemAt(${i})">✕</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-secondary);padding-left:22px;"><span>🎯 ${it.note}</span>${it.linkTab ? `<button class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>` : ''}</div></div>`;
+      const grpHeads = [['phys', 'フィジカル'], ['court', 'コート']];
+      let groupedHtml = '', firstGrp = true;
+      grpHeads.forEach(([g, label]) => {
+        const idxs = [];
+        currentMenuPlan.items.forEach((it, i) => { if (menuItemGroup(it) === g) idxs.push(i); });
+        if (!idxs.length) return;
+        groupedHtml += `<div style="font-weight:900;font-size:0.8rem;color:var(--text-secondary);margin:${firstGrp ? '2px' : '14px'} 0 6px;">${label}</div>` + idxs.map(i => rowHtml(currentMenuPlan.items[i], i)).join('');
+        firstGrp = false;
+      });
+      c.innerHTML = groupedHtml;
       updateMenuTimeGaugeUI();
     }
     function updateMenuTimeGaugeUI() {
@@ -17626,6 +17649,15 @@ function sharePoseResultImage() {
     return total;
   }
 
+  /* メニュー一覧の内部グループ（phys=フィジカル系／court=コート系）。一覧の見出し分け専用で、メニューカードには付けない */
+  var BT_DRILL_MENU_GROUP = {
+    menu_footwork_thorough: 'phys', menu_power: 'phys', menu_endurance: 'phys', menu_wall: 'phys',
+    menu_technique: 'court', menu_doubles: 'court', menu_multifeed: 'court', menu_net: 'court',
+    menu_jump_smash_style: 'court', program_jump_smash: 'court', menu_serve: 'court',
+    menu_allcourt: 'court', menu_feint: 'court', menu_rally_counter: 'court', menu_compact: 'court'
+  };
+  function btDrillMenuGroup(menu) { return BT_DRILL_MENU_GROUP[menu.menuId] || 'court'; }
+
   function renderBtDrillLibrary() {
     var chips = document.getElementById('btDrillFilters');
     var bodyEl = document.getElementById('btDrillLibraryBody');
@@ -17646,7 +17678,16 @@ function sharePoseResultImage() {
         return '<button type="button" class="' + cls + '" onclick="btDrillSetPlayerFilter(\'' + g.key + '\')">' + g.label + '</button>';
       }).join('');
     }
-    var html = BT_DRILL_MENUS.map(btDrillMenuHtml).join('');
+    var html = '';
+    if (btDrillFilter === 'all' && btDrillPlayerFilter === 'all') {
+      /* 絞り込みなしのときだけフィジカル系／コート系の見出しで分ける（フィルタ時は従来どおりフラット） */
+      [['phys', 'フィジカル系'], ['court', 'コート系']].forEach(function(gd){
+        var inner = BT_DRILL_MENUS.filter(function(m){ return btDrillMenuGroup(m) === gd[0]; }).map(btDrillMenuHtml).join('');
+        if (inner) html += '<div class="bt-drill-group-head">' + gd[1] + '</div>' + inner;
+      });
+    } else {
+      html = BT_DRILL_MENUS.map(btDrillMenuHtml).join('');
+    }
     bodyEl.innerHTML = html || '<div class="bt-drill-empty">条件に合うドリルがありません。カテゴリや参考選手・方式の絞り込みを変えてみてください</div>';
   }
 
@@ -17674,6 +17715,7 @@ function sharePoseResultImage() {
       + '.bt-drill-chip{padding:8px 14px;border-radius:999px;border:1px solid var(--border-subtle);background:var(--bg-surface);color:var(--text-secondary);font-size:0.8rem;font-weight:800;cursor:pointer;}'
       + '.bt-drill-chip.active{background:var(--accent-primary);color:#020617;border-color:var(--accent-primary);}'
       + '.bt-drill-menu{margin-bottom:18px;}'
+      + '.bt-drill-group-head{font-weight:900;font-size:0.95rem;color:var(--accent-primary);margin:16px 0 10px;padding-bottom:5px;border-bottom:2px solid var(--border-subtle);}'
       + '.bt-drill-menu-highlight{outline:3px solid var(--accent-highlight);outline-offset:4px;border-radius:10px;background:rgba(250,204,21,0.10);}'
       + '.bt-drill-open-menu{margin:0 0 8px;}'
       + '.bt-drill-menu-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:4px;}'
