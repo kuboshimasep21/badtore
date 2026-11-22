@@ -15045,6 +15045,10 @@ function sharePoseResultImage() {
      （URL完全一致、YouTube は動画IDでも同一判定）は出典欄に出さず、動画は
      参考動画側に一本化する。出典が0件になる場合は出典欄ごと出さない。
      判定・描画は btDrillSourcesHtml に集約（データは書き換えない）
+   - コンパクトショット特訓メニュー追加（2026-11-22）：プッシュ／ドライブ／
+     レシーブを小さなスイングで速く平たく打つ4ドリルを追加（合計14メニュー
+     ＋1プログラム／59ドリル）。参考動画は videos 配列で日本人チャンネルを
+     中心に、実際に開いてタイトル・内容を確認できた動画だけを採用している
    ========================================================================= */
 (function(){
   'use strict';
@@ -15242,6 +15246,14 @@ function sharePoseResultImage() {
       type: 'pack',
       description: '長いラリーへ持ち込んで相手の体力を削り、終盤の緩急（チェンジアップ）と決め球で仕留める男子シングルスのスタイルを分析し、一般ドリルとして構成しました。本人の練習メニューそのものではありません（処方レベルの出典が確認できなかったため、明記しています）。ラリーを「耐える」だけでなく「設計する」ことが狙いです。',
       drillIds: ['drill_rally_long_knock','drill_rally_changeup','drill_rally_patience_finish','drill_rally_finish_accuracy']
+    },
+    {
+      menuId: 'menu_compact',
+      title: 'コンパクトショット特訓メニュー',
+      referenceLabel: '参考方式：コンパクトショットの基本（コーチング公開情報）',
+      type: 'pack',
+      description: '速い展開で効くのは、大きく振らないショットです。プッシュ・ドライブ・レシーブを「肘を体の前に保ち、面を先に作り、体の前で小さく打つ」という共通の型でまとめました。振り幅を小さくして相手に時間を与えず、平たく速い球を繰り返すためのメニューです。本数や時間の数値はアプリ独自の目安です。',
+      drillIds: ['drill_compact_push','drill_compact_drive','drill_compact_receive','drill_compact_random']
     }
   ];
 
@@ -16898,6 +16910,139 @@ function sharePoseResultImage() {
       video: null,
       link: { type: 'footwork', target: '' },
       poseChecks: []
+    },
+    {
+      id: 'drill_compact_push',
+      name: 'プッシュ反復ノック',
+      menuId: 'menu_compact',
+      category: '前衛・ダブルス',
+      level: ['初級','中級'],
+      target: 'ネット前で肘を前に保ち、リストスタンドのまま振らずに押し込んで、浮かせずに沈めるプッシュを反復で身につける',
+      steps: [
+        '受ける側はネット前に立ち、ラケットを立てた構え（リストスタンド）で、肘を体の前に出した姿勢を保つ',
+        '球出し役はネット際へ、やや浮き気味の球をフォア側・バック側へ出し分ける',
+        '受ける側は一歩だけ踏み込み、打点を体の前・ネットより高い位置で取り、面をかぶせるように小さく押し込んで、相手コートの前〜中衛へ沈める',
+        '打った直後にラケットを構えの位置へ戻し、次の球に備える。大きく引いたり、振り抜いたりしない',
+        'フォア10本・バック10本を1セットとして、浮いてしまった本数を数える'
+      ],
+      dose: {
+        standard: '10本×4セットを目安に、週2〜3回',
+        junior: '10本×2セットから。速さよりも「振らない」ことを優先する',
+        note: 'プッシュは「押す」感覚が大切。面を先に作り、指と前腕の小さな動きで押し出す。本数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'JOOバドミントン：【基礎打ち】プッシュレシーブの極意3選', url: 'https://www.youtube.com/shorts/VV8cWJf3kZ8' },
+        { label: 'howcast：How to Do a Push Shot | Badminton Lessons', url: 'https://www.youtube.com/watch?v=85OIpokFCaw' }
+      ],
+      videos: [
+        { label: '【基礎打ち】プッシュレシーブの極意3選（JOOバドミントン）', url: 'https://www.youtube.com/shorts/VV8cWJf3kZ8' },
+        { label: 'How to Do a Push Shot | Badminton Lessons（howcast）', url: 'https://www.youtube.com/watch?v=85OIpokFCaw' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['front_racket_high','net_contact_height','contact_front']
+    },
+    {
+      id: 'drill_compact_drive',
+      name: 'ドライブ応酬',
+      menuId: 'menu_compact',
+      category: '前衛・ダブルス',
+      level: ['中級'],
+      target: '平たく速いドライブを、構えを崩さず体の前でさばき続ける。面をコンパクトに保ち、浮かせない応酬を身につける',
+      steps: [
+        '2人でネットを挟んでミドル付近に構える。ラケットは胸の高さで立て、肘を体の前に保つ',
+        'どちらかが平たいドライブで始め、ネットすれすれを通して相手のミドルへ打ち合う',
+        '打点は常に体の前で取る。体に近づいた球はバック側の面で小さく押し返す',
+        '浮いた球は相手のプッシュで決められる前提で、1球ごとに「浮かせない高さ」を意識する',
+        '30秒続ける→30秒休む、を繰り返し、途切れずに続いた回数を数える'
+      ],
+      dose: {
+        standard: '30秒×6セットを目安に',
+        junior: '20秒×4セットから。続けることより、浮かせないことを優先する',
+        note: 'コンパクトさの目安は「フォロースルーを小さく」。振り終わりの位置が、そのまま次の構えになるようにする'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'マテリアルクルー：コンパクトなスィングのドライブ', url: 'https://www.youtube.com/watch?v=z410X2cY-IQ' },
+        { label: '西東社『DVDでよくわかる！バドミントン』：ドライブショット（スロー）', url: 'https://www.youtube.com/watch?v=FEtSRXpZ4uU' }
+      ],
+      videos: [
+        { label: 'コンパクトなスィングのドライブ（マテリアルクルー）', url: 'https://www.youtube.com/watch?v=z410X2cY-IQ' },
+        { label: 'バドミントン ドライブショット（スロー）（西東社）', url: 'https://www.youtube.com/watch?v=FEtSRXpZ4uU' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['front_racket_high','contact_front','form_consistency']
+    },
+    {
+      id: 'drill_compact_receive',
+      name: 'スマッシュレシーブ・コンパクト返球',
+      menuId: 'menu_compact',
+      category: '守備',
+      level: ['中級'],
+      target: '強いスマッシュを体の前で小さく受けてネット前へ返す返球と、平たいドライブ返しへ転じる切り替えを身につける',
+      steps: [
+        '受ける側はコート中央やや後ろで低く構え、ラケットを体の前で立てる。バック側を広くカバーできる構えを基本にする',
+        '打つ側は後衛から、体の近く・左右へスマッシュを打ち分ける',
+        '受ける側は面を先に作り、振らずに当ててネット前へ小さく返す。体に近い球はバックの面で押し出す',
+        '余裕のある球は、面を立てて平たいドライブで相手のミドルへ切り返す',
+        '10本を1セットとして、ネット前に落とせた本数と、ドライブ返しに転じられた本数を数える'
+      ],
+      dose: {
+        standard: '10本×4セットを目安に',
+        junior: '球速を落として10本×2セットから。打点を体から遠ざけないことを優先する',
+        note: 'レシーブで振ると間に合わない。強い球ほど「面で受ける」感覚を優先し、小さく当てる。本数・時間はアプリ独自の目安'
+      },
+      durationMin: 15,
+      mode: 'pair',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: '中田政秀：【レシーブの基本】返せない原因は「打点」！安定感が劇的に変わる3ステップ練習法', url: 'https://www.youtube.com/watch?v=iK2_SRcpWDI' },
+        { label: 'JOOバドミントン：【日本1位が教える】レシーブを上達させる指導方法', url: 'https://www.youtube.com/shorts/49Qs03Ep8w0' }
+      ],
+      videos: [
+        { label: '【レシーブの基本】返せない原因は「打点」！安定感が劇的に変わる3ステップ練習法（中田政秀）', url: 'https://www.youtube.com/watch?v=iK2_SRcpWDI' },
+        { label: '【日本1位が教える】レシーブを上達させる㊙️指導方法㊙️（JOOバドミントン）', url: 'https://www.youtube.com/shorts/49Qs03Ep8w0' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['receive_racket_high','defense_low_center','contact_front']
+    },
+    {
+      id: 'drill_compact_random',
+      name: 'ランダム・コンパクト応酬',
+      menuId: 'menu_compact',
+      category: 'ノック・多球',
+      level: ['中級','上級'],
+      target: 'プッシュ・ドライブ・レシーブをランダムに出し分けられる応酬の中で、球種の判断と「振らない」返球を実戦に近づける',
+      steps: [
+        '相手役は前衛〜中衛の位置から、プッシュ気味の速い球、平たいドライブ、時おりスマッシュをランダムに出す',
+        '受ける側は構えを保ち、来た球に合わせて「プッシュで押し込む／ドライブで平たく返す／小さく受けて前に落とす」をその場で判断する',
+        'どの球でも共通ルールは「打点は体の前」「フォロースルーは小さく」「打ったらすぐ構え直す」',
+        '1分間続けて、ミスなく返せた球の割合を記録する'
+      ],
+      dose: {
+        standard: '1分×5セットを目安に',
+        junior: '40秒×3セットから。球出しの速さは受け手に合わせて調整する',
+        note: '判断が遅れた球は無理に振らず、面で当てるだけでもよい。決め切ることより、崩れないことを優先する実戦判断の練習'
+      },
+      durationMin: 10,
+      mode: 'pair',
+      referencePlayers: [],
+      originType: 'sourced',
+      sources: [
+        { label: 'BIPROGYバドミントンチーム：レシーブ特化（実業団の練習映像）', url: 'https://www.youtube.com/watch?v=iYYccGf-vzM' }
+      ],
+      videos: [
+        { label: 'レシーブ特化（BIPROGYバドミントンチーム）', url: 'https://www.youtube.com/watch?v=iYYccGf-vzM' }
+      ],
+      link: { type: 'footwork', target: '' },
+      poseChecks: ['contact_front','form_consistency']
     }
   ];
 
