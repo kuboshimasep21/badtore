@@ -2234,13 +2234,13 @@
 
     <button class="nav-tab" onclick="switchTab('tab-pose')" id="btn-tab-pose">🎥 3.フォーム診断</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-racket')" id="btn-tab-racket">🏸 4.ラケット</button>
+    <button class="nav-tab" onclick="switchTab('tab-score')" id="btn-tab-score">🧮 4.スコア</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-score')" id="btn-tab-score">🧮 5.スコア</button>
+    <button class="nav-tab" onclick="switchTab('tab-racket')" id="btn-tab-racket">🏸 7.ラケット</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-profile')" id="btn-tab-profile">👤 6.メンバー</button>
+    <button class="nav-tab" onclick="switchTab('tab-profile')" id="btn-tab-profile">👤 8.メンバー</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-progress')" id="btn-tab-progress">👥 7.進捗</button>
+    <button class="nav-tab" onclick="switchTab('tab-progress')" id="btn-tab-progress">👥 9.進捗</button>
 
     <button class="nav-tab" onclick="switchTab('tab-guide')" id="btn-tab-guide">📖 10.ガイド</button>
 
@@ -3771,7 +3771,7 @@
 
           <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:6px;">
 
-            Googleでログインすると、練習記録・自己ベスト・XPがクラウドに自動保存され、別のスマホでも続きが見られます。家族グループを作ると「👥 7.進捗」で家族の進捗も共有できます。ログインしなくても今まで通り使えます。
+            Googleでログインすると、練習記録・自己ベスト・XPがクラウドに自動保存され、別のスマホでも続きが見られます。家族グループを作ると「👥 9.進捗」で家族の進捗も共有できます。ログインしなくても今まで通り使えます。
 
           </p>
 
@@ -11865,19 +11865,20 @@
       }
     };
 
-    // 📋 TAB 8: メニュー作成＋📚 TAB 9: ドリル集（ガイドの前に配置し、ガイドを10番目へ）
+    // 📋 TAB 5: メニュー作成＋📚 TAB 6: ドリル集（スコアの後・ラケットの前に並べて配置。ガイドは10番目のまま）
     function injectMenuPlannerTab() {
       const nav = document.querySelector('.nav-scroller'), guideBtn = document.getElementById('btn-tab-guide');
+      const anchorBtn = document.getElementById('btn-tab-racket') || guideBtn;
       if (guideBtn) guideBtn.textContent = '📖 10.ガイド';
       if (nav && !document.getElementById('btn-tab-menu')) {
-        const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 8.メニュー';
+        const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 5.メニュー';
         b.onclick = () => switchTab('tab-menu');
-        if (guideBtn) nav.insertBefore(b, guideBtn); else nav.appendChild(b);
+        if (anchorBtn) nav.insertBefore(b, anchorBtn); else nav.appendChild(b);
       }
       if (nav && !document.getElementById('btn-tab-drills')) {
-        const db = document.createElement('button'); db.className = 'nav-tab'; db.id = 'btn-tab-drills'; db.textContent = '📚 9.ドリル';
+        const db = document.createElement('button'); db.className = 'nav-tab'; db.id = 'btn-tab-drills'; db.textContent = '📚 6.ドリル';
         db.onclick = () => switchTab('tab-drills');
-        if (guideBtn) nav.insertBefore(db, guideBtn); else nav.appendChild(db);
+        if (anchorBtn) nav.insertBefore(db, anchorBtn); else nav.appendChild(db);
       }
       const mc = document.querySelector('.main-container');
       if (mc && !document.getElementById('tab-menu')) {
@@ -12812,7 +12813,7 @@
                 🏟️ 体育館で練習するとき（1人〜少人数・2.5時間など）
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 時間割を作る：</b>「📋 8.メニュー」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ この条件で編成する］</b>を押します。<br>
+                <b>① 時間割を作る：</b>「📋 5.メニュー」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ この条件で編成する］</b>を押します。<br>
                 <b>② 黄金順序で練習：</b>いきなり基礎打ちをせず、「抜重・FW矯正 ➔ 手投げ分解ノック ➔ 基礎打ち ➔ 半面パターン」の順で各行の<b>［▶️ 今すぐ開始］</b>を押して進めます。
               </div>
             </div>
@@ -13465,7 +13466,7 @@ function sharePoseResultImage() {
   var STEPS = [
     { title: '👋 ようこそ、バドトレPROへ！', body: 'バドミントン専用のAI動作解析＆実践トレーニングアプリです。フットワーク・初速・フォーム分析・スコア管理まで、日々の練習をまるごとサポートします。' },
     { title: '🎥 AIフォーム分析の使い方', body: '「3.フォーム診断」タブで動画を読み込むかカメラを起動すると、姿勢を自動で解析してスコアと改善アドバイスを表示します。診断結果は「📸 診断結果を画像でシェア」ボタンから、画像で保存・共有もできます。' },
-    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「6.メンバー」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「10.ガイド」タブにもあります。' }
+    { title: '💾 データの保存について', body: '記録や自己ベストは、この端末の中に自動で保存されます。機種変更のときは「8.メンバー」タブの「📲 データ引き継ぎ」でバックアップしておきましょう。詳しい使い方は「10.ガイド」タブにもあります。' }
   ];
   var idx = 0;
   var overlay = null, titleEl = null, bodyEl = null, dotsEl = null, prevBtn = null, nextBtn = null;
@@ -13781,7 +13782,7 @@ function sharePoseResultImage() {
 
   // FABの表示制御: 「使うときだけ出す」。
   // ・その日のチェックが0件なら出さない（入口はフットワークタブの［🔁 ルーティン］ボタン）。
-  // ・1件でもチェックしたら「1.フットワーク」「8.メニュー」タブで表示し、ドリル/タイマー実行中は隠す。
+  // ・1件でもチェックしたら「1.フットワーク」「5.メニュー」タブで表示し、ドリル/タイマー実行中は隠す。
   // ・全項目チェック済みなら「✅ ルーティン済」（緑）を表示するが、最初に表示してから
   //   FAB_DONE_SHOW_MS 経過したら隠す。表示開始時刻は端末に保存するので、再読み込みしても
   //   ✅ が出続けることはない。1つでも外すと記録を消し、再び全達成したときにまた短時間だけ表示する。
@@ -14678,7 +14679,7 @@ function sharePoseResultImage() {
   }
 
   window.cloudCreateGroup = async function () {
-    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「6.メンバー」タブの☁️カードから）。'); return; }
+    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「8.メンバー」タブの☁️カードから）。'); return; }
     var input = document.getElementById('cloudGroupNameInput');
     var name = ((input && input.value) || '').trim() || '家族グループ';
     var gid = newUuid();
@@ -14692,7 +14693,7 @@ function sharePoseResultImage() {
   };
 
   window.cloudJoinGroup = async function () {
-    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「6.メンバー」タブの☁️カードから）。'); return; }
+    if (!sb || !cloudUser) { alert('先にGoogleでログインしてください（「8.メンバー」タブの☁️カードから）。'); return; }
     var input = document.getElementById('cloudJoinCodeInput');
     var code = ((input && input.value) || '').trim();
     if (!code) { alert('招待コードを入力してください。'); return; }
@@ -14766,7 +14767,7 @@ function sharePoseResultImage() {
     }
     if (!cloudUser) {
       orderProgressCards(true);
-      var msg = '<div style="font-size:0.78rem;color:var(--text-secondary);">ログインすると家族の進捗が見られます。「6.メンバー」タブの「☁️ クラウド保存＆家族グループ共有」カードからGoogleでログインしてください。</div>';
+      var msg = '<div style="font-size:0.78rem;color:var(--text-secondary);">ログインすると家族の進捗が見られます。「8.メンバー」タブの「☁️ クラウド保存＆家族グループ共有」カードからGoogleでログインしてください。</div>';
       pc.innerHTML = msg;
       gc.innerHTML = msg;
       return;
@@ -15150,7 +15151,7 @@ function sharePoseResultImage() {
 <script id="badtore-drill-library">
 /* =========================================================================
    📚 ドリル（プロ式メニュー）Step 1〜3
-   - 配置：独立タブ「📚 9.ドリル」（tab-drills）にカードをマウント
+   - 配置：独立タブ「📚 6.ドリル」（tab-drills）にカードをマウント
      （当初は設計B案でタブ8内の一区画。ブラッシュアップ Step B で独立タブ化）
    - データ：スタイル別メニュー＋ドリルの静的データ（プリセット・読み取り専用）
    - 看板はスタイル名、選手名は「参考選手／参考方式」として小さく表示
