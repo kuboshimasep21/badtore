@@ -12065,8 +12065,34 @@
       if (!list || !list.length) return null;
       const byId = {}; catalog.forEach(c => { byId[c.id] = c; });
       const seen = new Set(), picked = [];
+      // AI提案（カタログ外の新種目）の検証用：タグ除去・空白なしキーでカタログ名/提案名との重複を判定する
+      const stripTags = s => String(s == null ? '' : s).replace(/<[^>]*>/g, '').trim();
+      const catNameKeys = new Set(catalog.map(c => String(c.name || '').replace(/\s+/g, '')));
+      const propNameKeys = new Set();
+      let propCount = 0, hasCustom = false;
       list.forEach(en => {
-        if (!en || typeof en.id !== 'string') return;
+        if (!en || typeof en !== 'object') return;
+        if (en.custom && typeof en.custom === 'object') {
+          // AI提案：最大3件、名前必須（タグ除去・24文字まで）、分数は3〜30に丸め、grpは phys/court のみ
+          if (propCount >= 3) return;
+          const cu = en.custom;
+          const fullNm = stripTags(cu.name);
+          if (!fullNm) return;
+          // 重複判定は24文字に切り捨てる前の名前で行う（カタログ名の長い種目を提案名に流用したケースも弾く）
+          const key = fullNm.replace(/\s+/g, '');
+          if (catNameKeys.has(key) || propNameKeys.has(key)) return;
+          const nm = fullNm.slice(0, 24);
+          propNameKeys.add(key); propNameKeys.add(nm.replace(/\s+/g, '')); propCount++;
+          let m = Math.round(Number(cu.minutes) || 10);
+          m = Math.min(30, Math.max(3, m));
+          const grp = cu.grp === 'court' ? 'court' : 'phys';
+          const how = stripTags(cu.how).slice(0, 60);
+          const entry = { id: null, cat: grp === 'court' ? '🏸 コート系' : '💪 フィジカル系', name: nm, note: how || 'フォームを意識して無理なく実施', linkTab: '', fwPreset: '', grp };
+          picked.push({ entry, minutes: m, reason: String(en.reason || '').slice(0, 120), custom: true });
+          hasCustom = true;
+          return;
+        }
+        if (typeof en.id !== 'string') return;
         const c = byId[en.id];
         if (!c || seen.has(c.id)) return;
         seen.add(c.id);
@@ -12085,7 +12111,7 @@
           picked[bi].minutes = Math.max(3, picked[bi].minutes + diff);
         }
       }
-      return { picked, note: String((obj && obj.note) || '').slice(0, 200) };
+      return { picked, note: String((obj && obj.note) || '').slice(0, 200), hasCustom };
     }
 
     // テーマピルはタップでON/OFF（チェックボックスは使わない）。選択状態は .active クラスで保持する
@@ -12150,13 +12176,15 @@
         'あなたはバドミントン練習メニューの編成アシスタントです。',
         'ユーザーの希望：「' + reqText + '」',
         '条件：人数・場所=' + (MENU_PLAYERS_LABELS[pm] || pm) + '／持ち時間=' + target + '分／重点テーマ=' + (themes.length ? themes.join('、') : '指定なし') + (pins.length ? '／ピン留め課題=' + pins.join('、') : ''),
-        '下のカタログの中からだけ選んで、実施順に並べたメニューを作ってください。カタログにない種目の創作や、数値の創作は禁止です。',
-        '各カタログ項目の grp は種目グループ（phys=フィジカル系、court=コート系）です。場所が自宅・省スペースなら phys 中心に、体育館なら court 中心に寄せてください。ただしユーザーの自由入力の希望が優先です。',
-        '各種目の minutes はカタログの minutes を目安に、合計が ' + target + ' 分に近づくよう調整してください（各種目3〜120分）。',
+        '基本は下のカタログから選んで、実施順に並べたメニューを作ってください。カタログ種目の数値（minutes の目安）の創作は禁止です。',
+        'カタログでまかなえない希望（特定の部位や場面など）がある場合に限り、新しい種目を最大3つまで提案できます。提案は {"custom":{"name":"種目名","minutes":10,"how":"やり方を一言","grp":"phys"},"reason":"提案理由"} の形で items に混ぜてください。カタログで足りる場合は提案しないでください。',
+        '提案する種目は、シンプルで一般的・低リスクな動きだけにしてください。場所が自宅・省スペースなら自宅で1人でできる種目だけにし、ジュニアや自宅では重い負荷や最大ジャンプは避けて保守的な量（minutes は3〜30分）にしてください。how はやり方を一言（60文字以内）で書いてください。',
+        '各カタログ項目の grp は種目グループ（phys=フィジカル系、court=コート系）です。場所が自宅・省スペースなら phys 中心に、体育館なら court 中心に寄せてください。ただしユーザーの自由入力の希望が優先です。提案種目の grp も同じ基準で選んでください。',
+        '各種目の minutes はカタログの minutes を目安に、合計が ' + target + ' 分に近づくよう調整してください（カタログ種目は3〜120分、提案種目は3〜30分）。',
         'カタログ（JSON）：',
         JSON.stringify(catalog.map(c => ({ id: c.id, name: c.name, cat: c.cat, grp: c.grp, minutes: c.minutes, note: c.note }))),
         '出力は次のJSONだけにしてください（説明文やコードフェンスは付けない）：',
-        '{"items":[{"id":"カタログのid","minutes":15,"reason":"選んだ理由を一言"}],"note":"全体の狙いを一言"}'
+        '{"items":[{"id":"カタログのid","minutes":15,"reason":"選んだ理由を一言"},{"custom":{"name":"新しい種目名","minutes":10,"how":"やり方を一言","grp":"phys"},"reason":"提案理由"}],"note":"全体の狙いを一言"}'
       ].join('\n');
       if (btn) { btn.disabled = true; btn.textContent = '🤖 AIが編成中…'; }
       if (status) status.innerHTML = '<span style="color:var(--accent-secondary);font-weight:800;">⏳ AIがメニューを考えています…</span>';
@@ -12164,12 +12192,13 @@
         const res = await callGeminiForMenuConsult(prompt);
         const plan = parseAIConsultPlan(res && res.text, catalog, target);
         if (!plan) throw new Error('AI応答を解釈できませんでした');
-        currentMenuPlan = { title: (pm === 'home_1' ? '🏠 自宅' : '🏟️ 体育館') + ' ' + target + '分メニュー（AI編成）', targetMin: target, playersMode: pm, items: plan.picked.map((p, i) => ({ id: 'm_' + i, cat: p.entry.cat, name: p.entry.name, minutes: p.minutes, note: p.entry.note, linkTab: p.entry.linkTab, fwPreset: p.entry.fwPreset, grp: p.entry.grp || 'phys', done: false })) };
+        currentMenuPlan = { title: (pm === 'home_1' ? '🏠 自宅' : '🏟️ 体育館') + ' ' + target + '分メニュー（AI編成）', targetMin: target, playersMode: pm, items: plan.picked.map((p, i) => ({ id: 'm_' + i, cat: p.entry.cat, name: p.entry.name, minutes: p.minutes, note: p.entry.note, linkTab: p.entry.linkTab, fwPreset: p.entry.fwPreset, grp: p.entry.grp || 'phys', custom: !!p.custom, done: false })) };
         const ti = document.getElementById('currentMenuTitleInput'); if (ti) ti.value = currentMenuPlan.title;
         saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI();
         const note = document.getElementById('aiMenuPlanNote');
         if (note) {
           const lines = plan.picked.map((p, i) => (i + 1) + '. ' + menuAiEsc(p.entry.name) + '：' + menuAiEsc(p.reason || 'バランス配分'));
+          if (plan.hasCustom) lines.push('※「AI提案」の種目はAIが考えた新しい種目です。量は体調や様子に合わせて調整してください。');
           note.innerHTML = '<div style="font-weight:900;color:var(--accent-highlight);margin-bottom:3px;">🤖 AIの編成メモ</div>' + (plan.note ? '<div>' + menuAiEsc(plan.note) + '</div>' : '') + '<div style="color:var(--text-secondary);">' + lines.join('<br>') + '</div>';
           note.style.display = 'block';
         }
@@ -12192,9 +12221,16 @@
       saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI(); setMenuTabMode('create', false); switchTab('tab-menu'); playBeep(1120, 110);
     }
 
+    /* 結果リスト描画の単一定義: フィジカル→コートのグループ見出し（PR #18）と
+       ▲▼並び替え・筋トレタイマー等の操作を統合。項目操作は plan 配列のインデックス基準で、グループは描画上のビュー */
     function renderCurrentMenuEditorUI() {
       const c = document.getElementById('menuItemsListContainer'); if (!c) return;
-      const rowHtml = (it, i) => `<div class="menu-item-row ${it.done ? 'completed-row' : ''}"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:6px;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);"/><span class="badge-version">${it.cat}</span><span style="font-weight:900;font-size:0.82rem;">${it.name}</span></div><div style="display:flex;align-items:center;gap:4px;"><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button><span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;">${it.minutes}分</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},5)">+5</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.78rem;" onclick="removeMenuItemAt(${i})">✕</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-secondary);padding-left:22px;"><span>🎯 ${it.note}</span>${it.linkTab ? `<button class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>` : ''}</div></div>`;
+      const rowHtml = (it, i) => {
+        const btn = it.linkTab === 'workout_timer'
+          ? `<button class="btn btn-amber" style="padding:7px 10px;font-size:0.78rem;" onclick="openWorkoutIntervalTimer(${i})">⏱️ 筋トレタイマー</button>`
+          : (it.linkTab ? `<button class="btn btn-emerald" style="padding:7px 10px;font-size:0.78rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>` : '');
+        return `<div class="menu-item-row ${it.done ? 'completed-row' : ''}"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:6px;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);"/><span class="badge-version">${i + 1}. ${it.cat}</span><span style="font-weight:900;font-size:0.82rem;">${it.custom ? menuAiEsc(it.name) : it.name}</span>${it.custom ? '<span style="font-size:0.7rem;font-weight:800;color:var(--accent-highlight);">AI提案</span>' : ''}</div><div style="display:flex;align-items:center;gap:4px;"><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button><span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;">${it.minutes}分</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},5)">+5</button><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="moveMenuItemOrderPart3(${i},-1)" ${i===0?'disabled':''}>▲</button><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="moveMenuItemOrderPart3(${i},1)" ${i===currentMenuPlan.items.length-1?'disabled':''}>▼</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.78rem;" onclick="removeMenuItemAt(${i})">✕</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-secondary);padding-left:22px;"><span>🎯 ${it.custom ? menuAiEsc(it.note) : it.note}</span>${btn}</div></div>`;
+      };
       const grpHeads = [['phys', 'フィジカル'], ['court', 'コート']];
       let groupedHtml = '', firstGrp = true;
       grpHeads.forEach(([g, label]) => {
@@ -13219,16 +13255,7 @@
       saveCurrentWorkingMenuToStorage(); renderCurrentMenuEditorUI();
     }
 
-    renderCurrentMenuEditorUI = function() {
-      const c = document.getElementById('menuItemsListContainer'); if (!c) return;
-      c.innerHTML = currentMenuPlan.items.map((it, i) => {
-        const btn = it.linkTab === 'workout_timer'
-          ? `<button class="btn btn-amber" style="padding:7px 10px;font-size:0.78rem;" onclick="openWorkoutIntervalTimer(${i})">⏱️ 筋トレタイマー</button>`
-          : (it.linkTab ? `<button class="btn btn-emerald" style="padding:7px 10px;font-size:0.78rem;" onclick="launchMenuLinkedTool(${i})">▶️ 今すぐ開始</button>` : '');
-        return `<div class="menu-item-row ${it.done ? 'completed-row' : ''}"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><div style="display:flex;align-items:center;gap:6px;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="toggleMenuItemDone(${i})" style="width:16px;height:16px;accent-color:var(--accent-primary);"/><span class="badge-version">${i + 1}. ${it.cat}</span><span style="font-weight:900;font-size:0.82rem;">${it.name}</span></div><div style="display:flex;align-items:center;gap:4px;"><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},-5)">-5</button><span style="font-weight:900;color:var(--accent-highlight);font-size:0.82rem;">${it.minutes}分</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="adjustMenuItemMin(${i},5)">+5</button><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="moveMenuItemOrderPart3(${i},-1)" ${i===0?'disabled':''}>▲</button><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="moveMenuItemOrderPart3(${i},1)" ${i===currentMenuPlan.items.length-1?'disabled':''}>▼</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.78rem;" onclick="removeMenuItemAt(${i})">✕</button></div></div><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-secondary);padding-left:22px;"><span>🎯 ${it.note}</span>${btn}</div></div>`;
-      }).join('');
-      updateMenuTimeGaugeUI();
-    };
+    /* renderCurrentMenuEditorUI の再定義は削除済み（part1側の単一定義に統合） */
 
     function openWorkoutIntervalTimer(i) {
       const it = currentMenuPlan.items[i] || { name: "筋トレ", workSec: 30, restSec: 15, sets: 3 };
