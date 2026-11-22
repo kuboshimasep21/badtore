@@ -3661,7 +3661,7 @@
 
             <button class="btn btn-cyan-outline" id="btnMatchTypeToggle" onclick="toggleMatchFormat()">👥 現在: ダブルス</button>
 
-            <button class="btn" onclick="undoMatchPoint()" id="btnUndoScore" disabled>↩️ 1手戻す</button>
+            <button class="btn" onclick="undoMatchPoint()" id="btnUndoScore" disabled>↩️ 1つ戻す</button>
 
             <button class="btn btn-cyan-outline" onclick="flipCourtSide()">🔄 コート反転</button>
 
@@ -3679,33 +3679,37 @@
 
         <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; max-width:600px; margin:0 auto 10px;">
 
-          <div class="card" style="background:var(--bg-panel); text-align:center; margin:0; padding:10px;">
+          <div class="card bt-score-panel" id="scorePanelA" onclick="btScorePanelTap(event,'A')" style="background:var(--bg-panel); text-align:center; margin:0; padding:10px;">
 
-            <div style="font-weight:800; color:#38bdf8; font-size:0.82rem;">🟦 自分チーム（A）</div>
+            <div style="font-weight:800; font-size:0.82rem;"><span style="background:#0284c7; color:#fff; border-radius:999px; padding:2px 10px;">🟦 自分チーム（A）</span> <span id="btServeBadgeA" style="display:none; background:#f59e0b; color:#000; border-radius:999px; padding:2px 8px;">🏸 サーブ</span></div>
 
-            <div style="font-size:2rem; font-weight:900; margin:2px 0;" id="scoreTeamA">0</div>
+            <div id="btPanelNamesA" style="font-weight:800; font-size:0.95rem; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">プレイヤー1</div>
+
+            <div style="font-size:3.3rem; line-height:1.05; font-weight:900; margin:2px 0;" id="scoreTeamA">0</div>
 
             <div class="btn-group" style="justify-content:center;">
 
-              <button class="btn btn-emerald" onclick="addMatchPoint('A', 1)">＋1 得点</button>
+              <button class="btn btn-emerald" style="flex:1; min-height:48px; font-size:1rem;" onclick="addMatchPoint('A', 1)">＋1 得点</button>
 
-              <button class="btn" onclick="addMatchPoint('A', -1)">－1</button>
+              <button class="btn" style="min-width:52px; min-height:48px;" onclick="addMatchPoint('A', -1)">－1</button>
 
             </div>
 
           </div>
 
-          <div class="card" style="background:var(--bg-panel); text-align:center; margin:0; padding:10px;">
+          <div class="card bt-score-panel" id="scorePanelB" onclick="btScorePanelTap(event,'B')" style="background:var(--bg-panel); text-align:center; margin:0; padding:10px;">
 
-            <div style="font-weight:800; color:#fb7185; font-size:0.82rem;">🟥 相手チーム（B）</div>
+            <div style="font-weight:800; font-size:0.82rem;"><span style="background:#e11d48; color:#fff; border-radius:999px; padding:2px 10px;">🟥 相手チーム（B）</span> <span id="btServeBadgeB" style="display:none; background:#f59e0b; color:#000; border-radius:999px; padding:2px 8px;">🏸 サーブ</span></div>
 
-            <div style="font-size:2rem; font-weight:900; margin:2px 0;" id="scoreTeamB">0</div>
+            <div id="btPanelNamesB" style="font-weight:800; font-size:0.95rem; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">相手1（B1）</div>
+
+            <div style="font-size:3.3rem; line-height:1.05; font-weight:900; margin:2px 0;" id="scoreTeamB">0</div>
 
             <div class="btn-group" style="justify-content:center;">
 
-              <button class="btn btn-emerald" onclick="addMatchPoint('B', 1)">＋1 得点</button>
+              <button class="btn btn-emerald" style="flex:1; min-height:48px; font-size:1rem;" onclick="addMatchPoint('B', 1)">＋1 得点</button>
 
-              <button class="btn" onclick="addMatchPoint('B', -1)">－1</button>
+              <button class="btn" style="min-width:52px; min-height:48px;" onclick="addMatchPoint('B', -1)">－1</button>
 
             </div>
 
@@ -18389,6 +18393,7 @@ function sharePoseResultImage() {
       h += '</div>';
     });
     h += '<input class="bt-tn-score" type="text" placeholder="スコア（例 21-15, 21-10）" value="' + btTnEsc(m.score || '') + '" onchange="btTn.setScore(' + di + ',' + ri + ',' + mi + ', this.value)">';
+    if (eff.p1 && eff.p2) h += '<button class="btn btn-emerald" style="margin-top:4px; min-height:40px;" onclick="btTn.startScoring(' + di + ',' + ri + ',' + mi + ')">' + (m.winner ? '🏸 スコアで記録し直す' : '🏸 スコアをつける') + '</button>';
     if (m.winner) h += '<button class="btn" style="margin-top:4px;" onclick="btTn.clearResult(' + di + ',' + ri + ',' + mi + ')">結果を取り消す</button>';
     return h + '</div>';
   }
@@ -18420,7 +18425,7 @@ function sharePoseResultImage() {
         h += '</div>';
       });
       h += '</div>';
-      h += '<div class="bt-tn-note">選手名をタップすると勝者になり、次の試合へ進みます。試合番号をタップすると進行表の情報が出ます。選手名の横の ☆ を押すと注目選手になり、その選手の試合に色がつきます。「（BS12の勝者）」と出ている枠には、その試合の勝者が入ります。</div>';
+      h += '<div class="bt-tn-note">選手名をタップすると勝者になり、次の試合へ進みます。試合番号をタップすると進行表の情報が出ます。選手名の横の ☆ を押すと注目選手になり、その選手の試合に色がつきます。「（BS12の勝者）」と出ている枠には、その試合の勝者が入ります。「🏸 スコアをつける」を押すとスコアボードで1点ずつ記録でき、試合終了で結果がここへ自動で入ります。</div>';
     });
     return h;
   }
@@ -18818,6 +18823,36 @@ function sharePoseResultImage() {
       if (!tn) return;
       tn.divisions[di].rounds[ri].matches[mi].score = val;
       btTnSaveRecord(tn);
+    },
+    /* スコアボード連携：この試合の実効対戦者をスコアボードへ渡して計測開始 */
+    startScoring: function(di, ri, mi){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      var div = tn.divisions[di];
+      if (!div || !div.rounds[ri] || !div.rounds[ri].matches[mi]) return;
+      var m = div.rounds[ri].matches[mi];
+      var eff = btTnMatchPlayers(div, ri, mi);
+      if (!eff.p1 || !eff.p2) { alert('対戦相手がまだ決まっていません'); return; }
+      var payload = {
+        tnId: tn.id, tnName: tn.name || '', di: di, ri: ri, mi: mi,
+        no: m.no || '', roundName: div.rounds[ri].name || m.round || '',
+        divCode: div.code || '', divLabel: div.label || div.code || '',
+        p1: eff.p1, p2: eff.p2, s1: eff.s1 || '', s2: eff.s2 || ''
+      };
+      if (typeof window.btScoreLinkBegin === 'function') window.btScoreLinkBegin(payload);
+      if (typeof window.switchTab === 'function') window.switchTab('tab-score');
+    },
+    /* スコアボード連携：試合結果（勝者・スコア文字列）を既存の保存経路で書き込む。
+       winnerSide: 1=A側 / 2=B側 / 0=取り消し。勝ち上がりは描画時に winner から導出される */
+    recordScoreResult: function(tnId, di, ri, mi, winnerSide, scoreStr){
+      var tn = null;
+      (btTnState.list || []).forEach(function(t){ if (t.id === tnId) tn = t; });
+      if (!tn || !tn.divisions[di] || !tn.divisions[di].rounds[ri] || !tn.divisions[di].rounds[ri].matches[mi]) return false;
+      var m = tn.divisions[di].rounds[ri].matches[mi];
+      m.winner = winnerSide || 0;
+      m.score = scoreStr || '';
+      btTnSaveRecord(tn).then(btTnRenderBracket);
+      return true;
     }
   };
   window.btTn = btTnApi;
@@ -19072,6 +19107,8 @@ function sharePoseResultImage() {
     cloudUpsert: btTnCloudUpsert,
     cloudDelete: btTnCloudDelete,
     cloudPull: btTnCloudPull,
+    recordScoreResult: btTnApi.recordScoreResult,
+    startScoring: btTnApi.startScoring,
     setCloudClient: function(c){ btTnSb = c; },
     setCloudUser: function(u){ btTnCloudUser = u; },
     getSyncState: function(){ return { state: btTnSyncState, user: btTnCloudUser ? btTnCloudUser.id : null, busy: btTnSyncBusy }; },
@@ -19555,6 +19592,491 @@ function sharePoseResultImage() {
     updatePbCounter: updatePbCounter, effBests: effBests
   };
   console.log('[badtore v106 badges] loaded');
+})();
+</script>
+
+<script id="badtore-v106-score-link">
+/* =========================================================
+   🏸 スコアボード連携（v10.6 追加）
+   - 大会の試合とスコアボードを連携：対戦表の「🏸 スコアをつける」から
+     名前入りで開始し、試合終了で結果（勝者・ゲームスコア）を大会側の
+     既存の保存経路（btTn.recordScoreResult）へ書き戻す
+   - ゲーム判定は標準ルール：21点先取、デュースは2点差、最大30点。
+     ゲームが終わると自動で次ゲームへ進む（従来の手動「＋1ゲーム奪取」
+     も、同じ記録経路に合わせて継続利用できる）
+   - フリー試合は終了後に「試合記録」へ保存できる（端末内のみ）
+   - 進行中のスコアは localStorage に保存し、再読み込みでも復元する
+   - 「1つ戻す」は現在のゲーム内のみ（ゲームをまたぐ取り消しは
+     試合結果の取り消しボタンで行う）
+   ========================================================= */
+(function(){
+  'use strict';
+  if (window.__bt_score_link) return;
+
+  var LINK_KEY = 'badtore_score_link_v106';
+  var HIST_KEY = 'badtore_match_history_v106';
+
+  function lsGet(k){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function defaultLink(){
+    return { bound: null, bestOf: 3, games: [], finished: false, winner: null,
+             written: false, savedToHistory: false, historyId: null };
+  }
+  var link = defaultLink();
+
+  /* ---------- ルール判定 ---------- */
+  function gameWinner(a, b){
+    if (a >= 21 || b >= 21) {
+      if (Math.abs(a - b) >= 2) return a > b ? 'A' : 'B';
+      if (a === 30) return 'A';
+      if (b === 30) return 'B';
+    }
+    return null;
+  }
+  function neededWins(){ return Math.floor(link.bestOf / 2) + 1; }
+  function gamesWon(side){
+    return link.games.filter(function(g){ return g.w === side; }).length;
+  }
+  function scoreString(){
+    return link.games.filter(function(g){ return (g.a + g.b) > 0; })
+      .map(function(g){ return g.a + '-' + g.b; }).join(', ');
+  }
+  function dispNames(players){
+    if (typeof matchState !== 'undefined' && matchState.format === 'doubles') {
+      return players.filter(function(p){ return !!p; }).join('・') || '—';
+    }
+    return players[0] || '—';
+  }
+  function inProgress(){
+    if (link.finished) return false;
+    return !!link.bound || link.games.length > 0 ||
+      (typeof matchState !== 'undefined' && (matchState.scoreA + matchState.scoreB) > 0);
+  }
+
+  /* ---------- 永続化（進行中の復元） ---------- */
+  function persist(){
+    if (typeof matchState === 'undefined') return;
+    lsSet(LINK_KEY, {
+      link: link,
+      ms: {
+        format: matchState.format,
+        scoreA: matchState.scoreA, scoreB: matchState.scoreB,
+        servingTeam: matchState.servingTeam,
+        courtFlipped: matchState.courtFlipped, swapPairInit: matchState.swapPairInit,
+        playersA: matchState.playersA.slice(), playersB: matchState.playersB.slice(),
+        gamesA: matchState.gamesA || 0, gamesB: matchState.gamesB || 0
+      }
+    });
+  }
+  function restore(){
+    var saved = lsGet(LINK_KEY);
+    if (!saved || !saved.ms || typeof matchState === 'undefined') return;
+    link = Object.assign(defaultLink(), saved.link || {});
+    if (!Array.isArray(link.games)) link.games = [];
+    matchState.format = saved.ms.format || matchState.format;
+    matchState.scoreA = saved.ms.scoreA || 0;
+    matchState.scoreB = saved.ms.scoreB || 0;
+    matchState.servingTeam = saved.ms.servingTeam || 'A';
+    matchState.courtFlipped = !!saved.ms.courtFlipped;
+    matchState.swapPairInit = !!saved.ms.swapPairInit;
+    if (Array.isArray(saved.ms.playersA) && saved.ms.playersA.length) matchState.playersA = saved.ms.playersA.slice();
+    if (Array.isArray(saved.ms.playersB) && saved.ms.playersB.length) matchState.playersB = saved.ms.playersB.slice();
+    matchState.gamesA = saved.ms.gamesA || 0;
+    matchState.gamesB = saved.ms.gamesB || 0;
+    matchState.history = [];
+    var btn = document.getElementById('btnMatchTypeToggle');
+    if (btn) btn.textContent = matchState.format === 'doubles' ? '👥 現在: ダブルス' : '👤 現在: シングルス';
+    var ub = document.getElementById('btnUndoScore');
+    if (ub) ub.disabled = true;
+  }
+
+  /* ---------- ゲーム／試合の進行 ---------- */
+  function endGame(w, manual){
+    link.games.push({ a: matchState.scoreA, b: matchState.scoreB, w: w, manual: !!manual });
+    if (w === 'A') matchState.gamesA = (matchState.gamesA || 0) + 1;
+    else matchState.gamesB = (matchState.gamesB || 0) + 1;
+    matchState.scoreA = 0; matchState.scoreB = 0;
+    matchState.servingTeam = w;
+    matchState.courtFlipped = !matchState.courtFlipped;
+    matchState.history = [];
+    var ub = document.getElementById('btnUndoScore');
+    if (ub) ub.disabled = true;
+    if (typeof awardPlayerXP === 'function') awardPlayerXP(20);
+    if (typeof playBeep === 'function') playBeep(1180, 200);
+    if (gamesWon(w) >= neededWins()) finishMatch(w);
+    renderMatchCourt();
+  }
+  function finishMatch(w){
+    link.finished = true;
+    link.winner = w;
+    if (link.bound) {
+      var ok = false;
+      if (window.btTn && typeof window.btTn.recordScoreResult === 'function') {
+        ok = window.btTn.recordScoreResult(link.bound.tnId, link.bound.di, link.bound.ri, link.bound.mi, w === 'A' ? 1 : 2, scoreString());
+      }
+      link.written = !!ok;
+    }
+    if (typeof playBeep === 'function') playBeep(1560, 320);
+  }
+  function cancelFinish(){
+    if (!link.finished) return;
+    if (link.bound && link.written && window.btTn && typeof window.btTn.recordScoreResult === 'function') {
+      window.btTn.recordScoreResult(link.bound.tnId, link.bound.di, link.bound.ri, link.bound.mi, 0, '');
+    }
+    if (link.savedToHistory && link.historyId) deleteHistory(link.historyId, true);
+    var last = link.games.pop();
+    if (last) {
+      matchState.scoreA = last.a; matchState.scoreB = last.b;
+      if (last.w === 'A') matchState.gamesA = Math.max(0, (matchState.gamesA || 0) - 1);
+      else matchState.gamesB = Math.max(0, (matchState.gamesB || 0) - 1);
+      matchState.servingTeam = last.w;
+      matchState.courtFlipped = !matchState.courtFlipped;
+    }
+    link.finished = false; link.winner = null; link.written = false;
+    link.savedToHistory = false; link.historyId = null;
+    persist();
+    renderMatchCourt();
+    renderLinkUI();
+  }
+
+  /* ---------- フリー試合の記録 ---------- */
+  function loadHistory(){ return lsGet(HIST_KEY) || []; }
+  function saveHistory(){
+    if (link.bound || !link.finished || link.savedToHistory) return;
+    var hist = loadHistory();
+    var rec = {
+      id: 'mh' + Date.now().toString(36),
+      at: new Date().toISOString(),
+      format: matchState.format, bestOf: link.bestOf,
+      namesA: matchState.playersA.slice(0, matchState.format === 'doubles' ? 2 : 1),
+      namesB: matchState.playersB.slice(0, matchState.format === 'doubles' ? 2 : 1),
+      games: link.games.map(function(g){ return { a: g.a, b: g.b, w: g.w }; }),
+      winner: link.winner
+    };
+    hist.unshift(rec);
+    lsSet(HIST_KEY, hist);
+    link.savedToHistory = true; link.historyId = rec.id;
+    persist();
+    renderLinkUI();
+    renderHistory();
+  }
+  function deleteHistory(id, silent){
+    var hist = loadHistory().filter(function(r){ return r.id !== id; });
+    lsSet(HIST_KEY, hist);
+    if (link.historyId === id) { link.savedToHistory = false; link.historyId = null; persist(); renderLinkUI(); }
+    if (!silent) renderHistory();
+  }
+  function renderHistory(){
+    var el = document.getElementById('btScoreHistoryList');
+    if (!el) return;
+    var hist = loadHistory();
+    if (!hist.length) {
+      el.innerHTML = '<div style="font-size:0.82rem; color:var(--text-secondary);">まだ記録はありません。フリー試合が終わると、ここに保存できます。</div>';
+      return;
+    }
+    el.innerHTML = hist.map(function(r){
+      var d = new Date(r.at);
+      var ds = isNaN(d.getTime()) ? '' : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      var na = (r.namesA || []).join('・') || 'A', nb = (r.namesB || []).join('・') || 'B';
+      var gs = (r.games || []).map(function(g){ return g.a + '-' + g.b; }).join(', ');
+      var winName = r.winner === 'A' ? na : nb;
+      return '<div style="display:flex; gap:8px; align-items:center; padding:7px 0; border-bottom:1px solid var(--border-subtle);">'
+        + '<div style="flex:1; min-width:0; font-size:0.85rem;">'
+        + '<span style="color:var(--text-secondary);">' + esc(ds) + '</span> '
+        + '<b>' + esc(na) + '</b> vs <b>' + esc(nb) + '</b>'
+        + (gs ? '<span style="color:var(--text-secondary);">（' + esc(gs) + '）</span>' : '')
+        + '<br>🏆 <b>' + esc(winName) + '</b> の勝ち</div>'
+        + '<button class="btn" style="min-height:40px;" onclick="btScoreDeleteHistory(\'' + esc(r.id) + '\')">削除</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  /* ---------- UI ---------- */
+  var flashTimer = null;
+  function flashMsg(msg){
+    var el = document.getElementById('btScoreFlash');
+    if (el) el.textContent = msg;
+    if (flashTimer) clearTimeout(flashTimer);
+    flashTimer = setTimeout(function(){ var e2 = document.getElementById('btScoreFlash'); if (e2) e2.textContent = ''; }, 2600);
+  }
+  function updatePanelNames(){
+    if (typeof matchState === 'undefined') return;
+    var na = document.getElementById('btPanelNamesA'), nb = document.getElementById('btPanelNamesB');
+    if (na) na.textContent = dispNames(matchState.playersA);
+    if (nb) nb.textContent = dispNames(matchState.playersB);
+    var sa = document.getElementById('btServeBadgeA'), sb = document.getElementById('btServeBadgeB');
+    if (sa) sa.style.display = matchState.servingTeam === 'A' ? '' : 'none';
+    if (sb) sb.style.display = matchState.servingTeam === 'B' ? '' : 'none';
+  }
+  function syncNameInputs(){
+    if (typeof matchState === 'undefined') return;
+    var map = { btNameA1: matchState.playersA[0], btNameA2: matchState.playersA[1], btNameB1: matchState.playersB[0], btNameB2: matchState.playersB[1] };
+    Object.keys(map).forEach(function(id){
+      var el = document.getElementById(id);
+      if (el && document.activeElement !== el) el.value = map[id] || '';
+    });
+    var dbl = matchState.format === 'doubles';
+    ['btNameA2', 'btNameB2'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.style.display = dbl ? '' : 'none';
+    });
+  }
+  function renderLinkUI(){
+    var info = document.getElementById('btScoreBindInfo');
+    var status = document.getElementById('btScoreStatus');
+    if (!info || !status || typeof matchState === 'undefined') return;
+    if (link.bound) {
+      info.innerHTML = '🏸 大会「' + esc(link.bound.tnName) + '」と連携中<br>'
+        + '<span style="font-size:0.8rem;">' + esc(link.bound.divLabel) + ' ' + esc(link.bound.roundName) + ' ' + esc(link.bound.no) + '：'
+        + esc(dispNames(matchState.playersA)) + ' vs ' + esc(dispNames(matchState.playersB)) + '</span>';
+    } else {
+      info.textContent = '🏸 フリー試合（大会と連携していません）';
+    }
+    var strip = link.games.map(function(g, i){ return 'G' + (i + 1) + ' ' + g.a + '-' + g.b; }).join(' ／ ');
+    if (link.finished) {
+      var wn = link.winner === 'A' ? dispNames(matchState.playersA) : dispNames(matchState.playersB);
+      status.innerHTML = '🏁 試合終了：<b>' + esc(wn) + '</b> の勝ち（ゲーム ' + gamesWon('A') + '-' + gamesWon('B') + '）'
+        + (strip ? '<br>' + esc(strip) : '');
+    } else {
+      status.innerHTML = '第' + (link.games.length + 1) + 'ゲーム（ゲーム ' + gamesWon('A') + '-' + gamesWon('B') + '）'
+        + (strip ? '<br>' + esc(strip) : '');
+    }
+    document.querySelectorAll('#btScoreLinkBar [data-bo]').forEach(function(b){
+      var on = Number(b.getAttribute('data-bo')) === link.bestOf;
+      b.classList.toggle('btn-emerald', on);
+    });
+    var ub = document.getElementById('btScoreUnbindBtn');
+    if (ub) ub.style.display = link.bound ? '' : 'none';
+    var fin = document.getElementById('btScoreFinish');
+    if (fin) {
+      fin.style.display = link.finished ? '' : 'none';
+      if (link.finished) {
+        var ft = document.getElementById('btScoreFinishText');
+        if (ft) {
+          ft.textContent = link.bound
+            ? (link.written ? '✅ 大会の結果に反映しました' : '⚠️ 大会への反映に失敗しました（対戦表で手入力してください）')
+            : '🏁 試合が終了しました';
+        }
+        var sh = document.getElementById('btScoreSaveHistBtn');
+        if (sh) {
+          sh.style.display = link.bound ? 'none' : '';
+          sh.disabled = !!link.savedToHistory;
+          sh.textContent = link.savedToHistory ? '✅ 試合記録に保存済み' : '📒 試合記録に保存';
+        }
+      }
+    }
+    updatePanelNames();
+  }
+  function injectUI(){
+    if (document.getElementById('btScoreLinkBar')) return;
+    var style = document.createElement('style');
+    style.textContent = '.bt-score-panel{cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;}'
+      + '#tab-score .btn{touch-action:manipulation;}'
+      + '#btScoreLinkBar input{background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:6px; padding:6px; font-size:0.85rem; min-height:36px; width:100%;}';
+    document.head.appendChild(style);
+    var scoreEl = document.getElementById('scoreTeamA');
+    if (!scoreEl) return;
+    var grid = scoreEl.closest('.card').parentElement;
+    var bar = document.createElement('div');
+    bar.id = 'btScoreLinkBar';
+    bar.style.cssText = 'background:var(--bg-panel); border:1px solid var(--border-subtle); border-radius:10px; padding:8px 10px; margin:0 auto 10px; max-width:600px;';
+    bar.innerHTML =
+        '<div id="btScoreBindInfo" style="font-weight:800; font-size:0.85rem;"></div>'
+      + '<div id="btScoreStatus" style="font-size:0.82rem; margin-top:3px;"></div>'
+      + '<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:6px;">'
+      +   '<span style="font-size:0.78rem; color:var(--text-secondary);">試合形式:</span>'
+      +   '<button class="btn" data-bo="1" style="min-height:40px;" onclick="btScoreSetBestOf(1)">1ゲーム制</button>'
+      +   '<button class="btn" data-bo="3" style="min-height:40px;" onclick="btScoreSetBestOf(3)">3ゲーム制</button>'
+      +   '<button class="btn" data-bo="5" style="min-height:40px;" onclick="btScoreSetBestOf(5)">5ゲーム制</button>'
+      +   '<button class="btn" id="btScoreUnbindBtn" style="display:none; min-height:40px;" onclick="btScoreUnbind()">連携を解除</button>'
+      + '</div>'
+      + '<div id="btScoreFinish" style="display:none; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-subtle);">'
+      +   '<div id="btScoreFinishText" style="font-weight:900; font-size:0.92rem;"></div>'
+      +   '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">'
+      +     '<button class="btn btn-emerald" id="btScoreSaveHistBtn" style="min-height:44px;" onclick="btScoreSaveHistory()">📒 試合記録に保存</button>'
+      +     '<button class="btn" style="min-height:44px;" onclick="btScoreCancelFinish()">↩ 試合結果を取り消す</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div id="btScoreFlash" style="font-size:0.8rem; color:var(--accent-highlight); min-height:1em; margin-top:4px;"></div>'
+      + '<details style="margin-top:2px;"><summary style="font-size:0.8rem; cursor:pointer; color:var(--text-secondary);">選手名を編集</summary>'
+      + '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px;">'
+      +   '<input id="btNameA1" type="text" placeholder="A1 名前"><input id="btNameA2" type="text" placeholder="A2 名前">'
+      +   '<input id="btNameB1" type="text" placeholder="B1 名前"><input id="btNameB2" type="text" placeholder="B2 名前">'
+      + '</div></details>'
+      + '<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">パネルをタップすると+1点。ゲームは21点先取（デュースは2点差・最大30点）で自動判定し、次のゲームへ進みます。「1つ戻す」は現在のゲーム内だけ有効です。</div>';
+    grid.parentNode.insertBefore(bar, grid);
+    [['btNameA1', 'playersA', 0], ['btNameA2', 'playersA', 1], ['btNameB1', 'playersB', 0], ['btNameB2', 'playersB', 1]].forEach(function(cfg){
+      var el = document.getElementById(cfg[0]);
+      if (el) el.addEventListener('input', function(){
+        matchState[cfg[1]][cfg[2]] = el.value;
+        persist();
+        renderMatchCourt();
+      });
+    });
+    var sec = document.getElementById('tab-score');
+    if (sec && !document.getElementById('btScoreHistoryCard')) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.id = 'btScoreHistoryCard';
+      card.innerHTML = '<div class="card-header"><div class="card-title">📒 試合記録（フリー試合）</div></div><div id="btScoreHistoryList"></div>';
+      var tnCard = document.getElementById('btTnCard');
+      if (tnCard) sec.insertBefore(card, tnCard); else sec.appendChild(card);
+    }
+  }
+
+  /* ---------- 公開アクション ---------- */
+  function splitNames(s, isDbl, side){
+    var raw = String(s || '').trim();
+    var parts = raw.split('・').map(function(t){ return t.trim(); }).filter(function(t){ return !!t; });
+    var second = side === 'A' ? 'パートナー（A2）' : '相手2（B2）';
+    if (!isDbl) return [raw, second];
+    if (parts.length >= 2) return [parts[0], parts.slice(1).join('・')];
+    return [parts[0] || raw, second];
+  }
+  window.btScoreLinkBegin = function(payload){
+    if (!payload) return;
+    if (inProgress() && !confirm('進行中のスコアがあります。破棄して、この試合のスコア付けを始めますか？')) return;
+    link = defaultLink();
+    link.bound = { tnId: payload.tnId, tnName: payload.tnName || '', di: payload.di, ri: payload.ri, mi: payload.mi,
+                   no: payload.no || '', roundName: payload.roundName || '', divLabel: payload.divLabel || '', divCode: payload.divCode || '' };
+    var isDbl = /D/.test(payload.divCode || '') || (payload.p1 || '').indexOf('・') >= 0 || (payload.p2 || '').indexOf('・') >= 0;
+    matchState.format = isDbl ? 'doubles' : 'singles';
+    var btn = document.getElementById('btnMatchTypeToggle');
+    if (btn) btn.textContent = isDbl ? '👥 現在: ダブルス' : '👤 現在: シングルス';
+    matchState.playersA = splitNames(payload.p1, isDbl, 'A');
+    matchState.playersB = splitNames(payload.p2, isDbl, 'B');
+    matchState.scoreA = 0; matchState.scoreB = 0;
+    matchState.servingTeam = 'A';
+    matchState.courtFlipped = false; matchState.swapPairInit = false;
+    matchState.gamesA = 0; matchState.gamesB = 0; matchState.gameLog = [];
+    matchState.history = [];
+    var ub = document.getElementById('btnUndoScore');
+    if (ub) ub.disabled = true;
+    persist();
+    syncNameInputs();
+    renderMatchCourt();
+    renderLinkUI();
+    flashMsg('🏸 スコア付けを開始しました');
+  };
+  window.btScorePanelTap = function(ev, team){
+    if (ev && ev.target && ev.target.closest && ev.target.closest('button, input, select, a, details, summary')) return;
+    addMatchPoint(team, 1);
+  };
+  window.btScoreSetBestOf = function(n){
+    link.bestOf = n;
+    if (!link.finished) {
+      if (gamesWon('A') >= neededWins()) finishMatch('A');
+      else if (gamesWon('B') >= neededWins()) finishMatch('B');
+    }
+    persist();
+    renderLinkUI();
+  };
+  window.btScoreUnbind = function(){
+    if (!link.bound) return;
+    if (!link.finished && (matchState.scoreA + matchState.scoreB > 0 || link.games.length > 0)
+        && !confirm('大会との連携を解除しますか？（入力中のスコアはフリー試合として残ります）')) return;
+    link.bound = null; link.written = false;
+    persist();
+    renderLinkUI();
+    flashMsg('連携を解除しました');
+  };
+  window.btScoreSaveHistory = function(){ saveHistory(); };
+  window.btScoreCancelFinish = function(){ cancelFinish(); };
+  window.btScoreDeleteHistory = function(id){ deleteHistory(id, false); };
+
+  /* ---------- 既存関数のラップ ---------- */
+  function wrap(){
+    if (typeof addMatchPoint !== 'function' || typeof renderMatchCourt !== 'function') return;
+    var _add = addMatchPoint;
+    addMatchPoint = function(team, delta){
+      if (link.finished) { flashMsg('この試合は終了しています。続ける場合は「試合結果を取り消す」かリセットしてください'); return; }
+      _add(team, delta);
+      if (delta > 0) {
+        var w = gameWinner(matchState.scoreA, matchState.scoreB);
+        if (w) endGame(w, false);
+      }
+      persist();
+      renderLinkUI();
+    };
+    var _undo = undoMatchPoint;
+    undoMatchPoint = function(){
+      _undo();
+      persist();
+      renderLinkUI();
+    };
+    var _reset = resetMatchScore;
+    resetMatchScore = function(){
+      if ((inProgress() || link.finished) && !confirm('現在のスコアをリセットしますか？')) return;
+      link = defaultLink();
+      _reset();
+      matchState.gamesA = 0; matchState.gamesB = 0; matchState.gameLog = [];
+      matchState.history = [];
+      var ub = document.getElementById('btnUndoScore');
+      if (ub) ub.disabled = true;
+      persist();
+      syncNameInputs();
+      renderMatchCourt();
+      renderLinkUI();
+    };
+    if (typeof claimGameForTeam === 'function') {
+      claimGameForTeam = function(w){
+        if (link.finished) { flashMsg('この試合は終了しています'); return; }
+        endGame(w, true);
+        persist();
+        renderLinkUI();
+      };
+    }
+    var _fmt = toggleMatchFormat;
+    toggleMatchFormat = function(){
+      _fmt();
+      persist();
+      syncNameInputs();
+      renderLinkUI();
+    };
+    ['flipCourtSide', 'swapInitialPairPos', 'toggleServeRight'].forEach(function(name){
+      if (typeof window[name] === 'function') {
+        var orig = window[name];
+        window[name] = function(){ orig(); persist(); };
+      }
+    });
+    var _render = renderMatchCourt;
+    renderMatchCourt = function(){
+      _render();
+      updatePanelNames();
+    };
+  }
+
+  /* ---------- 起動 ---------- */
+  function boot(){
+    injectUI();
+    restore();
+    syncNameInputs();
+    renderMatchCourt();
+    renderLinkUI();
+    renderHistory();
+  }
+  wrap();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+  window.__bt_score_link = {
+    getLink: function(){ return link; },
+    gameWinner: gameWinner,
+    scoreString: scoreString,
+    gamesWon: gamesWon,
+    neededWins: neededWins,
+    begin: window.btScoreLinkBegin,
+    cancelFinish: cancelFinish,
+    saveHistory: saveHistory,
+    loadHistory: loadHistory,
+    deleteHistory: function(id){ deleteHistory(id, false); },
+    persist: persist,
+    restore: restore,
+    LINK_KEY: LINK_KEY, HIST_KEY: HIST_KEY
+  };
+  console.log('[badtore score-link] loaded');
 })();
 </script>
 
