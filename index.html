@@ -18247,7 +18247,7 @@ function sharePoseResultImage() {
       '.bt-tn-ed-row{display:flex;gap:5px;align-items:center;margin:4px 0;flex-wrap:wrap;}',
       '.bt-tn-ed-row input{background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;font-size:0.8rem;min-height:32px;}',
       '.bt-tn-bracket{display:flex;gap:5px;overflow-x:auto;padding:6px 2px;}',
-      '.bt-tn-round{flex:1 1 0;min-width:66px;}',
+      '.bt-tn-round{flex:1 1 0;min-width:88px;}',
       '.bt-tn-bracket-fit .bt-tn-round{min-width:0;}',
       '.bt-tn-round-title{font-weight:900;font-size:0.72rem;color:var(--accent-primary);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.bt-tn-match{border:1px solid var(--border-subtle);border-radius:10px;padding:5px;margin-bottom:6px;background:var(--bg-main);cursor:pointer;}',
@@ -18260,7 +18260,8 @@ function sharePoseResultImage() {
       '.bt-tn-match-no{font-size:0.66rem;font-weight:800;color:var(--accent-secondary);}',
       '.bt-tn-player{display:flex;justify-content:space-between;align-items:center;gap:3px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:7px;padding:3px 4px;margin:2px 0;color:var(--text-main);font-size:0.72rem;min-height:26px;}',
       '.bt-tn-player-win{border-color:var(--accent-primary);font-weight:900;background:var(--bg-panel);}',
-      '.bt-tn-pname{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}',
+      '.bt-tn-pname{display:block;white-space:nowrap;min-width:0;}',
+      '.bt-tn-pname-long{font-size:0.62rem;}',
       '.bt-tn-match .bt-tn-star{min-width:27px;min-height:27px;font-size:0.78rem;margin:1px 0;padding:0 2px;}',
       '.bt-tn-cscore{font-size:0.68rem;color:var(--text-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}',
       '.bt-tn-dplayer{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:var(--bg-main);border:1px solid var(--border-subtle);border-radius:10px;padding:10px;margin:6px 0;color:var(--text-main);font-size:1.1rem;cursor:pointer;min-height:56px;}',
@@ -18274,10 +18275,11 @@ function sharePoseResultImage() {
       '.bt-tn-chip-on{background:var(--accent-primary);color:#fff;font-weight:800;}',
       '.bt-tn-sec-title{font-weight:900;font-size:0.84rem;margin:10px 0 4px;}',
       '.bt-tn-note{font-size:0.74rem;color:var(--text-sub);line-height:1.5;}',
-      '.bt-tn-school{display:block;font-size:0.68rem;color:var(--text-sub);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.bt-tn-school{display:block;font-size:0.68rem;color:var(--text-sub);line-height:1.25;white-space:nowrap;}',
+      '.bt-tn-school-long{font-size:0.6rem;}',
       '.bt-tn-candidate{color:var(--text-sub);font-size:0.74rem;}',
       '.bt-tn-seed{display:inline-block;font-size:0.66rem;font-weight:900;color:#2a1503;background:#f59e0b;border:1px solid #f59e0b;border-radius:999px;padding:0 6px;margin-left:5px;line-height:1.5;vertical-align:1px;}',
-      '.bt-tn-match .bt-tn-seed{font-size:0.6rem;padding:0 4px;margin-left:3px;flex:0 0 auto;}',
+      '.bt-tn-match .bt-tn-seed{font-size:0.66rem;padding:0 4px;margin-left:3px;flex:0 0 auto;}',
       '.bt-tn-list-row{border:1px solid var(--border-subtle);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:var(--bg-main);cursor:pointer;}',
       '.bt-tn-list-row-cur{border:2px solid var(--accent-primary);background:var(--bg-panel);}'
     ].join('\n');
@@ -18460,9 +18462,9 @@ function sharePoseResultImage() {
       h += '<div style="display:flex;gap:3px;align-items:stretch;">'
         + '<div class="bt-tn-player' + (isWin ? ' bt-tn-player-win' : '') + '" style="flex:1;min-width:0;">'
         + '<span style="flex:1;min-width:0;">'
-        + (sc ? '<span class="bt-tn-school">' + btTnEsc(sc) + '</span>' : '')
+        + (sc ? '<span class="bt-tn-school' + (String(sc).length >= 8 ? ' bt-tn-school-long' : '') + '">' + btTnEsc(sc) + '</span>' : '')
         + (nm
-          ? '<span style="display:flex;align-items:center;min-width:0;"><span class="bt-tn-pname">' + btTnEsc(nm) + '</span>' + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? '<span style="flex:0 0 auto;"> 👀</span>' : '') + '</span>'
+          ? '<span style="display:flex;align-items:center;min-width:0;"><span style="flex:1;min-width:0;">' + String(nm).split('・').map(function(part){ var pn = part.trim(); return '<span class="bt-tn-pname' + (pn.length >= 6 ? ' bt-tn-pname-long' : '') + '">' + btTnEsc(pn) + '</span>'; }).join('') + '</span>' + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? '<span style="flex:0 0 auto;"> 👀</span>' : '') + '</span>'
           : (ph ? '<span class="bt-tn-candidate">' + btTnEsc(ph) + '</span>' : '<span>（未定）</span>'))
         + '</span>' + (isWin ? '<span style="flex:0 0 auto;">🏆</span>' : '')
         + '</div>';
@@ -18630,7 +18632,7 @@ function sharePoseResultImage() {
     h += btTnSchoolSectionHtml(tn, names, smap);
     if (!btTnState.schoolFilter) tn.divisions.forEach(function(div, di){
       if (div.code !== btTnState.divCode) return;
-      h += '<div class="bt-tn-bracket' + (div.rounds.length >= 6 ? ' bt-tn-bracket-fit' : '') + '">';
+      h += '<div class="bt-tn-bracket' + (div.rounds.length === 5 ? ' bt-tn-bracket-fit' : '') + '">';
       btTnSortedRoundIdx(div).forEach(function(ri){
         var r = div.rounds[ri];
         h += '<div class="bt-tn-round"><div class="bt-tn-round-title">' + btTnEsc(r.name) + '</div>';
@@ -19866,7 +19868,8 @@ function sharePoseResultImage() {
    - 大会の試合とスコアボードを連携：対戦表の「🏸 スコアをつける」から
      名前入りで開始し、試合終了で結果（勝者・ゲームスコア）を大会側の
      既存の保存経路（btTn.recordScoreResult）へ書き戻す
-   - ゲーム判定は標準ルール：21点先取、デュースは2点差、最大30点。
+   - ゲーム判定は選択式：21点制（21点先取、デュースは2点差、最大30点）
+     または15点制（15点先取、デュースは2点差、最大21点）。
      ゲームが終わると自動で次ゲームへ進む（従来の手動「＋1ゲーム奪取」
      も、同じ記録経路に合わせて継続利用できる）
    - フリー試合は終了後に「試合記録」へ保存できる（端末内のみ）
@@ -19880,23 +19883,33 @@ function sharePoseResultImage() {
 
   var LINK_KEY = 'badtore_score_link_v106';
   var HIST_KEY = 'badtore_match_history_v106';
+  var POINTS_KEY = 'badtore_score_points_v106';
 
   function lsGet(k){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
   function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function defaultLink(){
-    return { bound: null, bestOf: 3, games: [], finished: false, winner: null,
+    return { bound: null, bestOf: 3, points: 21, games: [], finished: false, winner: null,
              written: false, savedToHistory: false, historyId: null };
   }
   var link = defaultLink();
+  (function(){
+    var p = Number(lsGet(POINTS_KEY));
+    if (p === 15 || p === 21) link.points = p;
+  })();
 
   /* ---------- ルール判定 ---------- */
+  /* 21点制: 21点先取・2点差・最大30点 / 15点制: 15点先取・2点差・最大21点 */
+  function rulesFor(points){
+    return points === 15 ? { target: 15, cap: 21 } : { target: 21, cap: 30 };
+  }
   function gameWinner(a, b){
-    if (a >= 21 || b >= 21) {
+    var r = rulesFor(link.points);
+    if (a >= r.target || b >= r.target) {
       if (Math.abs(a - b) >= 2) return a > b ? 'A' : 'B';
-      if (a === 30) return 'A';
-      if (b === 30) return 'B';
+      if (a === r.cap) return 'A';
+      if (b === r.cap) return 'B';
     }
     return null;
   }
@@ -20014,7 +20027,7 @@ function sharePoseResultImage() {
     var rec = {
       id: 'mh' + Date.now().toString(36),
       at: new Date().toISOString(),
-      format: matchState.format, bestOf: link.bestOf,
+      format: matchState.format, bestOf: link.bestOf, points: link.points,
       namesA: matchState.playersA.slice(0, matchState.format === 'doubles' ? 2 : 1),
       namesB: matchState.playersB.slice(0, matchState.format === 'doubles' ? 2 : 1),
       games: link.games.map(function(g){ return { a: g.a, b: g.b, w: g.w }; }),
@@ -20112,6 +20125,15 @@ function sharePoseResultImage() {
       var on = Number(b.getAttribute('data-bo')) === link.bestOf;
       b.classList.toggle('btn-emerald', on);
     });
+    document.querySelectorAll('#btScoreLinkBar [data-pt]').forEach(function(b){
+      var on = Number(b.getAttribute('data-pt')) === link.points;
+      b.classList.toggle('btn-emerald', on);
+    });
+    var rn = document.getElementById('btScoreRuleNote');
+    if (rn) {
+      var rr = rulesFor(link.points);
+      rn.textContent = 'パネルをタップすると+1点。ゲームは' + rr.target + '点先取（デュースは2点差・最大' + rr.cap + '点）で自動判定し、次のゲームへ進みます。「1つ戻す」は現在のゲーム内だけ有効です。';
+    }
     var ub = document.getElementById('btScoreUnbindBtn');
     if (ub) ub.style.display = link.bound ? '' : 'none';
     var fin = document.getElementById('btScoreFinish');
@@ -20157,6 +20179,11 @@ function sharePoseResultImage() {
       +   '<button class="btn" data-bo="5" style="min-height:40px;" onclick="btScoreSetBestOf(5)">5ゲーム制</button>'
       +   '<button class="btn" id="btScoreUnbindBtn" style="display:none; min-height:40px;" onclick="btScoreUnbind()">連携を解除</button>'
       + '</div>'
+      + '<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:6px;">'
+      +   '<span style="font-size:0.78rem; color:var(--text-secondary);">1ゲームの点数:</span>'
+      +   '<button class="btn" data-pt="21" style="min-height:40px;" onclick="btScoreSetPoints(21)">21点制</button>'
+      +   '<button class="btn" data-pt="15" style="min-height:40px;" onclick="btScoreSetPoints(15)">15点制</button>'
+      + '</div>'
       + '<div id="btScoreFinish" style="display:none; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-subtle);">'
       +   '<div id="btScoreFinishText" style="font-weight:900; font-size:1.05rem;"></div>'
       +   '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">'
@@ -20170,7 +20197,7 @@ function sharePoseResultImage() {
       +   '<input id="btNameA1" type="text" placeholder="A1 名前"><input id="btNameA2" type="text" placeholder="A2 名前">'
       +   '<input id="btNameB1" type="text" placeholder="B1 名前"><input id="btNameB2" type="text" placeholder="B2 名前">'
       + '</div></details>'
-      + '<div style="font-size:0.78rem; color:var(--text-secondary); margin-top:4px;">パネルをタップすると+1点。ゲームは21点先取（デュースは2点差・最大30点）で自動判定し、次のゲームへ進みます。「1つ戻す」は現在のゲーム内だけ有効です。</div>';
+      + '<div id="btScoreRuleNote" style="font-size:0.78rem; color:var(--text-secondary); margin-top:4px;">パネルをタップすると+1点。ゲームは21点先取（デュースは2点差・最大30点）で自動判定し、次のゲームへ進みます。「1つ戻す」は現在のゲーム内だけ有効です。</div>';
     grid.parentNode.insertBefore(bar, grid);
     [['btNameA1', 'playersA', 0], ['btNameA2', 'playersA', 1], ['btNameB1', 'playersB', 0], ['btNameB2', 'playersB', 1]].forEach(function(cfg){
       var el = document.getElementById(cfg[0]);
@@ -20203,7 +20230,9 @@ function sharePoseResultImage() {
   window.btScoreLinkBegin = function(payload){
     if (!payload) return;
     if (inProgress() && !confirm('進行中のスコアがあります。破棄して、この試合のスコア付けを始めますか？')) return;
+    var keepPts = link.points;
     link = defaultLink();
+    link.points = keepPts;
     link.bound = { tnId: payload.tnId, tnName: payload.tnName || '', di: payload.di, ri: payload.ri, mi: payload.mi,
                    no: payload.no || '', roundName: payload.roundName || '', divLabel: payload.divLabel || '', divCode: payload.divCode || '' };
     var isDbl = /D/.test(payload.divCode || '') || (payload.p1 || '').indexOf('・') >= 0 || (payload.p2 || '').indexOf('・') >= 0;
@@ -20234,6 +20263,18 @@ function sharePoseResultImage() {
     if (!link.finished) {
       if (gamesWon('A') >= neededWins()) finishMatch('A');
       else if (gamesWon('B') >= neededWins()) finishMatch('B');
+    }
+    persist();
+    renderLinkUI();
+  };
+  window.btScoreSetPoints = function(p){
+    p = Number(p);
+    if (p !== 15 && p !== 21) return;
+    link.points = p;
+    lsSet(POINTS_KEY, p);
+    if (!link.finished && typeof matchState !== 'undefined' && (matchState.scoreA + matchState.scoreB) > 0) {
+      var w = gameWinner(matchState.scoreA, matchState.scoreB);
+      if (w) endGame(w, false);
     }
     persist();
     renderLinkUI();
@@ -20274,7 +20315,9 @@ function sharePoseResultImage() {
     var _reset = resetMatchScore;
     resetMatchScore = function(){
       if ((inProgress() || link.finished) && !confirm('現在のスコアをリセットしますか？')) return;
+      var keepPts2 = link.points;
       link = defaultLink();
+      link.points = keepPts2;
       _reset();
       matchState.gamesA = 0; matchState.gamesB = 0; matchState.gameLog = [];
       matchState.history = [];
@@ -20329,6 +20372,9 @@ function sharePoseResultImage() {
   window.__bt_score_link = {
     getLink: function(){ return link; },
     gameWinner: gameWinner,
+    rulesFor: rulesFor,
+    getPoints: function(){ return link.points; },
+    setPoints: window.btScoreSetPoints,
     scoreString: scoreString,
     gamesWon: gamesWon,
     neededWins: neededWins,
@@ -20339,7 +20385,7 @@ function sharePoseResultImage() {
     deleteHistory: function(id){ deleteHistory(id, false); },
     persist: persist,
     restore: restore,
-    LINK_KEY: LINK_KEY, HIST_KEY: HIST_KEY
+    LINK_KEY: LINK_KEY, HIST_KEY: HIST_KEY, POINTS_KEY: POINTS_KEY
   };
   console.log('[badtore score-link] loaded');
 })();
