@@ -17921,17 +17921,21 @@ function sharePoseResultImage() {
      btTnMatchPlayers の繰り上がり計算とこの対応を共有し、候補表示と食い違わないようにする */
   function btTnFeederSource(div, ri, mi, side){
     var round = div.rounds[ri];
-    if (!round || ri <= 0) return null;
+    if (!round) return null;
+    /* 前ラウンドは保存順ではなく進行順で決める（初戦が最初、シードの入るラウンドがその次に来る並び） */
+    var pri = btTnRoundPrevIdx(div, ri);
+    if (pri < 0) return null;
     var fmi = mi * 2 + (side === 2 ? 1 : 0);
     if (round.third) {
       /* 3位決定戦は準決勝の敗者。前ラウンドが決勝（1試合）の場合はそれを飛ばして準決勝から取る */
-      var fri = ri - 1;
-      if (fri > 0 && div.rounds[fri].matches.length < 2) fri = fri - 1;
-      if (fri < 0 || fmi >= div.rounds[fri].matches.length) return null;
+      var fri = pri;
+      var ppri = btTnRoundPrevIdx(div, fri);
+      if (ppri >= 0 && div.rounds[fri].matches.length < 2) fri = ppri;
+      if (fmi >= div.rounds[fri].matches.length) return null;
       return { fri: fri, fmi: fmi, wantLoser: true };
     }
-    if (fmi >= div.rounds[ri - 1].matches.length) return null;
-    return { fri: ri - 1, fmi: fmi, wantLoser: false };
+    if (fmi >= div.rounds[pri].matches.length) return null;
+    return { fri: pri, fmi: fmi, wantLoser: false };
   }
   /* 実効対戦者：前ラウンド勝者（3位決定戦は敗者）を繰り上げて表示する */
   /* 実効選手：名前・学校名・シードをセットで返す（繰り上がりで一緒に移動させるため） */
@@ -17957,7 +17961,7 @@ function sharePoseResultImage() {
   function btTnMatchPlayers(div, ri, mi){
     var round = div.rounds[ri];
     var m = round.matches[mi];
-    if (ri === 0) return { p1: m.p1 || '', p2: m.p2 || '', s1: m.s1 || '', s2: m.s2 || '', seed1: m.seed1 || '', seed2: m.seed2 || '' };
+    if (btTnRoundPrevIdx(div, ri) < 0) return { p1: m.p1 || '', p2: m.p2 || '', s1: m.s1 || '', s2: m.s2 || '', seed1: m.seed1 || '', seed2: m.seed2 || '' };
     /* フィーダー対応は btTnFeederSource に一本化（候補表示の逆引きと共有）。
        対応が無いスロットは、繰り上がり前に入力されていた値をそのまま使う（従来の fallback と等価） */
     var src1 = btTnFeederSource(div, ri, mi, 1);
@@ -17988,7 +17992,7 @@ function sharePoseResultImage() {
   function btTnMatchOrigins(div, ri, mi){
     var m = div.rounds[ri].matches[mi];
     function selfOrigin(side){ return { div: div.code || '', no: m.no || '', ri: ri, mi: mi, side: side }; }
-    if (ri === 0) return { o1: selfOrigin(1), o2: selfOrigin(2) };
+    if (btTnRoundPrevIdx(div, ri) < 0) return { o1: selfOrigin(1), o2: selfOrigin(2) };
     var src1 = btTnFeederSource(div, ri, mi, 1);
     var src2 = btTnFeederSource(div, ri, mi, 2);
     var o1 = src1 ? (btTnFeederOrigin(div, src1.fri, src1.fmi, src1.wantLoser) || selfOrigin(1)) : selfOrigin(1);
@@ -18027,6 +18031,46 @@ function sharePoseResultImage() {
   }
 
   /* ---------- 成績算出・結果サマリー（純粋関数） ---------- */
+  /* ラウンドの進行順（小さいほど早い試合）。保存順がどうであれ、対戦表の並びと勝ち上がりの接続はこの順で決める。
+     表記ゆれ（全角数字・第N回戦・初戦・予選）に対応。判定できないラベルは null */
+  function btTnRoundOrdinal(round){
+    var n = String((round && round.name) || '').replace(/[\s　]+/g, '')
+      .replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
+    if ((round && round.third) || /3位/.test(n)) return 600;
+    if (/準々決勝/.test(n)) return 300;
+    if (/準決勝/.test(n)) return 400;
+    if (/決勝/.test(n)) return 500;
+    var m = n.match(/(\d+)回戦/);
+    if (m) return parseInt(m[1], 10) * 10;
+    if (/予選/.test(n)) return 4;
+    if (/初戦/.test(n)) return 5;
+    return null;
+  }
+  /* ソート用キー：判定できないラウンドは番号回戦の後・準々決勝の前に置く（同点の場合は元の並びを保持） */
+  function btTnRoundOrderKey(round){
+    var o = btTnRoundOrdinal(round);
+    return o === null ? 250 : o;
+  }
+  /* ラウンドを進行順に並べ替えた「元の添字」の配列（安定ソート）。保存データ自体は並べ替えない */
+  function btTnSortedRoundIdx(div){
+    var rounds = (div && div.rounds) || [];
+    var idx = rounds.map(function(_, ri){ return ri; });
+    idx.sort(function(a, b){
+      return (btTnRoundOrderKey(rounds[a]) - btTnRoundOrderKey(rounds[b])) || (a - b);
+    });
+    return idx;
+  }
+  /* 進行順で見た前／次のラウンドの元の添字（なければ -1） */
+  function btTnRoundPrevIdx(div, ri){
+    var order = btTnSortedRoundIdx(div);
+    var pos = order.indexOf(ri);
+    return pos > 0 ? order[pos - 1] : -1;
+  }
+  function btTnRoundNextIdx(div, ri){
+    var order = btTnSortedRoundIdx(div);
+    var pos = order.indexOf(ri);
+    return (pos >= 0 && pos < order.length - 1) ? order[pos + 1] : -1;
+  }
   /* ラウンド名の分類：表記ゆれ（準々決勝戦など）にも対応する */
   function btTnRoundKind(round){
     if (round && round.third) return { kind: 'third' };
@@ -18042,8 +18086,11 @@ function sharePoseResultImage() {
   /* 勝ち上がり先のラウンド名（3位決定戦は飛ばす）。なければ '' */
   function btTnNextRoundName(div, ri){
     var rounds = (div && div.rounds) || [];
-    for (var i = ri + 1; i < rounds.length; i++) {
-      if (btTnRoundKind(rounds[i]).kind !== 'third') return String(rounds[i].name || '');
+    var order = btTnSortedRoundIdx(div);
+    var pos = order.indexOf(ri);
+    if (pos < 0) return '';
+    for (var i = pos + 1; i < order.length; i++) {
+      if (btTnRoundKind(rounds[order[i]]).kind !== 'third') return String(rounds[order[i]].name || '');
     }
     return '';
   }
@@ -18052,7 +18099,8 @@ function sharePoseResultImage() {
     names = names || btTnProfileNames();
     var best = null;
     function consider(pri, label){ if (label && (!best || pri > best.pri)) best = { pri: pri, label: label }; }
-    ((div && div.rounds) || []).forEach(function(r, ri){
+    btTnSortedRoundIdx(div).forEach(function(ri){
+      var r = div.rounds[ri];
       var kind = btTnRoundKind(r);
       (r.matches || []).forEach(function(m, mi){
         if (!m.winner) return;
@@ -18113,7 +18161,8 @@ function sharePoseResultImage() {
     names = names || btTnProfileNames();
     var out = [];
     ((tn && tn.divisions) || []).forEach(function(div){
-      ((div && div.rounds) || []).forEach(function(r, ri){
+      btTnSortedRoundIdx(div).forEach(function(ri){
+        var r = div.rounds[ri];
         (r.matches || []).forEach(function(m, mi){
           if (!m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
@@ -18299,7 +18348,8 @@ function sharePoseResultImage() {
     var smap = btTnScheduleMap(tn);
     var lines = [];
     (tn.divisions || []).forEach(function(div){
-      (div.rounds || []).forEach(function(r, ri){
+      btTnSortedRoundIdx(div).forEach(function(ri){
+        var r = div.rounds[ri];
         (r.matches || []).forEach(function(m, mi){
           if (m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
@@ -18330,7 +18380,8 @@ function sharePoseResultImage() {
     var smap = btTnScheduleMap(tn);
     var lines = [];
     (tn.divisions || []).forEach(function(div){
-      (div.rounds || []).forEach(function(r, ri){
+      btTnSortedRoundIdx(div).forEach(function(ri){
+        var r = div.rounds[ri];
         (r.matches || []).forEach(function(m, mi){
           if (m.winner) return;
           var eff = btTnMatchPlayers(div, ri, mi);
@@ -18436,7 +18487,7 @@ function sharePoseResultImage() {
     names.sort(function(a, b){ return (counts[b] - counts[a]) || a.localeCompare(b, 'ja'); });
     return names.map(function(n){ return { name: n, count: counts[n] }; });
   }
-  /* 指定学校の全試合（全部門・全ラウンド）。進行表の時刻がある試合は時刻順、無い試合は対戦表順で後ろ */
+  /* 指定学校の全試合（全部門・全ラウンド）。進行表の時刻がある試合は時刻順、無い試合はラウンドの進行順で後ろ */
   function btTnSchoolMatches(tn, school){
     var smap = btTnScheduleMap(tn);
     var out = [];
@@ -18446,15 +18497,16 @@ function sharePoseResultImage() {
           var eff = btTnMatchPlayers(div, ri, mi);
           if (String(eff.s1 || '').trim() === school || String(eff.s2 || '').trim() === school) {
             var sch = m.no ? smap[m.no] : null;
-            out.push({ div: div, di: di, ri: ri, mi: mi, time: sch ? String(sch.time || '') : '' });
+            out.push({ div: div, di: di, ri: ri, mi: mi, ord: btTnRoundOrderKey(r), time: sch ? String(sch.time || '') : '' });
           }
         });
       });
     });
     return out.map(function(e, i){ return { e: e, i: i }; }).sort(function(a, b){
-      if (a.e.time && b.e.time) return a.e.time < b.e.time ? -1 : (a.e.time > b.e.time ? 1 : a.i - b.i);
-      if (a.e.time) return -1;
-      if (b.e.time) return 1;
+      if (a.e.time && b.e.time && a.e.time !== b.e.time) return a.e.time < b.e.time ? -1 : 1;
+      if (a.e.time && !b.e.time) return -1;
+      if (!a.e.time && b.e.time) return 1;
+      if (a.e.ord !== b.e.ord) return a.e.ord - b.e.ord;
       return a.i - b.i;
     }).map(function(x){ return x.e; });
   }
@@ -18506,7 +18558,8 @@ function sharePoseResultImage() {
     if (!btTnState.schoolFilter) tn.divisions.forEach(function(div, di){
       if (div.code !== btTnState.divCode) return;
       h += '<div class="bt-tn-bracket">';
-      (div.rounds || []).forEach(function(r, ri){
+      btTnSortedRoundIdx(div).forEach(function(ri){
+        var r = div.rounds[ri];
         h += '<div class="bt-tn-round"><div class="bt-tn-round-title">' + btTnEsc(r.name) + '</div>';
         (r.matches || []).forEach(function(m, mi){ h += btTnMatchHtml(tn, div, di, ri, mi, names, smap); });
         h += '</div>';
@@ -19206,6 +19259,10 @@ function sharePoseResultImage() {
     thumbsHtml: btTnThumbsHtml,
     ownSummaryHtml: btTnOwnSummaryHtml,
     roundKind: btTnRoundKind,
+    roundOrdinal: btTnRoundOrdinal,
+    sortedRoundIdx: btTnSortedRoundIdx,
+    roundPrevIdx: btTnRoundPrevIdx,
+    roundNextIdx: btTnRoundNextIdx,
     bestResultLabel: btTnBestResultLabel,
     tournamentResultLine: btTnTournamentResultLine,
     divisionChampions: btTnDivisionChampions,
