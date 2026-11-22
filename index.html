@@ -17619,6 +17619,7 @@ function sharePoseResultImage() {
     currentId: null,
     images: { bracket: [], schedule: [] },  // 現在の大会の画像 {imgId, kind, dataUrl}
     divCode: null,       // 表示中の部門コード
+    schoolFilter: null,  // 学校で探す：選択中の学校名（null=絞り込みなし）
     editDraft: null,     // 確認・修正画面のドラフト
     viewer: null,        // {kind, imgId, zoom}
     photosOpen: false    // 予備写真セクションの開閉状態（再描画で閉じないよう保持）
@@ -18208,7 +18209,7 @@ function sharePoseResultImage() {
       '.bt-tn-match-no{font-size:0.85rem;font-weight:800;color:var(--accent-secondary);cursor:pointer;}',
       '.bt-tn-player{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:7px;padding:6px;margin:2px 0;color:var(--text-main);font-size:1rem;line-height:1.3;cursor:pointer;min-height:40px;}',
       '.bt-tn-player-win{border-color:var(--accent-primary);font-weight:900;background:var(--bg-panel);}',
-      '.bt-tn-player-lose{opacity:.72;}',
+      '.bt-tn-player-lose .bt-tn-pname{opacity:.72;}',
       '.bt-tn-player:disabled{opacity:.55;cursor:default;}',
       '.bt-tn-score{width:100%;background:var(--bg-panel);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;font-size:1rem;margin-top:4px;min-height:36px;}',
       '.bt-tn-chip{border:1px solid var(--border-subtle);background:var(--bg-main);color:var(--text-main);border-radius:999px;padding:6px 12px;font-size:1rem;cursor:pointer;min-height:36px;}',
@@ -18217,7 +18218,7 @@ function sharePoseResultImage() {
       '.bt-tn-note{font-size:0.85rem;color:var(--text-sub);line-height:1.5;}',
       '.bt-tn-school{display:block;font-size:0.85rem;color:var(--text-sub);line-height:1.25;}',
       '.bt-tn-candidate{color:var(--text-sub);font-size:0.85rem;}',
-      '.bt-tn-seed{display:inline-block;font-size:0.85rem;font-weight:800;color:#92400e;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.55);border-radius:999px;padding:0 6px;margin-left:5px;line-height:1.5;vertical-align:1px;}',
+      '.bt-tn-seed{display:inline-block;font-size:0.85rem;font-weight:900;color:#2a1503;background:#f59e0b;border:1px solid #f59e0b;border-radius:999px;padding:0 6px;margin-left:5px;line-height:1.5;vertical-align:1px;}',
       '.bt-tn-list-row{border:1px solid var(--border-subtle);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:var(--bg-main);cursor:pointer;}',
       '.bt-tn-list-row-cur{border:2px solid var(--accent-primary);background:var(--bg-panel);}'
     ].join('\n');
@@ -18399,7 +18400,7 @@ function sharePoseResultImage() {
         + '<span style="flex:1;min-width:0;">'
         + (sc ? '<span class="bt-tn-school">' + btTnEsc(sc) + '</span>' : '')
         + (nm
-          ? '<span>' + btTnEsc(nm) + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? ' 👀' : '') + '</span>'
+          ? '<span><span class="bt-tn-pname">' + btTnEsc(nm) + '</span>' + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? ' 👀' : '') + '</span>'
           : (ph ? '<span class="bt-tn-candidate">' + btTnEsc(ph) + '</span>' : '<span>（未定）</span>'))
         + '</span>' + (isWin ? '<span>🏆</span>' : '')
         + '</button>';
@@ -18412,6 +18413,76 @@ function sharePoseResultImage() {
     if (eff.p1 && eff.p2) h += '<button class="btn btn-emerald" style="margin-top:4px; min-height:40px;" onclick="btTn.startScoring(' + di + ',' + ri + ',' + mi + ')">' + (m.winner ? '🏸 スコアで記録し直す' : '🏸 スコアをつける') + '</button>';
     if (m.winner) h += '<button class="btn" style="margin-top:4px;" onclick="btTn.clearResult(' + di + ',' + ri + ',' + mi + ')">結果を取り消す</button>';
     return h + '</div>';
+  }
+
+  /* ---------- 学校で探す（学校名ピッカー） ---------- */
+  /* 学校一覧は実効選手（勝ち上がり反映後）の学校名から作る。件数はその学校が出る試合数 */
+  function btTnSchoolIndex(tn){
+    var counts = {}, names = [];
+    ((tn && tn.divisions) || []).forEach(function(div){
+      (div.rounds || []).forEach(function(r, ri){
+        (r.matches || []).forEach(function(m, mi){
+          var eff = btTnMatchPlayers(div, ri, mi);
+          var seen = {};
+          [eff.s1, eff.s2].forEach(function(sc){
+            sc = String(sc || '').trim();
+            if (!sc || seen[sc]) return;
+            seen[sc] = true;
+            if (!(sc in counts)) { counts[sc] = 0; names.push(sc); }
+            counts[sc]++;
+          });
+        });
+      });
+    });
+    names.sort(function(a, b){ return (counts[b] - counts[a]) || a.localeCompare(b, 'ja'); });
+    return names.map(function(n){ return { name: n, count: counts[n] }; });
+  }
+  /* 指定学校の全試合（全部門・全ラウンド）。進行表の時刻がある試合は時刻順、無い試合は対戦表順で後ろ */
+  function btTnSchoolMatches(tn, school){
+    var smap = btTnScheduleMap(tn);
+    var out = [];
+    ((tn && tn.divisions) || []).forEach(function(div, di){
+      (div.rounds || []).forEach(function(r, ri){
+        (r.matches || []).forEach(function(m, mi){
+          var eff = btTnMatchPlayers(div, ri, mi);
+          if (String(eff.s1 || '').trim() === school || String(eff.s2 || '').trim() === school) {
+            var sch = m.no ? smap[m.no] : null;
+            out.push({ div: div, di: di, ri: ri, mi: mi, time: sch ? String(sch.time || '') : '' });
+          }
+        });
+      });
+    });
+    return out.map(function(e, i){ return { e: e, i: i }; }).sort(function(a, b){
+      if (a.e.time && b.e.time) return a.e.time < b.e.time ? -1 : (a.e.time > b.e.time ? 1 : a.i - b.i);
+      if (a.e.time) return -1;
+      if (b.e.time) return 1;
+      return a.i - b.i;
+    }).map(function(x){ return x.e; });
+  }
+  function btTnSchoolSectionHtml(tn, names, smap){
+    var schools = btTnSchoolIndex(tn);
+    if (!schools.length) return '';
+    if (btTnState.schoolFilter && !schools.some(function(s){ return s.name === btTnState.schoolFilter; })) {
+      btTnState.schoolFilter = null; /* データ編集で学校が消えた場合は絞り込みを解除 */
+    }
+    var cur = btTnState.schoolFilter;
+    var h = '<div class="bt-tn-sec-title">🏫 学校で探す</div>'
+      + '<div style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;">'
+      + '<button class="bt-tn-chip' + (!cur ? ' bt-tn-chip-on' : '') + '" style="flex:0 0 auto;" onclick="btTn.setSchoolFilter(\'\')">すべて表示</button>';
+    schools.forEach(function(s, i){
+      h += '<button class="bt-tn-chip' + (cur === s.name ? ' bt-tn-chip-on' : '') + '" style="flex:0 0 auto;" onclick="btTn.setSchoolFilterByIdx(' + i + ')">' + btTnEsc(s.name) + '（' + s.count + '）</button>';
+    });
+    h += '</div>';
+    if (cur) {
+      var list = btTnSchoolMatches(tn, cur);
+      h += '<div style="font-weight:900;font-size:1rem;margin:2px 0 6px;">🏫 ' + btTnEsc(cur) + ' の試合（' + list.length + '件）</div>';
+      if (!list.length) h += '<div class="bt-tn-note">この学校の試合は見つかりませんでした。</div>';
+      list.forEach(function(e){
+        h += '<div class="bt-tn-note" style="margin-top:6px;">' + btTnEsc(e.div.label || e.div.code) + ' ' + btTnEsc(e.div.rounds[e.ri].name) + '</div>'
+          + btTnMatchHtml(tn, e.div, e.di, e.ri, e.mi, names, smap);
+      });
+    }
+    return h;
   }
 
   function btTnBracketHtml(tn){
@@ -18432,7 +18503,8 @@ function sharePoseResultImage() {
       h += '<button class="bt-tn-chip' + (div.code === btTnState.divCode ? ' bt-tn-chip-on' : '') + '" onclick="btTn.setDivisionByIdx(' + di + ')">' + btTnEsc(div.label || div.code) + '</button>';
     });
     h += '</div>';
-    tn.divisions.forEach(function(div, di){
+    h += btTnSchoolSectionHtml(tn, names, smap);
+    if (!btTnState.schoolFilter) tn.divisions.forEach(function(div, di){
       if (div.code !== btTnState.divCode) return;
       h += '<div class="bt-tn-bracket">';
       (div.rounds || []).forEach(function(r, ri){
@@ -18619,6 +18691,7 @@ function sharePoseResultImage() {
       btTnState.list.unshift(tn);
       btTnState.currentId = tn.id;
       btTnState.divCode = null;
+      btTnState.schoolFilter = null;
       btTnState.photosOpen = false;
       btTnState.images = { bracket: [], schedule: [] };
       if (inp) inp.value = '';
@@ -18627,12 +18700,14 @@ function sharePoseResultImage() {
     select: function(id){
       btTnState.currentId = id;
       btTnState.divCode = null;
+      btTnState.schoolFilter = null;
       btTnState.photosOpen = false;
       btTnLoadImages(id).then(btTnRender);
     },
     selectAndScroll: function(id){
       btTnState.currentId = id;
       btTnState.divCode = null;
+      btTnState.schoolFilter = null;
       btTnState.photosOpen = false;
       btTnLoadImages(id).then(function(){
         btTnRender();
@@ -18655,6 +18730,7 @@ function sharePoseResultImage() {
         btTnState.list = btTnState.list.filter(function(t){ return t.id !== id; });
         btTnState.currentId = btTnState.list.length ? btTnState.list[0].id : null;
         btTnState.divCode = null;
+        btTnState.schoolFilter = null;
         btTnState.photosOpen = false;
         return btTnState.currentId ? btTnLoadImages(btTnState.currentId) : null;
       }).then(btTnRender).catch(function(){ btTnRender(); });
@@ -18764,9 +18840,21 @@ function sharePoseResultImage() {
       tn.divisions = built.divisions;
       tn.schedule = built.schedule;
       btTnState.divCode = tn.divisions.length ? tn.divisions[0].code : null;
+      btTnState.schoolFilter = null;
       btTnState.editDraft = null;
       btTnCloseOverlay('btTnEditor');
       btTnSaveRecord(tn).then(btTnRender);
+    },
+    setSchoolFilter: function(name){
+      btTnState.schoolFilter = name ? String(name) : null;
+      btTnRenderBracket();
+    },
+    setSchoolFilterByIdx: function(i){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      var s = btTnSchoolIndex(tn)[i];
+      btTnState.schoolFilter = s ? s.name : null;
+      btTnRenderBracket();
     },
     setDivisionByIdx: function(di){
       var tn = btTnCurrent();
@@ -19110,6 +19198,9 @@ function sharePoseResultImage() {
     watchSummaryHtml: btTnWatchSummaryHtml,
     watchSectionHtml: btTnWatchSectionHtml,
     matchHtml: btTnMatchHtml,
+    schoolIndex: btTnSchoolIndex,
+    schoolMatches: btTnSchoolMatches,
+    schoolSectionHtml: btTnSchoolSectionHtml,
     bracketHtml: btTnBracketHtml,
     bodyHtml: btTnBodyHtml,
     viewerHtml: btTnViewerHtml,
