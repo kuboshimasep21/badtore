@@ -11506,7 +11506,8 @@
         #reflexBanner .banner-svg-arrow { width:auto !important; height:auto !important; }
         .menu-item-row { background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:10px; padding:9px 10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px; }
         .menu-item-row.completed-row { opacity:0.68; border-color:var(--accent-primary); }
-        .theme-check-pill { display:inline-flex; align-items:center; gap:5px; background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:6px 9px; font-size:0.8rem; font-weight:800; cursor:pointer; }
+        .theme-check-pill { display:inline-flex; align-items:center; gap:5px; background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:6px 9px; font-size:0.8rem; font-weight:800; cursor:pointer; color:var(--text-primary); font-family:inherit; }
+        .theme-check-pill.active { background:var(--accent-primary); color:#020617; border-color:var(--accent-primary); }
       `;
       document.head.appendChild(st);
 
@@ -11905,10 +11906,10 @@
                 <div class="form-group"><label>② 全体の持ち時間（分）</label><div style="display:grid;grid-template-columns:1.3fr 1fr;gap:5px;"><select onchange="document.getElementById('aiMenuTargetMin').value=this.value;updateMenuTimeGaugeUI();"><option value="15">15分(自宅)</option><option value="30">30分</option><option value="60">60分(1時間)</option><option value="90">90分</option><option value="120">120分(2時間)</option><option value="150" selected>150分(2.5時間)</option></select><input type="number" id="aiMenuTargetMin" value="150" min="5" max="360" oninput="updateMenuTimeGaugeUI()"/></div></div>
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                <label class="theme-check-pill"><input type="checkbox" id="chkThemeAIWeak" checked/> 🎯 ピン留め課題・重点テーマ</label>
-                <label class="theme-check-pill"><input type="checkbox" id="chkThemeUnweight" checked/> 👟 抜重・一歩目＆リズム</label>
-                <label class="theme-check-pill"><input type="checkbox" id="chkThemeFootwork" checked/> 🦶 フットワーク＆ランジ軸</label>
-                <label class="theme-check-pill"><input type="checkbox" id="chkThemeFeeding" checked/> 🔄 手投げ分解ノック(回内)</label>
+                <button type="button" class="theme-check-pill active" id="chkThemeAIWeak" aria-pressed="true" onclick="toggleMenuThemePill(this)">🎯 ピン留め課題・重点テーマ</button>
+                <button type="button" class="theme-check-pill active" id="chkThemeUnweight" aria-pressed="true" onclick="toggleMenuThemePill(this)">👟 抜重・一歩目＆リズム</button>
+                <button type="button" class="theme-check-pill active" id="chkThemeFootwork" aria-pressed="true" onclick="toggleMenuThemePill(this)">🦶 フットワーク＆ランジ軸</button>
+                <button type="button" class="theme-check-pill active" id="chkThemeFeeding" aria-pressed="true" onclick="toggleMenuThemePill(this)">🔄 手投げ分解ノック(回内)</button>
               </div>
               <button class="btn btn-emerald" id="menuComposeBtn" style="width:100%;padding:9px;" onclick="composeMenuFromUI()">✨ この条件で編成する</button>
             </div>
@@ -12040,7 +12041,26 @@
       const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
       if (s < 0 || e <= s) return null;
       let obj = null;
-      try { obj = JSON.parse(raw.slice(s, e + 1)); } catch (err) { return null; }
+      try { obj = JSON.parse(raw.slice(s, e + 1)); } catch (err) { obj = null; }
+      if (!obj) {
+        // 応答が途中で切れた場合の救済(1)：末尾に閉じ括弧を補って解釈を試す（文字列の途中なら引用符も補う）
+        const body = raw.slice(s);
+        for (const closer of ['"}]}', '}]}', ']}', '}']) {
+          try { const cand = JSON.parse(body + closer); if (cand && Array.isArray(cand.items) && cand.items.length) { obj = cand; break; } } catch (err2) { /* 次の候補へ */ }
+        }
+      }
+      if (!obj) {
+        // 応答が途中で切れた場合の救済(2)：最後まで読めた種目の位置でJSONを閉じて解釈を試す
+        let pos = e;
+        for (let tries = 0; tries < 40 && pos > s && !obj; tries++) {
+          const head = raw.slice(s, pos + 1);
+          for (const closer of [']}', '}']) {
+            try { const cand = JSON.parse(head + closer); if (cand && Array.isArray(cand.items) && cand.items.length) { obj = cand; break; } } catch (err2) { /* 次の候補へ */ }
+          }
+          if (!obj) pos = raw.lastIndexOf('}', pos - 1);
+        }
+        if (!obj) return null;
+      }
       const list = obj && Array.isArray(obj.items) ? obj.items : null;
       if (!list || !list.length) return null;
       const byId = {}; catalog.forEach(c => { byId[c.id] = c; });
@@ -12068,6 +12088,43 @@
       return { picked, note: String((obj && obj.note) || '').slice(0, 200) };
     }
 
+    // テーマピルはタップでON/OFF（チェックボックスは使わない）。選択状態は .active クラスで保持する
+    function toggleMenuThemePill(el) {
+      if (!el) return;
+      const on = el.classList.toggle('active');
+      el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+
+    // AI相談専用の呼び出し：応答が速いモデルを先に使い、混雑（429/503）時は少し待って再試行する。
+    // ※ PRIMARY（gemini-3.1-pro-preview）は無料枠の1日上限が0で常時429になるため、相談ではFASTを優先する（大会読み取りと同じ順序）。
+    // 応答が返らないまま固まる（ハングする）混雑でも「編成中」のまま止まらないよう上限を設ける：
+    // 1リクエスト最大60秒でタイムアウト（一時的失敗として再試行）、相談全体は最大150秒で打ち切って通常編成にフォールバックする。
+    async function callGeminiForMenuConsult(prompt) {
+      const fast = (typeof GEMINI_MODEL_FAST !== 'undefined') ? GEMINI_MODEL_FAST : undefined;
+      const waits = [20000, 40000];
+      const REQ_TIMEOUT_MS = 60000;
+      const TOTAL_MS = 150000;
+      const deadline = Date.now() + TOTAL_MS;
+      let lastErr = null;
+      for (let round = 0; round <= waits.length; round++) {
+        const remain = deadline - Date.now();
+        if (remain <= 0) break;
+        try {
+          return await callGeminiWithFallback(getSavedGeminiApiKey(), [{ text: prompt }], fast, Math.min(REQ_TIMEOUT_MS, remain), deadline);
+        } catch (e) {
+          lastErr = e;
+          const transient = (typeof isGeminiTransientError === 'function') ? isGeminiTransientError(e) : !!(e && (e.status === 429 || e.status === 503));
+          if (round >= waits.length || !transient) break;
+          const remain2 = deadline - Date.now();
+          if (remain2 <= 0) break;
+          const status = document.getElementById('aiMenuConsultStatus');
+          if (status) status.innerHTML = '<span style="color:var(--accent-secondary);font-weight:800;">⏳ AIが混雑しています…少し待って再試行します（' + (round + 1) + '回目）</span>';
+          await new Promise(r => setTimeout(r, Math.min(waits[round], remain2)));
+        }
+      }
+      throw lastErr || new Error('AI応答を取得できませんでした');
+    }
+
     function composeMenuFromUI() {
       const inp = document.getElementById('aiMenuConsultInput');
       const txt = inp ? (inp.value || '').trim() : '';
@@ -12086,7 +12143,7 @@
       const themes = [];
       [['chkThemeAIWeak', 'ピン留め課題・重点テーマ'], ['chkThemeUnweight', '抜重・一歩目＆リズム'], ['chkThemeFootwork', 'フットワーク＆ランジ軸'], ['chkThemeFeeding', '手投げ分解ノック(回内)']].forEach(pair => {
         const el = document.getElementById(pair[0]);
-        if (el && el.checked) themes.push(pair[1]);
+        if (el && el.classList && el.classList.contains('active')) themes.push(pair[1]);
       });
       const pins = getActivePinnedList().filter(p => !p.done).map(p => p.text).filter(Boolean);
       const prompt = [
@@ -12104,7 +12161,7 @@
       if (btn) { btn.disabled = true; btn.textContent = '🤖 AIが編成中…'; }
       if (status) status.innerHTML = '<span style="color:var(--accent-secondary);font-weight:800;">⏳ AIがメニューを考えています…</span>';
       try {
-        const res = await callGeminiWithFallback(getSavedGeminiApiKey(), [{ text: prompt }]);
+        const res = await callGeminiForMenuConsult(prompt);
         const plan = parseAIConsultPlan(res && res.text, catalog, target);
         if (!plan) throw new Error('AI応答を解釈できませんでした');
         currentMenuPlan = { title: (pm === 'home_1' ? '🏠 自宅' : '🏟️ 体育館') + ' ' + target + '分メニュー（AI編成）', targetMin: target, playersMode: pm, items: plan.picked.map((p, i) => ({ id: 'm_' + i, cat: p.entry.cat, name: p.entry.name, minutes: p.minutes, note: p.entry.note, linkTab: p.entry.linkTab, fwPreset: p.entry.fwPreset, grp: p.entry.grp || 'phys', done: false })) };
@@ -12120,7 +12177,10 @@
         playBeep(1040, 100);
       } catch (err) {
         generateAIMenuByConditions(false);
-        if (status) status.innerHTML = '<span style="color:var(--accent-highlight);font-weight:800;">AIが混雑中のため、通常の自動編成で組みました</span>';
+        const busy = (typeof isGeminiTransientError === 'function') ? isGeminiTransientError(err) : !!(err && (err.status === 429 || err.status === 503));
+        if (status) status.innerHTML = busy
+          ? '<span style="color:var(--accent-highlight);font-weight:800;">AIが混雑中のため、通常の自動編成で組みました</span>'
+          : '<span style="color:var(--accent-highlight);font-weight:800;">AIの応答を取得できなかったため、通常の自動編成で組みました</span>';
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = '✨ この条件で編成する'; }
       }
@@ -13287,32 +13347,60 @@
 
     function isGeminiTransientError(e) {
       if (!e) return false;
+      if (e.isTimeout) return true;
       if (e.status === 429 || e.status === 503) return true;
       const msg = String((e && e.message) || e || '');
       return /high demand|overloaded|quota|resource[_\s-]?exhausted|try again later|temporarily/i.test(msg);
     }
 
-    async function callGeminiWithFallback(apiKey, parts, preferredModel) {
+    // timeoutMs / deadlineMs は任意指定（AIメニュー相談専用）。未指定の呼び出しでは従来どおりタイムアウトなしで動作する。
+    // timeoutMs を渡すと各リクエストに AbortController の制限時間を付け、時間切れは一時的失敗（混雑扱い）として再試行する。
+    // deadlineMs（絶対時刻）を渡すと、その時刻を過ぎたら新たな試行を開始せず、待機も残り時間で打ち切る。
+    async function callGeminiWithFallback(apiKey, parts, preferredModel, timeoutMs, deadlineMs) {
       const m1 = preferredModel ? normalizeGeminiModel(preferredModel) : normalizeGeminiModel(selectedGeminiModel);
       const m2 = m1 === GEMINI_MODEL_PRIMARY ? GEMINI_MODEL_FAST : GEMINI_MODEL_PRIMARY;
       const retryDelays = [2000, 5000];
+      const useTimeout = (typeof timeoutMs === 'number' && timeoutMs > 0);
+      const hasDeadline = (typeof deadlineMs === 'number' && deadlineMs > 0);
+      const deadlinePassed = () => hasDeadline && Date.now() >= deadlineMs;
       let lastErr = null;
       for (const m of [m1, m2]) {
         for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+          if (attempt > 0 && deadlinePassed()) break;
           try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }] })
-            });
-            const d = await res.json();
+            let res, d;
+            if (useTimeout) {
+              const remainMs = hasDeadline ? (deadlineMs - Date.now()) : timeoutMs;
+              if (remainMs <= 0) { const te = new Error('AI応答がタイムアウトしました'); te.isTimeout = true; throw te; }
+              const ctrl = new AbortController();
+              const timer = setTimeout(() => ctrl.abort(), Math.min(timeoutMs, remainMs));
+              try {
+                res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }] }), signal: ctrl.signal
+                });
+                d = await res.json();
+              } catch (fe) {
+                if (fe && fe.name === 'AbortError') { const te = new Error('AI応答がタイムアウトしました'); te.isTimeout = true; throw te; }
+                throw fe;
+              } finally { clearTimeout(timer); }
+            } else {
+              res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }] })
+              });
+              d = await res.json();
+            }
             if (res.ok && d.candidates && d.candidates[0]) return { text: d.candidates[0].content.parts.map(p => p.text || "").join("\n"), usedModel: m };
             lastErr = new Error((d.error && d.error.message) || `HTTP ${res.status}`);
             lastErr.status = res.status;
             if (d.error && d.error.status) lastErr.geminiStatus = d.error.status;
           } catch (e) { lastErr = e; }
           if (attempt < retryDelays.length && isGeminiTransientError(lastErr)) {
-            await new Promise(r => setTimeout(r, retryDelays[attempt]));
+            let waitMs = retryDelays[attempt];
+            if (hasDeadline) { const rem = deadlineMs - Date.now(); if (rem <= 0) break; waitMs = Math.min(waitMs, rem); }
+            await new Promise(r => setTimeout(r, waitMs));
           } else break;
         }
+        if (deadlinePassed()) break;
       }
       throw lastErr || new Error("APIエラー");
     }
