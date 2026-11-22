@@ -11506,8 +11506,6 @@
         #reflexBanner .banner-svg-arrow { width:auto !important; height:auto !important; }
         .menu-item-row { background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:10px; padding:9px 10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px; }
         .menu-item-row.completed-row { opacity:0.68; border-color:var(--accent-primary); }
-        .theme-check-pill { display:inline-flex; align-items:center; gap:5px; background:var(--bg-base); border:1px solid var(--border-subtle); border-radius:8px; padding:6px 9px; font-size:0.8rem; font-weight:800; cursor:pointer; color:var(--text-primary); font-family:inherit; }
-        .theme-check-pill.active { background:var(--accent-primary); color:#020617; border-color:var(--accent-primary); }
       `;
       document.head.appendChild(st);
 
@@ -11905,12 +11903,6 @@
                 <div class="form-group"><label>① 練習人数・場所</label><select id="aiMenuPlayersMode"><option value="home_1">🏠 1人（自宅・省スペース）</option><option value="gym_1">🏸 1人（体育館コート）</option><option value="gym_2" selected>👥 2人（体育館マンツーマン）</option><option value="gym_3">👥 3人（体育館ローテ・2対1）</option><option value="gym_4">👥 4人以上（パターン＆ゲーム）</option></select></div>
                 <div class="form-group"><label>② 全体の持ち時間（分）</label><div style="display:grid;grid-template-columns:1.3fr 1fr;gap:5px;"><select onchange="document.getElementById('aiMenuTargetMin').value=this.value;updateMenuTimeGaugeUI();"><option value="15">15分(自宅)</option><option value="30">30分</option><option value="60">60分(1時間)</option><option value="90">90分</option><option value="120">120分(2時間)</option><option value="150" selected>150分(2.5時間)</option></select><input type="number" id="aiMenuTargetMin" value="150" min="5" max="360" oninput="updateMenuTimeGaugeUI()"/></div></div>
               </div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                <button type="button" class="theme-check-pill active" id="chkThemeAIWeak" aria-pressed="true" onclick="toggleMenuThemePill(this)">🎯 ピン留め課題・重点テーマ</button>
-                <button type="button" class="theme-check-pill active" id="chkThemeUnweight" aria-pressed="true" onclick="toggleMenuThemePill(this)">👟 抜重・一歩目＆リズム</button>
-                <button type="button" class="theme-check-pill active" id="chkThemeFootwork" aria-pressed="true" onclick="toggleMenuThemePill(this)">🦶 フットワーク＆ランジ軸</button>
-                <button type="button" class="theme-check-pill active" id="chkThemeFeeding" aria-pressed="true" onclick="toggleMenuThemePill(this)">🔄 手投げ分解ノック(回内)</button>
-              </div>
               <button class="btn btn-emerald" id="menuComposeBtn" style="width:100%;padding:9px;" onclick="composeMenuFromUI()">✨ この条件で編成する</button>
             </div>
             <div>
@@ -12022,6 +12014,8 @@
       return 'phys';
     }
     const MENU_PLAYERS_LABELS = { home_1: '1人（自宅・省スペース）', gym_1: '1人（体育館コート）', gym_2: '2人（体育館マンツーマン）', gym_3: '3人（体育館ローテ・2対1）', gym_4: '4人以上（パターン＆ゲーム）' };
+    /* AI相談プロンプト用に、人数・場所セレクトの値を「対象（人数）」と「場所」に分けた表記 */
+    const MENU_PLAYERS_PARTS = { home_1: ['1人', '自宅・省スペース'], gym_1: ['1人', '体育館コート'], gym_2: ['2人', '体育館コート'], gym_3: ['3人', '体育館コート'], gym_4: ['4人以上', '体育館コート'] };
 
     function buildMenuComposeCatalog(pm, target) {
       const { tpls, w } = getMenuComposeTemplates(pm);
@@ -12114,13 +12108,6 @@
       return { picked, note: String((obj && obj.note) || '').slice(0, 200), hasCustom };
     }
 
-    // テーマピルはタップでON/OFF（チェックボックスは使わない）。選択状態は .active クラスで保持する
-    function toggleMenuThemePill(el) {
-      if (!el) return;
-      const on = el.classList.toggle('active');
-      el.setAttribute('aria-pressed', on ? 'true' : 'false');
-    }
-
     // AI相談専用の呼び出し：応答が速いモデルを先に使い、混雑（429/503）時は少し待って再試行する。
     // ※ PRIMARY（gemini-3.1-pro-preview）は無料枠の1日上限が0で常時429になるため、相談ではFASTを優先する（大会読み取りと同じ順序）。
     // 応答が返らないまま固まる（ハングする）混雑でも「編成中」のまま止まらないよう上限を設ける：
@@ -12166,16 +12153,12 @@
       const status = document.getElementById('aiMenuConsultStatus');
       const btn = document.getElementById('menuComposeBtn');
       const catalog = buildMenuComposeCatalog(pm, target);
-      const themes = [];
-      [['chkThemeAIWeak', 'ピン留め課題・重点テーマ'], ['chkThemeUnweight', '抜重・一歩目＆リズム'], ['chkThemeFootwork', 'フットワーク＆ランジ軸'], ['chkThemeFeeding', '手投げ分解ノック(回内)']].forEach(pair => {
-        const el = document.getElementById(pair[0]);
-        if (el && el.classList && el.classList.contains('active')) themes.push(pair[1]);
-      });
       const pins = getActivePinnedList().filter(p => !p.done).map(p => p.text).filter(Boolean);
+      const pp = MENU_PLAYERS_PARTS[pm] || ['指定なし', '指定なし'];
       const prompt = [
         'あなたはバドミントン練習メニューの編成アシスタントです。',
         'ユーザーの希望：「' + reqText + '」',
-        '条件：人数・場所=' + (MENU_PLAYERS_LABELS[pm] || pm) + '／持ち時間=' + target + '分／重点テーマ=' + (themes.length ? themes.join('、') : '指定なし') + (pins.length ? '／ピン留め課題=' + pins.join('、') : ''),
+        '条件：対象=' + pp[0] + '／場所=' + pp[1] + '（' + (MENU_PLAYERS_LABELS[pm] || pm) + '）／持ち時間=' + target + '分' + (pins.length ? '／重点テーマ（ピン留め課題）=' + pins.join('、') : ''),
         '基本は下のカタログから選んで、実施順に並べたメニューを作ってください。カタログ種目の数値（minutes の目安）の創作は禁止です。',
         'カタログでまかなえない希望（特定の部位や場面など）がある場合に限り、新しい種目を最大3つまで提案できます。提案は {"custom":{"name":"種目名","minutes":10,"how":"やり方を一言","grp":"phys"},"reason":"提案理由"} の形で items に混ぜてください。カタログで足りる場合は提案しないでください。',
         '提案する種目は、シンプルで一般的・低リスクな動きだけにしてください。場所が自宅・省スペースなら自宅で1人でできる種目だけにし、ジュニアや自宅では重い負荷や最大ジャンプは避けて保守的な量（minutes は3〜30分）にしてください。how はやり方を一言（60文字以内）で書いてください。',
