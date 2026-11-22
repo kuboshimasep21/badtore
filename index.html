@@ -3235,7 +3235,7 @@
 
               <div class="viewport-header-bar">
 
-                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（カメラ起動 または 動画読込を選択）</span>
+                <span class="viewport-status-text" id="poseHudStatus">⚪ 待機中（動画読込を選択）</span>
 
                 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
 
@@ -3273,7 +3273,7 @@
 
                   <div style="font-weight:800; color:#f8fafc; font-size:0.9rem;">「📁 動画読込」を選ぶとカメラ起動不要で即座に動画が表示され自動診断がスタートします！</div>
 
-                  <div style="font-size:0.8rem; margin-top:4px;">リアルタイム撮影時は「📷 AIカメラ起動」を押してください</div>
+                  <div style="font-size:0.8rem; margin-top:4px;">撮影はスマホのカメラアプリで撮ってから読み込んでください</div>
 
                 </div>
 
@@ -3541,7 +3541,7 @@
 
               <div id="aiSummaryContent" style="font-size:0.8rem; color:var(--text-primary); line-height:1.55;">
 
-                <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、カメラボタンを押さなくても動画がすぐに画面に表示されて自動解析が始まります。長い動画はシークバーで診断したい区間（開始A〜終了B）を切り出せます。
+                <b>「📁 動画読込（即・自動診断）」</b>を選ぶと、動画がすぐに画面に表示されて自動解析が始まります。長い動画はシークバーで診断したい区間（開始A〜終了B）を切り出せます。
 
               </div>
               <div class="btn-group" style="margin-top:8px;">
@@ -3561,15 +3561,6 @@
                 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                   <span style="font-size:0.8rem; color:var(--text-secondary); font-weight:800;">🖥️ 表示・再生:</span>
                   <button id="btnArcToggle" class="btn btn-cyan-outline active" onclick="toggleSwingArc()">🌈 軌道アーク: ON</button>
-                  <select id="delayMirrorSelect" onchange="changeDelayMirrorSec(this.value)" style="width:auto; padding:6px 8px; font-size:0.85rem; font-weight:800;">
-
-              <option value="0" selected>⏪ ディレイ: OFF</option>
-
-              <option value="3">⏪ 3秒遅れ再生</option>
-
-              <option value="5">⏪ 5秒遅れ再生</option>
-
-            </select>
                 </div>
                 <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:0.8rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:9px;">
                   <span style="color:var(--text-secondary); font-weight:800;">✂️ 診断区間（動画）:</span>
@@ -5861,7 +5852,7 @@
 
         document.getElementById('posePlaceholder').style.display = "block";
 
-        document.getElementById('poseHudStatus').textContent = "⚪ 待機中（カメラ起動 または 動画読込を選択）";
+        document.getElementById('poseHudStatus').textContent = "⚪ 待機中（動画読込を選択）";
 
       }
 
@@ -8725,7 +8716,7 @@
 
       if (activeCameraMode !== 'pose' || activeInputType === 'idle') {
 
-        alert("先に「📷 AIカメラ起動」または「📁 動画読込」を選択してください！");
+        alert("先に「📁 動画読込」で動画を選んでください！");
 
         return;
 
@@ -11485,7 +11476,7 @@
 
     function applyQuickPresetPose(k) {
       const s = document.getElementById('shotTypeSelect'); if (s) { s.value = k; updateShotCriteriaUI(); }
-      if (activeCameraMode !== 'pose' || activeInputType === 'idle') toggleLiveCamera('pose'); else startTimedPoseSession();
+      if (activeInputType === 'video') startTimedPoseSession(); else alert("先に「📁 動画読込」で動画を選んでください！");
     }
 
     function injectV103CoreStylesAndUI() {
@@ -11553,7 +11544,7 @@
 
       const poseHb = document.querySelector('#poseViewport .viewport-header-bar');
       if (poseHb) {
-        poseHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span><span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span></div><div class="btn-group"><button id="btnPoseCamToggleInFs" class="btn btn-emerald" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleLiveCamera('pose')">📷 AIカメラ起動</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="switchCameraFacing()">🔄 内/外</button><button id="btnPoseStartInFs" class="btn btn-amber" style="padding:7px 10px;font-size:0.8rem;" onclick="startTimedPoseSession()">▶️ 10秒測定</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopTimedPoseSession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button></div>`;
+        poseHb.innerHTML = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="viewport-status-text" id="poseHudStatus">⚪ 待機中</span><span class="viewport-status-text" id="poseConfidencePill" style="color:var(--accent-primary);">🎯 精度: --%</span></div><div class="btn-group"><button id="btnPoseStartInFs" class="btn btn-amber" style="padding:7px 10px;font-size:0.8rem;" onclick="startTimedPoseSession()">▶️ 再診断</button><button class="btn" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleVideoPause()">⏯️ 一時停止</button><button class="btn btn-rose" style="padding:7px 10px;font-size:0.8rem;" onclick="stopTimedPoseSession()">⏹️ 停止</button><button class="btn btn-cyan-outline" style="padding:7px 10px;font-size:0.8rem;" onclick="toggleSmartFullscreen('poseViewport')">⛶ 全画面</button></div>`;
       }
       const poseStg = document.querySelector('#poseViewport .viewport-stage');
       if (poseStg && !document.getElementById('poseLiveFloatingHud')) {
@@ -11771,7 +11762,7 @@
     // TAB 3: 5秒カウント＆停止対応
     startTimedPoseSession = function() {
       unlockAudioContext();
-      if (activeCameraMode !== 'pose' || activeInputType === 'idle') { alert("先に「📷 カメラ起動」または「📁 動画読込」を選択してください！"); return; }
+      if (activeCameraMode !== 'pose' || activeInputType === 'idle') { alert("先に「📁 動画読込」で動画を選んでください！"); return; }
       if (activeInputType === 'video') { startAutoVideoDiagnosis(); return; }
       stopTimedPoseSession();
       const ov = document.getElementById('poseCountdownOverlay'), num = document.getElementById('poseCountdownNum');
