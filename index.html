@@ -3663,9 +3663,9 @@
 
             <button class="btn" onclick="undoMatchPoint()" id="btnUndoScore" disabled>↩️ 1つ戻す</button>
 
-            <button class="btn btn-cyan-outline" onclick="flipCourtSide()">🔄 コート反転</button>
+            <button class="btn" onclick="flipCourtSide()">🔄 コート反転</button>
 
-            <button class="btn btn-amber" onclick="swapInitialPairPos()">🔄 左右入替</button>
+            <button class="btn" onclick="swapInitialPairPos()">🔄 左右入替</button>
 
             <button class="btn" onclick="toggleServeRight()">🏸 サーブ権切替</button>
 
@@ -3681,9 +3681,9 @@
 
           <div class="card bt-score-panel" id="scorePanelA" onclick="btScorePanelTap(event,'A')" style="background:var(--bg-panel); text-align:center; margin:0; padding:10px;">
 
-            <div style="font-weight:800; font-size:0.82rem;"><span style="background:#0284c7; color:#fff; border-radius:999px; padding:2px 10px;">🟦 自分チーム（A）</span> <span id="btServeBadgeA" style="display:none; background:#f59e0b; color:#000; border-radius:999px; padding:2px 8px;">🏸 サーブ</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><span style="background:#0284c7; color:#fff; border-radius:999px; padding:2px 10px; font-weight:800; font-size:0.85rem; white-space:nowrap;">🟦 自分チーム（A）</span><span id="btServeBadgeA" style="visibility:hidden; background:transparent; color:#0284c7; border:1.5px solid #0284c7; border-radius:999px; padding:1px 8px; font-weight:800; font-size:0.85rem; white-space:nowrap;">🏸 サーブ</span></div>
 
-            <div id="btPanelNamesA" style="font-weight:800; font-size:0.95rem; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">プレイヤー1</div>
+            <div id="btPanelNamesA" style="font-weight:800; font-size:1.15rem; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">プレイヤー1</div>
 
             <div style="font-size:3.3rem; line-height:1.05; font-weight:900; margin:2px 0;" id="scoreTeamA">0</div>
 
@@ -3699,9 +3699,9 @@
 
           <div class="card bt-score-panel" id="scorePanelB" onclick="btScorePanelTap(event,'B')" style="background:var(--bg-panel); text-align:center; margin:0; padding:10px;">
 
-            <div style="font-weight:800; font-size:0.82rem;"><span style="background:#e11d48; color:#fff; border-radius:999px; padding:2px 10px;">🟥 相手チーム（B）</span> <span id="btServeBadgeB" style="display:none; background:#f59e0b; color:#000; border-radius:999px; padding:2px 8px;">🏸 サーブ</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;"><span style="background:#e11d48; color:#fff; border-radius:999px; padding:2px 10px; font-weight:800; font-size:0.85rem; white-space:nowrap;">🟥 相手チーム（B）</span><span id="btServeBadgeB" style="visibility:hidden; background:transparent; color:#e11d48; border:1.5px solid #e11d48; border-radius:999px; padding:1px 8px; font-weight:800; font-size:0.85rem; white-space:nowrap;">🏸 サーブ</span></div>
 
-            <div id="btPanelNamesB" style="font-weight:800; font-size:0.95rem; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">相手1（B1）</div>
+            <div id="btPanelNamesB" style="font-weight:800; font-size:1.15rem; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">相手1（B1）</div>
 
             <div style="font-size:3.3rem; line-height:1.05; font-weight:900; margin:2px 0;" id="scoreTeamB">0</div>
 
@@ -11092,11 +11092,11 @@
 
       const getRoleBadge = (team, isRightCourt) => {
 
-        if (matchState.servingTeam === team && isRightCourt === isRightServiceCourt) return `<span class="badge-version" style="background:#f59e0b; color:#000;">🏸 サーバー</span>`;
+        if (matchState.servingTeam === team && isRightCourt === isRightServiceCourt) return `<span class="badge-version" style="background:#f59e0b; color:#000; font-size:0.85rem;">🏸 サーバー</span>`;
 
-        if (matchState.servingTeam !== team && isRightCourt === isRightServiceCourt) return `<span class="badge-version" style="background:#06b6d4; color:#000;">🛡️ レシーバー</span>`;
+        if (matchState.servingTeam !== team && isRightCourt === isRightServiceCourt) return `<span class="badge-version" style="background:#06b6d4; color:#000; font-size:0.85rem;">🛡️ レシーバー</span>`;
 
-        return `<span style="font-size:0.78rem; color:#cbd5e1;">${matchState.format === 'singles' ? '空きコート' : 'パートナー'}</span>`;
+        return `<span style="font-size:0.85rem; color:#cbd5e1;">${matchState.format === 'singles' ? '空きコート' : 'パートナー'}</span>`;
 
       };
 
@@ -11168,9 +11168,9 @@
 
         <div class="match-half">
 
-          <div class="${getBoxClass(topTeam, true)}"><div style="font-size:0.78rem; opacity:0.8;">右(偶数)</div><div style="font-weight:800; font-size:0.84rem;">${topRightPlayer}</div>${getRoleBadge(topTeam, true)}</div>
+          <div class="${getBoxClass(topTeam, true)}"><div style="font-size:0.85rem; opacity:0.8;">右(偶数)</div><div style="font-weight:800; font-size:1rem;">${topRightPlayer}</div>${getRoleBadge(topTeam, true)}</div>
 
-          <div class="${getBoxClass(topTeam, false)}"><div style="font-size:0.78rem; opacity:0.8;">左(奇数)</div><div style="font-weight:800; font-size:0.84rem;">${topLeftPlayer}</div>${getRoleBadge(topTeam, false)}</div>
+          <div class="${getBoxClass(topTeam, false)}"><div style="font-size:0.85rem; opacity:0.8;">左(奇数)</div><div style="font-weight:800; font-size:1rem;">${topLeftPlayer}</div>${getRoleBadge(topTeam, false)}</div>
 
         </div>
 
@@ -11178,9 +11178,9 @@
 
         <div class="match-half">
 
-          <div class="${getBoxClass(bottomTeam, false)}"><div style="font-size:0.78rem; opacity:0.8;">左(奇数)</div><div style="font-weight:800; font-size:0.84rem;">${botLeftPlayer}</div>${getRoleBadge(bottomTeam, false)}</div>
+          <div class="${getBoxClass(bottomTeam, false)}"><div style="font-size:0.85rem; opacity:0.8;">左(奇数)</div><div style="font-weight:800; font-size:1rem;">${botLeftPlayer}</div>${getRoleBadge(bottomTeam, false)}</div>
 
-          <div class="${getBoxClass(bottomTeam, true)}"><div style="font-size:0.78rem; opacity:0.8;">右(偶数)</div><div style="font-weight:800; font-size:0.84rem;">${botRightPlayer}</div>${getRoleBadge(bottomTeam, true)}</div>
+          <div class="${getBoxClass(bottomTeam, true)}"><div style="font-size:0.85rem; opacity:0.8;">右(偶数)</div><div style="font-weight:800; font-size:1rem;">${botRightPlayer}</div>${getRoleBadge(bottomTeam, true)}</div>
 
         </div>
 
@@ -12740,8 +12740,8 @@
     function initGameCountScoreboardUI() {
       const sA = document.getElementById('scoreTeamA'), sB = document.getElementById('scoreTeamB');
       if (!sA || !sB || document.getElementById('gameCountBadgeA')) return;
-      sA.insertAdjacentHTML('beforebegin', `<div style="margin:4px 0;display:flex;justify-content:center;gap:6px;"><span class="badge-version" id="gameCountBadgeA" style="background:#0284c7;color:#fff;">🏆 ゲーム: 0</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="claimGameForTeam('A')">＋1ゲーム奪取</button></div>`);
-      sB.insertAdjacentHTML('beforebegin', `<div style="margin:4px 0;display:flex;justify-content:center;gap:6px;"><span class="badge-version" id="gameCountBadgeB" style="background:#e11d48;color:#fff;">🏆 ゲーム: 0</span><button class="btn" style="padding:7px 10px;font-size:0.78rem;" onclick="claimGameForTeam('B')">＋1ゲーム奪取</button></div>`);
+      sA.insertAdjacentHTML('beforebegin', `<div style="margin:6px 0 2px;display:flex;flex-direction:column;gap:6px;"><span id="gameCountBadgeA" style="align-self:center;background:#0284c7;color:#fff;font-size:0.85rem;font-weight:900;padding:3px 12px;border-radius:999px;white-space:nowrap;">🏆 ゲーム: 0</span><button class="btn" style="width:100%;min-height:40px;font-size:1rem;white-space:nowrap;" onclick="claimGameForTeam('A')">＋1ゲーム奪取</button></div>`);
+      sB.insertAdjacentHTML('beforebegin', `<div style="margin:6px 0 2px;display:flex;flex-direction:column;gap:6px;"><span id="gameCountBadgeB" style="align-self:center;background:#e11d48;color:#fff;font-size:0.85rem;font-weight:900;padding:3px 12px;border-radius:999px;white-space:nowrap;">🏆 ゲーム: 0</span><button class="btn" style="width:100%;min-height:40px;font-size:1rem;white-space:nowrap;" onclick="claimGameForTeam('B')">＋1ゲーム奪取</button></div>`);
       renderMatchCourt();
     }
     function claimGameForTeam(w) {
@@ -17619,6 +17619,7 @@ function sharePoseResultImage() {
     currentId: null,
     images: { bracket: [], schedule: [] },  // 現在の大会の画像 {imgId, kind, dataUrl}
     divCode: null,       // 表示中の部門コード
+    schoolFilter: null,  // 学校で探す：選択中の学校名（null=絞り込みなし）
     editDraft: null,     // 確認・修正画面のドラフト
     viewer: null,        // {kind, imgId, zoom}
     photosOpen: false    // 予備写真セクションの開閉状態（再描画で閉じないよう保持）
@@ -17786,11 +17787,11 @@ function sharePoseResultImage() {
     var amb = btTnAmbiguousOrigins(tn, names);
     if (!dups.length && !amb.length) return '';
     var h = '<div style="border:1px solid var(--accent-secondary, #f59e0b);border-radius:10px;padding:8px;margin:8px 0;background:var(--bg-panel);">'
-      + '<div style="font-weight:900;font-size:0.82rem;">👤 同名の選手がいます</div>'
+      + '<div style="font-weight:900;font-size:1.15rem;">👤 同名の選手がいます</div>'
       + '<div class="bt-tn-note">同名の選手が複数いるため、お子さんの試合を特定してください。選んだ条件に合う試合だけを「自分の試合」として表示します。</div>';
     dups.forEach(function(d, di){
       var sel = btTnSelectedOwnSchool(tn, d.name);
-      h += '<div style="margin-top:6px;"><span style="font-weight:900;font-size:0.82rem;">' + btTnEsc(d.name) + '</span>'
+      h += '<div style="margin-top:6px;"><span style="font-weight:900;font-size:1rem;">' + btTnEsc(d.name) + '</span>'
         + (sel ? '<span class="bt-tn-note">（選択中：' + btTnEsc(sel) + '）</span>' : '')
         + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">';
       d.schools.forEach(function(sc, si){
@@ -17802,7 +17803,7 @@ function sharePoseResultImage() {
     });
     amb.forEach(function(e, ei){
       var selO = btTnSelectedOwnOrigin(tn, e.name, e.div);
-      h += '<div style="margin-top:6px;"><span style="font-weight:900;font-size:0.82rem;">' + btTnEsc(e.name) + '（' + btTnEsc(e.divLabel) + '）の初戦</span>'
+      h += '<div style="margin-top:6px;"><span style="font-weight:900;font-size:1rem;">' + btTnEsc(e.name) + '（' + btTnEsc(e.divLabel) + '）の初戦</span>'
         + (selO ? '<span class="bt-tn-note">（選択中）</span>' : '')
         + '<div class="bt-tn-note">名前と学校だけでは見分けられないため、初戦（最初の試合）を選んでください。その初戦から勝ち上がった選手だけを数えます。</div>'
         + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">';
@@ -18140,14 +18141,14 @@ function sharePoseResultImage() {
       + '<div style="border:1px solid var(--border-subtle);border-radius:10px;padding:8px;background:var(--bg-main);">';
     tn.divisions.forEach(function(div){
       var c = btTnDivisionChampions(div);
-      h += '<div style="font-size:0.8rem;margin:2px 0;"><b>' + btTnEsc(div.label || div.code || '') + '</b>：優勝 '
+      h += '<div style="font-size:1rem;margin:2px 0;"><b>' + btTnEsc(div.label || div.code || '') + '</b>：優勝 '
         + btTnEsc(c.champion || '未決定') + '／準優勝 ' + btTnEsc(c.runnerUp || '未決定') + '</div>';
     });
     var own = btTnOwnResults(tn, names);
     if (own.length) {
-      h += '<div style="font-weight:900;font-size:0.8rem;margin-top:6px;">自分の試合の結果</div>';
+      h += '<div style="font-weight:900;font-size:1.15rem;margin-top:6px;">自分の試合の結果</div>';
       own.forEach(function(o){
-        h += '<div style="font-size:0.8rem;margin-top:2px;">'
+        h += '<div style="font-size:1rem;margin-top:2px;">'
           + btTnEsc(o.divLabel) + ' ' + btTnEsc(o.round) + '：vs '
           + btTnEsc(o.opp ? btTnNameSchool(o.opp, o.oppSchool) : '（対戦相手未定）')
           + (o.score ? '　' + btTnEsc(o.score) : '')
@@ -18166,7 +18167,7 @@ function sharePoseResultImage() {
     btTnState.list.forEach(function(t){
       var cur = t.id === btTnState.currentId;
       h += '<div class="bt-tn-list-row' + (cur ? ' bt-tn-list-row-cur' : '') + '" onclick="btTn.selectAndScroll(\'' + btTnEsc(t.id) + '\')">'
-        + '<div style="font-weight:900;font-size:0.84rem;">' + (cur ? '📂 ' : '📁 ') + btTnEsc(t.name) + '</div>'
+        + '<div style="font-weight:900;font-size:1rem;">' + (cur ? '📂 ' : '📁 ') + btTnEsc(t.name) + '</div>'
         + '<div class="bt-tn-note">' + btTnEsc(btTnTournamentResultLine(t, names)) + '</div>'
         + '</div>';
     });
@@ -18186,7 +18187,7 @@ function sharePoseResultImage() {
       '.bt-tn-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;}',
       '.bt-tn-thumb{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;border:1px solid var(--border-subtle);cursor:pointer;background:#000;}',
       '.bt-tn-thumb img{width:100%;height:100%;object-fit:cover;display:block;}',
-      '.bt-tn-thumb-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:0.7rem;line-height:1;cursor:pointer;}',
+      '.bt-tn-thumb-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:0.85rem;line-height:1;cursor:pointer;}',
       '.bt-tn-viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;display:flex;flex-direction:column;}',
       '.bt-tn-viewer-bar{display:flex;gap:8px;justify-content:flex-end;padding:10px;}',
       '.bt-tn-viewer-body{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;}',
@@ -18194,29 +18195,30 @@ function sharePoseResultImage() {
       '.bt-tn-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9997;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:12px;}',
       '.bt-tn-modal{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;max-width:640px;width:100%;margin:auto;}',
       '.bt-tn-ed-row{display:flex;gap:5px;align-items:center;margin:4px 0;flex-wrap:wrap;}',
-      '.bt-tn-ed-row input{background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;font-size:0.8rem;min-height:32px;}',
+      '.bt-tn-ed-row input{background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;font-size:1rem;min-height:36px;}',
       '.bt-tn-bracket{display:flex;gap:10px;overflow-x:auto;padding:6px 2px;}',
-      '.bt-tn-round{min-width:172px;flex:0 0 auto;}',
-      '.bt-tn-round-title{font-weight:900;font-size:0.8rem;color:var(--accent-primary);margin-bottom:6px;}',
-      '.bt-tn-match{border:1px solid var(--border-subtle);border-radius:10px;padding:7px;margin-bottom:8px;background:var(--bg-main);}',
+      '.bt-tn-round{min-width:190px;flex:0 0 auto;}',
+      '.bt-tn-round-title{font-weight:900;font-size:1.15rem;color:var(--accent-primary);margin-bottom:6px;}',
+      '.bt-tn-match{border:1px solid var(--border-subtle);border-radius:10px;padding:8px;margin-bottom:8px;background:var(--bg-main);}',
       '.bt-tn-match-own{border:2px solid var(--accent-primary);background:var(--bg-panel);box-shadow:0 0 0 2px var(--accent-primary) inset;}',
       '.bt-tn-match-watch{border:2px solid #f59e0b;background:var(--bg-main);box-shadow:0 0 0 2px rgba(245,158,11,.35) inset;}',
       '.bt-tn-star{flex:0 0 auto;background:transparent;border:1px solid var(--border-subtle);border-radius:7px;color:var(--text-main);font-size:0.85rem;cursor:pointer;min-width:34px;min-height:34px;margin:2px 0;padding:0 4px;}',
       '.bt-tn-star-on{border-color:#f59e0b;background:rgba(245,158,11,.18);}',
-      '.bt-tn-watch-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid #f59e0b;background:rgba(245,158,11,.15);color:var(--text-main);border-radius:999px;padding:5px 10px;font-size:0.8rem;margin:0 6px 6px 0;}',
+      '.bt-tn-watch-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid #f59e0b;background:rgba(245,158,11,.15);color:var(--text-main);border-radius:999px;padding:5px 10px;font-size:0.85rem;margin:0 6px 6px 0;}',
       '.bt-tn-watch-chip button{background:transparent;border:none;color:inherit;cursor:pointer;font-size:0.85rem;line-height:1;padding:0;}',
-      '.bt-tn-match-no{font-size:0.72rem;font-weight:800;color:var(--accent-secondary);cursor:pointer;}',
-      '.bt-tn-player{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:7px;padding:6px;margin:2px 0;color:var(--text-main);font-size:0.82rem;cursor:pointer;min-height:34px;}',
+      '.bt-tn-match-no{font-size:0.85rem;font-weight:800;color:var(--accent-secondary);cursor:pointer;}',
+      '.bt-tn-player{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:7px;padding:6px;margin:2px 0;color:var(--text-main);font-size:1rem;line-height:1.3;cursor:pointer;min-height:40px;}',
       '.bt-tn-player-win{border-color:var(--accent-primary);font-weight:900;background:var(--bg-panel);}',
+      '.bt-tn-player-lose .bt-tn-pname{opacity:.72;}',
       '.bt-tn-player:disabled{opacity:.55;cursor:default;}',
-      '.bt-tn-score{width:100%;background:var(--bg-panel);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:5px;font-size:0.78rem;margin-top:4px;min-height:30px;}',
-      '.bt-tn-chip{border:1px solid var(--border-subtle);background:var(--bg-main);color:var(--text-main);border-radius:999px;padding:6px 12px;font-size:0.8rem;cursor:pointer;min-height:32px;}',
+      '.bt-tn-score{width:100%;background:var(--bg-panel);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;font-size:1rem;margin-top:4px;min-height:36px;}',
+      '.bt-tn-chip{border:1px solid var(--border-subtle);background:var(--bg-main);color:var(--text-main);border-radius:999px;padding:6px 12px;font-size:1rem;cursor:pointer;min-height:36px;}',
       '.bt-tn-chip-on{background:var(--accent-primary);color:#fff;font-weight:800;}',
-      '.bt-tn-sec-title{font-weight:900;font-size:0.84rem;margin:10px 0 4px;}',
-      '.bt-tn-note{font-size:0.74rem;color:var(--text-sub);line-height:1.5;}',
-      '.bt-tn-school{display:block;font-size:0.68rem;color:var(--text-sub);line-height:1.25;}',
-      '.bt-tn-candidate{color:var(--text-sub);font-size:0.74rem;}',
-      '.bt-tn-seed{display:inline-block;font-size:0.66rem;font-weight:800;color:#92400e;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.55);border-radius:999px;padding:0 6px;margin-left:5px;line-height:1.5;vertical-align:1px;}',
+      '.bt-tn-sec-title{font-weight:900;font-size:1.15rem;margin:10px 0 4px;}',
+      '.bt-tn-note{font-size:0.85rem;color:var(--text-sub);line-height:1.5;}',
+      '.bt-tn-school{display:block;font-size:0.85rem;color:var(--text-sub);line-height:1.25;}',
+      '.bt-tn-candidate{color:var(--text-sub);font-size:0.85rem;}',
+      '.bt-tn-seed{display:inline-block;font-size:0.85rem;font-weight:900;color:#2a1503;background:#f59e0b;border:1px solid #f59e0b;border-radius:999px;padding:0 6px;margin-left:5px;line-height:1.5;vertical-align:1px;}',
       '.bt-tn-list-row{border:1px solid var(--border-subtle);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:var(--bg-main);cursor:pointer;}',
       '.bt-tn-list-row-cur{border:2px solid var(--accent-primary);background:var(--bg-panel);}'
     ].join('\n');
@@ -18318,8 +18320,8 @@ function sharePoseResultImage() {
     });
     if (!lines.length) return '';
     return '<div style="border:1px solid var(--accent-primary);border-radius:10px;padding:8px;margin:8px 0;background:var(--bg-panel);">'
-      + '<div style="font-weight:900;font-size:0.82rem;color:var(--accent-primary);">⭐ 自分の試合（未確定の次戦）</div>'
-      + lines.map(function(l){ return '<div style="font-size:0.8rem;margin-top:3px;">' + l + '</div>'; }).join('')
+      + '<div style="font-weight:900;font-size:1.15rem;color:var(--accent-primary);">⭐ 自分の試合（未確定の次戦）</div>'
+      + lines.map(function(l){ return '<div style="font-size:1rem;margin-top:3px;">' + l + '</div>'; }).join('')
       + '</div>';
   }
 
@@ -18350,8 +18352,8 @@ function sharePoseResultImage() {
     });
     if (!lines.length) return '';
     return '<div style="border:1px solid #f59e0b;border-radius:10px;padding:8px;margin:8px 0;background:var(--bg-panel);">'
-      + '<div style="font-weight:900;font-size:0.82rem;color:#f59e0b;">👀 注目の試合（未確定の次戦）</div>'
-      + lines.map(function(l){ return '<div style="font-size:0.8rem;margin-top:3px;">' + l + '</div>'; }).join('')
+      + '<div style="font-weight:900;font-size:1.15rem;color:#f59e0b;">👀 注目の試合（未確定の次戦）</div>'
+      + lines.map(function(l){ return '<div style="font-size:1rem;margin-top:3px;">' + l + '</div>'; }).join('')
       + '</div>';
   }
 
@@ -18380,8 +18382,8 @@ function sharePoseResultImage() {
     var h = '<div class="bt-tn-match' + (own ? ' bt-tn-match-own' : (watched ? ' bt-tn-match-watch' : '')) + '">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;">'
       + '<span class="bt-tn-match-no" onclick="btTn.showMatchSchedule(' + di + ',' + ri + ',' + mi + ')">' + btTnEsc(m.no || '(番号なし)') + '</span>'
-      + (own ? '<span style="font-size:0.7rem;font-weight:900;color:var(--accent-primary);">⭐自分の試合</span>'
-        : (watched ? '<span style="font-size:0.7rem;font-weight:900;color:#f59e0b;">👀 注目</span>' : ''))
+      + (own ? '<span style="font-size:0.85rem;font-weight:900;color:var(--accent-primary);">⭐自分の試合</span>'
+        : (watched ? '<span style="font-size:0.85rem;font-weight:900;color:#f59e0b;">👀 注目</span>' : ''))
       + '</div>';
     if (sch) h += '<div class="bt-tn-note">' + btTnEsc(sch.court || '') + (sch.time ? ' ' + btTnEsc(sch.time) : '') + '</div>';
     [1, 2].forEach(function(side){
@@ -18393,12 +18395,12 @@ function sharePoseResultImage() {
       var sd = side === 1 ? eff.seed1 : eff.seed2;
       var ph = nm ? '' : btTnSlotPlaceholder(div, ri, mi, side);
       h += '<div style="display:flex;gap:4px;align-items:stretch;">'
-        + '<button class="bt-tn-player' + (isWin ? ' bt-tn-player-win' : '') + '" style="flex:1;"' + dis
+        + '<button class="bt-tn-player' + (isWin ? ' bt-tn-player-win' : (m.winner ? ' bt-tn-player-lose' : '')) + '" style="flex:1;"' + dis
         + ' onclick="btTn.setWinner(' + di + ',' + ri + ',' + mi + ',' + side + ')">'
         + '<span style="flex:1;min-width:0;">'
         + (sc ? '<span class="bt-tn-school">' + btTnEsc(sc) + '</span>' : '')
         + (nm
-          ? '<span>' + btTnEsc(nm) + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? ' 👀' : '') + '</span>'
+          ? '<span><span class="bt-tn-pname">' + btTnEsc(nm) + '</span>' + (sd ? '<span class="bt-tn-seed">' + btTnEsc(sd) + '</span>' : '') + (isW ? ' 👀' : '') + '</span>'
           : (ph ? '<span class="bt-tn-candidate">' + btTnEsc(ph) + '</span>' : '<span>（未定）</span>'))
         + '</span>' + (isWin ? '<span>🏆</span>' : '')
         + '</button>';
@@ -18411,6 +18413,76 @@ function sharePoseResultImage() {
     if (eff.p1 && eff.p2) h += '<button class="btn btn-emerald" style="margin-top:4px; min-height:40px;" onclick="btTn.startScoring(' + di + ',' + ri + ',' + mi + ')">' + (m.winner ? '🏸 スコアで記録し直す' : '🏸 スコアをつける') + '</button>';
     if (m.winner) h += '<button class="btn" style="margin-top:4px;" onclick="btTn.clearResult(' + di + ',' + ri + ',' + mi + ')">結果を取り消す</button>';
     return h + '</div>';
+  }
+
+  /* ---------- 学校で探す（学校名ピッカー） ---------- */
+  /* 学校一覧は実効選手（勝ち上がり反映後）の学校名から作る。件数はその学校が出る試合数 */
+  function btTnSchoolIndex(tn){
+    var counts = {}, names = [];
+    ((tn && tn.divisions) || []).forEach(function(div){
+      (div.rounds || []).forEach(function(r, ri){
+        (r.matches || []).forEach(function(m, mi){
+          var eff = btTnMatchPlayers(div, ri, mi);
+          var seen = {};
+          [eff.s1, eff.s2].forEach(function(sc){
+            sc = String(sc || '').trim();
+            if (!sc || seen[sc]) return;
+            seen[sc] = true;
+            if (!(sc in counts)) { counts[sc] = 0; names.push(sc); }
+            counts[sc]++;
+          });
+        });
+      });
+    });
+    names.sort(function(a, b){ return (counts[b] - counts[a]) || a.localeCompare(b, 'ja'); });
+    return names.map(function(n){ return { name: n, count: counts[n] }; });
+  }
+  /* 指定学校の全試合（全部門・全ラウンド）。進行表の時刻がある試合は時刻順、無い試合は対戦表順で後ろ */
+  function btTnSchoolMatches(tn, school){
+    var smap = btTnScheduleMap(tn);
+    var out = [];
+    ((tn && tn.divisions) || []).forEach(function(div, di){
+      (div.rounds || []).forEach(function(r, ri){
+        (r.matches || []).forEach(function(m, mi){
+          var eff = btTnMatchPlayers(div, ri, mi);
+          if (String(eff.s1 || '').trim() === school || String(eff.s2 || '').trim() === school) {
+            var sch = m.no ? smap[m.no] : null;
+            out.push({ div: div, di: di, ri: ri, mi: mi, time: sch ? String(sch.time || '') : '' });
+          }
+        });
+      });
+    });
+    return out.map(function(e, i){ return { e: e, i: i }; }).sort(function(a, b){
+      if (a.e.time && b.e.time) return a.e.time < b.e.time ? -1 : (a.e.time > b.e.time ? 1 : a.i - b.i);
+      if (a.e.time) return -1;
+      if (b.e.time) return 1;
+      return a.i - b.i;
+    }).map(function(x){ return x.e; });
+  }
+  function btTnSchoolSectionHtml(tn, names, smap){
+    var schools = btTnSchoolIndex(tn);
+    if (!schools.length) return '';
+    if (btTnState.schoolFilter && !schools.some(function(s){ return s.name === btTnState.schoolFilter; })) {
+      btTnState.schoolFilter = null; /* データ編集で学校が消えた場合は絞り込みを解除 */
+    }
+    var cur = btTnState.schoolFilter;
+    var h = '<div class="bt-tn-sec-title">🏫 学校で探す</div>'
+      + '<div style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;">'
+      + '<button class="bt-tn-chip' + (!cur ? ' bt-tn-chip-on' : '') + '" style="flex:0 0 auto;" onclick="btTn.setSchoolFilter(\'\')">すべて表示</button>';
+    schools.forEach(function(s, i){
+      h += '<button class="bt-tn-chip' + (cur === s.name ? ' bt-tn-chip-on' : '') + '" style="flex:0 0 auto;" onclick="btTn.setSchoolFilterByIdx(' + i + ')">' + btTnEsc(s.name) + '（' + s.count + '）</button>';
+    });
+    h += '</div>';
+    if (cur) {
+      var list = btTnSchoolMatches(tn, cur);
+      h += '<div style="font-weight:900;font-size:1rem;margin:2px 0 6px;">🏫 ' + btTnEsc(cur) + ' の試合（' + list.length + '件）</div>';
+      if (!list.length) h += '<div class="bt-tn-note">この学校の試合は見つかりませんでした。</div>';
+      list.forEach(function(e){
+        h += '<div class="bt-tn-note" style="margin-top:6px;">' + btTnEsc(e.div.label || e.div.code) + ' ' + btTnEsc(e.div.rounds[e.ri].name) + '</div>'
+          + btTnMatchHtml(tn, e.div, e.di, e.ri, e.mi, names, smap);
+      });
+    }
+    return h;
   }
 
   function btTnBracketHtml(tn){
@@ -18431,7 +18503,8 @@ function sharePoseResultImage() {
       h += '<button class="bt-tn-chip' + (div.code === btTnState.divCode ? ' bt-tn-chip-on' : '') + '" onclick="btTn.setDivisionByIdx(' + di + ')">' + btTnEsc(div.label || div.code) + '</button>';
     });
     h += '</div>';
-    tn.divisions.forEach(function(div, di){
+    h += btTnSchoolSectionHtml(tn, names, smap);
+    if (!btTnState.schoolFilter) tn.divisions.forEach(function(div, di){
       if (div.code !== btTnState.divCode) return;
       h += '<div class="bt-tn-bracket">';
       (div.rounds || []).forEach(function(r, ri){
@@ -18467,7 +18540,7 @@ function sharePoseResultImage() {
     var d = btTnState.editDraft;
     if (!d) return '';
     var h = '<div class="bt-tn-modal-ov" id="btTnEditor"><div class="bt-tn-modal" role="dialog" aria-modal="true">'
-      + '<div style="font-weight:900;font-size:0.95rem;color:var(--accent-primary);">📝 対戦表の確認・修正</div>'
+      + '<div style="font-weight:900;font-size:1.15rem;color:var(--accent-primary);">📝 対戦表の確認・修正</div>'
       + '<div class="bt-tn-note">内容を確かめて、間違いがあれば直してください。「この内容で確定」を押すと対戦表に反映されます。</div>';
     d.divisions.forEach(function(div, di){
       h += '<div style="border:1px solid var(--border-subtle);border-radius:10px;padding:8px;margin-top:10px;">'
@@ -18618,6 +18691,7 @@ function sharePoseResultImage() {
       btTnState.list.unshift(tn);
       btTnState.currentId = tn.id;
       btTnState.divCode = null;
+      btTnState.schoolFilter = null;
       btTnState.photosOpen = false;
       btTnState.images = { bracket: [], schedule: [] };
       if (inp) inp.value = '';
@@ -18626,12 +18700,14 @@ function sharePoseResultImage() {
     select: function(id){
       btTnState.currentId = id;
       btTnState.divCode = null;
+      btTnState.schoolFilter = null;
       btTnState.photosOpen = false;
       btTnLoadImages(id).then(btTnRender);
     },
     selectAndScroll: function(id){
       btTnState.currentId = id;
       btTnState.divCode = null;
+      btTnState.schoolFilter = null;
       btTnState.photosOpen = false;
       btTnLoadImages(id).then(function(){
         btTnRender();
@@ -18654,6 +18730,7 @@ function sharePoseResultImage() {
         btTnState.list = btTnState.list.filter(function(t){ return t.id !== id; });
         btTnState.currentId = btTnState.list.length ? btTnState.list[0].id : null;
         btTnState.divCode = null;
+        btTnState.schoolFilter = null;
         btTnState.photosOpen = false;
         return btTnState.currentId ? btTnLoadImages(btTnState.currentId) : null;
       }).then(btTnRender).catch(function(){ btTnRender(); });
@@ -18763,9 +18840,21 @@ function sharePoseResultImage() {
       tn.divisions = built.divisions;
       tn.schedule = built.schedule;
       btTnState.divCode = tn.divisions.length ? tn.divisions[0].code : null;
+      btTnState.schoolFilter = null;
       btTnState.editDraft = null;
       btTnCloseOverlay('btTnEditor');
       btTnSaveRecord(tn).then(btTnRender);
+    },
+    setSchoolFilter: function(name){
+      btTnState.schoolFilter = name ? String(name) : null;
+      btTnRenderBracket();
+    },
+    setSchoolFilterByIdx: function(i){
+      var tn = btTnCurrent();
+      if (!tn) return;
+      var s = btTnSchoolIndex(tn)[i];
+      btTnState.schoolFilter = s ? s.name : null;
+      btTnRenderBracket();
     },
     setDivisionByIdx: function(di){
       var tn = btTnCurrent();
@@ -19109,6 +19198,9 @@ function sharePoseResultImage() {
     watchSummaryHtml: btTnWatchSummaryHtml,
     watchSectionHtml: btTnWatchSectionHtml,
     matchHtml: btTnMatchHtml,
+    schoolIndex: btTnSchoolIndex,
+    schoolMatches: btTnSchoolMatches,
+    schoolSectionHtml: btTnSchoolSectionHtml,
     bracketHtml: btTnBracketHtml,
     bodyHtml: btTnBodyHtml,
     viewerHtml: btTnViewerHtml,
@@ -19793,7 +19885,7 @@ function sharePoseResultImage() {
     if (!el) return;
     var hist = loadHistory();
     if (!hist.length) {
-      el.innerHTML = '<div style="font-size:0.82rem; color:var(--text-secondary);">まだ記録はありません。フリー試合が終わると、ここに保存できます。</div>';
+      el.innerHTML = '<div style="font-size:0.85rem; color:var(--text-secondary);">まだ記録はありません。フリー試合が終わると、ここに保存できます。</div>';
       return;
     }
     el.innerHTML = hist.map(function(r){
@@ -19803,7 +19895,7 @@ function sharePoseResultImage() {
       var gs = (r.games || []).map(function(g){ return g.a + '-' + g.b; }).join(', ');
       var winName = r.winner === 'A' ? na : nb;
       return '<div style="display:flex; gap:8px; align-items:center; padding:7px 0; border-bottom:1px solid var(--border-subtle);">'
-        + '<div style="flex:1; min-width:0; font-size:0.85rem;">'
+        + '<div style="flex:1; min-width:0; font-size:1rem;">'
         + '<span style="color:var(--text-secondary);">' + esc(ds) + '</span> '
         + '<b>' + esc(na) + '</b> vs <b>' + esc(nb) + '</b>'
         + (gs ? '<span style="color:var(--text-secondary);">（' + esc(gs) + '）</span>' : '')
@@ -19827,8 +19919,8 @@ function sharePoseResultImage() {
     if (na) na.textContent = dispNames(matchState.playersA);
     if (nb) nb.textContent = dispNames(matchState.playersB);
     var sa = document.getElementById('btServeBadgeA'), sb = document.getElementById('btServeBadgeB');
-    if (sa) sa.style.display = matchState.servingTeam === 'A' ? '' : 'none';
-    if (sb) sb.style.display = matchState.servingTeam === 'B' ? '' : 'none';
+    if (sa) sa.style.visibility = matchState.servingTeam === 'A' ? 'visible' : 'hidden';
+    if (sb) sb.style.visibility = matchState.servingTeam === 'B' ? 'visible' : 'hidden';
   }
   function syncNameInputs(){
     if (typeof matchState === 'undefined') return;
@@ -19849,7 +19941,7 @@ function sharePoseResultImage() {
     if (!info || !status || typeof matchState === 'undefined') return;
     if (link.bound) {
       info.innerHTML = '🏸 大会「' + esc(link.bound.tnName) + '」と連携中<br>'
-        + '<span style="font-size:0.8rem;">' + esc(link.bound.divLabel) + ' ' + esc(link.bound.roundName) + ' ' + esc(link.bound.no) + '：'
+        + '<span style="font-size:0.85rem;">' + esc(link.bound.divLabel) + ' ' + esc(link.bound.roundName) + ' ' + esc(link.bound.no) + '：'
         + esc(dispNames(matchState.playersA)) + ' vs ' + esc(dispNames(matchState.playersB)) + '</span>';
     } else {
       info.textContent = '🏸 フリー試合（大会と連携していません）';
@@ -19894,7 +19986,7 @@ function sharePoseResultImage() {
     var style = document.createElement('style');
     style.textContent = '.bt-score-panel{cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;}'
       + '#tab-score .btn{touch-action:manipulation;}'
-      + '#btScoreLinkBar input{background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:6px; padding:6px; font-size:0.85rem; min-height:36px; width:100%;}';
+      + '#btScoreLinkBar input{background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:6px; padding:6px; font-size:1rem; min-height:40px; width:100%;}';
     document.head.appendChild(style);
     var scoreEl = document.getElementById('scoreTeamA');
     if (!scoreEl) return;
@@ -19903,29 +19995,29 @@ function sharePoseResultImage() {
     bar.id = 'btScoreLinkBar';
     bar.style.cssText = 'background:var(--bg-panel); border:1px solid var(--border-subtle); border-radius:10px; padding:8px 10px; margin:0 auto 10px; max-width:600px;';
     bar.innerHTML =
-        '<div id="btScoreBindInfo" style="font-weight:800; font-size:0.85rem;"></div>'
-      + '<div id="btScoreStatus" style="font-size:0.82rem; margin-top:3px;"></div>'
+        '<div id="btScoreBindInfo" style="font-weight:800; font-size:1rem;"></div>'
+      + '<div id="btScoreStatus" style="font-size:1rem; margin-top:3px;"></div>'
       + '<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:6px;">'
-      +   '<span style="font-size:0.78rem; color:var(--text-secondary);">試合形式:</span>'
+      +   '<span style="font-size:0.85rem; color:var(--text-secondary);">試合形式:</span>'
       +   '<button class="btn" data-bo="1" style="min-height:40px;" onclick="btScoreSetBestOf(1)">1ゲーム制</button>'
       +   '<button class="btn" data-bo="3" style="min-height:40px;" onclick="btScoreSetBestOf(3)">3ゲーム制</button>'
       +   '<button class="btn" data-bo="5" style="min-height:40px;" onclick="btScoreSetBestOf(5)">5ゲーム制</button>'
       +   '<button class="btn" id="btScoreUnbindBtn" style="display:none; min-height:40px;" onclick="btScoreUnbind()">連携を解除</button>'
       + '</div>'
       + '<div id="btScoreFinish" style="display:none; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-subtle);">'
-      +   '<div id="btScoreFinishText" style="font-weight:900; font-size:0.92rem;"></div>'
+      +   '<div id="btScoreFinishText" style="font-weight:900; font-size:1.15rem;"></div>'
       +   '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">'
       +     '<button class="btn btn-emerald" id="btScoreSaveHistBtn" style="min-height:44px;" onclick="btScoreSaveHistory()">📒 試合記録に保存</button>'
       +     '<button class="btn" style="min-height:44px;" onclick="btScoreCancelFinish()">↩ 試合結果を取り消す</button>'
       +   '</div>'
       + '</div>'
-      + '<div id="btScoreFlash" style="font-size:0.8rem; color:var(--accent-highlight); min-height:1em; margin-top:4px;"></div>'
-      + '<details style="margin-top:2px;"><summary style="font-size:0.8rem; cursor:pointer; color:var(--text-secondary);">選手名を編集</summary>'
+      + '<div id="btScoreFlash" style="font-size:0.85rem; color:var(--accent-highlight); min-height:1em; margin-top:4px;"></div>'
+      + '<details style="margin-top:2px;"><summary style="font-size:0.85rem; cursor:pointer; color:var(--text-secondary);">選手名を編集</summary>'
       + '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px;">'
       +   '<input id="btNameA1" type="text" placeholder="A1 名前"><input id="btNameA2" type="text" placeholder="A2 名前">'
       +   '<input id="btNameB1" type="text" placeholder="B1 名前"><input id="btNameB2" type="text" placeholder="B2 名前">'
       + '</div></details>'
-      + '<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">パネルをタップすると+1点。ゲームは21点先取（デュースは2点差・最大30点）で自動判定し、次のゲームへ進みます。「1つ戻す」は現在のゲーム内だけ有効です。</div>';
+      + '<div style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">パネルをタップすると+1点。ゲームは21点先取（デュースは2点差・最大30点）で自動判定し、次のゲームへ進みます。「1つ戻す」は現在のゲーム内だけ有効です。</div>';
     grid.parentNode.insertBefore(bar, grid);
     [['btNameA1', 'playersA', 0], ['btNameA2', 'playersA', 1], ['btNameB1', 'playersB', 0], ['btNameB2', 'playersB', 1]].forEach(function(cfg){
       var el = document.getElementById(cfg[0]);
