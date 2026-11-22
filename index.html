@@ -11111,6 +11111,8 @@
     };
 
     // 📋 TAB 5: メニュー作成＋📚 TAB 6: ドリル集（スコアの後・ラケットの前に並べて配置。ガイドは10番目のまま）
+    // AI相談は販売版（有料キー前提）で復活予定。それまで UI・実行経路とも Coming Soon でゲートする（Phase 2 課金の BILLING_COMING_SOON と同じパターン。本ファイルには課金コードが無いため、この定数が相談ゲートの単一の置き場）
+    const AI_CONSULT_COMING_SOON = true;
     function injectMenuPlannerTab() {
       const nav = document.querySelector('.nav-scroller'), guideBtn = document.getElementById('btn-tab-guide');
       const anchorBtn = document.getElementById('btn-tab-racket') || guideBtn;
@@ -11140,9 +11142,9 @@
             <div id="menuModeCreatePane">
             <div class="card" style="background:var(--bg-panel);margin-bottom:12px;">
               <div class="form-group" style="margin-bottom:8px;">
-                <label>🤖 AIに相談（自由に入力）</label>
-                <input type="text" id="aiMenuConsultInput" placeholder="例：自宅で足メイン、20分くらい" style="font-size:0.85rem;padding:7px 9px;"/>
-                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">入力すると下のボタンがAI編成になります（空欄なら通常の自動編成）。下の条件と組み合わせてもOKです。</div>
+                <label>🤖 AIに相談（自由に入力）${AI_CONSULT_COMING_SOON ? ' <span class="badge-version" style="background:var(--accent-highlight);color:#fff;">Coming Soon</span>' : ''}</label>
+                <input type="text" id="aiMenuConsultInput" placeholder="例：自宅で足メイン、20分くらい" style="font-size:0.85rem;padding:7px 9px;"${AI_CONSULT_COMING_SOON ? ' disabled' : ''}/>
+                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">${AI_CONSULT_COMING_SOON ? 'AI相談は準備中です。今は下の条件で編成できます。' : '入力すると下のボタンがAI編成になります（空欄なら通常の自動編成）。下の条件と組み合わせてもOKです。'}</div>
                 <div id="aiMenuConsultStatus" style="font-size:0.8rem;margin-top:4px;"></div>
               </div>
               <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:8px;">
@@ -11359,6 +11361,7 @@
     // 応答が返らないまま固まる（ハングする）混雑でも「編成中」のまま止まらないよう上限を設ける：
     // 1リクエスト最大60秒でタイムアウト（一時的失敗として再試行）、相談全体は最大150秒で打ち切って通常編成にフォールバックする。
     async function callGeminiForMenuConsult(prompt) {
+      if (AI_CONSULT_COMING_SOON) throw new Error('AI相談は準備中です');
       const fast = (typeof GEMINI_MODEL_FAST !== 'undefined') ? GEMINI_MODEL_FAST : undefined;
       const waits = [20000, 40000];
       const REQ_TIMEOUT_MS = 60000;
@@ -11386,13 +11389,14 @@
 
     function composeMenuFromUI() {
       const inp = document.getElementById('aiMenuConsultInput');
-      const txt = inp ? (inp.value || '').trim() : '';
+      const txt = (!AI_CONSULT_COMING_SOON && inp) ? (inp.value || '').trim() : '';
       if (txt) { composeMenuByAIConsult(); return; }
       const st = document.getElementById('aiMenuConsultStatus'); if (st) st.innerHTML = '';
       generateAIMenuByConditions(true);
     }
 
     async function composeMenuByAIConsult() {
+      if (AI_CONSULT_COMING_SOON) { generateAIMenuByConditions(true); return; }
       const pm = document.getElementById('aiMenuPlayersMode') ? document.getElementById('aiMenuPlayersMode').value : 'gym_2';
       const target = Math.max(5, Number(document.getElementById('aiMenuTargetMin') ? document.getElementById('aiMenuTargetMin').value : 150) || 150);
       const reqText = (document.getElementById('aiMenuConsultInput').value || '').trim();
