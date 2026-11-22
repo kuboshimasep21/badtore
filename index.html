@@ -3588,7 +3588,7 @@
 
     <!-- =========================================================
 
-         TAB 4: 🏸 ブランド別AIラケット診断
+         TAB 4: 🏸 ブランド別ラケット理論値診断
 
     ========================================================== -->
 
@@ -3598,9 +3598,9 @@
 
         <div class="card-header">
 
-          <div class="card-title">🏸 4大ブランド別 ラケット＆ガット診断カルテ</div>
+          <div class="card-title">🏸 4大ブランド別 ラケット理論値診断</div>
 
-          <span class="badge-version">スタイル・パワー連動</span>
+          <span class="badge-version">理論値診断</span>
 
         </div>
 
@@ -10126,85 +10126,126 @@
 
 
 
+    // ===== ラケット理論値診断モデル（2026-11-23）=====
+    // 理論適合度は打感の実測ではなく、希望とスペックの合いやすさを式で表した理論値。
+    // 材料は3つだけ: ①スタイル設定 ②パワー設定 ③スイング傾向（フォーム診断の実測がある場合のみ）。
+    // スイング傾向は、スマッシュ／ジャンピングスマッシュ／クリアの過去ベストに保存された
+    // 最大スイング速度指数（maxSp, pt）の最大値から3段階に分ける（境界はアプリ独自の目安）:
+    //   80pt以上=速め / 55〜79pt=普通 / 55pt未満=遅め。実測が無ければ傾向は使わず、好みだけで計算する。
+    // 希望バランス（0=ヘッドライト … 4=ヘッドヘビー）は、スタイル基準（パワー3/コントロール2/スピード1）
+    //   ＋ パワー補正（強い+1/標準0/控えめ-1）＋ 傾向補正（速め+1/普通0/遅め-1、実測時のみ）で決める。
+    // 理論適合度 = 60 ＋ スタイル一致14 ＋ パワー一致8 ＋ バランスの近さ（12−3×|希望−実物|）
+    //   ＋ 重さ規格の扱いやすさ（最大6）。上限99。
+    // シャフトの硬さはカタログ（RACKET_DB）に項目が無いため材料にしない。バランス表記が無いラケットは中立（2）扱い。
+    const RACKET_STYLE_LABELS = { power: 'パワー型', speed: 'スピード型', control: 'コントロール型' };
+    const RACKET_POWER_LABELS = { low: '控えめ', mid: '標準', high: '強い' };
+    const RACKET_SWING_SHOTS = ['smash', 'jump_smash', 'clear'];
+
+    function racketBalanceLevel(balanceText) {
+      const t = String(balanceText || '');
+      const heavy = t.includes('ヘッドヘビー') || t.includes('トップヘビー');
+      const light = t.includes('ヘッドライト');
+      const even = t.includes('イーブン');
+      if (heavy && even) return 3;
+      if (heavy) return t.includes('寄り') ? 3 : 4;
+      if (light && even) return 1;
+      if (light) return 0;
+      return 2;
+    }
+
+    function racketUClasses(weightText) {
+      const found = String(weightText || '').match(/(\d)U/g) || [];
+      const us = found.map(s => parseInt(s, 10));
+      if (!us.length) return { lightest: 4, heaviest: 4 };
+      return { lightest: Math.max.apply(null, us), heaviest: Math.min.apply(null, us) };
+    }
+
+    function getSwingSpeedBand() {
+      // フォーム診断の過去ベストに残る最大スイング速度指数（maxSp）を読む。記録が無ければ null。
+      try {
+        if (typeof getPersonalBestRecord !== 'function') return null;
+        let best = null;
+        RACKET_SWING_SHOTS.forEach(function (shot) {
+          const rec = getPersonalBestRecord(activeProfileId, shot);
+          if (rec && typeof rec.maxSp === 'number' && rec.maxSp > 0 && (best === null || rec.maxSp > best)) best = rec.maxSp;
+        });
+        if (best === null) return null;
+        if (best >= 80) return { band: 'fast', label: '速め', maxSp: best };
+        if (best >= 55) return { band: 'normal', label: '普通', maxSp: best };
+        return { band: 'slow', label: '遅め', maxSp: best };
+      } catch (e) { return null; }
+    }
+
+    function buildRacketReason(r, ctx) {
+      const parts = [];
+      if (r.type === userProfile.style) parts.push(ctx.styleLabel + '向けのタイプ');
+      if (ctx.swing && ctx.swing.band === 'fast' && r.balLevel >= 3) parts.push('スイングが速めでも力を伝えやすい、ヘッド側に重さのあるバランス');
+      else if (ctx.swing && ctx.swing.band === 'slow' && r.balLevel <= 1) parts.push('スイングが遅めでも振り抜きやすい、軽めのバランス');
+      else if (Math.abs(ctx.desiredBalance - r.balLevel) <= 1) parts.push('希望に近いバランス（' + r.balance + '）');
+      if (ctx.swing && ctx.swing.band === 'slow' && r.uLight >= 5) parts.push('軽い5U規格あり');
+      if (!parts.length) parts.push('希望のタイプ・バランスとは少し離れます');
+      return parts.slice(0, 2).join('・') + 'です。';
+    }
+
     function renderRacketRecommendations(brandFilter = 'ALL') {
-
       const container = document.getElementById('racketListContainer');
-
       const summaryBox = document.getElementById('racketDiagnosisSummary');
-
       if (!container || !summaryBox) return;
 
+      const styleLabel = RACKET_STYLE_LABELS[userProfile.style] || userProfile.style;
+      const powerLabel = RACKET_POWER_LABELS[userProfile.power] || userProfile.power;
+      const swing = getSwingSpeedBand();
 
+      let desiredBalance = userProfile.style === 'power' ? 3 : (userProfile.style === 'speed' ? 1 : 2);
+      if (userProfile.power === 'high') desiredBalance += 1;
+      if (userProfile.power === 'low') desiredBalance -= 1;
+      if (swing && swing.band === 'fast') desiredBalance += 1;
+      if (swing && swing.band === 'slow') desiredBalance -= 1;
+      desiredBalance = Math.max(0, Math.min(4, desiredBalance));
 
-      // マッチ度はスタイルとパワー設定への一致だけで決まる（身長・速度指数は採点に使わない）。
-      // 提案文が実態以上をうたわないよう、理由はこの2要素に限定する（全体監査 2026-11-22 M1）。
-
-
+      const inputsLine = swing
+        ? `計算に使った材料: スタイル（${styleLabel}）・パワー（${powerLabel}）・スイング傾向（${swing.label}／実測あり）`
+        : `計算に使った材料: スタイル（${styleLabel}）・パワー（${powerLabel}）・スイング傾向（実測なし）`;
 
       summaryBox.innerHTML = `
-
-        <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🤖 「${userProfile.name}」専用 ギアマッチング診断</div>
-
-        <div style="font-size:0.8rem; color:var(--text-primary);">
-
-          マッチ度は、あなたのスタイル（${userProfile.style}）とパワー設定（${userProfile.power}）に合うかどうかで決まります。
-
-        </div>
-
+        <div style="font-weight:800; color:var(--accent-secondary); margin-bottom:4px;">🏸 「${userProfile.name}」のラケット理論値診断</div>
+        <div style="font-size:0.8rem; color:var(--text-primary); margin-bottom:4px;">理論値診断は、スタイル・パワー設定・スイングの傾向から、スペックとの合いやすさを計算した目安です。実際の打感は試打でしか分かりません。</div>
+        <div style="font-size:0.8rem; color:var(--text-secondary);">${inputsLine}</div>
+        ${swing ? '' : `<div style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">※ 実測なし（好みだけで計算しています）。フォーム診断でスマッシュやクリアを測ると、スイングの傾向も反映されます。</div>`}
       `;
 
-
-
       const scoredList = RACKET_DB.filter(r => brandFilter === 'ALL' || r.brand === brandFilter).map(r => {
-
-        let matchPt = 78;
-
-        if (r.type === userProfile.style) matchPt += 12;
-
-        if (r.powerReq === userProfile.power) matchPt += 8;
-
-        return { ...r, matchPt: Math.min(99, matchPt) };
-
-      }).sort((a, b) => b.matchPt - a.matchPt);
-
-
+        const bal = racketBalanceLevel(r.balance);
+        const u = racketUClasses(r.weight);
+        let fitPt = 60;
+        if (r.type === userProfile.style) fitPt += 14;
+        if (r.powerReq === userProfile.power) fitPt += 8;
+        fitPt += Math.max(0, 12 - 3 * Math.abs(desiredBalance - bal));
+        if (swing && swing.band === 'slow') fitPt += (u.lightest >= 5 ? 6 : 3);
+        else if (swing && swing.band === 'fast') fitPt += (u.heaviest <= 3 ? 6 : 4);
+        else fitPt += 4;
+        return { ...r, fitPt: Math.min(99, fitPt), balLevel: bal, uLight: u.lightest };
+      }).sort((a, b) => b.fitPt - a.fitPt);
 
       const brandColors = { YONEX: "#10b981", MIZUNO: "#3b82f6", GOSEN: "#f59e0b", LINING: "#ef4444" };
 
-
-
       container.innerHTML = scoredList.map(r => `
-
         <div class="racket-card">
-
           <div>
-
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-
               <span class="badge-version" style="background:${brandColors[r.brand]}; color:#090d16;">${r.brand}</span>
-
-              <span style="font-weight:800; color:#34d399; font-size:0.8rem;">マッチ度: ${r.matchPt}%</span>
-
+              <span style="font-weight:800; color:#34d399; font-size:0.8rem;">理論適合度: ${r.fitPt}</span>
             </div>
-
             <div style="font-size:0.95rem; font-weight:800; margin-bottom:4px;">${r.name}</div>
-
             <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:8px;">${r.desc}</p>
-
+            <p style="font-size:0.8rem; color:var(--accent-secondary); margin-bottom:8px;">💡 ${buildRacketReason(r, { styleLabel: styleLabel, swing: swing, desiredBalance: desiredBalance })}</p>
           </div>
-
           <div style="background:var(--bg-base); padding:8px; border-radius:8px; font-size:0.8rem; color:var(--text-secondary);">
-
             <div>⚖️ 規格: <b>${r.weight}</b>（${r.balance}）</div>
-
             <div>🧵 推奨ガット: <b>${r.stringRec}</b></div>
-
           </div>
-
         </div>
-
       `).join('');
-
     }
 
 
