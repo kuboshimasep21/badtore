@@ -14647,7 +14647,7 @@ function sharePoseResultImage() {
     if (!sticky || !sticky.parentNode) return;
     var bar = document.createElement('div');
     bar.id = 'betaNoticeBanner';
-    bar.style.cssText = 'position:relative;background:var(--bg-surface);border:1px solid var(--accent-highlight);border-radius:10px;margin:10px 10px 0;padding:10px 32px 10px 12px;font-size:0.8rem;line-height:1.55;color:var(--text-primary);';
+    bar.style.cssText = 'position:relative;background:var(--bg-surface);border:1px solid var(--accent-highlight);border-radius:10px;margin:10px 10px 0;padding:calc(10px + env(safe-area-inset-top, 0px)) 32px 10px 12px;font-size:0.8rem;line-height:1.55;color:var(--text-primary);';
     bar.innerHTML =
       '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:4px;right:6px;background:none;border:none;color:var(--text-secondary);font-size:0.95rem;cursor:pointer;padding:4px 6px;">✕</button>' +
       '<div style="font-weight:900;margin-bottom:2px;">🧪 ベータ版です</div>' +
