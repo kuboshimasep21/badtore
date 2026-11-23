@@ -2202,7 +2202,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v10.6.0 PRO</span>
+      <span class="badge-version">v10.6.0 PRO（ベータ版）</span>
 
     </div>
 
@@ -11579,8 +11579,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.6.0 PRO";
-      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.6.0 PRO";
+      document.title = "バドトレPRO v10.6.0 PRO" + (window.BETA_NOTICE ? "（ベータ版）" : "");
+      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.6.0 PRO" + (window.BETA_NOTICE ? "（ベータ版）" : "");
       initSpeechVoices(); loadMenusAndLogsFromStorage();
       injectV103CoreStylesAndUI(); injectVideoAndDrillExtensions(); injectMenuPlannerTab();
       applyColorTheme(profileThemesMap[activeProfileId] || localStorage.getItem('badtore_last_theme_v102') || 'cyan', false);
@@ -12804,7 +12804,7 @@
       applyColorTheme(saved, false);
 
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.6.0 PRO";
+      if (vb) vb.textContent = "v10.6.0 PRO" + (window.BETA_NOTICE ? "（ベータ版）" : "");
     });
   </script>
 <script id="badtore-brushup-share-20261118">
@@ -13633,7 +13633,7 @@ function sharePoseResultImage() {
       mountRhythmHumanAnimator();
       mountWorkoutTimerHumanAnimator();
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.6.0 PRO";
+      if (vb) vb.textContent = "v10.6.0 PRO" + (window.BETA_NOTICE ? "（ベータ版）" : "");
     }, 150);
   });
 </script>
@@ -14458,12 +14458,30 @@ function sharePoseResultImage() {
     }
   }
 
+  function feedbackFormHtml(){
+    return '<div>' +
+      '<div style="font-weight:900;font-size:0.82rem;margin-bottom:4px;">💬 フィードバックを送る</div>' +
+      '<p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px;">バグ報告・要望・感想など、開発者に直接届きます。</p>' +
+      '<select id="tfCategory" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;margin-bottom:6px;">' +
+      '<option value="bug">🐛 バグ・不具合</option><option value="request">💡 要望・あったらいいな</option><option value="impression">😊 感想</option><option value="other">📝 その他</option></select>' +
+      '<textarea id="tfMessage" rows="3" placeholder="気づいたことを書いてください" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box;"></textarea>' +
+      '<div class="btn-group" style="margin-top:6px;"><button class="btn btn-cyan-outline" id="tfSendBtn" style="padding:8px 14px;">📨 送信する</button></div>' +
+      '<div id="tfSendMsg" style="font-size:0.8rem;margin-top:5px;"></div>' +
+      '</div>';
+  }
+
   function renderArea(){
     var area = document.getElementById('tfArea');
     if (!area) return;
     if (!tsb) { area.innerHTML = '<p style="font-size:0.8rem;color:var(--text-secondary);">接続を準備中です…</p>'; return; }
     if (!tUser) {
-      area.innerHTML = '<p style="font-size:0.8rem;color:var(--text-secondary);">テスターコードの登録とフィードバック送信には、上の「☁️ クラウド保存」カードからGoogleでログインしてください。</p>';
+      area.innerHTML = '<div style="margin-bottom:12px;">' +
+        '<div style="font-weight:900;font-size:0.82rem;margin-bottom:4px;">🎫 テスター登録</div>' +
+        '<p style="font-size:0.8rem;color:var(--text-secondary);">テスターコードの登録には、上の「☁️ クラウド保存」カードからGoogleでログインしてください。</p></div>' +
+        feedbackFormHtml() +
+        '<p style="font-size:0.78rem;color:var(--text-secondary);margin-top:6px;">フィードバックはログインしなくても送れます。</p>';
+      var sdAnon = document.getElementById('tfSendBtn');
+      if (sdAnon) sdAnon.addEventListener('click', sendFeedback);
       return;
     }
     var html = '<div style="margin-bottom:12px;">' +
@@ -14480,15 +14498,7 @@ function sharePoseResultImage() {
         '<div id="tfRedeemMsg" style="font-size:0.8rem;margin-top:5px;"></div>';
     }
     html += '</div>';
-    html += '<div>' +
-      '<div style="font-weight:900;font-size:0.82rem;margin-bottom:4px;">💬 フィードバックを送る</div>' +
-      '<p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px;">バグ報告・要望・感想など、開発者に直接届きます。</p>' +
-      '<select id="tfCategory" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;margin-bottom:6px;">' +
-      '<option value="bug">🐛 バグ・不具合</option><option value="request">💡 要望・あったらいいな</option><option value="impression">😊 感想</option><option value="other">📝 その他</option></select>' +
-      '<textarea id="tfMessage" rows="3" placeholder="気づいたことを書いてください" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box;"></textarea>' +
-      '<div class="btn-group" style="margin-top:6px;"><button class="btn btn-cyan-outline" id="tfSendBtn" style="padding:8px 14px;">📨 送信する</button></div>' +
-      '<div id="tfSendMsg" style="font-size:0.8rem;margin-top:5px;"></div>' +
-      '</div>';
+    html += feedbackFormHtml();
     area.innerHTML = html;
     var rb = document.getElementById('tfRedeemBtn');
     if (rb) rb.addEventListener('click', redeemCode);
@@ -14543,19 +14553,47 @@ function sharePoseResultImage() {
     if (!text) { if (msg) msg.textContent = '内容を入力してください。'; return; }
     if (msg) msg.textContent = '送信中…';
     try {
-      var res = await tsb.from('feedback').insert({
-        user_id: tUser.id,
-        email: tUser.email || '',
+      var row = {
         category: cat ? cat.value : 'other',
         message: text,
         app_version: APP_VERSION,
         context: activeTabId()
-      });
-      if (res.error) throw res.error;
+      };
+      if (tUser) {
+        row.user_id = tUser.id;
+        row.email = tUser.email || '';
+        var res = await tsb.from('feedback').insert(row);
+        if (res.error) throw res.error;
+      } else {
+        await sendFeedbackAnonymously(row);
+      }
       if (ta) ta.value = '';
       if (msg) msg.textContent = '✅ 送信しました。ありがとうございます！';
     } catch(e) {
       if (msg) msg.textContent = '送信できませんでした。時間をおいて試してください。';
+    }
+  }
+
+  // ログインしていない人向けの送信経路。
+  // persistSession:false の使い捨てクラウド接続で匿名サインインし、その uid で送る。
+  // メインの接続（クラウド保存・家族共有・テスター登録が使う共有セッション）には一切触れない。
+  async function sendFeedbackAnonymously(row){
+    if (!window.supabase || !window.supabase.createClient) throw new Error('supabase unavailable');
+    var anon = window.supabase.createClient(SB_URL, SB_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'badtore-anon-feedback' }
+    });
+    try {
+      var sign = await anon.auth.signInAnonymously();
+      if (sign.error) throw sign.error;
+      var aUser = sign.data ? sign.data.user : null;
+      if (!aUser || !aUser.id) throw new Error('anonymous sign-in failed');
+      row.user_id = aUser.id;
+      row.email = '';
+      var res = await anon.from('feedback').insert(row);
+      if (res.error) throw res.error;
+    } finally {
+      try { await anon.auth.signOut(); } catch(e) {}
+      anon = null;
     }
   }
 
@@ -14586,9 +14624,56 @@ function sharePoseResultImage() {
     renderArea: renderArea,
     redeemCode: redeemCode,
     sendFeedback: sendFeedback,
+    sendFeedbackAnonymously: sendFeedbackAnonymously,
     getState: function(){ return { tReg: tReg, tRegLoaded: tRegLoaded }; }
   };
   console.log('[badtore tester-feedback] loaded');
+})();
+</script>
+
+<script id="badtore-beta-notice">
+(function(){
+  "use strict";
+  if (window.__bt_beta_notice) return; window.__bt_beta_notice = true;
+  // ベータ版の間だけ出す案内バナーと、バージョン表示横の「（ベータ版）」表記を制御する単一フラグ。
+  // 正式リリース時はここを false にすれば、バナーとベータ表記が一括で消える（AI_CONSULT_COMING_SOON と同じパターン）。
+  // バナーは開くたびに必ず出す仕様のため、「次回から表示しない」のような保存は一切しない。
+  window.BETA_NOTICE = true;
+  if (!window.BETA_NOTICE) return;
+
+  function buildBanner(){
+    if (document.getElementById('betaNoticeBanner')) return;
+    var sticky = document.querySelector('.bt-sticky-top');
+    if (!sticky || !sticky.parentNode) return;
+    var bar = document.createElement('div');
+    bar.id = 'betaNoticeBanner';
+    bar.style.cssText = 'position:relative;background:var(--bg-surface);border:1px solid var(--accent-highlight);border-radius:10px;margin:10px 10px 0;padding:10px 32px 10px 12px;font-size:0.8rem;line-height:1.55;color:var(--text-primary);';
+    bar.innerHTML =
+      '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:4px;right:6px;background:none;border:none;color:var(--text-secondary);font-size:0.95rem;cursor:pointer;padding:4px 6px;">✕</button>' +
+      '<div style="font-weight:900;margin-bottom:2px;">🧪 ベータ版です</div>' +
+      '<div>開発中のため、動作や表示が変わったり、うまく動かないことがあります。</div>' +
+      '<div>AI機能は無料枠の範囲で動いています。混雑時は時間がかかることがあります。</div>' +
+      '<div>ログインしていない場合、記録はこの端末の中だけに保存されます。</div>' +
+      '<div style="margin-top:6px;">使ってみた感想や要望・不具合があれば、ぜひ教えてください。' +
+      '<button type="button" class="btn btn-cyan-outline" id="betaNoticeFeedbackBtn" style="padding:6px 12px;font-size:0.8rem;margin-left:6px;">💬 フィードバックを送る</button></div>';
+    sticky.parentNode.insertBefore(bar, sticky);
+    document.getElementById('betaNoticeClose').addEventListener('click', function(){
+      bar.style.display = 'none';
+    });
+    document.getElementById('betaNoticeFeedbackBtn').addEventListener('click', function(){
+      var g = document.getElementById('tfGuideBtn');
+      if (g) { g.click(); return; }
+      if (typeof switchTab === 'function') switchTab('tab-profile');
+      setTimeout(function(){
+        var c = document.getElementById('testerFeedbackCard');
+        if (c && c.scrollIntoView) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 250);
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildBanner);
+  else buildBanner();
+  console.log('[badtore beta-notice] loaded');
 })();
 </script>
 
