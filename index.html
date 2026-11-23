@@ -14650,8 +14650,12 @@ function sharePoseResultImage() {
     bar.style.cssText = 'position:relative;background:var(--bg-surface);border:1px solid var(--accent-highlight);border-radius:10px;margin:10px 10px 0;padding:calc(8px + env(safe-area-inset-top, 0px)) 28px 8px 10px;font-size:13px;line-height:1.45;color:var(--text-primary);';
     bar.innerHTML =
       '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:2px;right:5px;background:none;border:none;color:var(--text-secondary);font-size:0.9rem;cursor:pointer;padding:3px 5px;">✕</button>' +
-      '<div style="font-weight:900;font-size:14px;margin-bottom:1px;">🧪 ベータ版です</div>' +
-      '<div>開発中のため、うまく動かないことがあります。AIは無料枠で、混雑時は時間がかかります。</div>' +
+      '<div style="font-weight:900;font-size:14px;margin-bottom:1px;">🧪 ベータ版</div>' +
+      '<div>うまく動かないことがあります。</div>' +
+      '<div>現在AIは無料枠の範囲で利用可能ですので、機能に限界があります。</div>' +
+      '<div>※課金によるアップグレードは検討中です。</div>' +
+      '<div>諸々の数値は理論値となります。</div>' +
+      '<div>参考としてください。</div>' +
       '<div>未ログインの記録はこの端末だけに保存されます。感想・不具合はぜひ教えてください。' +
       '<button type="button" class="btn btn-cyan-outline" id="betaNoticeFeedbackBtn" style="padding:5px 10px;font-size:12px;margin-left:6px;">💬 フィードバックを送る</button></div>';
     sticky.parentNode.insertBefore(bar, sticky);
