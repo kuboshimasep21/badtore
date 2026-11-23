@@ -14458,12 +14458,30 @@ function sharePoseResultImage() {
     }
   }
 
+  function feedbackFormHtml(){
+    return '<div>' +
+      '<div style="font-weight:900;font-size:0.82rem;margin-bottom:4px;">💬 フィードバックを送る</div>' +
+      '<p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px;">バグ報告・要望・感想など、開発者に直接届きます。</p>' +
+      '<select id="tfCategory" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;margin-bottom:6px;">' +
+      '<option value="bug">🐛 バグ・不具合</option><option value="request">💡 要望・あったらいいな</option><option value="impression">😊 感想</option><option value="other">📝 その他</option></select>' +
+      '<textarea id="tfMessage" rows="3" placeholder="気づいたことを書いてください" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box;"></textarea>' +
+      '<div class="btn-group" style="margin-top:6px;"><button class="btn btn-cyan-outline" id="tfSendBtn" style="padding:8px 14px;">📨 送信する</button></div>' +
+      '<div id="tfSendMsg" style="font-size:0.8rem;margin-top:5px;"></div>' +
+      '</div>';
+  }
+
   function renderArea(){
     var area = document.getElementById('tfArea');
     if (!area) return;
     if (!tsb) { area.innerHTML = '<p style="font-size:0.8rem;color:var(--text-secondary);">接続を準備中です…</p>'; return; }
     if (!tUser) {
-      area.innerHTML = '<p style="font-size:0.8rem;color:var(--text-secondary);">テスターコードの登録とフィードバック送信には、上の「☁️ クラウド保存」カードからGoogleでログインしてください。</p>';
+      area.innerHTML = '<div style="margin-bottom:12px;">' +
+        '<div style="font-weight:900;font-size:0.82rem;margin-bottom:4px;">🎫 テスター登録</div>' +
+        '<p style="font-size:0.8rem;color:var(--text-secondary);">テスターコードの登録には、上の「☁️ クラウド保存」カードからGoogleでログインしてください。</p></div>' +
+        feedbackFormHtml() +
+        '<p style="font-size:0.78rem;color:var(--text-secondary);margin-top:6px;">フィードバックはログインしなくても送れます。</p>';
+      var sdAnon = document.getElementById('tfSendBtn');
+      if (sdAnon) sdAnon.addEventListener('click', sendFeedback);
       return;
     }
     var html = '<div style="margin-bottom:12px;">' +
@@ -14480,15 +14498,7 @@ function sharePoseResultImage() {
         '<div id="tfRedeemMsg" style="font-size:0.8rem;margin-top:5px;"></div>';
     }
     html += '</div>';
-    html += '<div>' +
-      '<div style="font-weight:900;font-size:0.82rem;margin-bottom:4px;">💬 フィードバックを送る</div>' +
-      '<p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px;">バグ報告・要望・感想など、開発者に直接届きます。</p>' +
-      '<select id="tfCategory" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;margin-bottom:6px;">' +
-      '<option value="bug">🐛 バグ・不具合</option><option value="request">💡 要望・あったらいいな</option><option value="impression">😊 感想</option><option value="other">📝 その他</option></select>' +
-      '<textarea id="tfMessage" rows="3" placeholder="気づいたことを書いてください" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-base);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box;"></textarea>' +
-      '<div class="btn-group" style="margin-top:6px;"><button class="btn btn-cyan-outline" id="tfSendBtn" style="padding:8px 14px;">📨 送信する</button></div>' +
-      '<div id="tfSendMsg" style="font-size:0.8rem;margin-top:5px;"></div>' +
-      '</div>';
+    html += feedbackFormHtml();
     area.innerHTML = html;
     var rb = document.getElementById('tfRedeemBtn');
     if (rb) rb.addEventListener('click', redeemCode);
@@ -14543,19 +14553,47 @@ function sharePoseResultImage() {
     if (!text) { if (msg) msg.textContent = '内容を入力してください。'; return; }
     if (msg) msg.textContent = '送信中…';
     try {
-      var res = await tsb.from('feedback').insert({
-        user_id: tUser.id,
-        email: tUser.email || '',
+      var row = {
         category: cat ? cat.value : 'other',
         message: text,
         app_version: APP_VERSION,
         context: activeTabId()
-      });
-      if (res.error) throw res.error;
+      };
+      if (tUser) {
+        row.user_id = tUser.id;
+        row.email = tUser.email || '';
+        var res = await tsb.from('feedback').insert(row);
+        if (res.error) throw res.error;
+      } else {
+        await sendFeedbackAnonymously(row);
+      }
       if (ta) ta.value = '';
       if (msg) msg.textContent = '✅ 送信しました。ありがとうございます！';
     } catch(e) {
       if (msg) msg.textContent = '送信できませんでした。時間をおいて試してください。';
+    }
+  }
+
+  // ログインしていない人向けの送信経路。
+  // persistSession:false の使い捨てクラウド接続で匿名サインインし、その uid で送る。
+  // メインの接続（クラウド保存・家族共有・テスター登録が使う共有セッション）には一切触れない。
+  async function sendFeedbackAnonymously(row){
+    if (!window.supabase || !window.supabase.createClient) throw new Error('supabase unavailable');
+    var anon = window.supabase.createClient(SB_URL, SB_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'badtore-anon-feedback' }
+    });
+    try {
+      var sign = await anon.auth.signInAnonymously();
+      if (sign.error) throw sign.error;
+      var aUser = sign.data ? sign.data.user : null;
+      if (!aUser || !aUser.id) throw new Error('anonymous sign-in failed');
+      row.user_id = aUser.id;
+      row.email = '';
+      var res = await anon.from('feedback').insert(row);
+      if (res.error) throw res.error;
+    } finally {
+      try { await anon.auth.signOut(); } catch(e) {}
+      anon = null;
     }
   }
 
@@ -14586,6 +14624,7 @@ function sharePoseResultImage() {
     renderArea: renderArea,
     redeemCode: redeemCode,
     sendFeedback: sendFeedback,
+    sendFeedbackAnonymously: sendFeedbackAnonymously,
     getState: function(){ return { tReg: tReg, tRegLoaded: tRegLoaded }; }
   };
   console.log('[badtore tester-feedback] loaded');
