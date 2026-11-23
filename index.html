@@ -2202,7 +2202,7 @@
 
       <div class="brand-logo">🏸 バドトレPRO</div>
 
-      <span class="badge-version">v10.6.0 PRO</span>
+      <span class="badge-version">v10.6.0 PRO（ベータ版）</span>
 
     </div>
 
@@ -11579,8 +11579,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.title = "バドトレPRO v10.6.0 PRO";
-      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.6.0 PRO";
+      document.title = "バドトレPRO v10.6.0 PRO" + (window.BETA_NOTICE ? "（ベータ版）" : "");
+      const vb = document.querySelector('header .badge-version'); if (vb) vb.textContent = "v10.6.0 PRO" + (window.BETA_NOTICE ? "（ベータ版）" : "");
       initSpeechVoices(); loadMenusAndLogsFromStorage();
       injectV103CoreStylesAndUI(); injectVideoAndDrillExtensions(); injectMenuPlannerTab();
       applyColorTheme(profileThemesMap[activeProfileId] || localStorage.getItem('badtore_last_theme_v102') || 'cyan', false);
@@ -12804,7 +12804,7 @@
       applyColorTheme(saved, false);
 
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.6.0 PRO";
+      if (vb) vb.textContent = "v10.6.0 PRO" + (window.BETA_NOTICE ? "（ベータ版）" : "");
     });
   </script>
 <script id="badtore-brushup-share-20261118">
@@ -13633,7 +13633,7 @@ function sharePoseResultImage() {
       mountRhythmHumanAnimator();
       mountWorkoutTimerHumanAnimator();
       const vb = document.querySelector('header .badge-version');
-      if (vb) vb.textContent = "v10.6.0 PRO";
+      if (vb) vb.textContent = "v10.6.0 PRO" + (window.BETA_NOTICE ? "（ベータ版）" : "");
     }, 150);
   });
 </script>
@@ -14589,6 +14589,52 @@ function sharePoseResultImage() {
     getState: function(){ return { tReg: tReg, tRegLoaded: tRegLoaded }; }
   };
   console.log('[badtore tester-feedback] loaded');
+})();
+</script>
+
+<script id="badtore-beta-notice">
+(function(){
+  "use strict";
+  if (window.__bt_beta_notice) return; window.__bt_beta_notice = true;
+  // ベータ版の間だけ出す案内バナーと、バージョン表示横の「（ベータ版）」表記を制御する単一フラグ。
+  // 正式リリース時はここを false にすれば、バナーとベータ表記が一括で消える（AI_CONSULT_COMING_SOON と同じパターン）。
+  // バナーは開くたびに必ず出す仕様のため、「次回から表示しない」のような保存は一切しない。
+  window.BETA_NOTICE = true;
+  if (!window.BETA_NOTICE) return;
+
+  function buildBanner(){
+    if (document.getElementById('betaNoticeBanner')) return;
+    var sticky = document.querySelector('.bt-sticky-top');
+    if (!sticky || !sticky.parentNode) return;
+    var bar = document.createElement('div');
+    bar.id = 'betaNoticeBanner';
+    bar.style.cssText = 'position:relative;background:var(--bg-surface);border:1px solid var(--accent-highlight);border-radius:10px;margin:10px 10px 0;padding:10px 32px 10px 12px;font-size:0.8rem;line-height:1.55;color:var(--text-primary);';
+    bar.innerHTML =
+      '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:4px;right:6px;background:none;border:none;color:var(--text-secondary);font-size:0.95rem;cursor:pointer;padding:4px 6px;">✕</button>' +
+      '<div style="font-weight:900;margin-bottom:2px;">🧪 ベータ版です</div>' +
+      '<div>開発中のため、動作や表示が変わったり、うまく動かないことがあります。</div>' +
+      '<div>AI機能は無料枠の範囲で動いています。混雑時は時間がかかることがあります。</div>' +
+      '<div>ログインしていない場合、記録はこの端末の中だけに保存されます。</div>' +
+      '<div style="margin-top:6px;">使ってみた感想や要望・不具合があれば、ぜひ教えてください。' +
+      '<button type="button" class="btn btn-cyan-outline" id="betaNoticeFeedbackBtn" style="padding:6px 12px;font-size:0.8rem;margin-left:6px;">💬 フィードバックを送る</button></div>';
+    sticky.parentNode.insertBefore(bar, sticky);
+    document.getElementById('betaNoticeClose').addEventListener('click', function(){
+      bar.style.display = 'none';
+    });
+    document.getElementById('betaNoticeFeedbackBtn').addEventListener('click', function(){
+      var g = document.getElementById('tfGuideBtn');
+      if (g) { g.click(); return; }
+      if (typeof switchTab === 'function') switchTab('tab-profile');
+      setTimeout(function(){
+        var c = document.getElementById('testerFeedbackCard');
+        if (c && c.scrollIntoView) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 250);
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildBanner);
+  else buildBanner();
+  console.log('[badtore beta-notice] loaded');
 })();
 </script>
 
