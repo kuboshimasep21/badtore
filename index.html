@@ -14647,15 +14647,17 @@ function sharePoseResultImage() {
     if (!sticky || !sticky.parentNode) return;
     var bar = document.createElement('div');
     bar.id = 'betaNoticeBanner';
-    bar.style.cssText = 'position:relative;background:var(--bg-surface);border:1px solid var(--accent-highlight);border-radius:10px;margin:10px 10px 0;padding:10px 32px 10px 12px;font-size:0.8rem;line-height:1.55;color:var(--text-primary);';
+    bar.style.cssText = 'position:relative;background:var(--bg-surface);border:1px solid var(--accent-highlight);border-radius:10px;margin:10px 10px 0;padding:calc(8px + env(safe-area-inset-top, 0px)) 28px 8px 10px;font-size:13px;line-height:1.45;color:var(--text-primary);';
     bar.innerHTML =
-      '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:4px;right:6px;background:none;border:none;color:var(--text-secondary);font-size:0.95rem;cursor:pointer;padding:4px 6px;">✕</button>' +
-      '<div style="font-weight:900;margin-bottom:2px;">🧪 ベータ版です</div>' +
-      '<div>開発中のため、動作や表示が変わったり、うまく動かないことがあります。</div>' +
-      '<div>AI機能は無料枠の範囲で動いています。混雑時は時間がかかることがあります。</div>' +
-      '<div>ログインしていない場合、記録はこの端末の中だけに保存されます。</div>' +
-      '<div style="margin-top:6px;">使ってみた感想や要望・不具合があれば、ぜひ教えてください。' +
-      '<button type="button" class="btn btn-cyan-outline" id="betaNoticeFeedbackBtn" style="padding:6px 12px;font-size:0.8rem;margin-left:6px;">💬 フィードバックを送る</button></div>';
+      '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:2px;right:5px;background:none;border:none;color:var(--text-secondary);font-size:0.9rem;cursor:pointer;padding:3px 5px;">✕</button>' +
+      '<div style="font-weight:900;font-size:14px;margin-bottom:1px;">🧪 ベータ版</div>' +
+      '<div>うまく動かないことがあります。</div>' +
+      '<div>現在AIは無料枠の範囲で利用可能ですので、機能に限界があります。</div>' +
+      '<div>※課金によるアップグレードは検討中です。</div>' +
+      '<div>諸々の数値は理論値となります。</div>' +
+      '<div>参考としてください。</div>' +
+      '<div>未ログインの記録はこの端末だけに保存されます。今後の開発の為、使用感・改善点・不具合など、ぜひ教えてください。' +
+      '<button type="button" class="btn btn-cyan-outline" id="betaNoticeFeedbackBtn" style="padding:5px 10px;font-size:12px;margin-left:6px;">💬 フィードバックを送る</button></div>';
     sticky.parentNode.insertBefore(bar, sticky);
     document.getElementById('betaNoticeClose').addEventListener('click', function(){
       bar.style.display = 'none';
