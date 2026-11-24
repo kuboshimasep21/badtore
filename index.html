@@ -14651,12 +14651,10 @@ function sharePoseResultImage() {
     bar.innerHTML =
       '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:calc(6px + env(safe-area-inset-top, 0px));right:5px;background:none;border:none;color:var(--text-secondary);font-size:0.9rem;cursor:pointer;padding:3px 5px;">✕</button>' +
       '<div style="font-weight:900;font-size:14px;margin-bottom:1px;">🧪 ベータ版</div>' +
-      '<div>うまく動かないことがあります。</div>' +
-      '<div>現在AIは無料枠の範囲で利用可能ですので、機能に限界があります。</div>' +
-      '<div>※課金によるアップグレードは検討中です。</div>' +
-      '<div>諸々の数値は理論値となります。</div>' +
-      '<div>参考としてください。</div>' +
-      '<div>未ログインの記録はこの端末だけに保存されます。今後の開発の為、使用感・改善点・不具合など、ぜひ教えてください。' +
+      '<div>現在開発中の為、動かない・使い辛い等、改善点があれば、是非下記フォームよりフィードバックして頂けると幸いです。</div>' +
+      '<div style="margin-top:4px;">また、現在のAI測定は無料枠のものを使用していますので、理論値での回答である場合が多くなります。参考程度に利用ください。※AIアップグレードは検討中です。</div>' +
+      '<div>※未ログインの場合、記録はこの端末内にのみ保存されます。</div>' +
+      '<div style="margin-top:4px;">皆様からのご意見・ご感想お待ちしています。' +
       '<button type="button" class="btn btn-cyan-outline" id="betaNoticeFeedbackBtn" style="padding:5px 10px;font-size:12px;margin-left:6px;">💬 フィードバックを送る</button></div>';
     sticky.parentNode.insertBefore(bar, sticky);
     document.getElementById('betaNoticeClose').addEventListener('click', function(){
