@@ -14649,7 +14649,7 @@ function sharePoseResultImage() {
     bar.id = 'betaNoticeBanner';
     bar.style.cssText = 'position:relative;background:var(--bg-surface);border:1px solid var(--accent-highlight);border-radius:10px;margin:10px 10px 0;padding:calc(8px + env(safe-area-inset-top, 0px)) 28px 8px 10px;font-size:13px;line-height:1.45;color:var(--text-primary);';
     bar.innerHTML =
-      '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:2px;right:5px;background:none;border:none;color:var(--text-secondary);font-size:0.9rem;cursor:pointer;padding:3px 5px;">✕</button>' +
+      '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:calc(6px + env(safe-area-inset-top, 0px));right:5px;background:none;border:none;color:var(--text-secondary);font-size:0.9rem;cursor:pointer;padding:3px 5px;">✕</button>' +
       '<div style="font-weight:900;font-size:14px;margin-bottom:1px;">🧪 ベータ版</div>' +
       '<div>うまく動かないことがあります。</div>' +
       '<div>現在AIは無料枠の範囲で利用可能ですので、機能に限界があります。</div>' +
