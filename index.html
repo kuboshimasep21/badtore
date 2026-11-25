@@ -17454,6 +17454,7 @@ function sharePoseResultImage() {
   var btTnState = {
     list: [],            // 大会レコード（画像を含まない）
     currentId: null,
+    openId: null,        // 一覧で開いている大会（大会名タップで開閉。null=すべて閉じている）
     images: { bracket: [], schedule: [] },  // 現在の大会の画像 {imgId, kind, dataUrl}
     divCode: null,       // 表示中の部門コード
     schoolFilter: null,  // 学校で探す：選択中の学校名（null=絞り込みなし）
@@ -18070,8 +18071,8 @@ function sharePoseResultImage() {
     var names = btTnProfileNames();
     var h = '<div style="margin:2px 0 6px;">';
     btTnState.list.forEach(function(t){
-      var cur = t.id === btTnState.currentId;
-      h += '<div class="bt-tn-list-row' + (cur ? ' bt-tn-list-row-cur' : '') + '" onclick="btTn.selectAndScroll(\'' + btTnEsc(t.id) + '\')">'
+      var cur = t.id === btTnState.openId;
+      h += '<div class="bt-tn-list-row' + (cur ? ' bt-tn-list-row-cur' : '') + '" onclick="btTn.toggleOpen(\'' + btTnEsc(t.id) + '\')">'
         + '<div style="font-weight:900;font-size:0.84rem;">' + (cur ? '📂 ' : '📁 ') + btTnEsc(t.name) + '</div>'
         + '<div class="bt-tn-note">' + btTnEsc(btTnTournamentResultLine(t, names)) + '</div>'
         + '</div>';
@@ -18152,10 +18153,6 @@ function sharePoseResultImage() {
       + '<div class="bt-tn-sec-title">📁 大会</div>'
       + '<div id="btTnList"></div>'
       + '<div class="bt-tn-ed-row">'
-      + '<select id="btTnSelect" onchange="btTn.select(this.value)" style="flex:1;min-width:140px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-subtle);border-radius:6px;padding:6px;min-height:34px;"></select>'
-      + '<button class="btn btn-rose" onclick="btTn.removeCurrent()">🗑 大会を削除</button>'
-      + '</div>'
-      + '<div class="bt-tn-ed-row">'
       + '<input id="btTnNewName" type="text" placeholder="新しい大会名（例：南区個人戦 2026-11-22）" style="flex:1;min-width:180px;">'
       + '<button class="btn btn-emerald" onclick="btTn.create()">＋ 大会を追加</button>'
       + '</div>'
@@ -18165,7 +18162,9 @@ function sharePoseResultImage() {
   function btTnBodyHtml(){
     var tn = btTnCurrent();
     if (!tn) return '<div class="bt-tn-note" style="margin-top:10px;">大会がまだ登録されていません。上の「新しい大会名」に名前を入れて「＋ 大会を追加」を押してください。</div>';
+    if (tn.id !== btTnState.openId) return '<div class="bt-tn-note" style="margin-top:10px;">大会名をタップすると、対戦表が表示されます。</div>';
     var h = '';
+    h += '<div class="bt-tn-ed-row"><button class="btn btn-rose" onclick="btTn.removeCurrent()">🗑 この大会を削除</button></div>';
     /* 読み取り・編集 */
     h += '<div class="bt-tn-sec-title">📖 対戦表データ</div>'
       + '<div class="bt-tn-ed-row">'
@@ -18675,6 +18674,7 @@ function sharePoseResultImage() {
       var tn = { id: btTnUid(), name: name, createdAt: Date.now(), updatedAt: Date.now(), divisions: [], schedule: [], watch: [], ownSchoolByName: {}, ownOriginByName: {} };
       btTnState.list.unshift(tn);
       btTnState.currentId = tn.id;
+      btTnState.openId = tn.id;
       btTnState.divCode = null;
       btTnState.schoolFilter = null;
       btTnState.matchDetail = null;
@@ -18693,8 +18693,18 @@ function sharePoseResultImage() {
       btTnState.photosOpen = false;
       btTnLoadImages(id).then(btTnRender);
     },
+    toggleOpen: function(id){
+      if (btTnState.openId === id) {
+        btTnState.openId = null;
+        btTnRender();
+        return;
+      }
+      btTnState.openId = id;
+      btTnApi.selectAndScroll(id);
+    },
     selectAndScroll: function(id){
       btTnState.currentId = id;
+      btTnState.openId = id;
       btTnState.divCode = null;
       btTnState.schoolFilter = null;
       btTnState.matchDetail = null;
@@ -18720,6 +18730,7 @@ function sharePoseResultImage() {
       }).then(function(){
         btTnState.list = btTnState.list.filter(function(t){ return t.id !== id; });
         btTnState.currentId = btTnState.list.length ? btTnState.list[0].id : null;
+        btTnState.openId = null;
         btTnState.divCode = null;
         btTnState.schoolFilter = null;
         btTnState.matchDetail = null;
