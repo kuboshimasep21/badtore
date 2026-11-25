@@ -14651,10 +14651,10 @@ function sharePoseResultImage() {
     bar.innerHTML =
       '<button type="button" id="betaNoticeClose" aria-label="閉じる" style="position:absolute;top:calc(6px + env(safe-area-inset-top, 0px));right:5px;background:none;border:none;color:var(--text-secondary);font-size:0.9rem;cursor:pointer;padding:3px 5px;">✕</button>' +
       '<div style="font-weight:900;font-size:14px;margin-bottom:1px;">🧪 ベータ版</div>' +
-      '<div>現在開発中の為、動かない・使い辛い等、改善点があれば、是非下記フォームよりフィードバックして頂けると幸いです。</div>' +
-      '<div style="margin-top:4px;">また、現在のAI測定は無料枠のものを使用していますので、理論値での回答である場合が多くなります。参考程度に利用ください。※AIアップグレードは検討中です。</div>' +
+      '<div>現在開発中のため、動かない・使い辛い等、改善点があれば、是非下記フォームよりフィードバックしていただけると幸いです。</div>' +
+      '<div style="margin-top:4px;">また、現在のAI機能は無料枠のものを使用していますので、理論値での回答になる場合が多くなります。参考程度にご利用ください。※AIアップグレードは検討中です。</div>' +
       '<div>※未ログインの場合、記録はこの端末内にのみ保存されます。</div>' +
-      '<div style="margin-top:4px;">皆様からのご意見・ご感想お待ちしています。' +
+      '<div style="margin-top:4px;">皆様からのご意見・ご感想をお待ちしています。' +
       '<button type="button" class="btn btn-cyan-outline" id="betaNoticeFeedbackBtn" style="padding:5px 10px;font-size:12px;margin-left:6px;">💬 フィードバックを送る</button></div>';
     sticky.parentNode.insertBefore(bar, sticky);
     document.getElementById('betaNoticeClose').addEventListener('click', function(){
@@ -20814,10 +20814,10 @@ function sharePoseResultImage() {
     var totalMatches = S.schedule.reduce(function (s, rd) { return s + rd.matches.length; }, 0);
     var html = '';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">'
-      + '<div style="font-weight:900;">' + (S.mode === 'singles' ? 'シングルス総当たり' : 'ダブルス組み替え') + '（' + n + '人・全' + S.schedule.length + 'ラウンド・' + totalMatches + '試合）</div>'
+      + '<div style="font-weight:900;">' + (S.mode === 'singles' ? 'シングルス総当たり' : 'ダブルス（ペア組み替え）') + '（' + n + '人・全' + S.schedule.length + 'ラウンド・' + totalMatches + '試合）</div>'
       + '<div style="display:flex;gap:6px;"><button class="btn btn-cyan-outline" style="padding:6px 10px;font-size:0.82rem;" onclick="btGamePractice.clearResults()">結果をリセット</button>'
       + '<button class="btn btn-rose" style="padding:6px 10px;font-size:0.82rem;" onclick="btGamePractice.discard()">表を消して作り直す</button></div></div>';
-    html += '<div style="font-size:0.8rem;color:var(--text-secondary);margin:6px 0 10px;">勝った方をタップすると記録できます（もう一度タップで取り消し）。</div>';
+    html += '<div style="font-size:0.8rem;color:var(--text-secondary);margin:6px 0 10px;">勝った側をタップすると記録できます（もう一度タップで取り消し）。</div>';
     S.schedule.forEach(function (rd, r) {
       html += '<div style="margin-bottom:12px;"><div style="font-weight:900;font-size:0.9rem;margin-bottom:5px;">第' + (r + 1) + 'ラウンド</div>';
       rd.matches.forEach(function (mm, m) {
@@ -20854,8 +20854,8 @@ function sharePoseResultImage() {
     names.forEach(function (nm) { if (!seen[nm]) { seen[nm] = 1; uniq.push(nm); } });
     names = uniq;
     var msg = root.querySelector('#gpMsg');
-    if (S.mode === 'singles' && names.length < 2) { msg.textContent = 'シングルスは2人以上で名前を入れてください。'; return; }
-    if (S.mode === 'doubles' && names.length < 4) { msg.textContent = 'ダブルスは4人以上で名前を入れてください。'; return; }
+    if (S.mode === 'singles' && names.length < 2) { msg.textContent = '名前を2人以上入れてください。'; return; }
+    if (S.mode === 'doubles' && names.length < 4) { msg.textContent = '名前を4人以上入れてください。'; return; }
     if (names.length > 24) { msg.textContent = '名前は24人までにしてください（' + names.length + '人入っています）。'; return; }
     msg.textContent = '';
     S.names = names;
