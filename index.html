@@ -2234,7 +2234,7 @@
 
     <button class="nav-tab" onclick="switchTab('tab-pose')" id="btn-tab-pose">🎥 3.フォーム診断</button>
 
-    <button class="nav-tab" onclick="switchTab('tab-score')" id="btn-tab-score">🧮 4.スコア</button>
+    <button class="nav-tab" onclick="switchTab('tab-score')" id="btn-tab-score">🧮 6.スコア</button>
 
     <button class="nav-tab" onclick="switchTab('tab-racket')" id="btn-tab-racket">🏸 7.ラケット</button>
 
@@ -11151,20 +11151,20 @@
       }
     };
 
-    // 📋 TAB 5: メニュー作成＋📚 TAB 6: ドリル集（スコアの後・ラケットの前に並べて配置。ガイドは10番目のまま）
+    // 📋 TAB 4: メニュー作成＋📚 TAB 5: ドリル集（フォーム診断の後・スコアの前に並べて配置。ガイドは10番目のまま）
     // AI相談は販売版（有料キー前提）で復活予定。それまで UI・実行経路とも Coming Soon でゲートする（Phase 2 課金の BILLING_COMING_SOON と同じパターン。本ファイルには課金コードが無いため、この定数が相談ゲートの単一の置き場）
     const AI_CONSULT_COMING_SOON = true;
     function injectMenuPlannerTab() {
       const nav = document.querySelector('.nav-scroller'), guideBtn = document.getElementById('btn-tab-guide');
-      const anchorBtn = document.getElementById('btn-tab-racket') || guideBtn;
+      const anchorBtn = document.getElementById('btn-tab-score') || document.getElementById('btn-tab-racket') || guideBtn;
       if (guideBtn) guideBtn.textContent = '📖 10.ガイド';
       if (nav && !document.getElementById('btn-tab-menu')) {
-        const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 5.メニュー';
+        const b = document.createElement('button'); b.className = 'nav-tab'; b.id = 'btn-tab-menu'; b.textContent = '📋 4.メニュー';
         b.onclick = () => switchTab('tab-menu');
         if (anchorBtn) nav.insertBefore(b, anchorBtn); else nav.appendChild(b);
       }
       if (nav && !document.getElementById('btn-tab-drills')) {
-        const db = document.createElement('button'); db.className = 'nav-tab'; db.id = 'btn-tab-drills'; db.textContent = '📚 6.ドリル';
+        const db = document.createElement('button'); db.className = 'nav-tab'; db.id = 'btn-tab-drills'; db.textContent = '📚 5.ドリル';
         db.onclick = () => switchTab('tab-drills');
         if (anchorBtn) nav.insertBefore(db, anchorBtn); else nav.appendChild(db);
       }
@@ -12206,7 +12206,7 @@
                 🏟️ 体育館で練習するとき（1人〜少人数・2.5時間など）
               </div>
               <div style="font-size:0.8rem;color:var(--text-primary);line-height:1.55;">
-                <b>① 時間割を作る：</b>「📋 5.メニュー」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ この条件で編成する］</b>を押します。<br>
+                <b>① 時間割を作る：</b>「📋 4.メニュー」を開き、「練習人数（1人/2人/3人）」と「持ち時間（150分など）」を選んで<b>［✨ この条件で編成する］</b>を押します。<br>
                 <b>② 黄金順序で練習：</b>いきなり基礎打ちをせず、「抜重・FW矯正 ➔ 手投げ分解ノック ➔ 基礎打ち ➔ 半面パターン」の順で各行の<b>［▶️ 今すぐ開始］</b>を押して進めます。
               </div>
             </div>
@@ -13228,7 +13228,7 @@ function sharePoseResultImage() {
 
   // FABの表示制御: 「使うときだけ出す」。
   // ・その日のチェックが0件なら出さない（入口はフットワークタブの［🔁 ルーティン］ボタン）。
-  // ・1件でもチェックしたら「1.フットワーク」「5.メニュー」タブで表示し、ドリル/タイマー実行中は隠す。
+  // ・1件でもチェックしたら「1.フットワーク」「4.メニュー」タブで表示し、ドリル/タイマー実行中は隠す。
   // ・全項目チェック済みなら「✅ ルーティン済」（緑）を表示するが、最初に表示してから
   //   FAB_DONE_SHOW_MS 経過したら隠す。表示開始時刻は端末に保存するので、再読み込みしても
   //   ✅ が出続けることはない。1つでも外すと記録を消し、再び全達成したときにまた短時間だけ表示する。
@@ -14680,7 +14680,7 @@ function sharePoseResultImage() {
 <script id="badtore-drill-library">
 /* =========================================================================
    📚 ドリル（プロ式メニュー）Step 1〜3
-   - 配置：独立タブ「📚 6.ドリル」（tab-drills）にカードをマウント
+   - 配置：独立タブ「📚 5.ドリル」（tab-drills）にカードをマウント
      （当初は設計B案でタブ8内の一区画。ブラッシュアップ Step B で独立タブ化）
    - データ：スタイル別メニュー＋ドリルの静的データ（プリセット・読み取り専用）
    - 看板はスタイル名、選手名は「参考選手／参考方式」として小さく表示
